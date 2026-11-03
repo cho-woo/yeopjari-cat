@@ -1,0 +1,166 @@
+name: Build and publish Yeopjari Cat 1.9.0
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - build-inputs/v1.9.0/yeopjari-src-1.9.0.tar.gz
+      - .github/workflows/publish-v1.9.0.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: yeopjari-cat-release-publication
+  cancel-in-progress: false
+
+jobs:
+  build-publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      VERSION: 1.9.0
+      TAG: v1.9.0
+      REPO: cho-woo/yeopjari-cat
+      SRC_SHA256: 9ae05050d4cf9222cfa05832d254e76f940a2d89a7464b4343c97669a1e9d78b
+      BASE_ZIP_SHA256: 5b8f7dfe15f015fa980494a92f682fef62534f5f002cd768bd12288e80c12e28
+      LLVM_SHA256: 55064b60b991a1e1e8090b8c2f84e82b22cfe5903d12c159d65064cf5e8ae335
+      BOX2D_COMMIT: 8c661469c9507d3ad6fbd2fea3f1aa71669c2fe3
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Reconstruct source and retained v1.8 assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p work
+          echo "$SRC_SHA256  build-inputs/v1.9.0/yeopjari-src-1.9.0.tar.gz" | sha256sum -c -
+          tar -xzf build-inputs/v1.9.0/yeopjari-src-1.9.0.tar.gz -C work
+
+          curl -fL --retry 3 -o /tmp/v1.8.zip             https://github.com/cho-woo/yeopjari-cat/releases/download/v1.8.0/YeopjariCat-Windows-1.8.0.zip
+          echo "$BASE_ZIP_SHA256  /tmp/v1.8.zip" | sha256sum -c -
+          mkdir -p /tmp/v18
+          unzip -q /tmp/v1.8.zip -d /tmp/v18
+          cp /tmp/v18/README_KO.txt work/README_KO.txt
+          mkdir -p work/release
+          cp /tmp/v18/THIRD_PARTY_NOTICES.txt work/release/THIRD_PARTY_NOTICES.txt
+
+          cat >> work/README_KO.txt <<'EOF'
+
+## 1.9.0 — 성격·옷장·장난감과 더 다양한 랜덤 행동
+
+성격은 개냥이, 시크냥, 호기심쟁이, 장난꾸러기, 잠보, 우다다냥의 여섯 타입으로 표시되며 실제 랜덤 행동 가중치에 반영됩니다. 식빵, 꾹꾹이, 빼꼼, 몸 긁기, 재채기가 추가됐고 여러 행동이 짧은 시퀀스로 이어집니다.
+
+우클릭 메뉴의 **옷장**에서 빨간 리본, 포근한 목도리, 쪼꼬미 왕관을 선택할 수 있습니다. **장난감**에서 공이나 박스를 꺼내면 고양이가 가끔 다가가 놀거나 박스에 들어갑니다. 기존 성장 기록과 캐릭터 선택은 그대로 이어집니다.
+EOF
+
+          python3 -m pip install --disable-pip-version-check --quiet pefile
+          mkdir -p work/assets/audio
+          python3 - <<'PY'
+          from pathlib import Path
+          import pefile
+          names = {
+              101:"assets/cat.png", 102:"assets/cat-actions.png",
+              103:"assets/cat-silver.png", 104:"assets/cat-silver-actions.png",
+              105:"assets/cat-jump-churu.png", 106:"assets/cat-gestures.png",
+              301:"assets/audio/hungry.wav", 302:"assets/audio/meal.wav",
+              303:"assets/audio/treat.wav", 304:"assets/audio/refuse.wav",
+              305:"assets/audio/pet.wav", 306:"assets/audio/jump.wav",
+              307:"assets/audio/punch.wav", 308:"assets/audio/wake.wav",
+              309:"assets/audio/food-request.wav", 310:"assets/audio/meal-fish.wav",
+              311:"assets/audio/meal-nogari.wav", 312:"assets/audio/punch-second.wav",
+              313:"assets/audio/gesture.wav", 314:"assets/audio/greeting.wav",
+          }
+          pe=pefile.PE("/tmp/v18/YeopjariCat.exe", fast_load=False)
+          found={}
+          for type_entry in pe.DIRECTORY_ENTRY_RESOURCE.entries:
+              if type_entry.id != 10: continue
+              for name_entry in type_entry.directory.entries:
+                  rid=name_entry.id
+                  if rid not in names: continue
+                  lang=name_entry.directory.entries[0]
+                  data=lang.data.struct
+                  payload=pe.get_data(data.OffsetToData,data.Size)
+                  out=Path("work")/names[rid]
+                  out.parent.mkdir(parents=True,exist_ok=True)
+                  out.write_bytes(payload)
+                  found[rid]=len(payload)
+          missing=sorted(set(names)-set(found))
+          if missing: raise SystemExit(f"missing RCDATA resources: {missing}")
+          print("extracted",len(found),"retained resources")
+          PY
+
+      - name: Fetch pinned Box2D and LLVM-MinGW
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone -q https://github.com/erincatto/box2d.git work/third_party/box2d
+          git -C work/third_party/box2d checkout -q "$BOX2D_COMMIT"
+          test "$(git -C work/third_party/box2d rev-parse HEAD)" = "$BOX2D_COMMIT"
+          mkdir -p work/toolchain
+          curl -fL --retry 3 -o /tmp/llvm-mingw.tar.xz             https://github.com/mstorsjo/llvm-mingw/releases/download/20261020/llvm-mingw-20261020-ucrt-ubuntu-22.04-x86_64.tar.xz
+          echo "$LLVM_SHA256  /tmp/llvm-mingw.tar.xz" | sha256sum -c -
+          tar -xJf /tmp/llvm-mingw.tar.xz -C work/toolchain
+          test -x work/toolchain/llvm-mingw-20261020-ucrt-ubuntu-22.04-x86_64/bin/x86_64-w64-mingw32-clang++
+
+      - name: Run source tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd work
+          for test in cat_behavior_test cat_animation_test cat_nutrition_test cat_preferences_test cat_update_notice_test cat_audio_test pet_state_test update_protocol_test; do
+            g++ -std=c++17 -O2 -Wall -Wextra "tests/$test.cpp" -I src -o "/tmp/$test"
+            "/tmp/$test"
+          done
+          python3 -m unittest discover -s tests -p '*_test.py'
+
+      - name: Build Windows x64 package
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd work
+          chmod +x build.sh
+          ./build.sh
+          python3 tools/release.py             --exe release/YeopjariCat.exe             --version "$VERSION"             --github "$REPO"             --notes-file RELEASE_NOTES_KO.txt             --output "release/publish/$TAG"
+          python3 tools/release.py --verify "release/publish/$TAG"
+          sha256sum release/publish/$TAG/YeopjariCat-1.9.0.exe                     release/publish/$TAG/YeopjariCat-Windows-1.9.0.zip                     release/publish/$TAG/latest.txt
+
+      - name: Publish verified release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          cd "work/release/publish/$TAG"
+          if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+            echo "Release $TAG already exists; refusing to overwrite."
+            exit 1
+          fi
+          gh release create "$TAG"             YeopjariCat-1.9.0.exe             YeopjariCat-Windows-1.9.0.zip             latest.txt             RELEASE_NOTES_KO.txt             SHA256SUMS.txt             --repo "$REPO"             --target main             --title "옆자리 고양이 1.9.0 · 성격, 옷장, 장난감"             --notes-file RELEASE_NOTES_KO.txt             --latest
+
+      - name: Verify public update feed and downloads
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "work/release/publish/$TAG"
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib, urllib.request, time
+          base="https://github.com/cho-woo/yeopjari-cat/releases/download/v1.9.0/"
+          names=["YeopjariCat-1.9.0.exe","YeopjariCat-Windows-1.9.0.zip","latest.txt","RELEASE_NOTES_KO.txt","SHA256SUMS.txt"]
+          for name in names:
+              expected=hashlib.sha256(Path(name).read_bytes()).hexdigest()
+              for attempt in range(5):
+                  try:
+                      with urllib.request.urlopen(base+name,timeout=45) as r: payload=r.read()
+                      if hashlib.sha256(payload).hexdigest()!=expected: raise RuntimeError(f"hash mismatch: {name}")
+                      break
+                  except Exception:
+                      if attempt==4: raise
+                      time.sleep(2)
+          with urllib.request.urlopen("https://github.com/cho-woo/yeopjari-cat/releases/latest/download/latest.txt",timeout=45) as r:
+              text=r.read().decode("ascii")
+          if "version=1.9.0\n" not in text: raise RuntimeError("latest feed is not v1.9.0")
+          print("public release and latest feed verified")
+          PY
