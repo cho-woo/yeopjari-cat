@@ -1,0 +1,14 @@
+{
+  "app_id": "yeopjari-cat",
+  "version": "1.5.0",
+  "feed_url": "https://github.com/cho-woo/yeopjari-cat/releases/latest/download/latest.txt",
+  "download_url": "https://github.com/cho-woo/yeopjari-cat/releases/download/v1.5.0/YeopjariCat-1.5.0.exe",
+  "github_repository": "cho-woo/yeopjari-cat",
+  "files": {
+    "YeopjariCat-1.5.0.exe": "8cb432b3ef76b691a3078e4632c40d8c5c2bde2278330600d3550e4a2512ee1e",
+    "YeopjariCat-Windows-1.5.0.zip": "050c0e74ed4302ee619417f504bd54ef61f9b767560476ad08d5f1739a07fe5b",
+    "latest.txt": "5c0ca471f304f0dc17fda0e0e3981a416467ce8a4e12efd24d78a802cd71fff1",
+    "RELEASE_NOTES_KO.txt": "9661ea4ff32c0ea60238c32d616be7d806a7491b2211585b1d54c29af21d3812",
+    "SHA256SUMS.txt": "692bb2011d11c57f6a6060336379b7de26390e17b29e1e6c5a65693f736a6b73"
+  }
+}
