@@ -1,0 +1,35 @@
+name: Export Yeopjari Cat v1.8.0 source snapshot
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract verified v1.8.0 source
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir snapshot
+          tar -xzf build-inputs/v1.8.0/yeopjari-src-1.8.0.tar.gz -C snapshot
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("snapshot/src/main.cpp")
+          s=p.read_text()
+          if '#include <utility>\n' not in s:
+              s=s.replace('#include <vector>\n','#include <vector>\n#include <utility>\n')
+          s=s.replace('static_cast<LONG>(std::round(g.work.bottom - 74 * bodyScale * body.bodyHeight))};',
+                      'static_cast<LONG>(std::round(CurrentGroundY(ticks) - 74 * bodyScale * body.bodyHeight))};')
+          p.write_text(s)
+          PY
+          tar -czf v18-source-snapshot.tar.gz -C snapshot .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v18-source-snapshot
+          path: v18-source-snapshot.tar.gz
+          retention-days: 1
