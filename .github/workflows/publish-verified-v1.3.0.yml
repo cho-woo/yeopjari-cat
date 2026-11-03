@@ -1,0 +1,187 @@
+name: Publish verified Yeopjari Cat 1.3.0
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/publish-verified-v1.3.0.yml
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: yeopjari-cat-release-publication
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.repository == 'cho-woo/yeopjari-cat' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    permissions:
+      contents: write
+    steps:
+      - name: Verify existing assets, publish the draft, and verify public downloads
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_HOST: github.com
+          GH_PROMPT_DISABLED: '1'
+          GH_NO_UPDATE_NOTIFIER: '1'
+        run: |
+          python3 - <<'PYTHON'
+          """Publish only the verified, already-uploaded Yeopjari Cat v1.3.0 draft.
+          
+          This file is embedded verbatim in the accompanying GitHub Actions workflow.
+          It uses the standard ephemeral GITHUB_TOKEN through gh; it never reads or logs it.
+          """
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          import re
+          import subprocess
+          import tempfile
+          import time
+          import urllib.error
+          import urllib.request
+          
+          REPOSITORY = "cho-woo/yeopjari-cat"
+          REPOSITORY_ID = 1443686100
+          REPOSITORY_URL = "https://github.com/" + REPOSITORY
+          RELEASE_ID = 432202112
+          TAG = "v1.3.0"
+          VERSION = (1, 3, 0)
+          EXPECTED = {
+              "latest.txt": (703935294, 1173, "dfb783ab3cc4a6b6890e71a80b2810470c0fdaeaadc20d1b534ecfe84856388e"),
+              "RELEASE_NOTES_KO.txt": (703935303, 682, "a4f12929626de1963bf776ef2ea6e128afd36f2480880aeb117e4d91042ed970"),
+              "SHA256SUMS.txt": (703935313, 348, "10838525a0231364ca5cc190e09c8d8828c2e1bf3124bbaf7421ef15c475986e"),
+              "YeopjariCat-1.3.0.exe": (703935250, 10158592, "15cee0930fda02bcad06941f210f8f35c73fd831a906121f3ca7ce4326bb5e83"),
+              "YeopjariCat-Windows-1.3.0.zip": (703935181, 8515842, "1b4b20ec59939248936f483545973eb57bc8ca82e71635d359c7df53413e19e4"),
+          }
+          
+          
+          def require(condition, message):
+              if not condition:
+                  raise RuntimeError(message)
+          
+          
+          def gh(*arguments, timeout=120):
+              return subprocess.run(
+                  ["gh", *arguments], check=True, stdout=subprocess.PIPE,
+                  stderr=subprocess.PIPE, text=True, timeout=timeout,
+              ).stdout
+          
+          
+          def api(resource):
+              return json.loads(gh("api", "--method", "GET", "repos/" + REPOSITORY + resource))
+          
+          
+          def verify_release(release):
+              require(release.get("id") == RELEASE_ID, "Unexpected release ID")
+              require(release.get("tag_name") == TAG, "Unexpected release tag")
+              require(release.get("target_commitish") == "main", "Unexpected release target")
+              require(release.get("prerelease") is False, "Prereleases must not become the stable feed")
+              require(type(release.get("draft")) is bool, "Missing draft state")
+              require(release.get("url") == f"https://api.github.com/repos/{REPOSITORY}/releases/{RELEASE_ID}",
+                      "Unexpected release repository")
+              assets = release.get("assets", [])
+              require(len(assets) == len(EXPECTED), "Missing, extra or duplicate release assets")
+              by_name = {asset["name"]: asset for asset in assets}
+              require(set(by_name) == set(EXPECTED), "Unexpected asset names")
+              for name, (asset_id, size, digest) in EXPECTED.items():
+                  asset = by_name[name]
+                  require(asset.get("id") == asset_id, f"Asset was replaced: {name}")
+                  require(asset.get("state") == "uploaded", f"Asset not fully uploaded: {name}")
+                  require(asset.get("size") == size, f"Unexpected remote size: {name}")
+                  require(asset.get("digest") == "sha256:" + digest, f"Unexpected remote digest: {name}")
+              return release
+          
+          
+          def verify_bytes(name, payload):
+              _, size, digest = EXPECTED[name]
+              require(len(payload) == size, f"Downloaded size mismatch: {name}")
+              require(hashlib.sha256(payload).hexdigest() == digest, f"Downloaded SHA256 mismatch: {name}")
+          
+          
+          def prevent_downgrade():
+              releases = api("/releases?per_page=100")
+              require(isinstance(releases, list), "Invalid release listing")
+              for release in releases:
+                  if release.get("draft") or release.get("prerelease"):
+                      continue
+                  match = re.fullmatch(r"v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)", release.get("tag_name", ""))
+                  require(match is not None, "A published stable release uses an unknown version format")
+                  version = tuple(map(int, match.groups()))
+                  require(version <= VERSION, "A newer stable release exists; refusing to move the latest feed backward")
+                  require(version != VERSION or release.get("id") == RELEASE_ID, "A different release owns this version")
+          
+          
+          def public_download(url, expected_name):
+              # urllib's default opener sends no Authorization header. HTTPS redirects are
+              # normal for release assets; bound the read to one byte past the expected size.
+              size = EXPECTED[expected_name][1]
+              for attempt in range(3):
+                  try:
+                      request = urllib.request.Request(url, headers={"User-Agent": "YeopjariCat-release-verifier/1.3"})
+                      with urllib.request.urlopen(request, timeout=45) as response:
+                          require(response.status == 200, "Public asset is not available")
+                          require(response.geturl().startswith("https://"), "Unexpected non-HTTPS download")
+                          payload = response.read(size + 1)
+                      verify_bytes(expected_name, payload)
+                      return
+                  except (urllib.error.URLError, TimeoutError):
+                      if attempt == 2:
+                          raise
+                      time.sleep(2)
+          
+          
+          def main():
+              repository = api("")
+              require(repository.get("id") == REPOSITORY_ID, "Unexpected repository ID")
+              require(repository.get("full_name") == REPOSITORY, "Unexpected repository owner")
+              require(repository.get("private") is False, "Distribution repository must be public")
+              release_path = f"/releases/{RELEASE_ID}"
+              release = verify_release(api(release_path))
+              with tempfile.TemporaryDirectory(prefix="yeopjari-verified-release-") as directory:
+                  gh("release", "download", TAG, "--repo", REPOSITORY_URL, "--dir", directory, timeout=240)
+                  folder = Path(directory)
+                  require({path.name for path in folder.iterdir()} == set(EXPECTED), "Unexpected downloaded file set")
+                  for name in EXPECTED:
+                      verify_bytes(name, (folder / name).read_bytes())
+                  # Repeat metadata checks after download, immediately before publication.
+                  release = verify_release(api(release_path))
+                  was_draft = release["draft"]
+                  if was_draft:
+                      prevent_downgrade()
+                      gh("release", "edit", TAG, "--repo", REPOSITORY_URL,
+                         "--draft=false", "--prerelease=false", "--latest")
+                  published = verify_release(api(release_path))
+                  require(published["draft"] is False and published.get("published_at"), "Release is still unpublished")
+                  require(published.get("html_url") == REPOSITORY_URL + "/releases/tag/" + TAG,
+                          "Unexpected published release URL")
+                  for name in EXPECTED:
+                      url = REPOSITORY_URL + "/releases/download/" + TAG + "/" + name
+                      public_download(url, name)
+                  if was_draft:
+                      require(api("/releases/latest").get("id") == RELEASE_ID, "Published release did not become latest")
+                      public_download(REPOSITORY_URL + "/releases/latest/download/latest.txt", "latest.txt")
+                  # Rerunning this workflow after a later version is published verifies
+                  # v1.3.0 without editing it or changing the latest-release pointer.
+                  outcome = "Published" if was_draft else "Already published; verified without modification"
+                  lines = [f"## {outcome}: Yeopjari Cat {TAG}", "",
+                           f"Release: {published['html_url']}", "",
+                           "All five asset sizes and SHA256 digests match the approved local package.",
+                           "All five downloads were verified without authentication."]
+                  if was_draft:
+                      lines += ["", "Latest update feed: " + REPOSITORY_URL + "/releases/latest/download/latest.txt"]
+                  summary = "\n".join(lines) + "\n"
+                  print(summary)
+                  if os.environ.get("GITHUB_STEP_SUMMARY"):
+                      with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as stream:
+                          stream.write(summary)
+          
+          
+          if __name__ == "__main__":
+              main()
+          PYTHON
