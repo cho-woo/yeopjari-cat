@@ -1,0 +1,451 @@
+name: Publish verified Yeopjari Cat 1.7.0
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/publish-verified-v1.7.0.yml
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: yeopjari-cat-release-publication
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.repository == 'cho-woo/yeopjari-cat' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - name: Verify the binary bundle, publish the release, and verify public downloads
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_HOST: github.com
+          GH_PROMPT_DISABLED: '1'
+          GH_NO_UPDATE_NOTIFIER: '1'
+        run: |
+          python3 - <<'PYTHON'
+          """Publish the approved v1.7.0 binary bundle without rebuilding or executing it.
+          
+          The matching workflow embeds this script. All inputs are fetched from the exact
+          workflow commit, pinned by byte length and SHA256, before any release mutation.
+          """
+          import base64
+          import hashlib
+          import json
+          import lzma
+          import os
+          from pathlib import Path
+          import re
+          import stat
+          import struct
+          import subprocess
+          import tempfile
+          import time
+          import urllib.error
+          import urllib.request
+          import zipfile
+          import zlib
+          
+          REPOSITORY = "cho-woo/yeopjari-cat"
+          REPOSITORY_ID = 1443686100
+          REPOSITORY_URL = "https://github.com/" + REPOSITORY
+          TAG = "v1.7.0"
+          VERSION = (1, 7, 0)
+          TITLE = '옆자리 고양이 1.7.0 · 맞춤 효과음과 업데이트 알림'
+          BUNDLE_PATH = "release-bundles/v1.7.0/"
+          ZIP_NAME = "YeopjariCat-Windows-1.7.0.zip"
+          EXE_NAME = "YeopjariCat-1.7.0.exe"
+          FEED_URL = REPOSITORY_URL + "/releases/latest/download/latest.txt"
+          DOWNLOAD_URL = REPOSITORY_URL + "/releases/download/" + TAG + "/" + EXE_NAME
+          # Filled from the independently built and verified local package.
+          EXPECTED = {'YeopjariCat-1.7.0.exe': [11579904, '6acb3c3f66c1d0fa75214f088f0e4fbdbacdf08ee0ca63c7823d79f872b1f6ac'],
+           'YeopjariCat-Windows-1.7.0.zip': [9537053,
+                                             '9b6fa9170a40b7f39e78d49c9460cad4d8feece98b0a373a3134842ce6208609'],
+           'latest.txt': [2633, 'c5019722b4652d011b6afc3045bc3eaf376b4e4cb15776c450170291c513b833'],
+           'RELEASE_NOTES_KO.txt': [1779, '99b726ef907252aba608306e004cff7d8a9178dbdc4b54f99e44d78d7a8920da'],
+           'SHA256SUMS.txt': [348, 'f52face9c29693adeebd5d71f5db086399d216d3f6cc7a2c7c0fd1af1c8d574a']}
+          INPUTS = {'YeopjariCat-Windows-1.7.0.zip': [9537053,
+                                             '9b6fa9170a40b7f39e78d49c9460cad4d8feece98b0a373a3134842ce6208609'],
+           'latest.txt': [2633, 'c5019722b4652d011b6afc3045bc3eaf376b4e4cb15776c450170291c513b833'],
+           'RELEASE_NOTES_KO.txt': [1779, '99b726ef907252aba608306e004cff7d8a9178dbdc4b54f99e44d78d7a8920da'],
+           'SHA256SUMS.txt': [348, 'f52face9c29693adeebd5d71f5db086399d216d3f6cc7a2c7c0fd1af1c8d574a'],
+           'release-info.json': [792, 'd6c77b21b534dcbab6fc580752405f889a2a0dd74e9ba917b015ce596e9ab481']}
+          ZIP_MEMBERS = {'YeopjariCat.exe': [11579904, '6acb3c3f66c1d0fa75214f088f0e4fbdbacdf08ee0ca63c7823d79f872b1f6ac'],
+           'update-feed.txt': [76, 'af1c2b4702bf200084ec3e33de1bc8a987f29a57fe30aaad87c0cafa74bc913a'],
+           'README_KO.txt': [17104, '1b7c97bf66b72dfbf7164ce4279581fc78e45644e501eba2e9fc1dac5fc87124'],
+           'CHANGELOG_KO.txt': [1779, '99b726ef907252aba608306e004cff7d8a9178dbdc4b54f99e44d78d7a8920da'],
+           'THIRD_PARTY_NOTICES.txt': [17744, 'eff9e825c61ae62b81bfcaa60d63da7d99147a5bb4cad1eb72e4bfca93736414'],
+           'DISTRIBUTION_KO.txt': [800, '60fd13bcaa4904404781533a4c2e744ae55c2b66ef8ff65c96144e13e089d38c']}
+          
+          
+          DELTA_DOCUMENT = [1197417, '190b8ff38db6534d5a1a6140ffd93a0f68f23821bf5a5f8391481242744bf680']
+          BASE_EXE = [10813952, '976666d85ad1827c3d457aeb5a700c93650afe1b028cefb240b401d4ea832b53']
+          DELTA_PROGRAM = [1579305, '1dc44f6947fd01f367a257308ce45aa233e4394b2b7a0da97809424797eb4fa8']
+          DELTA_PARTS = {'v17-delta-001.txt': [49152, '8e903333439fe01d77ec10b0f49681ddd38f49bdfb409cfaa1d51fbc6cc52f67'],
+           'v17-delta-002.txt': [49152, '1d20b2f9b59afa33681f6470e86df3069f815170d59df349655f1791f8207147'],
+           'v17-delta-003.txt': [49152, '96d51f28c6fc45989f3391e63d36c978b7ee830a1b7c38840d30b2746a65bd69'],
+           'v17-delta-004.txt': [49152, 'f1e3dbd92d743b47384615eb4f4fd1207402b3a5024a44060224abf21068df91'],
+           'v17-delta-005.txt': [49152, 'c7a63609292e3e84586ad9766770dae71d2f2cd35db51a17da73c68a4e16d2aa'],
+           'v17-delta-006.txt': [49152, 'c81c10495aeb5bcf5376f46ae7c1712a0f9a96471b61faa0e5237a23d61cee5e'],
+           'v17-delta-007.txt': [49152, '88997ef13f3d2a102aa6745cc502e1d402979052fa93ff7bc1599f160fbaf478'],
+           'v17-delta-008.txt': [49152, '738f7b2ef1e0b5aafae83873808cb2b2e88aa9b669d044a3bd510c020d421819'],
+           'v17-delta-009.txt': [49152, 'f3f8bd85ac699b47ceb3ffd4f7a51c1cdf32704b4c07f8530a985153f37fdfe2'],
+           'v17-delta-010.txt': [49152, '0f6561e81c1902cf8f2247c5b816d5c130ce68ab8a7ed5754da4f685d734ac4f'],
+           'v17-delta-011.txt': [49152, 'a12ebd36a4d04ddacdb52ccb28122fc9982214ff6fcaeae704b62e305f99a81c'],
+           'v17-delta-012.txt': [49152, 'f2ed0b9bc6fff83d99d2dba433e3ba8446adc30e352693cf8294512b22d6d54e'],
+           'v17-delta-013.txt': [49152, 'de908799a5da6d66841c6b336d273223de1b693e9925ae04e3c64b69a13ac7aa'],
+           'v17-delta-014.txt': [49152, 'd27516fd1fd8bfc2651353d86fdd4eca263f222f35b418f404fa4af659065a8e'],
+           'v17-delta-015.txt': [49152, 'aa54183e63c9f6724ac135f080962c50e1d68c829f42cf66054bd319e8b2c530'],
+           'v17-delta-016.txt': [49152, 'dba8776c4548513f9b5eeff18a97076abac5d5983ea5abc9a2fe309471a83509'],
+           'v17-delta-017.txt': [49152, '32825b1f7dc084198228270fc671347e8b449cd58380fd7072a3c374b523b88e'],
+           'v17-delta-018.txt': [49152, '89b1c7fd3d01a25218cd6d05ad913fcc6218724d2180c529616fa5148473093d'],
+           'v17-delta-019.txt': [49152, '7470575bc4c6bc6ac52d06fe8f97ea75851ce5f6ccbf9d18e86cb8002d8a5286'],
+           'v17-delta-020.txt': [49152, '2fefeb93f6562d2aa4ea362b198535b854dfa529665739c7b6c9d55b409f60fa'],
+           'v17-delta-021.txt': [49152, 'a026113021ae7aee9f8159776ad6b79c377bd190b77fd2f4c7e47c2fd50b7c6e'],
+           'v17-delta-022.txt': [49152, '0f8effca465667eb794842013fd07cf5bb9e84313a51a11d60426e8075415efe'],
+           'v17-delta-023.txt': [49152, '0436ea9a676ba768a4fd25605c3a4cc4b05564e253dc2a5da49207107bdbffa1'],
+           'v17-delta-024.txt': [49152, '522d301131ccd74df48a38f7103de70b2d5e2b484d858c103bdc8c352978726e'],
+           'v17-delta-025.txt': [17769, '16ce46e9edb8505b8353de60cf60790b870c8645302e883423cd448786de1dd6']}
+          
+          
+          def require(condition, message):
+              if not condition:
+                  raise RuntimeError(message)
+          
+          
+          def gh(*arguments, timeout=120, binary=False):
+              completed = subprocess.run(
+                  ["gh", *arguments], stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                  text=not binary, timeout=timeout,
+              )
+              if completed.returncode:
+                  detail = completed.stderr.decode("utf-8", errors="replace") if binary else completed.stderr
+                  code = re.search(r"HTTP ([0-9]{3})", detail)
+                  suffix = f" (HTTP {code.group(1)})" if code else ""
+                  # Keep credentials, temporary redirect URLs, and raw responses out of logs.
+                  raise RuntimeError("GitHub CLI " + " ".join(arguments[:2]) + " failed" + suffix)
+              return completed.stdout
+          
+          
+          def api(resource):
+              return json.loads(gh("api", "--method", "GET", "repos/" + REPOSITORY + resource))
+          
+          
+          def verify_bytes(name, payload, expected=EXPECTED):
+              size, digest = expected[name]
+              require(len(payload) == size, f"Byte length mismatch: {name}")
+              require(hashlib.sha256(payload).hexdigest() == digest, f"SHA256 mismatch: {name}")
+          
+          
+          def reconstruct_bundle(document, base_exe):
+              # This interpreter copies bounded byte ranges and literal data only. It does
+              # not execute a program or load the Windows binary into the Linux process.
+              require(type(document) is dict and document.get("schema") == 1, "Unknown delta schema")
+              require([document.get("base_exe_bytes"), document.get("base_exe_sha256")] == BASE_EXE,
+                      "Delta base identity differs")
+              require([document.get("target_exe_bytes"), document.get("target_exe_sha256")] == EXPECTED[EXE_NAME],
+                      "Delta target identity differs")
+              require([document.get("zip_bytes"), document.get("zip_sha256")] == EXPECTED[ZIP_NAME],
+                      "Delta ZIP identity differs")
+              require([document.get("program_bytes"), document.get("program_sha256")] == DELTA_PROGRAM,
+                      "Delta instruction identity differs")
+              verify_bytes("base", base_exe, {"base": BASE_EXE})
+              compressed = base64.b64decode(document["program_xz_base64"], validate=True)
+              require(len(compressed) == 882948, "Unexpected compressed delta size")
+              decoder = lzma.LZMADecompressor(format=lzma.FORMAT_XZ, memlimit=128 * 1024 * 1024)
+              program = decoder.decompress(compressed, max_length=DELTA_PROGRAM[0] + 1)
+              require(decoder.eof and not decoder.unused_data, "Incomplete or trailing compressed delta")
+              verify_bytes("program", program, {"program": DELTA_PROGRAM})
+              cursor = 0
+              operations = 0
+              output = bytearray()
+          
+              def integer():
+                  nonlocal cursor
+                  value = 0
+                  for shift in range(0, 35, 7):
+                      require(cursor < len(program), "Truncated delta integer")
+                      byte = program[cursor]
+                      cursor += 1
+                      value |= (byte & 0x7f) << shift
+                      if not byte & 0x80:
+                          require(value < 2 ** 32, "Delta integer overflow")
+                          return value
+                  raise RuntimeError("Delta integer is too long")
+          
+              while cursor < len(program):
+                  operations += 1
+                  require(operations <= 25000, "Too many delta operations")
+                  operation = program[cursor]
+                  cursor += 1
+                  if operation == ord("C"):
+                      offset, length = integer(), integer()
+                      require(length > 0 and offset <= len(base_exe) and length <= len(base_exe) - offset,
+                              "Delta copy exceeds source")
+                      require(length <= EXPECTED[EXE_NAME][0] - len(output), "Delta copy exceeds target")
+                      output.extend(base_exe[offset:offset + length])
+                  elif operation == ord("L"):
+                      length = integer()
+                      require(length > 0 and length <= len(program) - cursor, "Truncated delta literal")
+                      require(length <= EXPECTED[EXE_NAME][0] - len(output), "Delta literal exceeds target")
+                      output.extend(program[cursor:cursor + length])
+                      cursor += length
+                  else:
+                      raise RuntimeError("Unknown delta operation")
+              executable = bytes(output)
+              verify_bytes(EXE_NAME, executable)
+              compressor = zlib.compressobj(level=9, wbits=-15)
+              deflated = compressor.compress(executable) + compressor.flush()
+              # Compression implementations can differ. Never publish a different archive:
+              # both the compressed segment and complete ZIP must match the approved bytes.
+              require(document.get("deflate_bytes") == 9522405, "Unexpected ZIP segment size")
+              verify_bytes("deflate", deflated, {"deflate": [document["deflate_bytes"], document["deflate_sha256"]]})
+              prefix = base64.b64decode(document["zip_prefix_base64"], validate=True)
+              tail = base64.b64decode(document["zip_tail_base64"], validate=True)
+              require(len(prefix) == 45 and len(tail) == 14603, "Unexpected ZIP framing size")
+              archive = prefix + deflated + tail
+              verify_bytes(ZIP_NAME, archive)
+              return archive
+          
+          
+          def fetch_bundle(folder, commit):
+              require(re.fullmatch(r"[0-9a-f]{40}", commit) is not None, "Invalid workflow commit SHA")
+          
+              def fetch(name, expected):
+                  resource = f"repos/{REPOSITORY}/contents/{BUNDLE_PATH}{name}?ref={commit}"
+                  payload = gh("api", "--method", "GET", "-H", "Accept: application/vnd.github.raw+json",
+                               resource, binary=True, timeout=180)
+                  verify_bytes(name, payload, expected)
+                  return payload
+          
+              for name in INPUTS:
+                  if name != ZIP_NAME:
+                      (folder / name).write_bytes(fetch(name, INPUTS))
+              document_bytes = b"".join(fetch(name, DELTA_PARTS) for name in DELTA_PARTS)
+              verify_bytes("document", document_bytes, {"document": DELTA_DOCUMENT})
+              document = json.loads(document_bytes.decode("ascii"))
+              with tempfile.TemporaryDirectory(prefix="yeopjari-v1.6.0-base-") as directory:
+                  base_name = "YeopjariCat-1.6.0.exe"
+                  gh("release", "download", "v1.6.0", "--repo", REPOSITORY_URL,
+                     "--pattern", base_name, "--dir", directory, timeout=240)
+                  base_folder = Path(directory)
+                  require({path.name for path in base_folder.iterdir()} == {base_name}, "Unexpected base download set")
+                  base = (base_folder / base_name).read_bytes()
+                  (folder / ZIP_NAME).write_bytes(reconstruct_bundle(document, base))
+          
+          def prepare_assets(folder):
+              # Validate every committed input before reading metadata or opening the ZIP.
+              for name in INPUTS:
+                  verify_bytes(name, (folder / name).read_bytes(), INPUTS)
+              info = json.loads((folder / "release-info.json").read_text(encoding="utf-8"))
+              require(info == {
+                  "app_id": "yeopjari-cat", "version": "1.7.0", "feed_url": FEED_URL,
+                  "download_url": DOWNLOAD_URL, "github_repository": REPOSITORY,
+                  "files": {name: expected[1] for name, expected in EXPECTED.items()},
+              }, "Release information does not match the approved package")
+              notes = (folder / "RELEASE_NOTES_KO.txt").read_bytes()
+              manifest_text = (folder / "latest.txt").read_text(encoding="utf-8")
+              manifest_lines = manifest_text.splitlines()
+              require(len(manifest_lines) == 8 and all("=" in line for line in manifest_lines), "Invalid update manifest")
+              manifest = dict(line.split("=", 1) for line in manifest_lines)
+              require(manifest == {
+                  "schema": "1", "app_id": "yeopjari-cat", "channel": "stable", "version": "1.7.0",
+                  "download_url": DOWNLOAD_URL, "sha256": EXPECTED[EXE_NAME][1],
+                  "size_bytes": str(EXPECTED[EXE_NAME][0]),
+                  "notes_b64": base64.b64encode(notes).decode("ascii"),
+              }, "Manifest fields, executable or notes do not match")
+              checksums = "".join(EXPECTED[name][1] + "  " + name + "\n" for name in
+                                  (EXE_NAME, ZIP_NAME, "latest.txt", "RELEASE_NOTES_KO.txt"))
+              require((folder / "SHA256SUMS.txt").read_bytes() == checksums.encode("ascii"), "Checksum list mismatch")
+              with zipfile.ZipFile(folder / ZIP_NAME) as archive:
+                  entries = archive.infolist()
+                  require(len(entries) == len(ZIP_MEMBERS), "ZIP has missing, duplicate or extra entries")
+                  require({entry.filename for entry in entries} == set(ZIP_MEMBERS), "Unexpected ZIP filenames")
+                  require(sum(entry.file_size for entry in entries) == sum(x[0] for x in ZIP_MEMBERS.values()),
+                          "Unexpected ZIP uncompressed size")
+                  for entry in entries:
+                      name = entry.filename
+                      size, digest = ZIP_MEMBERS[name]
+                      require(not entry.is_dir() and "/" not in name and "\\" not in name, "ZIP paths must be root files")
+                      require(stat.S_IFMT(entry.external_attr >> 16) in (0, stat.S_IFREG), "ZIP contains a special file")
+                      require(not entry.flag_bits & 1, "Encrypted ZIP member is not supported")
+                      require(entry.compress_type == zipfile.ZIP_DEFLATED, "Unexpected ZIP compression")
+                      require(entry.file_size == size and 0 <= entry.compress_size <= INPUTS[ZIP_NAME][0],
+                              "Unexpected ZIP member size")
+                      with archive.open(entry) as stream:
+                          payload = stream.read(size + 1)
+                      verify_bytes(name, payload, ZIP_MEMBERS)
+                      if name == "YeopjariCat.exe":
+                          verify_bytes(EXE_NAME, payload)
+                          # These header checks do not execute the Windows program.
+                          require(payload[:2] == b"MZ" and len(payload) > 64, "Missing PE DOS header")
+                          pe = struct.unpack_from("<I", payload, 0x3C)[0]
+                          require(pe <= len(payload) - 96 and payload[pe:pe + 4] == b"PE\0\0", "Invalid PE signature")
+                          require(struct.unpack_from("<H", payload, pe + 4)[0] == 0x8664, "EXE must target AMD64")
+                          require(struct.unpack_from("<H", payload, pe + 24)[0] == 0x20B, "EXE must be PE32+")
+                          require(struct.unpack_from("<H", payload, pe + 24 + 68)[0] == 2, "EXE must be a Windows GUI program")
+                          (folder / EXE_NAME).write_bytes(payload)
+                      elif name == "update-feed.txt":
+                          require(payload == (FEED_URL + "\n").encode("utf-8"), "ZIP update feed points elsewhere")
+                      elif name == "CHANGELOG_KO.txt":
+                          require(payload == notes, "ZIP changelog differs from published notes")
+              for name in EXPECTED:
+                  verify_bytes(name, (folder / name).read_bytes())
+          
+          
+          def releases():
+              data = api("/releases?per_page=100")
+              require(isinstance(data, list), "Invalid release list")
+              require(len(data) < 100, "Release history exceeds this publisher; review all pages before continuing")
+              return data
+          
+          
+          def prevent_downgrade(rows):
+              for release in rows:
+                  if release.get("draft") or release.get("prerelease"):
+                      continue
+                  match = re.fullmatch(r"v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)", release.get("tag_name", ""))
+                  require(match is not None, "Published stable version format is unknown")
+                  require(tuple(map(int, match.groups())) <= VERSION, "A newer stable version exists; refusing a downgrade")
+          
+          
+          def verify_release(release, notes, complete=False, release_id=None, asset_ids=None):
+              identifier = release.get("id")
+              require(type(identifier) is int and identifier > 0, "Missing release ID")
+              if release_id is not None:
+                  require(identifier == release_id, "Release was replaced")
+              require(release.get("url") == f"https://api.github.com/repos/{REPOSITORY}/releases/{identifier}",
+                      "Unexpected release repository")
+              require(release.get("tag_name") == TAG, "Unexpected release tag")
+              require(release.get("target_commitish") == "main", "Unexpected release target")
+              require(release.get("prerelease") is False, "The stable feed cannot use a prerelease")
+              require(type(release.get("draft")) is bool, "Missing draft state")
+              require(release.get("name") == TITLE, "Release title differs from this prepared release")
+              require((release.get("body") or "").replace("\r\n", "\n") == notes,
+                      "Release notes differ from this prepared release")
+              assets = release.get("assets", [])
+              require(isinstance(assets, list), "Invalid release assets")
+              names = [asset.get("name") for asset in assets]
+              require(len(names) == len(set(names)) and set(names) <= set(EXPECTED), "Extra or duplicate release assets")
+              if complete:
+                  require(set(names) == set(EXPECTED), "Release assets are incomplete")
+              for asset in assets:
+                  name = asset["name"]
+                  size, digest = EXPECTED[name]
+                  require(asset.get("state") == "uploaded", f"Incomplete asset upload: {name}")
+                  require(asset.get("size") == size, f"Remote size mismatch: {name}")
+                  require(asset.get("digest") == "sha256:" + digest, f"Remote SHA256 mismatch: {name}")
+                  if asset_ids is not None:
+                      require(asset.get("id") == asset_ids[name], f"Asset changed during verification: {name}")
+              return release
+          
+          
+          def public_download(url, expected_name):
+              # This sends no Authorization header and reads at most expected_size + 1.
+              size = EXPECTED[expected_name][0]
+              for attempt in range(3):
+                  try:
+                      request = urllib.request.Request(url, headers={"User-Agent": "YeopjariCat-release-verifier/1.7"})
+                      with urllib.request.urlopen(request, timeout=45) as response:
+                          require(response.status == 200 and response.geturl().startswith("https://"), "Public HTTPS download failed")
+                          payload = response.read(size + 1)
+                      verify_bytes(expected_name, payload)
+                      return
+                  except (urllib.error.URLError, TimeoutError):
+                      if attempt == 2:
+                          raise
+                      time.sleep(2)
+          
+          
+          def publish(folder):
+              notes = (folder / "RELEASE_NOTES_KO.txt").read_text(encoding="utf-8")
+              rows = releases()
+              matches = [row for row in rows if row.get("tag_name") == TAG]
+              require(len(matches) <= 1, "Duplicate releases have this tag")
+              if not matches:
+                  prevent_downgrade(rows)
+                  gh("release", "create", TAG, "--repo", REPOSITORY_URL, "--draft", "--target", "main",
+                     "--title", TITLE, "--notes-file", str(folder / "RELEASE_NOTES_KO.txt"))
+                  # The new draft can take a few seconds to appear in collection reads.
+                  for attempt in range(5):
+                      matches = [row for row in releases() if row.get("tag_name") == TAG]
+                      require(len(matches) <= 1, "Duplicate releases have this tag")
+                      if matches:
+                          break
+                      if attempt < 4:
+                          time.sleep(2)
+                  require(len(matches) == 1, "New draft was not found after bounded verification")
+              release = verify_release(matches[0], notes)
+              release_id = release["id"]
+              release_path = f"/releases/{release_id}"
+              if release["draft"]:
+                  prevent_downgrade(releases())
+                  existing = {asset["name"] for asset in release["assets"]}
+                  missing = [name for name in EXPECTED if name not in existing]
+                  if missing:
+                      # Deliberately no --clobber: existing assets must match exactly.
+                      gh("release", "upload", TAG, *[str(folder / name) for name in missing],
+                         "--repo", REPOSITORY_URL, timeout=300)
+              # Retry only visibility of missing assets. Existing extra assets, wrong
+              # upload state, size, digest or release identity fail immediately.
+              for attempt in range(5):
+                  release = verify_release(api(release_path), notes, complete=False, release_id=release_id)
+                  if {asset["name"] for asset in release["assets"]} == set(EXPECTED):
+                      break
+                  if attempt < 4:
+                      time.sleep(2)
+              release = verify_release(release, notes, complete=True, release_id=release_id)
+              asset_ids = {asset["name"]: asset["id"] for asset in release["assets"]}
+              with tempfile.TemporaryDirectory(prefix="yeopjari-downloaded-assets-") as directory:
+                  gh("release", "download", TAG, "--repo", REPOSITORY_URL, "--dir", directory, timeout=240)
+                  downloaded = Path(directory)
+                  require({path.name for path in downloaded.iterdir()} == set(EXPECTED), "Unexpected downloaded asset set")
+                  for name in EXPECTED:
+                      verify_bytes(name, (downloaded / name).read_bytes())
+              release = verify_release(api(release_path), notes, complete=True, release_id=release_id, asset_ids=asset_ids)
+              was_draft = release["draft"]
+              if was_draft:
+                  prevent_downgrade(releases())
+                  gh("release", "edit", TAG, "--repo", REPOSITORY_URL, "--draft=false", "--prerelease=false", "--latest")
+              published = verify_release(api(release_path), notes, complete=True, release_id=release_id, asset_ids=asset_ids)
+              require(not published["draft"] and published.get("published_at"), "Release remains unpublished")
+              require(published.get("html_url") == REPOSITORY_URL + "/releases/tag/" + TAG, "Unexpected published URL")
+              for name in EXPECTED:
+                  public_download(REPOSITORY_URL + "/releases/download/" + TAG + "/" + name, name)
+              if was_draft:
+                  require(api("/releases/latest").get("id") == release_id, "This release did not become latest")
+                  public_download(FEED_URL, "latest.txt")
+              outcome = "Published" if was_draft else "Already published; verified without modification"
+              lines = [f"## {outcome}: Yeopjari Cat {TAG}", "", "Release: " + published["html_url"], "",
+                       "All five assets match the approved sizes and SHA256 digests.",
+                       "All five public downloads were verified without authentication."]
+              if was_draft:
+                  lines += ["", "Latest update feed: " + FEED_URL]
+              summary = "\n".join(lines) + "\n"
+              print(summary)
+              if os.environ.get("GITHUB_STEP_SUMMARY"):
+                  with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as stream:
+                      stream.write(summary)
+          
+          
+          def main():
+              repository = api("")
+              require(repository.get("id") == REPOSITORY_ID and repository.get("full_name") == REPOSITORY,
+                      "Unexpected repository identity")
+              require(repository.get("private") is False, "Distribution repository must be public")
+              with tempfile.TemporaryDirectory(prefix="yeopjari-v1.7.0-") as directory:
+                  folder = Path(directory)
+                  fetch_bundle(folder, os.environ.get("GITHUB_SHA", ""))
+                  prepare_assets(folder)
+                  publish(folder)
+          
+          
+          if __name__ == "__main__":
+              main()
+          PYTHON
