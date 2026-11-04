@@ -25,38 +25,39 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 
-v1.10.1 asset continuity
+Current cat effect recordings — v1.10.3
 
-The fourteen action-sound WAV files are unchanged from the publicly released
-v1.10.0 set. Their existing recording attribution and license notices below
-continue to apply.
+All fourteen action-sound WAV files were prepared from the user-provided
+reference video. The user explicitly authorized their public distribution in
+this application update. Four intact short excerpts are reused across fourteen
+cue slots; the pitch and timing are unchanged. Editing is limited to mono
+PCM16/22050Hz conversion, DC removal, level adjustment and short edge fades.
+The source and output hashes and edit ranges are recorded in
+assets/audio/manifest.json. No CC0 license, authorship or general reuse license
+is asserted for these user-provided recordings.
 
-The added reclining-pose atlas, assets/cat-recline.png, was generated using
-the existing public repository artwork assets/cat.png and assets/cat-silver.png
-as its image inputs. The six existing character atlases remain unchanged.
+Only the short prepared cues are distributed in this release. The original
+video and full decoded audio are not included in the public repository or ZIP.
 
-User-supplied cat effect recordings (v1.7.0)
+Character artwork continuity
 
-Eleven recordings were supplied for this application update. Selected excerpts
-were trimmed, faded, converted to mono PCM16/22050Hz, and level-adjusted without
-pitch changes. They cover jumping, greeting, hunger/food requests, eating,
-ear/tail gestures and two punch variants. No new CC0 license or authorship claim
-is assigned to these user-supplied recordings. They are not covered by the CC0
-notice below. The developer package includes the original MP3 files and a record
-of their original filenames, exact hashes, edit ranges and resulting WAV hashes.
+The reclining-pose atlas assets/cat-recline.png was generated using the existing
+public repository artwork assets/cat.png and assets/cat-silver.png as image
+inputs. The six earlier character atlases remain unchanged.
 
-Retained cat sound recordings — Kerzoven
+Historical audio attribution (v1.5.0 through v1.10.2)
+
+Earlier releases used eleven user-supplied recordings introduced in v1.7.0 and
+three edited CC0 cues (refuse.wav, pet.wav, wake.wav) introduced in v1.5.0.
+Those historical sound sets are not the audio embedded in v1.10.3.
+The old user-provided recordings were never assigned a new CC0 license or
+authorship claim. Historical manifests and source materials retain their
+original notices in the repository history.
 
 Cat Purr & Meow — Kerzoven
 Original recordings: https://opengameart.org/content/cat-purr-meow
 License: CC0 1.0 Universal (public-domain dedication)
 https://creativecommons.org/publicdomain/zero/1.0/
-
-Three edited cues from v1.5.0 remain in use: refuse.wav, pet.wav and wake.wav.
-They retain the original CC0 dedication. The historical manifest for v1.5.0 is
-preserved as source/assets/audio/manifest-legacy-v15.json; the current manifest
-separates those three cues from the eleven user-supplied recordings.
-There is no generated human narration.
 
 This executable was built with LLVM-MinGW. Windows system libraries are linked by import and are not distributed here.
 

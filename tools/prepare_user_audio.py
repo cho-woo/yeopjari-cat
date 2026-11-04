@@ -140,6 +140,9 @@ def wav_bytes(samples: list[int]) -> bytes:
 
 def verify(output: Path, source_dir: Path | None = None) -> dict:
     manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
+    if manifest.get("schema") == 3:
+        from prepare_reference_audio import verify as verify_reference_audio
+        return verify_reference_audio(output)
     expected = set(SOURCE_HASHES) | set(RETAINED)
     cues = manifest.get("cues", [])
     if manifest.get("schema") != 2 or manifest.get("version") != "1.7.0":
@@ -253,6 +256,9 @@ def main() -> int:
     parser.add_argument("--output-dir", type=Path, default=OUTPUT)
     parser.add_argument("--verify", action="store_true", help="Verify all 14 WAVs and original MP3 hashes; no FFmpeg or network")
     args = parser.parse_args()
+    current = args.output_dir / "manifest.json"
+    if not args.verify and current.exists() and json.loads(current.read_text(encoding="utf-8")).get("schema") == 3:
+        raise ValueError("Current cues use the reference video; use prepare_reference_audio.py or a separate historical output directory")
     result = verify(args.output_dir, args.source_dir) if args.verify else generate(args.source_dir, args.output_dir)
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0

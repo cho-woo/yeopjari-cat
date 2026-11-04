@@ -115,6 +115,9 @@ def write_pcm(path: Path, samples: list[int]) -> bytes:
 
 def verify(output: Path) -> dict:
     manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
+    if manifest.get("schema") == 3:
+        from prepare_reference_audio import verify as verify_reference_audio
+        return verify_reference_audio(output)
     if manifest.get("schema") == 2:
         # v1.7 combines user-provided clips and three retained CC0 clips.
         # Do not apply the historical all-CC0 provenance assertion to that set.
@@ -158,8 +161,8 @@ def main() -> int:
         print(json.dumps(verify(args.output_dir), indent=2))
         return 0
     existing_manifest = args.output_dir / "manifest.json"
-    if existing_manifest.exists() and json.loads(existing_manifest.read_text(encoding="utf-8")).get("schema") == 2:
-        raise ValueError("This folder contains v1.7 user-provided audio. Use prepare_user_audio.py, "
+    if existing_manifest.exists() and json.loads(existing_manifest.read_text(encoding="utf-8")).get("schema") in (2, 3):
+        raise ValueError("This folder contains user-provided audio. Use its matching preparation tool, "
                          "or choose a separate --output-dir to reproduce the historical CC0 set.")
     args.source_dir.mkdir(parents=True, exist_ok=True)
     args.output_dir.mkdir(parents=True, exist_ok=True)

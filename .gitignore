@@ -8,3 +8,5 @@ __pycache__/
 *.py[cod]
 
 /render-self-test.txt
+
+/build-inputs/audio-reference/

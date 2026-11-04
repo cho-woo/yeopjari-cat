@@ -2728,7 +2728,7 @@ int RenderSelfTest() {
     return result;
 }
 
-int SelfTest() {
+int SelfTest(HINSTANCE instance) {
     const auto start = cat::ToUnix({2026, 10, 31, 0, 0, 0});
     cat::PetState original = cat::NewPet(start), parsed; std::string error;
     if (!cat::Parse(cat::Serialize(original), parsed, error) || parsed.bornUtc != start) return 10;
@@ -2743,6 +2743,14 @@ int SelfTest() {
     if (anniversary.year != 2034 || anniversary.month != 2 || anniversary.day != 28) return 14;
     const auto before = parsed.bornUtc;
     if (cat::Parse("broken", parsed, error) || parsed.bornUtc != before) return 15;
+    // Verify the exact embedded WAVs through the production Windows resource
+    // loader and PCM parser. No device is opened and no sound is played here.
+    cat::audio::Player audio;
+    for (unsigned index = 0; index < cat::audio::CueCount; ++index) {
+        const auto cue = static_cast<cat::audio::Cue>(index);
+        if (!audio.LoadResource(cue, instance, 301 + static_cast<int>(index)) || !audio.HasClip(cue))
+            return 100 + static_cast<int>(index);
+    }
     return 0;
 }
 
@@ -2752,7 +2760,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
         return RenderSelfTest();
     }
     if (const auto helperResult = cat::update::HandleUpdateHelperCommandLine()) return *helperResult;
-    if (commandLine && wcsstr(commandLine, L"--self-test")) return SelfTest();
+    if (commandLine && wcsstr(commandLine, L"--self-test")) return SelfTest(instance);
     g.instance = instance;
     g.instanceMutex = CreateMutexW(nullptr, TRUE, L"Local\\YeopjariCat.OneInstance.v1");
     if (!g.instanceMutex || GetLastError() == ERROR_ALREADY_EXISTS) {
