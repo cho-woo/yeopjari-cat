@@ -24,7 +24,7 @@ v1.10.0의 기능과 저장 형식을 유지하면서 창 이동, 지면 접촉,
 
 ## 검증 방법과 상태
 
-이 공개 후보에서 아래 검증을 다시 수행한 뒤 결과를 기록합니다. 이전 빌드의 실행 파일이나 검사 결과를 이 후보의 검증으로 대신하지 않습니다.
+v1.10.1 배포 대상에서 아래 검증을 수행했습니다. 공개된 파일은 별도로 다시 내려받아 검사했으며, 이전 빌드의 실행 파일이나 검사 결과로 대신하지 않았습니다.
 
 - `bash tools/check.sh`: 모델 검사, 실제 Box2D 검사, Windows x64 빌드, ZIP 구성·해시와 업데이트 피드 검증.
 - `tests/cat_physics_test.cpp`: 실제 도약·착지, 움직이거나 사라진 발판, 천장·측벽, 고정 시간 간격과 일시정지.
@@ -35,4 +35,16 @@ v1.10.0의 기능과 저장 형식을 유지하면서 창 이동, 지면 접촉,
 
 `tools/render_motion_preview.py`의 미리보기는 실제 C++ 자세·변형과 PNG를 사용하지만 Windows 실행 검증을 대신하지 않습니다. `tools/physics_trace.cpp`와 `tools/render_physics_trace.py`는 실제 Box2D 궤적과 여러 FPS의 결과를 확인하는 도구입니다.
 
-이 후보의 `tools/check.sh`는 통과했습니다. 실제 Box2D 5,562개, 정지·창 제동 35,438개, 공중 자세 100,200개 검사와 기존 회귀 검사를 수행했습니다. Python 20개 중 19개 통과, 기존 v1.5 자료 부재 검사 1개를 명시적으로 건너뛰었습니다. Windows x64 교차 빌드·ZIP·후보 업데이트 피드도 검증했습니다. [검사 로그](validation/v1.10.1-public-check.log) · [기존 공개 음원 동일성](validation/v1.10.1-public-audio.json). Windows CI와 공개 다운로드 검증은 대기 중입니다. 실제 Windows 10/11 화면, 스피커, 창 조작과 여러 모니터에서의 수동 검수는 별도이며 자동 검사 통과만으로 완료했다고 표시하지 않습니다.
+`tools/check.sh`는 통과했습니다. 실제 Box2D 5,562개, 정지·창 제동 35,438개, 공중 자세 100,200개 검사와 기존 회귀 검사를 수행했습니다. Python 20개 중 19개 통과, 기존 v1.5 자료 부재 검사 1개를 명시적으로 건너뛰었습니다. Windows x64 교차 빌드·ZIP·업데이트 피드도 검증했습니다. [검사 로그](validation/v1.10.1-public-check.log) · [기존 공개 음원 동일성](validation/v1.10.1-public-audio.json).
+
+## 공개 배포 검증
+
+[v1.10.1 정식 Release](https://github.com/cho-woo/yeopjari-cat/releases/tag/v1.10.1)는 2026-11-04 03:46:26 UTC에 공개되었습니다. 태그는 검사한 소스 `78e9535194755e9a14797f56d84c351730e514cd`를 가리킵니다. [배포 워크플로 41768956725](https://github.com/cho-woo/yeopjari-cat/actions/runs/41768956725)의 빌드, Windows 검사, 배포 단계가 모두 성공했습니다. Windows Server 2022 실행기에서 배포할 동일 EXE의 `--self-test`와 `--render-self-test`가 통과했습니다.
+
+공개된 EXE·ZIP·버전 피드·변경 내용·체크섬 파일을 독립적으로 다시 내려받아 GitHub API의 파일 크기·SHA-256과 대조했습니다. `tools/release.py` 검증, 실제 PE x64 버전·한글 대화상자 리소스, ZIP 내부 EXE·공식 업데이트 주소·변경 내용의 일치를 확인했습니다. 공개 EXE 안의 음원 리소스 14개도 v1.10.0 공개 소스와 바이트 단위로 같았습니다. [공개 배포 검증 기록](validation/v1.10.1-published.json).
+
+- EXE: 13,716,480바이트, SHA-256 `d317a5ce650f326af602ce6ba4d37182502eccad566f4c57dd7890ea513499e0`.
+- ZIP: SHA-256 `e049e34ba3f7780d556dc167580a764be4bcbe54a3f7141dd58361bb57581d51`.
+- 공식 `releases/latest/download/latest.txt`는 2026-11-04 03:49:47 UTC 확인 시 v1.10.1의 고정 버전 피드와 같았습니다. 이후 정식 버전이 나오면 최신 피드는 바뀔 수 있습니다.
+
+실제 Windows 10/11 사용자 환경에서의 화면, 스피커, 창 조작, 여러 모니터와 실행 중 업데이트 교체의 수동 검수는 별도이며 자동 검사 통과만으로 완료했다고 표시하지 않습니다.

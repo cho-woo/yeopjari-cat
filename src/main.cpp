@@ -2415,9 +2415,11 @@ LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
     case WM_ERASEBKGND: return 1;
     case WM_PAINT: { PAINTSTRUCT paint{}; BeginPaint(window, &paint); EndPaint(window, &paint); return 0; }
     case WM_NCHITTEST: {
-        // While perched on another app, never steal its title-bar or tab clicks.
-        if (g.perch.active || g.perch.transitioning) return HTTRANSPARENT;
-        POINT point{GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)}; ScreenToClient(window, &point);
+        POINT point{GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
+        // The visible body above the ledge remains clickable (including the
+        // update menu). Only the supporting app's own rectangle passes through.
+        if (g.perch.active && PtInRect(&g.perch.rect, point)) return HTTRANSPARENT;
+        ScreenToClient(window, &point);
         if (g.surface.pixels && point.x >= 0 && point.y >= 0 && point.x < g.surface.width && point.y < g.surface.height) {
             const BYTE alpha = g.surface.pixels[(static_cast<size_t>(point.y) * g.surface.width + point.x) * 4 + 3];
             if (alpha > 22) return HTCLIENT;
@@ -2426,7 +2428,6 @@ LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
     }
     case WM_LBUTTONDOWN: {
         g.prank.Clear();
-        if (g.perch.active || g.perch.transitioning) CancelPerch();
         g.audio.Stop();
         GetCursorPos(&g.dragStart); g.dragOffset = g.centerX - g.dragStart.x;
         if (g.brain) g.brain->Interrupt(GetTickCount64());
@@ -2435,7 +2436,10 @@ LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
     }
     case WM_MOUSEMOVE: if (g.dragging) {
         POINT cursor{}; GetCursorPos(&cursor);
-        if (std::abs(cursor.x - g.dragStart.x) > 4 || std::abs(cursor.y - g.dragStart.y) > 4) g.moved = true;
+        if (!g.moved && (std::abs(cursor.x - g.dragStart.x) > 4 || std::abs(cursor.y - g.dragStart.y) > 4)) {
+            if (g.perch.active || g.perch.transitioning) CancelPerch();
+            g.moved = true;
+        }
         if (g.moved) {
             HMONITOR monitor = MonitorFromPoint(cursor, MONITOR_DEFAULTTONEAREST);
             if (monitor != g.monitor) { g.monitor = monitor; KeepOnWorkArea(true); }
@@ -2482,6 +2486,73 @@ LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
         PostQuitMessage(0); return 0;
     }
     return DefWindowProcW(window, message, wParam, lParam);
+}
+
+int NativePerchHitTest() {
+    // Exercise the production Win32 procedure on a hidden popup. No message
+    // loop, visible window, mouse-up/save path or application data is involved.
+    if (!g.surface.pixels || g.surface.width != 420 || g.surface.height != 320) return 50;
+    constexpr wchar_t testClass[] = L"YeopjariCat.Native.PerchHitSelfTest";
+    WNDCLASSEXW wc{};
+    wc.cbSize = sizeof(wc); wc.lpfnWndProc = WindowProc;
+    wc.hInstance = g.instance; wc.lpszClassName = testClass;
+    if (!RegisterClassExW(&wc)) return 51;
+    HWND window = CreateWindowExW(WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE,
+        testClass, L"", WS_POPUP, 100, 100, 420, 320,
+        nullptr, nullptr, g.instance, nullptr);
+    if (!window) { UnregisterClassW(testClass, g.instance); return 52; }
+
+    const int result = [&]() -> int {
+        POINT origin{};
+        if (!ClientToScreen(window, &origin)) return 53;
+        POINT opaque{-1, -1}, transparent{-1, -1};
+        for (int y = 0; y < 280; ++y) for (int x = 0; x < 420; ++x) {
+            const BYTE alpha = g.surface.pixels[(static_cast<std::size_t>(y) * 420 + x) * 4 + 3];
+            if (alpha >= 245 && opaque.x < 0) opaque = {x, y};
+            if (alpha == 0 && transparent.x < 0) transparent = {x, y};
+        }
+        if (opaque.x < 0) return 54;
+        if (transparent.x < 0) return 55;
+        const auto hit = [&](POINT client) {
+            return SendMessageW(window, WM_NCHITTEST, 0,
+                MAKELPARAM(origin.x + client.x, origin.y + client.y));
+        };
+        g.perch.active = true; g.perch.transitioning = false;
+        g.perch.hwnd = window;
+        g.perch.rect = {origin.x, origin.y + 280, origin.x + 420, origin.y + 600};
+        if (hit(opaque) != HTCLIENT) return 56;
+        if (hit(transparent) != HTTRANSPARENT) return 57;
+        // An opaque shadow/accessory over the supporting app still passes
+        // through to its title bar. Restore the actual rendered pixel afterward.
+        const std::size_t offset = static_cast<std::size_t>(290 * 420 + 210) * 4;
+        const std::array<BYTE, 4> saved{{g.surface.pixels[offset], g.surface.pixels[offset + 1],
+            g.surface.pixels[offset + 2], g.surface.pixels[offset + 3]}};
+        std::fill_n(g.surface.pixels + offset, 4, static_cast<BYTE>(255));
+        const auto supportHit = hit({210, 290});
+        std::copy(saved.begin(), saved.end(), g.surface.pixels + offset);
+        if (supportHit != HTTRANSPARENT) return 58;
+        g.perch.active = false; g.perch.transitioning = true;
+        if (hit(opaque) != HTCLIENT) return 59;
+        g.perch.active = true; g.perch.transitioning = false;
+
+        g.physics.Reset(500, 40, 960); g.physicsReady = true;
+        g.physics.SetPlatform(250, 900, 180);
+        if (!g.physics.LaunchTo(500, 180)) return 60;
+        for (int i = 0; i < 180; ++i) g.physics.Update(cat::physics::kFixedStepSeconds);
+        if (!g.physics.OnPlatform() || !g.physics.CurrentPose().grounded) return 61;
+        const auto before = g.physics.CurrentPose();
+        SendMessageW(window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(opaque.x, opaque.y));
+        if (!g.perch.active || !g.physics.OnPlatform() || !g.physics.CurrentPose().grounded ||
+                g.physics.CurrentPose().lift != before.lift || !g.dragging || g.moved) return 62;
+        return 0;
+    }();
+    if (GetCapture() == window) ReleaseCapture();
+    g.dragging = g.moved = false;
+    g.perch = {};
+    g.physics.RemovePlatform(); g.physicsReady = false;
+    DestroyWindow(window); // WM_DESTROY does not enter the save/close path.
+    UnregisterClassW(testClass, g.instance);
+    return result;
 }
 
 int RenderSelfTest() {
@@ -2641,7 +2712,8 @@ int RenderSelfTest() {
                     return 44;
                 }
             }
-            return 0;
+            context = "native perch hit testing and mouse-down support";
+            return NativePerchHitTest();
         }();
     } catch (...) {
         result = 41;
