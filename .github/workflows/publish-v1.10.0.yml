@@ -44,6 +44,11 @@ jobs:
           with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
               output.write('path=' + str(packages[0]) + '\n')
           PY
+      - name: Test publisher permissions and failure safeguards without network
+        shell: pwsh
+        env:
+          PACKAGE_PATH: ${{ steps.package.outputs.path }}
+        run: '& ./tests/publisher_runtime_test.ps1 -PackagePath $env:PACKAGE_PATH'
       - uses: actions/upload-artifact@v4
         with:
           name: release-v1.10.0-${{ github.sha }}

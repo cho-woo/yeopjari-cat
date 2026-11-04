@@ -388,7 +388,9 @@ foreach ($name in $Hashes.Keys) {
 $repository = Invoke-GhJson -Arguments @('api', '--hostname', 'github.com', ('repos/' + $Repo))
 if ($repository.private) { throw 'The updater requires a public download repository. This script will not change repository visibility.' }
 if ($repository.archived) { throw 'This repository is archived.' }
-if (-not $repository.permissions.push) { throw 'You need write permission to publish releases in this repository.' }
+# Repository role metadata can report push=false for a GitHub Actions
+# installation token that has contents:write. The draft write below is the
+# authoritative permission check; an API rejection still stops publication.
 $releases = @(Invoke-GhJson -Arguments @('release', 'list', '--repo', $RepoTarget, '--limit', '1000', '--json', 'tagName,isDraft,isPrerelease'))
 if ($releases.Count -ge 1000) { throw 'This repository has too many releases for this bounded publisher. Review the version history manually.' }
 $existing = @($releases | Where-Object { $_.tagName -eq $Tag })
@@ -418,6 +420,8 @@ if ($remote.isPrerelease) { throw 'Release is a prerelease; stopping before uplo
 foreach ($asset in @($remote.assets)) {
     if (-not $Hashes.Contains($asset.name)) { throw "Unexpected draft asset: $($asset.name). Review the draft before continuing." }
 }
+& gh release edit $Tag --repo $RepoTarget --notes-file (Join-Path $PSScriptRoot 'RELEASE_NOTES_KO.txt')
+if ($LASTEXITCODE -ne 0) { throw 'Cannot write draft release notes. Check publishing permission; no assets were uploaded.' }
 $temporary = Join-Path ([IO.Path]::GetTempPath()) ('Yeopjari-release-' + [guid]::NewGuid().ToString('N'))
 [void](New-Item -ItemType Directory -Path $temporary)
 try {
@@ -433,8 +437,6 @@ try {
             throw "Draft asset differs: $name. It was not overwritten. Review or remove that draft asset first."
         }
     }
-    & gh release edit $Tag --repo $RepoTarget --notes-file (Join-Path $PSScriptRoot 'RELEASE_NOTES_KO.txt')
-    if ($LASTEXITCODE -ne 0) { throw 'Release notes update failed; the release remains a draft.' }
     if ($Publish) {
         & gh release edit $Tag --repo $RepoTarget --draft=false --prerelease=false --latest
         if ($LASTEXITCODE -ne 0) { throw 'Publishing failed. Inspect the draft before retrying.' }
