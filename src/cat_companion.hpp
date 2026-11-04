@@ -8,6 +8,7 @@
 #include "cat_nutrition.hpp"
 #include "cat_physics.hpp"
 #include "cat_motion_gate.hpp"
+#include "cat_pose_transition.hpp"
 #include "cat_environment.hpp"
 #include "cat_preferences.hpp"
 #include "cat_species.hpp"
@@ -264,6 +265,7 @@ public:
         ready_=false; nextDecision_=0; interaction_=event_=Interaction::None; socialUntil_=0; supportId_=0;
         motion_=cat::animation::Motion::Idle; walkingMotion_=cat::animation::Motion::Walk;
         motionStart_=lastTicks_=careUntil_=landedAt_=0; direction_=facing_=1; speed_=0; support_={}; gait_.Reset();
+        poseTransition_.Reset(); motionSerial_=0;
         waitingForStop_=jumpPending_=false;
     }
     bool Bound() const { return state_ && brain_; }
@@ -278,12 +280,12 @@ public:
         minX_=std::isfinite(minX)?minX:40; maxX_=std::isfinite(maxX)?std::max(maxX,minX_+1):minX_+800;
         physics_.Reset(minX_+std::clamp(state_->pet.position,0.0,1.0)*(maxX_-minX_),minX_,maxX_);
         maxLift_=std::isfinite(maxLift)?std::max(1.0,maxLift):1;
-        physics_.SetCeiling(maxLift_); gait_.Reset(); ready_=true; supportId_=0;
+        physics_.SetCeiling(maxLift_); gait_.Reset(); poseTransition_.Reset(); ready_=true; supportId_=0;
     }
     void Relocate(double minX,double maxX,double maxLift,double deltaX=0) {
         if(!ready_) { Reset(minX,maxX,maxLift); return; }
         minX_=minX; maxX_=std::max(minX+1,maxX); maxLift_=std::isfinite(maxLift)?std::max(1.0,maxLift):1;
-        physics_.RelocateBounds(minX_,maxX_,deltaX); physics_.SetCeiling(maxLift_); gait_.Reset();
+        physics_.RelocateBounds(minX_,maxX_,deltaX); physics_.SetCeiling(maxLift_); gait_.Reset(); poseTransition_.Reset();
     }
     std::uintptr_t SupportId() const { return supportId_; }
     cat::physics::Pose Physical() const { return physics_.CurrentPose(); }
@@ -303,11 +305,12 @@ public:
             const auto frozen=lastTicks_ && c.ticks>=lastTicks_?c.ticks-lastTicks_:0;
             motionStart_+=frozen; nextDecision_+=frozen; socialUntil_+=frozen; careUntil_+=frozen; lastTicks_=c.ticks;
             if(landedAt_) landedAt_+=frozen;
+            poseTransition_.Pause(frozen);
             physics_.Update(0,true); return;
         }
         UpdateSupport(c);
         const auto before=physics_.CurrentPose();
-        if(c.ticks < lastTicks_) { nextDecision_=0; socialUntil_=0; interaction_=Interaction::None; }
+        if(c.ticks < lastTicks_) { nextDecision_=0; socialUntil_=0; interaction_=Interaction::None; poseTransition_.Reset(); }
         lastTicks_=c.ticks;
         if(interaction_!=Interaction::None && c.ticks >= socialUntil_) { interaction_=Interaction::None; nextDecision_=0; }
         if(interaction_!=Interaction::None && (!c.primaryVisible || Busy(c,interaction_) || state_->pet.roamingPaused)) {
@@ -358,13 +361,18 @@ public:
                 physics_.Pounce(direction_,30*jump,state_->pet.roamingPaused?0:72*body.speed*species.movementSpeedMultiplier);
             if(launched) facing_=direction_;
         }
+        const auto beforeRendered=physics_.RenderPose();
         physics_.Update(c.elapsedSeconds);
         const auto after=physics_.CurrentPose();
+        const auto rendered=physics_.RenderPose();
         if(after.landed) { landedAt_=c.ticks; landingStrength_=std::clamp(after.landingSpeed/300.0,.2,1.0); }
         if(after.grounded && !after.onPlatform && supportId_) { supportId_=0; support_={}; physics_.RemovePlatform(); }
-        const double stride=after.x-before.x-after.supportTravelX;
-        const auto walking=cat::motion::DisplayedMotion(motion_,walkingMotion_,after.grounded,waitingForStop_,
-            after.velocityX-after.supportVelocityX);
+        // Advance paws from the same interpolated displacement used by View.
+        // At120Hz the body moves between60Hz Box2D steps; current-pose deltas
+        // would otherwise make the feet alternate between a hold and a jump.
+        const double stride=rendered.relativeTravelX-beforeRendered.relativeTravelX;
+        const auto walking=cat::motion::DisplayedMotion(motion_,walkingMotion_,rendered.grounded,waitingForStop_,
+            rendered.velocityX-rendered.supportVelocityX);
         gait_.Advance(walking,stride/std::max(.1,cat::GrowthScale(state_->pet.bornUtc,state_->pet.updatedUtc)),c.elapsedSeconds);
         state_->pet.position=std::clamp((after.x-minX_)/(maxX_-minX_),0.0,1.0);
     }
@@ -422,7 +430,7 @@ public:
     }
     void DragTo(double x) {
         if(!ready_) return;
-        physics_.Reset(std::clamp(x,minX_,maxX_),minX_,maxX_); supportId_=0; support_={}; gait_.Reset();
+        physics_.Reset(std::clamp(x,minX_,maxX_),minX_,maxX_); supportId_=0; support_={}; gait_.Reset(); poseTransition_.Reset();
         physics_.SetCeiling(maxLift_);
         state_->pet.position=std::clamp((physics_.CurrentPose().x-minX_)/(maxX_-minX_),0.0,1.0);
         interaction_=Interaction::None; nextDecision_=careUntil_=landedAt_=0;
@@ -447,7 +455,18 @@ public:
         else if((displayed==cat::animation::Motion::Jump || displayed==cat::animation::Motion::Pounce) && !jumpPending_) {
             s.animation=cat::animation::LandingPose(landedAt_ && ticks>=landedAt_?ticks-landedAt_:280,landingStrength_,displayedFacing);
         }
-        if(std::abs(s.physical.supportVelocityX)>2 && s.physical.onPlatform) s.animation.angle+=std::clamp(-s.physical.supportVelocityX/60.0,-4.0,4.0);
+        if(s.physical.grounded && s.physical.onPlatform && std::abs(s.physical.supportVelocityX)>2 &&
+                s.animation.frame==4 && s.animation.blendFrame<0 && !s.animation.bellyRig &&
+                s.animation.groundContact && !s.animation.centerPivot) {
+            // A moving support carries the physical feet. Balance bends the
+            // neck/chest locally; rotating the whole sprite would lift them.
+            s.animation.joints.headNod=std::clamp(s.animation.joints.headNod+
+                std::clamp(-s.physical.supportVelocityX/300.0,-.2,.2),-1.0,1.0);
+            s.animation.joints.crouch=std::max(s.animation.joints.crouch,
+                std::min(std::abs(s.physical.supportVelocityX)/500.0,.16));
+        }
+        s.animation=poseTransition_.Apply(s.animation,ticks,motionSerial_,
+            static_cast<unsigned>(s.preferences.character),s.enabled);
         return s;
     }
 private:
@@ -455,11 +474,13 @@ private:
     std::unique_ptr<cat::behavior::Brain> brain_;
     cat::physics::Controller physics_;
     cat::animation::Locomotion gait_;
+    mutable cat::animation::PoseTransition poseTransition_;
     bool ready_=false,contactRecorded_=false,waitingForStop_=false,jumpPending_=false;
     double minX_=40,maxX_=1000,maxLift_=700,speed_=0,landingStrength_=1;
     int direction_=1,facing_=1;
     unsigned sleepVariant_=0;
     std::uint64_t rng_=1,nextDecision_=0,motionStart_=0,socialUntil_=0,lastTicks_=0,careUntil_=0,landedAt_=0;
+    std::uint64_t motionSerial_=0;
     std::uintptr_t supportId_=0;
     Platform support_;
     Context lastContext_;
@@ -483,6 +504,7 @@ private:
     void SetMotion(cat::animation::Motion m,std::uint64_t ticks,std::uint64_t duration,double speed,bool alreadyAirborne=false) {
         const bool jumping=m==cat::animation::Motion::Jump || m==cat::animation::Motion::Pounce;
         if(motion_!=m || jumping) {
+            ++motionSerial_;
             motionStart_=ticks; motion_=m;
             if(m==cat::animation::Motion::Sleep) sleepVariant_=static_cast<unsigned>(Random()*6);
             const auto physical=physics_.CurrentPose();

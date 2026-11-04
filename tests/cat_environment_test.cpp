@@ -43,7 +43,7 @@ void ApproachAndContactAtEveryFrameRate() {
         const std::vector<CursorAction> expected{CursorAction::Watch, CursorAction::Hunt,
             CursorAction::Sniff, CursorAction::Paw, CursorAction::None};
         CHECK(sequence == expected);
-        CHECK(pawAt > 4200 && pawAt < 4700);
+        CHECK(pawAt > 4500 && pawAt < 5200);
         CHECK(!reaction.Active());
     }
 }
@@ -243,6 +243,51 @@ void WindowRiseBudgetUsesWorkAreaAndSpecies() {
     CHECK(WindowJumpRiseLimit(1200, 0) == 0);
     CHECK(WindowJumpRiseLimit(std::numeric_limits<double>::quiet_NaN(), 1) == 0);
 }
+
+void NearbyTeasingEscalatesAndChaseNeverBacksAway() {
+    for(int side:{-1,1}) {
+        CursorReaction reaction;
+        auto input=Input();input.cursorHeight=6;
+        bool tapped=false,punched=false,chased=false;
+        for(int frame=0;frame<500;++frame) {
+            input.nowMs=frame*16;
+            input.cursorX=input.catX+side*(28+15*std::sin(frame*.016*2*3.141592653589793*1.2));
+            auto output=reaction.Step(input);
+            tapped=tapped||output.action==CursorAction::Paw;
+            punched=punched||output.action==CursorAction::Punch;
+            if(output.action==CursorAction::Chase) {
+                chased=true;
+                // Close teasing must not make the animal walk backwards to
+                // manufacture a run-up. A nearby target gets a planted hop.
+                input.nowMs+=1;input.cursorX=input.catX+side*10;
+                output=reaction.Step(input);
+                CHECK(output.action==CursorAction::Chase);
+                CHECK(output.velocity*side>=0);
+                CHECK(output.velocity==0);
+                input.nowMs+=16;input.cursorX=input.catX+side*120;
+                output=reaction.Step(input);
+                CHECK(output.velocity*side>0);
+                break;
+            }
+        }
+        CHECK(tapped&&punched&&chased);
+    }
+}
+
+void FastDepartureBeforeTakeoffCancelsTheAttack() {
+    CursorReaction reaction;
+    auto input=Input();input.cursorHeight=6;
+    bool prepared=false;
+    for(int frame=0;frame<500;++frame) {
+        input.nowMs=frame*16;
+        input.cursorX=input.catX+28+15*std::sin(frame*.016*2*3.141592653589793*1.2);
+        if(reaction.Step(input).action==CursorAction::Pounce){prepared=true;break;}
+    }
+    CHECK(prepared);
+    input.nowMs+=16;input.cursorX+=200;
+    CHECK(reaction.Step(input).action==CursorAction::Abandon);
+    CHECK(!reaction.InFlight());
+}
 }
 
 int main() {
@@ -253,6 +298,7 @@ int main() {
         StillCursorGetsRareShortSitAtEveryFrameRate(); SittingRequiresStillLowReachableCursorAndEndsWhenUserMoves();
         RareSitCooldownAndSpeciesInterestAreReal();
         WindowRiseBudgetUsesWorkAreaAndSpecies();
+        NearbyTeasingEscalatesAndChaseNeverBacksAway(); FastDepartureBeforeTakeoffCancelsTheAttack();
         std::cout << "Environment reactions: " << checks << " checks passed\n";
     } catch (const std::exception& e) { std::cerr << e.what() << '\n'; return 1; }
 }

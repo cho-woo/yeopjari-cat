@@ -20,8 +20,13 @@ inline Placement BuildPlacement(int workBottom, int surfaceHeight, double dpi,
                                 double physicalLift, double cosmeticLiftBodyPx,
                                 double bodyScale) {
     const int feet = workBottom - static_cast<int>(std::lround(physicalLift * dpi));
+    // A layered window has integer screen coordinates, but its GDI+ content
+    // does not. Keep the rounding remainder inside the surface so a slow
+    // physical descent remains subpixel-smooth, as horizontal motion already
+    // does. The one-pixel transparent contact margin stays unchanged.
+    const double subpixel = workBottom - physicalLift*dpi - feet;
     return {feet, feet - surfaceHeight,
-            surfaceHeight - 1.0 - cosmeticLiftBodyPx * bodyScale};
+            surfaceHeight - 1.0 + subpixel - cosmeticLiftBodyPx * bodyScale};
 }
 
 } // namespace cat::render

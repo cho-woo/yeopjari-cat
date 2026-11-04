@@ -23,12 +23,12 @@ void PhysicalAltitudeMovesTheSurfaceExactlyOnce() {
             const double lift = quarterPixel / 4.;
             const auto placed = cat::render::BuildPlacement(workBottom, surfaceHeight, dpi, lift, 0, dpi * growth);
             const double screenContact = placed.windowTop + placed.localBottom;
-            CHECK(placed.localBottom == floor.localBottom);
+            CHECK(std::abs(placed.localBottom-floor.localBottom) <= .5);
             CHECK(placed.windowTop + surfaceHeight == placed.screenFeetY);
-            CHECK(screenContact == placed.screenFeetY - 1);
-            // The entire world-space altitude is applied once, with at most
-            // half a physical pixel of layered-window position quantization.
-            CHECK(std::abs(screenContact - (workBottom - lift * dpi - 1)) <= .5);
+            CHECK(std::abs(screenContact-(placed.screenFeetY-1)) <= .5);
+            // Integer window movement and fractional local drawing together
+            // preserve the exact physical contact, with no rounded staircase.
+            CHECK(std::abs(screenContact - (workBottom - lift * dpi - 1)) < 1e-9);
             // A high jump still has the same drawing room as a floor pose.
             // The former fixed window / local physical lift implementation
             // clipped even a 110px cat completely at a 350px jump height.
@@ -49,7 +49,7 @@ void GrowthAndCosmeticMotionCannotRescalePhysicalHeight() {
             CHECK(placed.windowTop == base.windowTop && placed.screenFeetY == base.screenFeetY);
             CHECK(std::abs((placed.localBottom - base.localBottom) + cosmeticLift * dpi * growth) < 1e-9);
             CHECK(std::abs((placed.windowTop + placed.localBottom) -
-                (base.screenFeetY - 1 - cosmeticLift * dpi * growth)) < 1e-9);
+                (base.windowTop + base.localBottom - cosmeticLift * dpi * growth)) < 1e-9);
         }
         // Resizing the offscreen surface changes only local coordinates.
         const auto taller = cat::render::BuildPlacement(-80, surfaceHeight + 173, dpi, lift, 0, dpi);
@@ -83,6 +83,25 @@ void EveryScheduledMotionUsesTheSamePhysicalSupportCoordinate() {
         }
     }
 }
+
+void SlowVerticalMotionKeepsEveryFractionalStep() {
+    for(double dpi:{1.,1.25,1.5,1.75,2.})
+    for(int fps:{30,60,120,144})
+    for(int direction:{-1,1}) {
+        double previous=0;
+        for(int frame=0;frame<=fps*3;++frame) {
+            const double lift=180.37+direction*frame/double(fps)*7.3;
+            const auto placed=cat::render::BuildPlacement(-60,static_cast<int>(300*dpi),dpi,lift,0,dpi);
+            const double feet=placed.windowTop+placed.localBottom;
+            CHECK(std::abs(feet-(-61-lift*dpi))<1e-9);
+            if(frame) {
+                CHECK(std::abs(feet-previous+direction*7.3*dpi/fps)<1e-9);
+                CHECK((feet-previous)*direction<0); // No duplicate frames between integer window moves.
+            }
+            previous=feet;
+        }
+    }
+}
 }
 
 int main() {
@@ -90,6 +109,7 @@ int main() {
         PhysicalAltitudeMovesTheSurfaceExactlyOnce();
         GrowthAndCosmeticMotionCannotRescalePhysicalHeight();
         EveryScheduledMotionUsesTheSamePhysicalSupportCoordinate();
+        SlowVerticalMotionKeepsEveryFractionalStep();
         std::cout << "Render placement: " << checks << " checks passed\n";
         return 0;
     } catch (const std::exception& error) {

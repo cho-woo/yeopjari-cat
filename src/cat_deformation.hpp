@@ -15,10 +15,13 @@ struct Joints {
     double leftEar = 0, rightEar = 0, headNod = 0;
     double frontLeft = 0, frontRight = 0, tailRaise = 0, breath = 0;
     double crouch = 0;
+    // Transient cursor foreleg reach; unrelated animations leave these zero.
+    double pawReachX = 0, pawReachY = 0, pawAnchorX = 0;
 };
 inline bool Finite(const Joints& j) {
     return std::isfinite(j.leftEar) && std::isfinite(j.rightEar) && std::isfinite(j.headNod) &&
-        std::isfinite(j.frontLeft) && std::isfinite(j.frontRight) && std::isfinite(j.tailRaise) && std::isfinite(j.breath) && std::isfinite(j.crouch);
+        std::isfinite(j.frontLeft) && std::isfinite(j.frontRight) && std::isfinite(j.tailRaise) && std::isfinite(j.breath) && std::isfinite(j.crouch) &&
+        std::isfinite(j.pawReachX) && std::isfinite(j.pawReachY) && std::isfinite(j.pawAnchorX);
 }
 inline double Smooth(double x) { x = std::clamp(x, 0.0, 1.0); return x*x*(3-2*x); }
 inline double Bump(double x, double centre, double radius) {
@@ -30,11 +33,15 @@ inline Joints Bounded(Joints j) {
     j.frontLeft = std::clamp(j.frontLeft,0.0,1.0); j.frontRight = std::clamp(j.frontRight,0.0,1.0);
     j.tailRaise = std::clamp(j.tailRaise,0.0,1.0); j.breath = std::clamp(j.breath,-1.0,1.0);
     j.crouch = std::clamp(j.crouch,0.0,1.0);
+    j.pawReachX=std::clamp(j.pawReachX,-1.0,1.0);j.pawReachY=std::clamp(j.pawReachY,0.0,1.0);
+    const double reach=std::abs(j.pawReachX)+j.pawReachY;
+    if(reach>1){j.pawReachX/=reach;j.pawReachY/=reach;}
+    if(j.pawAnchorX!=0)j.pawAnchorX=std::clamp(j.pawAnchorX,.60,.85);
     return j;
 }
 inline bool Zero(const Joints& j) {
     return j.leftEar==0 && j.rightEar==0 && j.headNod==0 && j.frontLeft==0 &&
-        j.frontRight==0 && j.tailRaise==0 && j.breath==0 && j.crouch==0;
+        j.frontRight==0 && j.tailRaise==0 && j.breath==0 && j.crouch==0 && j.pawReachX==0 && j.pawReachY==0;
 }
 
 // Forward deformation of a point in the canonical sitting sprite (base frame4),
@@ -66,6 +73,14 @@ inline Point SittingPoint(Point uv, const Joints& controls) {
     // Paws lift from attached forelegs, fading to zero at their upper roots.
     const double distal = Smooth((uv.y-.73)/.24);
     result.y -= .023*distal*(j.frontLeft*Bump(uv.x,.43,.12)+j.frontRight*Bump(uv.x,.69,.12));
+
+    // Cursor taps extend one attached foreleg. The L1 reach budget keeps the
+    // positive mesh Jacobian even when aiming diagonally. The head, opposite
+    // forepaw and hindlegs retain their exact pixels, with no root translation.
+    const double pawX=j.pawAnchorX==0 ? .69 : j.pawAnchorX;
+    const double reach=Bump(uv.x,pawX,.18)*Smooth((uv.y-.70)/.28);
+    result.x+=.10*j.pawReachX*reach;
+    result.y-=.14*j.pawReachY*reach;
 
     // The tail is at the left of canonical frame4. Its base remains fixed;
     // the tip curls upward and inward. Keep this small enough to prevent mesh
@@ -266,6 +281,9 @@ inline bool Warp(const std::uint32_t* src,int width,int height,int strideBytes,
     }
     constexpr int cells=32, side=cells+1;
     std::array<detail::Vertex,side*side> mesh;
+    const bool reaching=shape==Shape::Sitting&&(j.pawReachX!=0||j.pawReachY!=0);
+    const double pawCentre=j.pawAnchorX==0?.69:j.pawAnchorX;
+    const double pawLeft=pawCentre-.18,pawRight=std::min(1.0,pawCentre+.18);
     for (int y=0;y<=cells;++y) for (int x=0;x<=cells;++x) {
         // A mesh edge lies exactly on the ear-root boundary. Interpolation may
         // therefore never carry an ear displacement into the lower body. The
@@ -276,7 +294,11 @@ inline bool Warp(const std::uint32_t* src,int width,int height,int strideBytes,
             : shape==Shape::Eating ? (y<=28 ? .86*y/28 : .86+.14*(y-28)/4)
             : shape==Shape::Grooming || shape==Shape::Treat ? (y<=28 ? .90*y/28 : .90+.10*(y-28)/4)
             : (y<=30 ? .94*y/30 : .94+.06*(y-30)/2);
-        const Point uv{static_cast<double>(x)/cells,v};
+        // An exact edge around the reaching leg prevents interpolation from
+        // resampling the other paw/body outside the local reach region.
+        const double u=!reaching ? static_cast<double>(x)/cells :
+            x<=8 ? pawLeft*x/8 : x<=24 ? pawLeft+(pawRight-pawLeft)*(x-8)/16 : pawRight+(1-pawRight)*(x-24)/8;
+        const Point uv{u,v};
         const auto p=DeformPoint(uv,j,shape);
         mesh[y*side+x]={{p.x*width,p.y*height},uv};
     }

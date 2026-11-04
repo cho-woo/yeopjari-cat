@@ -267,8 +267,10 @@ struct Controller::Impl {
         current.velocityX = velocity.x*kPixelsPerMeter;
         current.velocityY = velocity.y*kPixelsPerMeter;
         current.grounded = grounded;
-        if (current.onPlatform && onPlatform)
-            current.supportTravelX += (b2Body_GetPosition(platform).x - platformBeforeX) * kPixelsPerMeter;
+        const double supportTravel = current.onPlatform && onPlatform ?
+            (b2Body_GetPosition(platform).x - platformBeforeX) * kPixelsPerMeter : 0.0;
+        current.supportTravelX += supportTravel;
+        current.relativeTravelX += current.x-previous.x-supportTravel;
         current.onPlatform = onPlatform;
         current.supportVelocityX = onPlatform ? platformVelocity.x*kPixelsPerMeter : 0;
     }
@@ -512,8 +514,9 @@ void Controller::Update(double elapsedSeconds, bool paused) {
     impl_->current.supportTravelX = 0.0;
     if (paused || !std::isfinite(elapsedSeconds) || elapsedSeconds < 0.0 ||
         elapsedSeconds > kStallSeconds) {
-        impl_->accumulator = 0.0;
-        impl_->previous = impl_->current;
+        // Discard only the new elapsed time. Keeping the existing fraction
+        // and previous pose freezes the exact displayed location; collapsing
+        // them to current used to jump a partly rendered step on opening a menu.
         return;
     }
     impl_->accumulator += std::min(elapsedSeconds, kMaxCatchUpSteps*kFixedStepSeconds);
@@ -539,6 +542,7 @@ Pose Controller::RenderPose() const {
     pose.velocityX = Lerp(impl_->previous.velocityX, pose.velocityX, alpha);
     pose.velocityY = Lerp(impl_->previous.velocityY, pose.velocityY, alpha);
     pose.supportVelocityX = Lerp(impl_->previous.supportVelocityX, pose.supportVelocityX, alpha);
+    pose.relativeTravelX = Lerp(impl_->previous.relativeTravelX, pose.relativeTravelX, alpha);
     return pose;
 }
 

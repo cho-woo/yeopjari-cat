@@ -111,6 +111,40 @@ Context Frame(std::uint64_t ticks,double x,double lift=0) {
 void Step(Model& model,Context& c,unsigned frames) {
     for(unsigned i=0;i<frames;++i) { c.ticks+=17;c.nowUtc=born+static_cast<std::int64_t>(c.ticks/1000); model.Tick(c); }
 }
+void CanonicalPoseTransitionUsesHostActionAndPause() {
+    using M=cat::animation::Motion;
+    for(unsigned reset=0;reset<5;++reset) {
+        State s=NewState(born);s.pet.position=.2;s.nutrition.fullness=60;s.pet.hunger=60;
+        Model model;model.Bind(s);model.Reset(0,1600,700);
+        auto c=Frame(100,model.Physical().x+65);c.primaryMotion=M::Eat;
+        CHECK(model.TrySocial(Interaction::FoodCompetition,c));model.Tick(c);Step(model,c,12);
+        const auto kneading=model.View(c.ticks);
+        CHECK(kneading.motion==M::Knead && kneading.animation.joints.frontLeft>.9);
+        CHECK(model.Pet(c.nowUtc,c.ticks));
+        const auto record=Serialize(s);
+        const auto start=model.View(c.ticks);
+        CHECK(start.motion==M::TailRaise && start.animation.joints.frontLeft==kneading.animation.joints.frontLeft);
+        CHECK(model.View(c.ticks).animation.joints.frontLeft==start.animation.joints.frontLeft);
+        CHECK(Serialize(s)==record); // Rendering never changes saved care/growth data.
+        if(reset==0) {
+            Step(model,c,3);const auto middle=model.View(c.ticks);
+            CHECK(middle.animation.joints.frontLeft>0 && middle.animation.joints.frontLeft<start.animation.joints.frontLeft);
+            const auto physical=model.Physical();
+            c.ticks+=5000;c.nowUtc+=5;c.paused=true;c.elapsedSeconds=5;model.Tick(c);
+            const auto paused=model.View(c.ticks);
+            CHECK(paused.animation.joints.frontLeft==middle.animation.joints.frontLeft);
+            CHECK(model.Physical().x==physical.x && model.Physical().lift==physical.lift);
+            c.paused=false;c.elapsedSeconds=1.0/60;Step(model,c,12);
+            CHECK(model.View(c.ticks).animation.joints.frontLeft==0);
+        } else {
+            if(reset==1)model.Relocate(0,1600,700);
+            if(reset==2)model.DragTo(model.Physical().x+50);
+            if(reset==3)s.preferences.character=cat::Character::Rabbit;
+            if(reset==4){model.Bind(s);model.Reset(0,1600,700);}
+            CHECK(model.View(c.ticks).animation.joints.frontLeft==0);
+        }
+    }
+}
 void IndependentCareAndAge() {
     auto first=cat::NewPet(born-365*86400); cat::Feed(first,born,false); const auto original=cat::Serialize(first);
     State second=NewState(born); second.nutrition.fullness=50; second.pet.hunger=50;
@@ -174,11 +208,22 @@ void RealWindowFollowingAndClosure() {
     CHECK(movingLanding);
     CHECK(apex>180); CHECK(landed); CHECK(m.Physical().onPlatform); CHECK(std::abs(m.Physical().lift-180)<1);
     CHECK(m.Physical().x>=c.primaryPlatform.left && m.Physical().x<=c.primaryPlatform.right);
+    CHECK(m.Pet(c.nowUtc,c.ticks)); // Stable canonical sitting rig during support movement.
     const auto oldX=m.Physical().x;
     // The second cat keeps its own ledge even if the first cat leaves it.
     c.primary.onPlatform=false;c.primaryPlatform={};c.primary.lift=0;
     for(unsigned i=0;i<60;++i) { c.supportPlatform.left+=.5;c.supportPlatform.right+=.5;Step(m,c,1); }
     CHECK(m.Physical().onPlatform); CHECK(m.Physical().x>oldX+20);
+    for(int direction:{1,-1}) {
+        if(direction<0)for(unsigned i=0;i<60;++i) {c.supportPlatform.left-=.5;c.supportPlatform.right-=.5;Step(m,c,1);}
+        const auto view=m.View(c.ticks);
+        CHECK(view.animation.frame==4 && view.motion==cat::animation::Motion::TailRaise);
+        CHECK(view.physical.onPlatform && std::abs(view.physical.supportVelocityX-direction*30)<.1);
+        CHECK(view.animation.angle==0 && view.animation.x==0 && view.animation.lift==0);
+        CHECK(view.animation.scaleX==1 && view.animation.scaleY==1);
+        CHECK(direction*view.animation.joints.headNod<-.01 && std::abs(view.animation.joints.headNod)<=.2);
+        CHECK(view.animation.joints.crouch>.01 && view.animation.joints.crouch<=.16);
+    }
     c.supportPlatform={};Step(m,c,1);CHECK(m.TakeEvent()==Interaction::Startled);CHECK(m.SupportId()==0);
     Step(m,c,180);CHECK(m.Physical().grounded);CHECK(!m.Physical().onPlatform);CHECK(m.Physical().lift<1);
     c.primary.onPlatform=true;c.primary.lift=510;c.primaryPlatform={99,2000,2300,510,true};CHECK(!m.TrySocial(Interaction::WindowFollow,c));
@@ -330,6 +375,9 @@ void PairedRunningUsesOneSupportAndBodyMultiplier() {
         }
         CHECK(std::abs(m.Physical().velocityX-m.Physical().supportVelocityX-60)<1.5);
         if(perched)CHECK(m.Physical().onPlatform && std::abs(m.Physical().supportVelocityX-30)<.1);
+        const auto animation=m.View(c.ticks).animation;
+        CHECK(animation.angle==0 && animation.x==0 && animation.lift==0);
+        CHECK(animation.scaleX==1 && animation.scaleY==1);
         CHECK(Valid(s));
     }
 }
@@ -353,9 +401,41 @@ void HighWindowFollowingRespectsTheRealCeiling() {
     CHECK(!m.TrySocial(Interaction::WindowFollow,c));
     CHECK(m.Physical().onPlatform && m.SupportId()==401);CHECK(Valid(s));
 }
+void HighRefreshGaitFollowsRenderedTravel() {
+    // Box2D steps at60Hz while the layered window may render at120Hz. Both
+    // root displacement and footfalls must use the same interpolated sample.
+    State s=NewState(born);s.pet.position=.2;
+    Model m;m.Bind(s);m.Reset(0,2400,700);
+    auto c=Frame(100,m.Physical().x+60);c.elapsedSeconds=1.0/120;
+    c.primaryMotion=cat::animation::Motion::Zoomies;c.primary.velocityX=90;
+    CHECK(m.TrySocial(Interaction::RunTogether,c));
+    cat::animation::Locomotion expected;
+    double priorTravel=m.View(c.ticks).physical.relativeTravelX;
+    unsigned renderedBetweenSteps=0;
+    for(unsigned frame=1;frame<=600;++frame) {
+        const double priorPhysicalX=m.Physical().x;
+        c.ticks=100+frame*1000/120;c.nowUtc=born+static_cast<std::int64_t>(c.ticks/1000);
+        c.primary.x=m.Physical().x+60;m.Tick(c);
+        const auto view=m.View(c.ticks);
+        const double stride=view.physical.relativeTravelX-priorTravel;
+        expected.Advance(view.motion,stride/view.growthScale,c.elapsedSeconds);
+        priorTravel=view.physical.relativeTravelX;
+        if(frame>120) {
+            CHECK(view.motion==cat::animation::Motion::Zoomies);
+            const auto pose=cat::animation::Evaluate(view.motion,0,c.ticks,1,expected);
+            CHECK(view.animation.frame==pose.frame);
+            CHECK(view.animation.blendFrame==pose.blendFrame);
+            CHECK(std::abs(view.animation.blend-pose.blend)<1e-10);
+            CHECK(std::abs(view.animation.joints.breath-pose.joints.breath)<1e-10);
+            if(m.Physical().x==priorPhysicalX && stride>.01)++renderedBetweenSteps;
+        }
+    }
+    CHECK(renderedBetweenSteps>100);CHECK(Valid(s));
+}
 }
 int main() {
     try { SeparateAdoptionAndRestart();IndividualStableTemperaments();StrictBundleParsing();RecoveryAndFaults();IndependentCareAndAge();SocialContactAndCompetition();RealWindowFollowingAndClosure();SpeciesLimitsAndBraking();ManualCareIsNotInterrupted();NaturalTakeoffAndLandingUsePhysicalMotion();SocialGesturesWaitForPlantedFeet();BrakingPreservesTheCompleteMeal();PairedRunningUsesOneSupportAndBodyMultiplier();HighWindowFollowingRespectsTheRealCeiling();
+        HighRefreshGaitFollowsRenderedTravel();CanonicalPoseTransitionUsesHostActionAndPause();
         std::cout<<"companion checks passed: "<<checks<<'\n';return 0;
     } catch(const std::exception& e) { std::cerr<<e.what()<<'\n';return 1; }
 }

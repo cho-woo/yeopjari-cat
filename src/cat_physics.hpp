@@ -16,6 +16,10 @@ struct Pose {
     bool hanging = false; // supported by a real ledge joint, not ground contact
     double supportVelocityX = 0.0; // world px/s of the contacted ledge, else zero
     double supportTravelX = 0.0; // ledge travel while supported in this Update
+    // Cumulative displacement relative to actual contacted support. RenderPose
+    // interpolates this with x, so visible footfalls follow visible root travel.
+    // Viewport relocation and reset do not manufacture walking distance.
+    double relativeTravelX = 0.0;
     // An event during the most recent Update, cleared by the next Update.
     // Getters do not consume it. landingSpeed is the incoming speed in px/s.
     bool landed = false;

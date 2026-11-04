@@ -1,5 +1,6 @@
 #include "../src/cat_physics.hpp"
 #include "../src/cat_environment.hpp"
+#include "../src/cat_animation.hpp"
 #include <box2d/box2d.h>
 
 #include <algorithm>
@@ -156,6 +157,82 @@ void FrameRateIndependenceAndInterpolation() {
     CHECK(Near(fast.RenderPose().x, (previousRenderX+currentX)*0.5, 0.0001));
 }
 
+void RenderedStrideFollowsEveryRenderedSubstep() {
+    using cat::animation::Motion;
+    for(double dt:{1./30,1./60,1./120,1./144,.016}) {
+        Controller cat;
+        cat.Reset(500,96,1824);
+        cat.SetTargetVelocity(120);
+        Run(cat,1);
+        cat::animation::Locomotion gait;
+        for(int frame=0;frame<60;++frame) {
+            const auto before=cat.RenderPose();
+            const double oldPhase=gait.Phase();
+            cat.Update(dt);
+            const auto after=cat.RenderPose();
+            const double visibleTravel=after.relativeTravelX-before.relativeTravelX;
+            CHECK(Near(visibleTravel,after.x-before.x,.000001));
+            CHECK(gait.Advance(Motion::Walk,visibleTravel,dt));
+            const double phaseTravel=std::fmod(gait.Phase()-oldPhase+1,1)*cat::animation::StrideLength(Motion::Walk);
+            CHECK(Near(phaseTravel,std::abs(after.x-before.x),.000001));
+            CHECK(phaseTravel>.1); //120/144Hz must not alternate zero/double strides.
+        }
+    }
+}
+
+void RenderedSupportTravelAndHalfStepPauseStayContinuous() {
+    Controller cat;
+    cat.Reset(500,96,1824);
+    cat.SetPlatform(250,1350,180);
+    CHECK(cat.LaunchTo(500,180));
+    Run(cat,3);
+    constexpr double dt=1./120;
+    double left=250;
+    for(int i=0;i<240;++i) {
+        left+=30*dt;cat.SetPlatform(left,left+1100,180);
+        cat.Update(dt);
+    }
+    for(int i=0;i<60;++i) {
+        const auto before=cat.RenderPose();
+        left+=30*dt;cat.SetPlatform(left,left+1100,180);
+        cat.Update(dt);
+        const auto after=cat.RenderPose();
+        CHECK(after.onPlatform);
+        CHECK(Near(after.relativeTravelX-before.relativeTravelX,after.x-before.x-30*dt,.0002));
+        CHECK(std::abs(after.relativeTravelX-before.relativeTravelX)<.001); // Carrying is not walking.
+    }
+    cat.SetTargetVelocity(45);
+    for(int i=0;i<120;++i) {left+=30*dt;cat.SetPlatform(left,left+1100,180);cat.Update(dt);}
+    for(int i=0;i<60;++i) {
+        const auto before=cat.RenderPose();
+        left+=30*dt;cat.SetPlatform(left,left+1100,180);cat.Update(dt);
+        const auto after=cat.RenderPose();
+        CHECK(Near(after.relativeTravelX-before.relativeTravelX,after.x-before.x-30*dt,.0002));
+        CHECK(Near(after.relativeTravelX-before.relativeTravelX,45*dt,.001));
+    }
+
+    Controller paused,reference;
+    for(Controller* item:{&paused,&reference}) {
+        item->Reset(500,96,1824);item->SetTargetVelocity(80);
+        item->Update(1./60);item->Update(1./120); // Exactly half an interpolated step.
+    }
+    const auto drawn=paused.RenderPose();
+    const auto actual=paused.CurrentPose();
+    CHECK(drawn.x<actual.x);
+    for(double stall:{0.,.1,30.,7200.}) {
+        paused.Update(stall,stall<=.25);
+        CHECK(Near(paused.RenderPose().x,drawn.x,0));
+        CHECK(Near(paused.RenderPose().relativeTravelX,drawn.relativeTravelX,0));
+        CHECK(Near(paused.CurrentPose().x,actual.x,0));
+    }
+    paused.Update(dt);reference.Update(dt);
+    CHECK(Near(paused.RenderPose().x,reference.RenderPose().x,0));
+    CHECK(Near(paused.RenderPose().relativeTravelX,reference.RenderPose().relativeTravelX,0));
+    const auto travelBeforeRelocation=paused.RenderPose().relativeTravelX;
+    paused.RelocateBounds(196,1924,100);
+    CHECK(Near(paused.RenderPose().relativeTravelX,travelBeforeRelocation,0));
+}
+
 void PauseStallAndCatchUpLimit() {
     Controller cat, twelveSteps;
     for (Controller* item : {&cat, &twelveSteps}) {
@@ -168,12 +245,13 @@ void PauseStallAndCatchUpLimit() {
     CHECK(Near(cat.CurrentPose().x, twelveSteps.CurrentPose().x, 0.0001));
     CHECK(Near(cat.CurrentPose().lift, twelveSteps.CurrentPose().lift, 0.0001));
     const auto before = cat.CurrentPose();
+    const auto drawnBeforePause = cat.RenderPose();
     cat.Update(7200.0); // PC suspend must not fast-forward physics.
     CHECK(Near(cat.CurrentPose().x, before.x, 0.0001));
     CHECK(Near(cat.CurrentPose().lift, before.lift, 0.0001));
     for (int i = 0; i < 60; ++i) cat.Update(step, true);
     CHECK(Near(cat.CurrentPose().lift, before.lift, 0.0001));
-    CHECK(Near(cat.RenderPose().lift, before.lift, 0.0001));
+    CHECK(Near(cat.RenderPose().lift, drawnBeforePause.lift, 0.0001));
     cat.Update(step);
     CHECK(cat.CurrentPose().lift > before.lift);
     CHECK(cat.CurrentPose().x < before.x+2);
@@ -797,6 +875,8 @@ int main() {
         AccelerationBrakingAndReversal();
         FloorAndScreenEdgeCollisions();
         FrameRateIndependenceAndInterpolation();
+        RenderedStrideFollowsEveryRenderedSubstep();
+        RenderedSupportTravelAndHalfStepPauseStayContinuous();
         PauseStallAndCatchUpLimit();
         ResetBoundsAndInvalidInput();
         ViewportRelocationPreservesJumpAndMotor();

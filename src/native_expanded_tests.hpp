@@ -1,4 +1,6 @@
 #pragma once
+#include "native_posture_tests.hpp"
+#include "native_walking_tests.hpp"
 // Runs only under --render-self-test, after loading resources. No save paths,
 // audio device, updater or user interaction is involved.
 int NativeExpandedRenderTest(std::string& context) {
@@ -56,6 +58,39 @@ int NativeExpandedRenderTest(std::string& context) {
             for(std::size_t p=3;p<420*320*4;p+=4)if(canvas.pixels[p]>=32)++visible;
             if(visible<700)return 134;
         }
+        // Render the real targeted-paw mesh through GDI+, separately from
+        // expression changes. Reaching must move a paw without moving the head
+        // or replacing the body, for either facing and every character.
+        const auto geometry=CursorAttackGeometry(character);
+        for(int direction:{-1,1}) {
+            cat::animation::Pose resting;resting.flip=direction<0;
+            if(!draw(character,cat::Outfit::None,resting))return 135;
+            const auto planted=copy();
+            for(const auto kind:{cat::cursor::AttackKind::Gentle,cat::cursor::AttackKind::Strong}) {
+                const auto peak=kind==cat::cursor::AttackKind::Gentle?270U:320U;
+                for(const auto elapsed:std::array<std::uint64_t,3>{150,peak,cat::cursor::DurationMs(kind)}) {
+                    auto reaching=cat::cursor::AttackPose(kind,elapsed,direction,
+                        direction*((geometry.pawAnchorX-.5)*geometry.width+5),20,geometry);
+                    reaching.face={}; // Compare anatomy, not intentional eye/brow reactions.
+                    if(!draw(character,cat::Outfit::None,reaching))return 135;
+                    std::size_t changedPaw=0;
+                    const double headBottom=280-geometry.height*.40;
+                    context="cursor paw c="+std::to_string(c)+" direction="+std::to_string(direction)+
+                        " kind="+std::to_string(static_cast<int>(kind))+" elapsed="+std::to_string(elapsed);
+                    for(int y=0;y<320;++y)for(int x=0;x<420;++x) {
+                        const auto p=static_cast<std::size_t>(y*420+x)*4;
+                        const bool changed=std::memcmp(planted.data()+p,canvas.pixels+p,4)!=0;
+                        if(y<headBottom && changed)return 136;
+                        if(y>=headBottom && changed)++changedPaw;
+                        if((x==0||x==419||y==0||y==319) && canvas.pixels[p+3]>=32)return 137;
+                    }
+                    if(elapsed<cat::cursor::DurationMs(kind) ? changedPaw<8 : changedPaw!=0)return 138;
+                    for(int o=0;o<cat::kOutfitCount;++o)
+                        if(!draw(character,static_cast<cat::Outfit>(o),reaching))return 139;
+                    if(!draw(character,cat::Outfit::None,resting) || copy()!=planted)return 140;
+                }
+            }
+        }
         // Use precisely the same head/body drawing and joints: expression may
         // change facial pixels but cannot scale or bob the planted body.
         cat::animation::Pose neutral;neutral.frame=4;neutral.joints={};
@@ -77,6 +112,8 @@ int NativeExpandedRenderTest(std::string& context) {
     if(cat::SerializePreferences(g.preferences)!=originalPreferences || cat::nutrition::Serialize(g.nutrition)!=originalNutrition) {
         context="explicit companion renderer mutated primary preferences/nutrition";return 131;
     }
+    if(const int walking=NativeWalkingRenderTest(context))return walking;
+    if(const int posture=NativePostureRenderTest(context))return posture;
     context="actual independent companion window rendering and hit testing";
     std::string windowError;
     if(!cat::companion::NativeWindowSmokeTest(g.instance,PaintCompanion,windowError)) {context+=" "+windowError;return 132;}

@@ -33,6 +33,8 @@ struct Pose {
     bool groundContact = true;
     bool bellyRig = false;
     cat::expression::Face face;
+    bool walkingRig=false;
+    double walkPhase=0,walkStride=28,walkDuty=.62,walkLift=5.5;
 };
 
 inline double SmoothStep(double fraction) {
@@ -83,9 +85,9 @@ inline bool Walking(Motion motion) {
     return motion==Motion::Walk || motion==Motion::Stalk || motion==Motion::Zoomies;
 }
 inline double StrideLength(Motion motion) {
-    // A complete four-pose cycle covers two footfalls. The old 14px cycle
-    // churned the paws several times while the body moved one paw-length.
-    return motion==Motion::Zoomies ? 58.0 : motion==Motion::Stalk ? 34.0 : 44.0;
+    // One complete articulated stride; short legs cannot plausibly cover the
+    // old44px stance without excessive shear. Motor/root speed is unchanged.
+    return motion==Motion::Zoomies ? 38.0 : motion==Motion::Stalk ? 24.0 : 28.0;
 }
 
 inline double TravelFactor(Motion motion, std::uint64_t elapsed) {
@@ -95,9 +97,9 @@ inline double TravelFactor(Motion motion, std::uint64_t elapsed) {
 
 // Persistent gait phase follows ground actually covered, so weight/age changes,
 // braking and a blocked boundary cannot make the paws keep stepping in place.
-// Advance once per simulation update, using post-collision displacement divided
-// by DPI * growth scale. Rendering must not advance this state. Reset after a
-// drag, work-area relocation or a hidden/menu pause; those are not footsteps.
+// Advance from rendered, ground-relative displacement divided by DPI * growth.
+// Reset only for drag/viewport relocation. Hidden/menu pauses preserve the
+// rendered fraction and phase, so resuming cannot add a phantom footstep.
 class Locomotion {
 public:
     void Reset() { phase_ = speed_ = 0; }
@@ -396,29 +398,15 @@ inline Pose Evaluate(Motion motion, std::uint64_t elapsed, std::uint64_t ticks,
     if (!Walking(motion)) return p;
 
     const double phase = locomotion.Phase();
-    const double referenceSpeed = motion == Motion::Zoomies ? 150.0 : motion == Motion::Stalk ? 12.0 : 22.0;
-    const double activity = SmoothStep(locomotion.Speed() / referenceSpeed);
-    const double swing = std::sin(phase * 2 * kPi);
-    const double bob = swing * swing; // Two smooth weight transfers per stride.
     p.lift = 0;
     p.x = 0;
     p.scaleX = p.scaleY = 1;
     p.angle = 0;
     p.blendFrame = -1;
     p.blend = 0;
-    const double framePhase = phase * 4;
-    p.frame = static_cast<int>(framePhase);
-    const double fraction = framePhase - p.frame;
-    // Hold the clear paw pose for most of the step, then blend only adjacent
-    // poses briefly. Keeping a double image for the whole stride adds blur.
-    if (fraction > .6) {
-        p.blendFrame = (p.frame + 1) % 4;
-        p.blend = SmoothStep((fraction - .6) / .4);
-    }
-    // The photos already contain stance/swing poses. Global scale/rotation
-    // made the head pulse and lifted planted paws during every weight transfer.
-    // Root movement remains exclusively physical; local breathing is enough.
-    p.joints.breath=.12*activity*(1-bob);
+    p.frame=1;p.joints={};p.walkingRig=true;p.walkPhase=phase;p.walkStride=StrideLength(motion);
+    p.walkDuty=motion==Motion::Stalk?.72:motion==Motion::Zoomies?.54:.62;
+    p.walkLift=motion==Motion::Stalk?3.5:motion==Motion::Zoomies?7.0:5.5;
     return p;
 }
 

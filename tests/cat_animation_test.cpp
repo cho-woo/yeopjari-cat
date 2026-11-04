@@ -440,11 +440,12 @@ void DistanceDrivenGaitSurvivesSpeedAndActionChanges() {
     const auto before = Evaluate(Motion::Walk, 9000, 700, 1, frequent);
     const auto restarted = Evaluate(Motion::Walk, 0, 700, 1, frequent);
     CHECK(WeightDistance(before, restarted) == 0);
+    CHECK(before.walkingRig && restarted.walkingRig && before.walkPhase==restarted.walkPhase);
     CHECK(before.lift == restarted.lift && before.angle == restarted.angle);
     const auto heldPhase = frequent.Phase();
     CHECK(frequent.Advance(Motion::Idle, 0, .1));
     CHECK(frequent.Phase() == heldPhase);
-    CHECK(frequent.Advance(Motion::Walk, 4.4, .1));
+    CHECK(frequent.Advance(Motion::Walk, StrideLength(Motion::Walk)*.1, .1));
     CHECK(std::abs(frequent.Phase() - std::fmod(heldPhase + .1, 1.0)) < 1e-12);
 
     // Actual distance, including slower feeding/weight states, sets cadence.
@@ -457,6 +458,7 @@ void DistanceDrivenGaitSurvivesSpeedAndActionChanges() {
     const auto right = Evaluate(Motion::Walk, 0, 700, 1, slow);
     const auto left = Evaluate(Motion::Walk, 0, 700, -1, leftward);
     CHECK(WeightDistance(right, left) == 0 && right.flip != left.flip);
+    CHECK(right.walkingRig && left.walkingRig && right.walkPhase==left.walkPhase);
     CHECK(std::abs(right.angle + left.angle) < 1e-12);
 }
 
@@ -473,9 +475,10 @@ void BlockedOrStoppedGaitsDoNotKeepStepping() {
     CHECK(std::abs(stopped.angle) < 1e-12 && std::abs(stopped.scaleY - 1) < 1e-12);
     const auto late = Evaluate(Motion::Walk, 100000, 0, 1, gait);
     CHECK(WeightDistance(stopped, late) == 0);
+    CHECK(stopped.walkingRig && late.walkingRig && stopped.walkPhase==late.walkPhase);
 
     // A reversal changes facing, never rewinds the gait or adds a phantom step.
-    CHECK(gait.Advance(Motion::Walk, -4.4, .1));
+    CHECK(gait.Advance(Motion::Walk, -StrideLength(Motion::Walk)*.1, .1));
     CHECK(std::abs(gait.Phase() - std::fmod(phase + .1, 1.0)) < 1e-12);
     gait.Reset();
     CHECK(gait.Phase() == 0 && gait.Speed() == 0);
@@ -483,6 +486,7 @@ void BlockedOrStoppedGaitsDoNotKeepStepping() {
 
 void DistanceDrivenFrameTransitionsRemainContinuous() {
     using namespace cat::animation;
+    CHECK(StrideLength(Motion::Walk)==28 && StrideLength(Motion::Stalk)==24 && StrideLength(Motion::Zoomies)==38);
     for (const auto motion : {Motion::Walk, Motion::Zoomies, Motion::Stalk}) {
         Locomotion gait;
         const double stride = StrideLength(motion);
@@ -491,6 +495,11 @@ void DistanceDrivenFrameTransitionsRemainContinuous() {
         for (int i = 1; i <= 2800; ++i) {
             CHECK(gait.Advance(motion, stride / 1400, .002));
             const auto current = Evaluate(motion, 0, 700, 1, gait);
+            CHECK(current.walkingRig && current.frame==1 && current.blendFrame==-1);
+            CHECK(current.walkPhase==gait.Phase() && current.walkStride==stride);
+            CHECK(current.groundContact && current.x==0 && current.lift==0);
+            CHECK(current.scaleX==1 && current.scaleY==1 && current.angle==0);
+            CHECK(cat::deform::Zero(current.joints));
             continuous = continuous && WeightDistance(previous, current) < .022
                 && std::abs(previous.lift - current.lift) < .05
                 && std::abs(previous.angle - current.angle) < .05;
@@ -502,11 +511,14 @@ void DistanceDrivenFrameTransitionsRemainContinuous() {
         CHECK(continuous);
         CHECK(normalized);
     }
-    // Most of a step has one clear sprite, not two continuously ghosted paws.
+    // Every phase uses one registered walking drawing. A separate foot rig
+    // carries continuous phase, so body/head pixels never crossfade identities.
     for (const double phase : {.05, .10, .30, .35, .55, .60, .80, .85}) {
         Locomotion gait;
-        CHECK(gait.Advance(Motion::Walk, phase * 44, .1));
-        CHECK(Evaluate(Motion::Walk, 0, 0, 1, gait).blendFrame == -1);
+        CHECK(gait.Advance(Motion::Walk, phase * StrideLength(Motion::Walk), .1));
+        const auto pose=Evaluate(Motion::Walk, 0, 0, 1, gait);
+        CHECK(pose.blendFrame == -1 && pose.walkingRig && pose.frame==1);
+        CHECK(std::abs(pose.walkPhase-phase)<1e-12);
     }
 }
 
@@ -536,6 +548,7 @@ void GaitDiscontinuityGuardsAndLegacyPoseCompatibility() {
                 && legacy.x == actual.x && legacy.lift == actual.lift
                 && legacy.scaleX == actual.scaleX && legacy.scaleY == actual.scaleY
                 && legacy.angle == actual.angle && JointValues(legacy.joints) == JointValues(actual.joints));
+            CHECK(!actual.walkingRig && !legacy.walkingRig);
         }
     }
 }
