@@ -12,6 +12,7 @@ concurrency:
 
 env:
   VERSION: 1.10.0
+  PYTHONUTF8: '1'
 
 jobs:
   build:
@@ -55,12 +56,25 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - uses: actions/download-artifact@v4
         with:
           name: release-v1.10.0-${{ github.sha }}
           path: package
       - name: Verify downloaded package on Windows
-        run: python tools/release.py --verify package
+        shell: pwsh
+        run: |
+          $PSNativeCommandUseErrorActionPreference = $false
+          $output = & python -X utf8 tools/release.py --verify package 2>&1
+          $code = $LASTEXITCODE
+          $output | ForEach-Object { Write-Host $_ }
+          if ($code -ne 0) {
+            $detail = ($output -join "`n").Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
+            Write-Host "::error::$detail"
+            exit $code
+          }
       - name: Execute the Windows x64 binary self-test
         timeout-minutes: 2
         shell: pwsh
