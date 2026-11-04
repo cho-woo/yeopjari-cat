@@ -10,7 +10,7 @@
 
 namespace cat::deform {
 struct Point { double x = 0, y = 0; };
-enum class Shape { Sitting, ReclineSide, ReclineBack, Airborne };
+enum class Shape { Sitting, ReclineSide, ReclineBack, Airborne, Eating, Grooming, Treat, Stretch, TailChase };
 struct Joints {
     double leftEar = 0, rightEar = 0, headNod = 0;
     double frontLeft = 0, frontRight = 0, tailRaise = 0, breath = 0;
@@ -124,9 +124,66 @@ inline Point AirbornePoint(Point uv,const Joints& controls) {
     return result;
 }
 
+// Care artwork has different neck/paw positions from sitting. Keep its bowl,
+// treat packet, tail and supporting feet fixed, and move only the active parts.
+// A single source face is retained; independent photographs are never blended.
+inline Point CarePoint(Point uv,const Joints& controls,Shape shape) {
+    if(!std::isfinite(uv.x)||!std::isfinite(uv.y))return {};
+    if(!Finite(controls))return uv;
+    const auto j=Bounded(controls);
+    Point result=uv;
+    const bool eating=shape==Shape::Eating;
+    const double fixed=eating ? .86 : .90;
+    if(uv.y>=fixed)return uv;
+    const double head=eating ? Smooth((uv.x-.30)/.15)*Smooth((.84-uv.y)/.14)
+                             : Smooth((.68-uv.y)/.12);
+    const Point neck=eating ? Point{.68,.76} : Point{.62,.65};
+    const double angle=.025*j.headNod*head;
+    const double dx=uv.x-neck.x,dy=uv.y-neck.y;
+    result.x+=dx*(std::cos(angle)-1)-dy*std::sin(angle);
+    result.y+=dx*std::sin(angle)+dy*(std::cos(angle)-1);
+    if(shape==Shape::Grooming) {
+        const double paw=Bump(uv.x,.81,.14)*Bump(uv.y,.61,.17);
+        result.x-=.010*j.frontRight*paw;
+        result.y-=.018*j.frontRight*paw;
+    } else if(shape==Shape::Treat) {
+        const double tongue=Bump(uv.x,.70,.09)*Bump(uv.y,.54,.07);
+        result.y+=.008*j.frontLeft*tongue;
+    }
+    return result;
+}
+
+inline Point GesturePoint(Point uv,const Joints& controls,Shape shape) {
+    if(!std::isfinite(uv.x)||!std::isfinite(uv.y))return {};
+    if(!Finite(controls))return uv;
+    const auto j=Bounded(controls);
+    Point result=uv;
+    if(uv.y>=.94)return uv;
+    if(shape==Shape::Stretch) {
+        // The long forelegs remain planted; only the back/chest lengthens.
+        const double back=Bump(uv.x,.40,.24)*Bump(uv.y,.48,.32);
+        result.x-=.014*j.breath*back;
+        result.y-=.010*j.breath*back;
+    } else {
+        // Look-back art keeps its facing; the tail curls toward the nose.
+        const double tail=Bump(uv.x,.23,.23)*Bump(uv.y,.56,.25);
+        result.x+=.018*j.tailRaise*tail;
+        result.y-=.035*j.tailRaise*tail;
+        const double head=Smooth((uv.x-.44)/.15)*Smooth((.65-uv.y)/.14);
+        const double angle=.018*j.headNod*head;
+        const double dx=uv.x-.70,dy=uv.y-.55;
+        result.x+=dx*(std::cos(angle)-1)-dy*std::sin(angle);
+        result.y+=dx*std::sin(angle)+dy*(std::cos(angle)-1);
+    }
+    return result;
+}
+
 inline Point DeformPoint(Point uv,const Joints& joints,Shape shape=Shape::Sitting) {
     return shape==Shape::Sitting ? SittingPoint(uv,joints) :
-        shape==Shape::Airborne ? AirbornePoint(uv,joints) : RecliningPoint(uv,joints,shape);
+        shape==Shape::Airborne ? AirbornePoint(uv,joints) :
+        shape==Shape::Eating || shape==Shape::Grooming || shape==Shape::Treat ? CarePoint(uv,joints,shape) :
+        shape==Shape::Stretch || shape==Shape::TailChase ? GesturePoint(uv,joints,shape) :
+        RecliningPoint(uv,joints,shape);
 }
 
 namespace detail {
@@ -192,7 +249,7 @@ inline bool Warp(const std::uint32_t* src,int width,int height,int strideBytes,
                  std::uint32_t* dst,int dstStrideBytes,const Joints& controls,Shape shape=Shape::Sitting) {
     if (!src || !dst || width<1 || height<1 || width>4096 || height>4096 ||
         strideBytes<width*4 || dstStrideBytes<width*4 || strideBytes>65536 || dstStrideBytes>65536 ||
-        !Finite(controls) || (shape!=Shape::Sitting && shape!=Shape::ReclineSide && shape!=Shape::ReclineBack && shape!=Shape::Airborne)) return false;
+        !Finite(controls) || static_cast<int>(shape)<0 || static_cast<int>(shape)>static_cast<int>(Shape::TailChase)) return false;
     const auto j=Bounded(controls);
     const auto a=reinterpret_cast<std::uintptr_t>(src), b=reinterpret_cast<std::uintptr_t>(dst);
     const auto sourceBytes=static_cast<std::size_t>(height-1)*strideBytes+width*4;
@@ -216,6 +273,8 @@ inline bool Warp(const std::uint32_t* src,int width,int height,int strideBytes,
         const double v=shape==Shape::Sitting
             ? (y<=12 ? .36*y/12 : y<=21 ? .36+.29*(y-12)/9 : y<=31 ? .65+.33*(y-21)/10 : 1.0)
             : shape==Shape::Airborne ? (y<=20 ? .64*y/20 : .64+.36*(y-20)/12)
+            : shape==Shape::Eating ? (y<=28 ? .86*y/28 : .86+.14*(y-28)/4)
+            : shape==Shape::Grooming || shape==Shape::Treat ? (y<=28 ? .90*y/28 : .90+.10*(y-28)/4)
             : (y<=30 ? .94*y/30 : .94+.06*(y-30)/2);
         const Point uv{static_cast<double>(x)/cells,v};
         const auto p=DeformPoint(uv,j,shape);

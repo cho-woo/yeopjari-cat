@@ -123,13 +123,13 @@ class Renderer:
     def skin(self,character,frame,joints,part=0):
         source,_ = self.sprite(character,frame)
         premultiplied=source.convert('RGBa')
-        if frame not in (4,9,10,16,24,25):
+        if frame not in (4,6,7,8,9,10,15,16,18,24,25):
             return premultiplied
         data=premultiplied.tobytes('raw','BGRa')
         source_bytes=ctypes.create_string_buffer(data,len(data))
         destination=ctypes.create_string_buffer(len(data))
         values=(ctypes.c_double*8)(*joints)
-        shape=3 if frame==16 else 2 if frame==25 else 1 if frame==24 else 0
+        shape=3 if frame==16 else 4 if frame==7 else 5 if frame in (9,10) else 6 if frame==18 else 7 if frame==8 else 8 if frame==15 else 2 if frame==25 else 1 if frame in (6,24) else 0
         if not self.lib.preview_warp(source_bytes,source.width,source.height,destination,values,shape):
             raise RuntimeError('Production Warp rejected source crop')
         if part:

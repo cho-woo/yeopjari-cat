@@ -516,6 +516,94 @@ void DirectWindowTransfersKeepSourceUntilTakeoff() {
     }
 }
 
+void HighWindowsUseRealRiseAndAvailableHeadroom() {
+    // Ordinary browser/explorer tops can be 700–900 logical pixels above
+    // the taskbar. The former absolute 520 px limit rejected every such
+    // ledge even when the same ballistic solver had sufficient headroom.
+    for (double height : {700., 900.}) {
+        cat::physics::Pose reference;
+        for (int fps : {60, 30, 120, 144}) {
+            Controller cat;
+            cat.Reset(500, 96, 1824);
+            cat.SetCeiling(1040);
+            CHECK(cat.CanLaunchToPlatform(350, 950, height, 650));
+            CHECK(cat.LaunchToPlatform(350, 950, height, 650));
+            CHECK(Near(cat.CurrentPose().x, 500, 0));
+            CHECK(Near(cat.CurrentPose().lift, 0, 0));
+            int landings = 0;
+            double peak = 0;
+            for (int frame = 0; frame < fps*4; ++frame) {
+                cat.Update(1./fps);
+                const auto pose = cat.CurrentPose();
+                peak = std::max(peak, pose.lift);
+                if (pose.landed) ++landings;
+                CHECK(pose.lift >= 0 && pose.lift <= height+46);
+            }
+            CHECK(peak > height+40 && peak < height+46);
+            CHECK(landings == 1 && cat.OnPlatform());
+            CHECK(Near(cat.CurrentPose().lift, height, .6));
+            if (fps == 60) reference = cat.CurrentPose();
+            CHECK(Near(cat.CurrentPose().x, reference.x, .001));
+            CHECK(Near(cat.CurrentPose().lift, reference.lift, .001));
+        }
+    }
+
+    Controller cat;
+    cat.Reset(500, 96, 1824);
+    cat.SetCeiling(1500);
+    CHECK(!cat.CanLaunchToPlatform(350, 950, 1400, 650)); // Finite rise budget, even under a tall roof.
+    CHECK(cat.LaunchToPlatform(350, 950, 700, 650));
+    Run(cat, 4);
+    CHECK(cat.OnPlatform());
+    const auto before = cat.CurrentPose();
+    CHECK(cat.CanLaunchToPlatform(900, 1500, 1400, 1100)); // Rise is 700, not absolute altitude 1400.
+    CHECK(!cat.LaunchToPlatform(900, 1500, 1490, 1100)); // Apex would hit the work-area roof.
+    CHECK(cat.OnPlatform());
+    CHECK(Near(cat.CurrentPose().lift, before.lift, 0));
+    CHECK(Near(cat.CurrentPose().x, before.x, 0));
+    CHECK(cat.LaunchToPlatform(900, 1500, 1400, 1100));
+    CHECK(Near(cat.CurrentPose().lift, before.lift, 0));
+    CHECK(Near(cat.CurrentPose().x, before.x, 0));
+    Run(cat, 4);
+    CHECK(cat.OnPlatform() && Near(cat.CurrentPose().lift, 1400, .6));
+    CHECK(cat.LaunchToPlatform(1000, 1750, 1400, 1350)); // Same-height transfer above the old cap.
+    Run(cat, 4);
+    CHECK(cat.OnPlatform() && Near(cat.CurrentPose().lift, 1400, .6));
+    CHECK(cat.LaunchToPlatform(1000, 1750, 300, 1350)); // Long descent must keep the one-way top contact.
+    Run(cat, 4);
+    CHECK(cat.OnPlatform() && Near(cat.CurrentPose().lift, 300, .6));
+    const auto supported = cat.CurrentPose();
+    cat.RemovePlatform();
+    CHECK(Near(cat.CurrentPose().lift, supported.lift, 0));
+    CHECK(!cat.CurrentPose().grounded);
+    cat.Update(step);
+    CHECK(Near(cat.CurrentPose().velocityY, -15, .03));
+    Run(cat, 3);
+    CHECK(cat.CurrentPose().grounded && cat.CurrentPose().lift < 1);
+}
+
+void OneWayLandingDoesNotDependOnFixedClockPhase() {
+    // Heights and clearance change where the feet cross a ledge relative to
+    // a 60 Hz physics step. A landing must survive every such contact phase.
+    for (int height = 115; height < 1000; height += 13) {
+        for (double clearance : {20., 45., 80.}) {
+            Controller cat;
+            cat.Reset(500, 96, 1824);
+            cat.SetCeiling(1200);
+            CHECK(cat.LaunchToPlatform(350, 1200, height, 650, clearance));
+            bool passedAbove = false, contacted = false;
+            for (int frame = 0; frame < 240; ++frame) {
+                cat.Update(step);
+                const auto pose = cat.CurrentPose();
+                if (pose.lift > height + 5) passedAbove = true;
+                if (pose.onPlatform) { CHECK(passedAbove); contacted = true; }
+            }
+            CHECK(contacted && cat.OnPlatform());
+            CHECK(Near(cat.CurrentPose().lift, height, .6));
+        }
+    }
+}
+
 void DisablingCursorPlayLeavesOrdinaryWindowPlanningAvailable() {
     cat::environment::CursorReaction reaction;
     cat::environment::CursorInput input;
@@ -721,6 +809,8 @@ int main() {
         CeilingAndReachability();
         TallViewportContainsRaisedPlatformLaunch();
         DirectWindowTransfersKeepSourceUntilTakeoff();
+        HighWindowsUseRealRiseAndAvailableHeadroom();
+        OneWayLandingDoesNotDependOnFixedClockPhase();
         DisablingCursorPlayLeavesOrdinaryWindowPlanningAvailable();
         CursorSitApproachesWithMotorAndWaitsForBraking();
         LedgeGripUsesJointAndReleasesMomentum();

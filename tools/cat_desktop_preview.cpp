@@ -4,6 +4,7 @@
 // it is not a Win32 execution, window discovery test, or production state machine.
 #include "../src/cat_animation.hpp"
 #include "../src/cat_physics.hpp"
+#include "../src/cat_motion_gate.hpp"
 #include <box2d/box2d.h>
 #include <algorithm>
 #include <cmath>
@@ -45,8 +46,8 @@ void Scenario(const std::string& scene) {
         }
         const bool preparing = time >= .28 && !launched;
         const double walkingVelocity = current.velocityX - current.supportVelocityX;
-        Motion motion = preparing ? Motion::Jump : Motion::Watch;
-        if (!preparing && physical.grounded && std::abs(walkingVelocity) > 2) motion = Motion::Walk;
+        const Motion motion=cat::motion::DisplayedMotion(preparing ? Motion::Jump : Motion::Watch,
+            Motion::Walk,physical.grounded,false,walkingVelocity);
         const auto actionElapsed = preparing ? milliseconds - 280 : milliseconds;
         auto pose = cat::animation::Evaluate(motion, actionElapsed, 10000 + milliseconds, 1, gait);
         if (motion == Motion::Jump) pose.lift = 0;
@@ -55,10 +56,9 @@ void Scenario(const std::string& scene) {
         if (!physical.grounded) {
             pose = cat::animation::AirbornePose(physical.velocityY, 1);
         }
-        if (landedAt >= 0 && time - landedAt < .280) {
-            const double settle = std::sin((time - landedAt) / .280 * cat::animation::kPi) * landingStrength;
-            pose.scaleX *= 1 + .035 * settle;
-            pose.scaleY *= 1 - .085 * settle;
+        if (pose.frame==4 && physical.grounded && landedAt >= 0) {
+            pose.joints.crouch=std::max(pose.joints.crouch,cat::animation::LandingPose(
+                static_cast<std::uint64_t>(std::llround((time-landedAt)*1000)),landingStrength,1).joints.crouch);
         }
         std::cout << scene << ',' << time << ',' << current.x << ',' << current.lift << ','
             << physical.x << ',' << physical.lift << ',' << physical.velocityX << ',' << physical.velocityY << ','

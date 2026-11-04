@@ -54,7 +54,8 @@ void NewPosesKeepTheirIntendedBaseline() {
     CHECK(Evaluate(Motion::Peek,0,0,1).lift == 0);
     CHECK(Evaluate(Motion::Peek,3600,3600,1).lift == 0);
     CHECK(Evaluate(Motion::Peek,999999,999999,1).lift == 0);
-    CHECK(Evaluate(Motion::Peek,1800,1800,1).lift < -30);
+    CHECK(Evaluate(Motion::Peek,1800,1800,1).lift == 0);
+    CHECK(Evaluate(Motion::Peek,1800,1800,1).joints.crouch == 1);
     for (unsigned t=0; t<3600; t+=16) {
         CHECK(Evaluate(Motion::Loaf,t,t,1).lift >= 0);
         CHECK(std::abs(Evaluate(Motion::Peek,t+1,t+1,1).lift - Evaluate(Motion::Peek,t,t,1).lift) < .06);

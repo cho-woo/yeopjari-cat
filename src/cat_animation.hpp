@@ -56,6 +56,18 @@ inline Pose AirbornePose(double velocityY,int direction) {
     return p;
 }
 
+// Absorb contact in the torso while the head translates rigidly and the paws
+// stay planted. This is only a stopped landing; a moving landing keeps its
+// distance-driven gait until Box2D has actually removed horizontal velocity.
+inline Pose LandingPose(std::uint64_t elapsedSinceContact,double strength,int direction) {
+    Pose p;
+    p.flip=direction<0;
+    const double impact=std::isfinite(strength) ? std::clamp(strength,0.0,1.0) : 0.0;
+    if(elapsedSinceContact<280)
+        p.joints.crouch=.7*impact*std::sin(elapsedSinceContact/280.0*kPi);
+    return p;
+}
+
 inline int PunchHits(std::uint64_t elapsed) {
     return elapsed >= kSecondPunchMs ? 2 : elapsed >= kFirstPunchMs ? 1 : 0;
 }
@@ -66,6 +78,14 @@ inline bool PunchContact(std::uint64_t elapsed) {
 
 inline bool Travels(Motion motion) {
     return motion == Motion::Walk || motion == Motion::Stalk || motion == Motion::Pounce || motion == Motion::Zoomies;
+}
+inline bool Walking(Motion motion) {
+    return motion==Motion::Walk || motion==Motion::Stalk || motion==Motion::Zoomies;
+}
+inline double StrideLength(Motion motion) {
+    // A complete four-pose cycle covers two footfalls. The old 14px cycle
+    // churned the paws several times while the body moved one paw-length.
+    return motion==Motion::Zoomies ? 58.0 : motion==Motion::Stalk ? 34.0 : 44.0;
 }
 
 inline double TravelFactor(Motion motion, std::uint64_t elapsed) {
@@ -100,9 +120,10 @@ public:
         const double observedSpeed = std::min(500.0, distance / deltaSeconds);
         const double response = -std::expm1(-deltaSeconds / .075);
         speed_ += (observedSpeed - speed_) * response;
-        if (motion == Motion::Walk || motion == Motion::Zoomies || motion == Motion::Stalk) {
-            const double stride = motion == Motion::Zoomies ? 38.0 : 14.0;
+        if (Walking(motion)) {
+            const double stride = StrideLength(motion);
             phase_ = std::fmod(phase_ + distance / stride, 1.0);
+            if(phase_>1-1e-12)phase_=0; // Same cycle boundary at30/60/120Hz.
         }
         return true;
     }
@@ -141,86 +162,72 @@ inline Pose Evaluate(Motion motion, std::uint64_t elapsed, std::uint64_t ticks, 
         break;
     case Motion::Eat:
         p.frame = 7;
-        p.scaleY = 1 + .012 * std::sin(t / 110.0);
+        p.joints = {};
+        p.joints.headNod = .42 * std::sin(t / 260.0);
         break;
     case Motion::Treat:
-        p.frame = 18 + static_cast<int>(elapsed / 200 % 2);
-        if (elapsed % 200 >= 150)
-            crossfade(p.frame, p.frame == 18 ? 19 : 18, static_cast<double>(elapsed % 200 - 150) / 50);
-        p.lift = 0;
-        p.scaleY = 1 + .009 * std::sin(t / 200.0 * kPi);
+        p.frame = 18;
+        p.joints = {};
+        p.joints.headNod = .25 * std::sin(t / 280.0);
+        p.joints.frontLeft = .5-.5*std::cos(t / 230.0 * kPi);
         break;
     case Motion::Groom:
-        crossfade(9, 10, .5 - .5 * std::cos(t / 440.0 * kPi));
-        p.joints.headNod = .2 * std::sin(t / 440.0 * kPi);
+        p.frame = 9;
+        p.joints = {};
+        p.joints.headNod = .32 * std::sin(t / 440.0 * kPi);
+        p.joints.frontRight = .5-.5*std::cos(t / 440.0 * kPi);
         break;
     case Motion::Stretch:
         p.frame = 8;
-        p.scaleX = 1 + .015 * std::sin(std::min(t / 1900.0, 1.0) * kPi);
-        p.scaleY = 1 - .008 * std::sin(std::min(t / 1900.0, 1.0) * kPi);
+        p.joints = {};
+        p.joints.breath = std::sin(std::min(t / 1900.0, 1.0) * kPi);
         break;
     case Motion::Watch:
         p.frame = 4;
         p.joints.headNod = .35 * std::sin(t / 950.0);
         break;
     case Motion::Stalk:
-        p.frame = 11;
-        p.x = 0;
+        // Sneaking is locomotion. A static crouch (and, for added species,
+        // its sitting-art fallback) must never translate along the floor.
+        p.frame = static_cast<int>(elapsed / 240 % 4);
+        crossfade(p.frame,(p.frame+1)%4,static_cast<double>(elapsed%240)/240);
         break;
     case Motion::Pounce:
         if (elapsed < 240) {
-            p.frame = 11;
-            p.scaleY = .96;
+            p.frame = 4;
+            p.joints.crouch = .65 * SmoothStep(t / 240.0);
         } else if (elapsed < 840) {
-            const double jump = (t - 240) / 600;
-            p.frame = 1;
-            p.lift = 0;
-            p.angle = (jump - .5) * 12 * direction;
-            p.scaleX = 1.04;
+            p = AirbornePose(((t-240)/600-.5)*400,direction);
         } else {
-            p.frame = 14;
-            p.scaleY = 1 - .055 * std::max(0.0, 1 - (t - 840) / 200.0);
+            p = LandingPose(elapsed-840,1,direction);
         }
         break;
     case Motion::Jump:
-        // A single in-place hop: crouch, rise, tuck the paws, land, then settle.
-        // The new airborne art stays distinct from the forward-pouncing frames.
+        // Preview timing only; runtime uses actual flight/contact from Box2D.
         p.lift = 0;
         if (elapsed < 220) {
-            const double crouch = std::sin(t / 220.0 * kPi);
-            p.frame = 11;
-            p.scaleX = 1 + .025 * crouch;
-            p.scaleY = 1 - .1 * crouch;
+            p.frame = 4;
+            p.joints.crouch = .65 * SmoothStep(t / 220.0);
         } else if (elapsed < 1060) {
-            const double flight = (t - 220) / 840;
-            p.frame = flight < .5 ? 16 : 17;
-            p.lift = 0;
-            p.scaleY = 1 + .025 * std::sin(flight * 2 * kPi);
-            p.angle = direction * 2 * std::sin(flight * 2 * kPi);
+            p = AirbornePose(((t-220)/840-.5)*400,direction);
         } else {
-            const double landing = std::sin(std::min((t - 1060) / 260, 1.0) * kPi);
-            p.frame = 14;
-            p.scaleX = 1 + .03 * landing;
-            p.scaleY = 1 - .09 * landing;
+            p = LandingPose(elapsed-1060,1,direction);
         }
         break;
     case Motion::Zoomies:
         p.frame = static_cast<int>(elapsed / 55 % 4);
         crossfade(p.frame, (p.frame + 1) % 4, static_cast<double>(elapsed % 55) / 55);
         p.angle = 0;
-        p.scaleX = 1.025;
         break;
     case Motion::TailChase:
         p.frame = 15;
-        p.flip = (elapsed / 370 % 2 == 0) != (direction < 0);
-        p.x = 0;
-        p.angle = 0;
-        p.scaleX = .96 + .04 * std::abs(std::cos(t / 240.0));
+        p.joints = {};
+        p.joints.tailRaise = .5-.5*std::cos(t / 520.0 * kPi);
+        p.joints.headNod = .4*std::sin(t / 520.0 * kPi);
         break;
     case Motion::Punch:
         if (elapsed < kFirstPunchMs) {
             p.frame = 12;
-            p.scaleY = 1 - .035 * std::sin(t / kFirstPunchMs * kPi);
         } else if (PunchContact(elapsed)) {
             p.frame = 13;
             const double strike = elapsed < 460 ? t - kFirstPunchMs : t - kSecondPunchMs;
@@ -259,20 +266,20 @@ inline Pose Evaluate(Motion motion, std::uint64_t elapsed, std::uint64_t ticks, 
         p.joints.headNod = .12 * std::sin(t / 840.0 * kPi);
         break;
     case Motion::Peek: {
-        // Sink below the platform edge so mostly the head peeks out, then rise again.
-        p.frame = 14;
+        // Peek from a supported crouch. Toy/window foreground supplies cover;
+        // the renderer must not put the cat through its supporting floor.
+        p.frame = 4;
         const double phase = std::clamp(t / kPeekDurationMs, 0.0, 1.0);
         const double dip = phase < .3 ? SmoothStep(phase / .3) : phase > .72 ? SmoothStep((1.0 - phase) / .28) : 1.0;
-        // Enter from the standing baseline and return there. Starting/ending
-        // 54 pixels below it teleported the body when the motion changed.
-        p.lift = -38.0 * dip;
-        p.angle = direction * std::sin(t / 430.0) * 3.2 * dip;
+        p.joints.crouch = dip;
+        p.joints.headNod = .55 * std::sin(t / 620.0) * dip;
         break;
     }
     case Motion::Scratch:
         p.frame = 9;
-        p.joints.headNod = .25 * std::sin(t / 180.0 * kPi);
-        p.joints.rightEar = .2 * (.5 + .5 * std::sin(t / 180.0 * kPi));
+        p.joints = {};
+        p.joints.headNod = .15 * std::sin(t / 180.0 * kPi);
+        p.joints.frontRight = .5-.5*std::cos(t / 180.0 * kPi);
         break;
     case Motion::Sneeze: {
         p.frame = 4;
@@ -291,7 +298,6 @@ inline Pose Evaluate(Motion motion, std::uint64_t elapsed, std::uint64_t ticks, 
     case Motion::BoxSit:
         p.frame = 4;
         p.joints.crouch = .65 * SmoothStep(t / 350.0);
-        p.lift = -8.0 * SmoothStep(t / 350.0);
         break;
     case Motion::Yawn:
         p.face.mouth = std::pow(std::sin(std::clamp(t / 2400.0, 0.0, 1.0) * kPi), 2);
@@ -387,7 +393,7 @@ inline Pose EvaluateSleep(unsigned variant, std::uint64_t elapsed, std::uint64_t
 inline Pose Evaluate(Motion motion, std::uint64_t elapsed, std::uint64_t ticks,
                      int direction, const Locomotion& locomotion) {
     Pose p = Evaluate(motion, elapsed, ticks, direction);
-    if (motion != Motion::Walk && motion != Motion::Zoomies && motion != Motion::Stalk) return p;
+    if (!Walking(motion)) return p;
 
     const double phase = locomotion.Phase();
     const double referenceSpeed = motion == Motion::Zoomies ? 150.0 : motion == Motion::Stalk ? 12.0 : 22.0;
@@ -400,13 +406,6 @@ inline Pose Evaluate(Motion motion, std::uint64_t elapsed, std::uint64_t ticks,
     p.angle = 0;
     p.blendFrame = -1;
     p.blend = 0;
-    if (motion == Motion::Stalk) {
-        p.frame = 11;
-        p.x = swing * .6 * activity;
-        p.angle = swing * .5 * activity;
-        return p;
-    }
-
     const double framePhase = phase * 4;
     p.frame = static_cast<int>(framePhase);
     const double fraction = framePhase - p.frame;
@@ -416,14 +415,10 @@ inline Pose Evaluate(Motion motion, std::uint64_t elapsed, std::uint64_t ticks,
         p.blendFrame = (p.frame + 1) % 4;
         p.blend = SmoothStep((fraction - .6) / .4);
     }
-    if (motion == Motion::Zoomies) {
-        p.scaleX += .025 * activity;
-        p.scaleY -= .018 * bob * activity;
-        p.angle = direction * 2.4 * swing * activity;
-    } else {
-        p.scaleY -= .009 * bob * activity;
-        p.angle = direction * .6 * swing * activity;
-    }
+    // The photos already contain stance/swing poses. Global scale/rotation
+    // made the head pulse and lifted planted paws during every weight transfer.
+    // Root movement remains exclusively physical; local breathing is enough.
+    p.joints.breath=.12*activity*(1-bob);
     return p;
 }
 

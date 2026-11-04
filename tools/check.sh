@@ -5,6 +5,7 @@ ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 bash tools/test.sh
 bash build.sh
+cp THIRD_PARTY_NOTICES.txt release/THIRD_PARTY_NOTICES.txt
 version="$(python3 -c 'import sys; sys.path.insert(0,"tools"); import release; print(release.version_from_header(release.ROOT/"src/app_version.h"))')"
 # Each run gets its own directory; release.py intentionally refuses overwrites.
 mkdir -p release/publish

@@ -159,10 +159,11 @@ struct Controller::Impl {
                         double& vx, double& vy, bool checkCurrentPlatform = true, bool allowHanging = false) const {
         if ((!current.grounded && !(allowHanging && current.hanging)) || !std::isfinite(targetX) || !std::isfinite(targetHeight) ||
                 !std::isfinite(clearance) || targetX < minX || targetX > maxX ||
-                targetHeight < 0 || targetHeight > 520 || clearance < 10 || clearance > 120)
+                targetHeight < 0 || targetHeight > ceiling || clearance < 10 || clearance > 120)
             return false;
         const double gravity = kGravity * kPixelsPerMeter;
         const double rise = targetHeight - current.lift;
+        if (rise > kMaximumLaunchRisePixels) return false;
         const double apex = std::max(current.lift, targetHeight) + clearance;
         if (apex > ceiling) return false;
         vy = std::sqrt(2 * gravity * (apex - current.lift));
@@ -182,7 +183,7 @@ struct Controller::Impl {
     bool PlatformLaunchVelocity(double left, double right, double height, double targetX,
                                 double clearance, double& vx, double& vy) const {
         if (!std::isfinite(left) || !std::isfinite(right) || !std::isfinite(height) ||
-                height <= 0 || height > 520 || height > ceiling || right - left < 72)
+                height <= 0 || height > ceiling || right - left < 72)
             return false;
         left = std::max(left, minX - 96); right = std::min(right, maxX + 96);
         if (right - left < 72 || !LaunchVelocity(targetX, height, clearance, vx, vy, false)) return false;
@@ -216,6 +217,7 @@ struct Controller::Impl {
         const b2Vec2 before = b2Body_GetLinearVelocity(body);
         b2Vec2 platformVelocity{};
         const double platformBeforeX = B2_IS_NON_NULL(platform) ? b2Body_GetPosition(platform).x : 0;
+        const bool topContactWasEligible = platformCanCollide;
         platformCanCollide = false;
         if (B2_IS_NON_NULL(platform)) {
             const auto position = b2Body_GetPosition(platform);
@@ -227,7 +229,15 @@ struct Controller::Impl {
             const auto catPosition = b2Body_GetPosition(body);
             // Pass through from below/upward. Only a top contact reached from
             // above while descending relative to the ledge can support the cat.
-            platformCanCollide = !current.hanging && catPosition.y - kFootOffset >= position.y - .02f &&
+            // Box2D can first report a new contact after the feet cross the
+            // top, then resolve its small penetration over subsequent steps.
+            // Keep that already armed contact until resolution, while the
+            // capsule center is above the top. Otherwise a fixed 2 px cutoff
+            // disables the very contact that must finish the landing. A body
+            // approaching from underneath never arms this allowance.
+            const bool reachedFromAbove = catPosition.y - kFootOffset >= position.y - .02f ||
+                (topContactWasEligible && catPosition.y >= position.y);
+            platformCanCollide = !current.hanging && reachedFromAbove &&
                 before.y <= platformVelocity.y + .05f;
         }
         const double vx = before.x * kPixelsPerMeter;
@@ -317,7 +327,7 @@ void Controller::RelocateBounds(double minX, double maxX, double deltaX) {
 
 void Controller::SetPlatform(double left, double right, double height) {
     if (!std::isfinite(left) || !std::isfinite(right) || !std::isfinite(height) ||
-            right-left < 36 || height <= 0 || height > 520 || height > impl_->ceiling) {
+            right-left < 36 || height <= 0 || height > impl_->ceiling) {
         RemovePlatform();
         return;
     }

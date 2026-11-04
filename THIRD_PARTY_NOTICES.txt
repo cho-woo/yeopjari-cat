@@ -25,21 +25,25 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 
-Current cat effect recordings — v2.0.0
+Current audio status — v2.0.1
 
-All fourteen action-sound WAV files were prepared from the user-provided
-reference video. The user explicitly authorized their public distribution in
-this application update. Three intact short excerpts are reused across fourteen
-cue slots; the pitch and timing are unchanged. Editing is limited to mono
+This version contains no action-sound recordings or audio playback code.
+Audio assets and preparation tools have been removed from the current source.
+Historical release attribution is retained below; it does not describe audio
+included in the current executable or package.
+
+Historical user-provided effect recordings — v1.10.3 and v2.0.0
+
+Those releases used short excerpts from a user-provided reference video with
+explicit authorization for public distribution in the application. The v2.0.0
+set reused three excerpts across fourteen action slots and excluded the rejected
+0.18–0.91-second excerpt. Processing retained pitch and timing, using mono
 PCM16/22050Hz conversion, DC removal, level adjustment and short edge fades.
-The source and output hashes and edit ranges are recorded in
-assets/audio/manifest.json. No CC0 license, authorship or general reuse license
-is asserted for these user-provided recordings.
-
-The rejected 0.18–0.91-second excerpt from the first reference video is excluded
-from every cue. Only the three remaining allowed excerpts are used.
-Only the short prepared cues are distributed in this release. The original
-video and full decoded audio are not included in the public repository or ZIP.
+No CC0 license, authorship or general reuse license was asserted.
+The original video and full decoded audio were not distributed.
+Historical hashes, edit ranges and source notices remain at:
+https://github.com/cho-woo/yeopjari-cat/blob/v1.10.3/assets/audio/manifest.json
+https://github.com/cho-woo/yeopjari-cat/blob/v2.0.0/assets/audio/manifest.json
 
 Character artwork continuity
 
@@ -57,9 +61,7 @@ Historical audio attribution (v1.5.0 through v1.10.2)
 
 Earlier releases used eleven user-supplied recordings introduced in v1.7.0 and
 three edited CC0 cues (refuse.wav, pet.wav, wake.wav) introduced in v1.5.0.
-Those historical sound sets are not the audio embedded in v2.0.0.
-The v1.10.3 video cue set is superseded; its rejected opening excerpt is no
-longer included in the current executable.
+No historical sound set is embedded in v2.0.1.
 The old user-provided recordings were never assigned a new CC0 license or
 authorship claim. Historical manifests and source materials retain their
 original notices in the repository history.

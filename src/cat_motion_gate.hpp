@@ -10,6 +10,17 @@ inline bool ReadyToStart(bool grounded, double velocityX) {
     return grounded && std::isfinite(velocityX) && std::abs(velocityX) <= kStoppedSpeed;
 }
 
+inline animation::Motion DisplayedMotion(animation::Motion requested,animation::Motion previousWalking,
+                                        bool grounded,bool waiting,double relativeVelocity) {
+    if (!grounded || !std::isfinite(relativeVelocity)) return requested;
+    // Motor braking outlives the action that requested it, especially after
+    // a pounce landing. Every planted translating body needs actual footfalls,
+    // not only Idle/Watch. Motion clocks and saved state remain unchanged.
+    if ((waiting || std::abs(relativeVelocity)>kStoppedSpeed) && !animation::Walking(requested))
+        return animation::Walking(previousWalking)?previousWalking:animation::Motion::Walk;
+    return requested;
+}
+
 inline bool NeedsStop(animation::Motion requested, bool grounded, double velocityX,
                       bool windowTransfer = false) {
     // A pounce travels only after its planted crouch/takeoff preparation.

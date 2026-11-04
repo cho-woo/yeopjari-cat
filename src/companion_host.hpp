@@ -70,7 +70,6 @@ void FeedCompanion(bool treat) {
     if (!g.companionStore.enabled() || !g.companionModel.Bound()) return;
     const auto result = g.companionModel.Feed(UtcNow(), GetTickCount64(), treat, Random(0,1));
     if (result == cat::nutrition::FeedResult::Accepted) {
-        PlayCatSound(treat ? cat::audio::Cue::Treat : cat::audio::Cue::Meal);
         SaveCompanion();
     } else Balloon(L"두 번째 동물", L"배부르거나 소화 중이면 조금 기다려 주세요. 공중에서는 착지한 뒤 먹어요.");
 }
@@ -100,7 +99,7 @@ void ShowCompanionMenu(POINT point) {
     AppendMenuW(menu, MF_STRING, kCompanionStatus, L"이 동물의 성장 기록");
     AppendMenuW(menu, MF_STRING, UpdateCheckCommand, L"프로그램 업데이트 확인…");
     AppendMenuW(menu, MF_STRING, kCompanionToggle, L"두 번째 동물 잠시 쉬게 하기");
-    g.menuOpen = true; g.audio.Stop();
+    g.menuOpen = true;
     SetForegroundWindow(g.companionWindow.Handle());
     const UINT command = static_cast<UINT>(TrackPopupMenu(menu, TPM_RETURNCMD | TPM_NONOTIFY | TPM_RIGHTBUTTON,
         point.x, point.y, 0, g.companionWindow.Handle(), nullptr));
@@ -135,7 +134,7 @@ bool EnsureCompanionWindow() {
             using I = cat::companion::InputKind;
             if (input.kind == I::Menu) ShowCompanionMenu({input.screenX,input.screenY});
             else if (input.kind == I::Pet) {
-                if (g.companionModel.Pet(UtcNow(),GetTickCount64())) { PlayCatSound(cat::audio::Cue::Pet); SaveCompanion(); }
+                if (g.companionModel.Pet(UtcNow(),GetTickCount64())) SaveCompanion();
             } else {
                 g.companionModel.DragTo((input.screenX-g.work.left)/g.dpiScale);
                 if (input.kind == I::DragEnd) SaveCompanion();

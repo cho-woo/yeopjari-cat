@@ -162,8 +162,16 @@ void RealWindowFollowingAndClosure() {
     CHECK(m.TrySocial(Interaction::WindowFollow,c)); CHECK(m.SupportId()==73); CHECK(!m.Physical().grounded);
     CHECK(m.Busy());
     const auto food=s.pet.feedCount; CHECK(m.Feed(born,100,false)==cat::nutrition::FeedResult::TooSoon);CHECK(!m.Pet(born,100));CHECK(s.pet.feedCount==food);
-    bool landed=false; double apex=0;
-    for(unsigned i=0;i<240;++i) { Step(m,c,1);apex=std::max(apex,m.Physical().lift);landed=landed||m.Physical().onPlatform; }
+    bool landed=false,movingLanding=false; double apex=0;
+    for(unsigned i=0;i<240;++i) {
+        Step(m,c,1);apex=std::max(apex,m.Physical().lift);
+        const auto view=m.View(c.ticks);
+        if(!landed && m.Physical().onPlatform && std::abs(view.physical.velocityX-view.physical.supportVelocityX)>2) {
+            movingLanding=true;CHECK(cat::animation::Walking(view.motion));CHECK(view.animation.frame>=0 && view.animation.frame<=3);
+        }
+        landed=landed||m.Physical().onPlatform;
+    }
+    CHECK(movingLanding);
     CHECK(apex>180); CHECK(landed); CHECK(m.Physical().onPlatform); CHECK(std::abs(m.Physical().lift-180)<1);
     CHECK(m.Physical().x>=c.primaryPlatform.left && m.Physical().x<=c.primaryPlatform.right);
     const auto oldX=m.Physical().x;
@@ -178,7 +186,7 @@ void RealWindowFollowingAndClosure() {
 void SpeciesLimitsAndBraking() {
     State s=NewState(born);s.pet.position=.25;s.preferences.character=cat::Character::Munchkin;
     Model m;m.Bind(s);m.Reset(40,1000,800);
-    auto c=Frame(100,500,450);c.primary.onPlatform=true;c.primaryPlatform={20,200,850,450,true};
+    auto c=Frame(100,500,650);c.primary.onPlatform=true;c.primaryPlatform={20,200,850,650,true};
     CHECK(!m.TrySocial(Interaction::WindowFollow,c));
     s.preferences.character=cat::Character::Cream;
     CHECK(m.TrySocial(Interaction::WindowFollow,c));
@@ -221,9 +229,133 @@ void ManualCareIsNotInterrupted() {
         c.ticks=301200;c.nowUtc=born+301;CHECK(!m.TrySocial(Interaction::Sniff,c));
     }
 }
+void NaturalTakeoffAndLandingUsePhysicalMotion() {
+    using M=cat::animation::Motion;
+    // This actual birthday/brain sequence previously showed a seated frame 14
+    // after a jump while Box2D still moved at more than 100 logical px/second.
+    const auto birthday=born+7*86400;
+    State s=NewState(birthday);s.pet.position=.5;
+    Model m;m.Bind(s);m.Reset(0,1600,700);
+    Context c;c.primaryVisible=false;c.elapsedSeconds=1.0/60;
+    bool wasGrounded=true,badSliding=false,badFacing=false;
+    unsigned takeoffs=0;std::uint64_t crouchStarted=0;
+    for(unsigned frame=1;frame<24000;++frame) {
+        c.ticks=frame*17;c.nowUtc=birthday+static_cast<std::int64_t>(c.ticks/1000);m.Tick(c);
+        const auto view=m.View(c.ticks);
+        const auto physical=m.Physical();
+        const double speed=view.physical.velocityX-view.physical.supportVelocityX;
+        if(view.physical.grounded && std::abs(speed)>2) {
+            badSliding=badSliding || !cat::animation::Walking(view.motion) || view.animation.frame<0 || view.animation.frame>3;
+            badFacing=badFacing || view.animation.flip!=(speed<0);
+        }
+        if(view.motion!=M::Jump && view.motion!=M::Pounce)crouchStarted=0;
+        if(view.physical.grounded && (view.motion==M::Jump || view.motion==M::Pounce) && view.animation.frame==4) {
+            if(!crouchStarted)crouchStarted=c.ticks;
+            CHECK(std::abs(speed)<=2);
+            CHECK(view.animation.scaleX==1 && view.animation.scaleY==1 && view.animation.angle==0);
+        }
+        if(wasGrounded && !physical.grounded) {
+            ++takeoffs;
+            CHECK(crouchStarted>0 && c.ticks-crouchStarted>=204);
+            CHECK(!view.animation.groundContact);
+            crouchStarted=0;
+        }
+        wasGrounded=physical.grounded;
+    }
+    CHECK(takeoffs>0);CHECK(!badSliding);CHECK(!badFacing);CHECK(Valid(s));
+}
+void SocialGesturesWaitForPlantedFeet() {
+    using M=cat::animation::Motion;
+    for(const auto kind:{Interaction::Sniff,Interaction::Paw,Interaction::SharedSleep,Interaction::FoodCompetition}) {
+        State s=NewState(born);s.pet.position=.2;s.nutrition.fullness=60;s.pet.hunger=60;
+        Model m;m.Bind(s);m.Reset(0,1600,700);
+        auto c=Frame(100,m.Physical().x+200);c.primaryMotion=M::Zoomies;
+        CHECK(m.TrySocial(Interaction::RunTogether,c));Step(m,c,30);CHECK(m.Physical().velocityX>40);
+        c.primary.x=m.Physical().x+(kind==Interaction::Paw?48:65);
+        c.primaryMotion=kind==Interaction::SharedSleep?M::Sleep:kind==Interaction::FoodCompetition?M::Eat:M::Idle;
+        CHECK(m.TrySocial(kind,c));m.Tick(c);
+        CHECK(m.TakeEvent()==Interaction::None);CHECK(s.sniffs+s.mutualPlay+s.sharedSleeps+s.foodRaces==0);
+        CHECK(cat::animation::Travels(m.View(c.ticks).motion));
+        bool contacted=false;
+        for(unsigned frame=0;frame<90;++frame) {
+            Step(m,c,1);
+            if(m.TakeEvent()==kind) {
+                contacted=true;
+                CHECK(std::abs(m.Physical().velocityX-m.Physical().supportVelocityX)<=2);
+                CHECK(!cat::animation::Travels(m.View(c.ticks).motion));
+            }
+        }
+        CHECK(contacted);CHECK(s.sniffs+s.mutualPlay+s.sharedSleeps+s.foodRaces==1);CHECK(Valid(s));
+    }
+}
+void BrakingPreservesTheCompleteMeal() {
+    State s=NewState(born);s.pet.position=.2;s.nutrition.fullness=45;s.pet.hunger=45;
+    Model m;m.Bind(s);m.Reset(0,1600,700);
+    auto c=Frame(100,m.Physical().x+200);c.primaryMotion=cat::animation::Motion::Zoomies;
+    CHECK(m.TrySocial(Interaction::RunTogether,c));Step(m,c,30);CHECK(m.Physical().velocityX>40);
+    const auto acceptedAt=c.ticks;
+    CHECK(m.Feed(c.nowUtc,c.ticks,false)==cat::nutrition::FeedResult::Accepted);
+    c.primaryVisible=false;
+    while(c.ticks<acceptedAt+4250)Step(m,c,1);
+    CHECK(m.View(c.ticks).motion==cat::animation::Motion::Eat);
+    CHECK(!m.Pet(c.nowUtc,c.ticks)); // Braking time cannot consume the accepted meal.
+    CHECK(s.pet.feedCount==1 && s.memory.meals==1 && s.memory.pets==0);
+    Step(m,c,120);
+    CHECK(!m.Pet(c.nowUtc,c.ticks)); // Gesture resumes, but shared care credit keeps its five-minute limit.
+    CHECK(m.View(c.ticks).motion==cat::animation::Motion::TailRaise);
+    CHECK(s.memory.pets==0);CHECK(Valid(s));
+}
+void PairedRunningUsesOneSupportAndBodyMultiplier() {
+    for(bool perched:{false,true}) {
+        State s=NewState(born);s.pet.position=.2;s.preferences.character=cat::Character::Munchkin;
+        Model m;m.Bind(s);m.Reset(0,2400,700);
+        auto c=Frame(100,700,perched?120:0);
+        if(perched) {
+            c.primary.onPlatform=true;c.primaryPlatform={912,400,2100,120,true};c.supportPlatform=c.primaryPlatform;
+            CHECK(m.TrySocial(Interaction::WindowFollow,c));
+            for(unsigned i=0;i<240 && !m.Physical().onPlatform;++i)Step(m,c,1);
+            CHECK(m.Physical().onPlatform);Step(m,c,1);m.TakeEvent();
+        }
+        c.primary.x=m.Physical().x+60;c.primaryMotion=cat::animation::Motion::Zoomies;
+        c.primary.supportVelocityX=perched?30:0;c.primary.velocityX=60+c.primary.supportVelocityX;
+        CHECK(m.TrySocial(Interaction::RunTogether,c));
+        for(unsigned i=0;i<120;++i) {
+            // Feed the same measured 60 px/s relative pace at a steady spacing;
+            // actual Box2D still supplies all secondary acceleration and travel.
+            c.primary.x=m.Physical().x+60;
+            if(perched) {
+                c.primaryPlatform.left+=.5;c.primaryPlatform.right+=.5;c.supportPlatform=c.primaryPlatform;
+            }
+            Step(m,c,1);
+        }
+        CHECK(std::abs(m.Physical().velocityX-m.Physical().supportVelocityX-60)<1.5);
+        if(perched)CHECK(m.Physical().onPlatform && std::abs(m.Physical().supportVelocityX-30)<.1);
+        CHECK(Valid(s));
+    }
+}
+void HighWindowFollowingRespectsTheRealCeiling() {
+    State s=NewState(born);s.pet.position=.3;
+    Model m;m.Bind(s);m.Reset(0,1800,1040);
+    auto c=Frame(100,780,640);c.primary.onPlatform=true;
+    c.primaryPlatform={400,450,1300,640,true};c.supportPlatform=c.primaryPlatform;
+    CHECK(m.TrySocial(Interaction::WindowFollow,c));
+    for(unsigned i=0;i<240 && !m.Physical().onPlatform;++i)Step(m,c,1);
+    CHECK(m.Physical().onPlatform);CHECK(std::abs(m.Physical().lift-640)<1);
+    Step(m,c,30);
+    // A second jump starts from the first ledge, not from the taskbar. Its
+    // absolute height can exceed the old520px cap without exceeding the roof.
+    c.primary.lift=900;c.primary.x=980;c.primaryPlatform={401,650,1500,900,true};
+    CHECK(m.TrySocial(Interaction::WindowFollow,c));c.supportPlatform=c.primaryPlatform;
+    for(unsigned i=0;i<240 && !m.Physical().onPlatform;++i)Step(m,c,1);
+    CHECK(m.Physical().onPlatform);CHECK(std::abs(m.Physical().lift-900)<1);CHECK(m.SupportId()==401);
+    Step(m,c,30);
+    c.primary.lift=1020;c.primaryPlatform={402,700,1600,1020,true};
+    CHECK(!m.TrySocial(Interaction::WindowFollow,c));
+    CHECK(m.Physical().onPlatform && m.SupportId()==401);CHECK(Valid(s));
+}
 }
 int main() {
-    try { SeparateAdoptionAndRestart();IndividualStableTemperaments();StrictBundleParsing();RecoveryAndFaults();IndependentCareAndAge();SocialContactAndCompetition();RealWindowFollowingAndClosure();SpeciesLimitsAndBraking();ManualCareIsNotInterrupted();
+    try { SeparateAdoptionAndRestart();IndividualStableTemperaments();StrictBundleParsing();RecoveryAndFaults();IndependentCareAndAge();SocialContactAndCompetition();RealWindowFollowingAndClosure();SpeciesLimitsAndBraking();ManualCareIsNotInterrupted();NaturalTakeoffAndLandingUsePhysicalMotion();SocialGesturesWaitForPlantedFeet();BrakingPreservesTheCompleteMeal();PairedRunningUsesOneSupportAndBodyMultiplier();HighWindowFollowingRespectsTheRealCeiling();
         std::cout<<"companion checks passed: "<<checks<<'\n';return 0;
     } catch(const std::exception& e) { std::cerr<<e.what()<<'\n';return 1; }
 }

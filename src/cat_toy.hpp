@@ -163,6 +163,88 @@ struct Session {
     }
 };
 
+enum class AutoAction { None, Place, Retire };
+struct AutoDecision {
+    AutoAction action = AutoAction::None;
+    Kind kind = Kind::None;
+    bool timedOut = false;
+};
+struct AutoInput {
+    bool paused = false;
+    // Host arbitration: calm, on the floor, and no other activity owns the cat.
+    bool eligible = false;
+    Kind visibleKind = Kind::None;
+    Phase phase = Phase::None;
+    bool ballSettled = true;
+    // A rare event may temporarily borrow the object. Never remove it while
+    // that event owns it, even when our ordinary activity has finished.
+    bool protectedUse = false;
+};
+
+// Automatic toys use active application time, never UTC or save records.
+// A placement owns one complete Session. Afterwards the item disappears and
+// the ordinary behavior scheduler has several minutes before another item.
+// The host supplies entropy, so this helper never disturbs another RNG itself.
+class Automatic {
+public:
+    static constexpr double MaximumActiveSeconds = 120;
+
+    AutoDecision Advance(double seconds, const AutoInput& input, std::uint32_t entropy) {
+        if (input.paused || !std::isfinite(seconds) || seconds <= 0 || seconds > .25) return {};
+        if (!initialized_) Schedule(true, entropy);
+        if (active_ == Kind::None) {
+            remaining_ = std::max(0.0, remaining_ - seconds);
+            if (remaining_ > 0 || !input.eligible || input.visibleKind != Kind::None) return {};
+            active_ = Choose(entropy);
+            activeSeconds_ = 0;
+            completed_ = expired_ = false;
+            return {AutoAction::Place, active_, false};
+        }
+        if (input.visibleKind != active_) {
+            // Placement failed, a monitor reset removed it, or another owner
+            // replaced it. Do not replay or delete somebody else's object.
+            Schedule(false, entropy);
+            return {};
+        }
+        activeSeconds_ += seconds;
+        completed_ = completed_ || input.phase == Phase::Wait;
+        expired_ = expired_ || activeSeconds_ + 1e-9 >= MaximumActiveSeconds;
+        const bool ready = expired_ || (completed_ && (active_ != Kind::Ball || input.ballSettled));
+        if (!ready || input.protectedUse) return {};
+        const AutoDecision result{AutoAction::Retire, active_, expired_};
+        Schedule(false, entropy);
+        return result;
+    }
+
+    Kind ActiveKind() const { return active_; }
+    bool WaitingToRetire() const { return completed_ || expired_; }
+    double RemainingSeconds() const { return remaining_; }
+    double ActiveSeconds() const { return activeSeconds_; }
+
+    static Kind Choose(std::uint32_t entropy) {
+        constexpr Kind catalog[]{Kind::Ball, Kind::Box, Kind::PaperBag,
+                                 Kind::Catnip, Kind::FishingRod, Kind::Cushion};
+        return catalog[entropy % 6];
+    }
+    static double Delay(bool first, std::uint32_t entropy) {
+        const double fraction = static_cast<double>(entropy) / 4294967295.0;
+        return first ? 90 + 150 * fraction : 180 + 240 * fraction;
+    }
+
+private:
+    bool initialized_ = false, completed_ = false, expired_ = false;
+    Kind active_ = Kind::None;
+    double remaining_ = 0, activeSeconds_ = 0;
+
+    void Schedule(bool first, std::uint32_t entropy) {
+        initialized_ = true;
+        active_ = Kind::None;
+        completed_ = expired_ = false;
+        remaining_ = Delay(first, entropy);
+        activeSeconds_ = 0;
+    }
+};
+
 inline double SessionTarget(const Session& session, double toyX, double catX, double growth,
                             double low, double high) {
     growth = std::max(.1, growth);

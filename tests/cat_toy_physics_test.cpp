@@ -62,11 +62,22 @@ void FullActivity(cat::toy::Kind kind, double fps, double growth, double destina
     physics.Reset(300,low,high);
     PhysicsBall ball; ball.Reset(destination);
     Session session; session.Start(kind,destination<300 ? -1 : 1);
+    Automatic automatic;
+    AutoInput automaticInput; automaticInput.eligible=true;
+    AutoDecision placement;
+    const auto entropy=static_cast<std::uint32_t>(kind)-1;
+    for (int tick=0;tick<1000 && placement.action==AutoAction::None;++tick)
+        placement=automatic.Advance(.25,automaticInput,entropy);
+    CHECK(placement.action==AutoAction::Place && placement.kind==kind);
+    automaticInput.eligible=false; automaticInput.visibleKind=kind;
     bool consumed=false, sawEnter=false, sawSleep=false, sawExit=false;
     unsigned contacts=0;
     double maxStep=0, previous=physics.CurrentPose().x;
     double toyX=destination;
     for (int tick=0;tick<static_cast<int>(fps*90) && session.phase!=Phase::Wait;++tick) {
+        automaticInput.phase=session.phase;
+        if (automatic.Advance(dt,automaticInput,entropy).action!=AutoAction::None)
+            throw std::runtime_error("Automatic item retired during its active session");
         const auto state=physics.CurrentPose();
         if (kind==Kind::Ball) {
             const auto bounds=RollingBounds(1920,low,high,36*growth);
@@ -107,6 +118,24 @@ void FullActivity(cat::toy::Kind kind, double fps, double growth, double destina
         CHECK(sawEnter==IsContainer(kind));
         CHECK(sawSleep==(kind==Kind::Box || kind==Kind::Cushion));
     }
+    // The automatic lifecycle must wait for a real Box2D ball to finish moving,
+    // while containers retire only after the physical exit has completed.
+    automaticInput.phase=Phase::Wait;
+    AutoDecision retirement;
+    const double catAfterExit=physics.CurrentPose().x;
+    for (int tick=0;tick<static_cast<int>(fps*12) && retirement.action==AutoAction::None;++tick) {
+        automaticInput.ballSettled=ball.grounded && std::abs(ball.velocity)<.5 &&
+            std::abs(ball.verticalVelocity)<.5;
+        retirement=automatic.Advance(dt,automaticInput,entropy);
+        if (retirement.action==AutoAction::None && kind==Kind::Ball) {
+            const auto bounds=RollingBounds(1920,low,high,36*growth);
+            ball.Advance(dt,bounds.first,bounds.second);
+        }
+    }
+    CHECK(retirement.action==AutoAction::Retire && retirement.kind==kind && !retirement.timedOut);
+    CHECK(kind!=Kind::Ball || automaticInput.ballSettled);
+    CHECK(physics.CurrentPose().x==catAfterExit); // Lifecycle retirement never relocates the cat.
+    CHECK(automatic.RemainingSeconds()>=180 && automatic.ActiveKind()==Kind::None);
 }
 
 void PauseAndRaisedSupport() {

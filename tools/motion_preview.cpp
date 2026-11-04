@@ -7,7 +7,7 @@
 
 extern "C" {
 int preview_evaluate(int motion, unsigned long long elapsed, int direction, double* output) {
-    if (!output || motion < 0 || motion > static_cast<int>(cat::animation::Motion::BoxSit)) return 0;
+    if (!output || motion < 0 || motion > static_cast<int>(cat::animation::Motion::Pride)) return 0;
     const auto pose = cat::animation::Evaluate(static_cast<cat::animation::Motion>(motion), elapsed, 10000 + elapsed, direction);
     const double values[] = {static_cast<double>(pose.frame), pose.x, pose.lift, pose.scaleX, pose.scaleY,
         pose.angle, static_cast<double>(pose.flip), static_cast<double>(pose.centerPivot),
@@ -20,7 +20,7 @@ int preview_evaluate(int motion, unsigned long long elapsed, int direction, doub
 }
 int preview_warp(const std::uint32_t* source, int width, int height, std::uint32_t* destination,
                  const double* values, int shape) {
-    if (!values || shape < 0 || shape > 3) return 0;
+    if (!values || shape < 0 || shape > static_cast<int>(cat::deform::Shape::TailChase)) return 0;
     const cat::deform::Joints joints{values[0], values[1], values[2], values[3],
         values[4], values[5], values[6], values[7]};
     return cat::deform::Warp(source,width,height,width*4,destination,width*4,joints,

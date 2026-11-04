@@ -228,9 +228,17 @@ inline Event PeekEvent(const State& s,const EventContext& c) {
     if (!ContextValid(s,c) || c.busy) return Event::None;
     const auto celebration=AnniversaryEvent(s,c);
     if (Eligible(s,c,celebration)) return celebration;
-    for(auto e:{Event::PunchStartle,Event::TailStartle,Event::SneezeStartle})
-        if(Eligible(s,c,e)) return e;
-    if(c.trigger!=Trigger::None)return Event::None;
+    if(c.trigger!=Trigger::None) {
+        // Ordinary punches, tail play and sneezes happen much more often than
+        // special life events. Making every trigger claim the shared budget
+        // starved crown/box/long-term stories. Draw once per five-minute slot,
+        // so observing the same reaction on more frames cannot increase it.
+        const auto reaction=Mix(static_cast<std::uint64_t>(s.bornUtc)^Mix(static_cast<std::uint64_t>(c.nowUtc/300))^0xa115faceULL);
+        if(reaction%1000<80)
+            for(auto e:{Event::PunchStartle,Event::TailStartle,Event::SneezeStartle})
+                if(Eligible(s,c,e)) return e;
+        return Event::None;
+    }
     // A stable five-minute draw prevents render-rate and restart farming.
     const auto draw=Mix(static_cast<std::uint64_t>(s.bornUtc)^Mix(static_cast<std::uint64_t>(c.nowUtc/300))^0x1feda75ULL);
     if(draw%1000>=18) return Event::None;

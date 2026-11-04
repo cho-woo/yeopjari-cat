@@ -8,6 +8,7 @@
 #include "cat_nutrition.hpp"
 #include "cat_physics.hpp"
 #include "cat_motion_gate.hpp"
+#include "cat_environment.hpp"
 #include "cat_preferences.hpp"
 #include "cat_species.hpp"
 #include <functional>
@@ -262,12 +263,13 @@ public:
         rng_=static_cast<std::uint64_t>(state.pet.bornUtc)^0x1a7e24977a4eab43ULL;
         ready_=false; nextDecision_=0; interaction_=event_=Interaction::None; socialUntil_=0; supportId_=0;
         motion_=cat::animation::Motion::Idle; walkingMotion_=cat::animation::Motion::Walk;
-        motionStart_=lastTicks_=careUntil_=0; direction_=facing_=1; speed_=0; support_={}; gait_.Reset();
+        motionStart_=lastTicks_=careUntil_=landedAt_=0; direction_=facing_=1; speed_=0; support_={}; gait_.Reset();
+        waitingForStop_=jumpPending_=false;
     }
     bool Bound() const { return state_ && brain_; }
     bool Busy() const {
         if(!Bound() || !ready_ || !state_->enabled) return false;
-        return !physics_.CurrentPose().grounded || interaction_!=Interaction::None ||
+        return !physics_.CurrentPose().grounded || waitingForStop_ || jumpPending_ || interaction_!=Interaction::None ||
             motion_==cat::animation::Motion::Eat || motion_==cat::animation::Motion::Treat ||
             motion_==cat::animation::Motion::TailRaise || motion_==cat::animation::Motion::ToyPaw;
     }
@@ -300,6 +302,7 @@ public:
         if(c.paused || !std::isfinite(c.elapsedSeconds) || c.elapsedSeconds<0 || c.elapsedSeconds>.25) {
             const auto frozen=lastTicks_ && c.ticks>=lastTicks_?c.ticks-lastTicks_:0;
             motionStart_+=frozen; nextDecision_+=frozen; socialUntil_+=frozen; careUntil_+=frozen; lastTicks_=c.ticks;
+            if(landedAt_) landedAt_+=frozen;
             physics_.Update(0,true); return;
         }
         UpdateSupport(c);
@@ -310,7 +313,7 @@ public:
         if(interaction_!=Interaction::None && (!c.primaryVisible || Busy(c,interaction_) || state_->pet.roamingPaused)) {
             interaction_=Interaction::None; nextDecision_=0;
         }
-        if(before.grounded && interaction_==Interaction::None && c.ticks>=nextDecision_) {
+        if(before.grounded && !waitingForStop_ && !jumpPending_ && interaction_==Interaction::None && c.ticks>=nextDecision_) {
             bool social=false;
             if(c.primaryVisible && !c.primaryBusy && !state_->pet.roamingPaused &&
                 (!state_->lastSocialUtc || state_->pet.updatedUtc-state_->lastSocialUtc>=45) && Random()<.55) {
@@ -324,7 +327,16 @@ public:
         }
         double velocity=0;
         if(interaction_!=Interaction::None) velocity=SocialVelocity(c);
-        else if(cat::animation::Travels(motion_) && !state_->pet.roamingPaused) velocity=direction_*speed_;
+        else if(cat::animation::Walking(motion_) && !state_->pet.roamingPaused) velocity=direction_*speed_;
+        // Keep the complete action and care interval after the moving body has
+        // actually braked. Rendering alone must not hide a sliding meal/crouch.
+        if(waitingForStop_) {
+            const auto start=motionStart_;
+            cat::motion::AdvanceStopGate(waitingForStop_,before.grounded,
+                before.velocityX-before.supportVelocityX,c.ticks,motionStart_,nextDecision_);
+            if(careUntil_>start) careUntil_+=motionStart_-start;
+            velocity=0;
+        }
         if(before.grounded && ((before.x<=minX_+2 && velocity<0) || (before.x>=maxX_-2 && velocity>0))) {
             direction_=-direction_; velocity=-velocity;
         }
@@ -336,12 +348,23 @@ public:
         }
         if(std::abs(velocity)>.1) facing_=velocity<0?-1:1;
         if(before.grounded) physics_.SetTargetVelocity(velocity*cat::nutrition::VisualModifiers(state_->nutrition).speed*species.movementSpeedMultiplier);
+        if(!waitingForStop_ && jumpPending_ && before.grounded && c.ticks>=motionStart_ &&
+            c.ticks-motionStart_ >= (motion_==cat::animation::Motion::Jump?220U:240U)) {
+            jumpPending_=false;
+            const auto body=cat::nutrition::VisualModifiers(state_->nutrition);
+            const double growth=cat::GrowthScale(state_->pet.bornUtc,state_->pet.updatedUtc);
+            const double jump=growth*body.jump*species.jumpHeightMultiplier;
+            const bool launched=motion_==cat::animation::Motion::Jump?physics_.Jump(55*jump):
+                physics_.Pounce(direction_,30*jump,state_->pet.roamingPaused?0:72*body.speed*species.movementSpeedMultiplier);
+            if(launched) facing_=direction_;
+        }
         physics_.Update(c.elapsedSeconds);
         const auto after=physics_.CurrentPose();
+        if(after.landed) { landedAt_=c.ticks; landingStrength_=std::clamp(after.landingSpeed/300.0,.2,1.0); }
         if(after.grounded && !after.onPlatform && supportId_) { supportId_=0; support_={}; physics_.RemovePlatform(); }
         const double stride=after.x-before.x-after.supportTravelX;
-        const auto walking=cat::animation::Travels(motion_)?motion_:
-            std::abs(after.velocityX-after.supportVelocityX)>2?walkingMotion_:motion_;
+        const auto walking=cat::motion::DisplayedMotion(motion_,walkingMotion_,after.grounded,waitingForStop_,
+            after.velocityX-after.supportVelocityX);
         gait_.Advance(walking,stride/std::max(.1,cat::GrowthScale(state_->pet.bornUtc,state_->pet.updatedUtc)),c.elapsedSeconds);
         state_->pet.position=std::clamp((after.x-minX_)/(maxX_-minX_),0.0,1.0);
     }
@@ -354,12 +377,12 @@ public:
             const auto& p=c.primaryPlatform;
             if(!c.primary.onPlatform || !p.valid || !p.id || p.right-p.left<100) return false;
             const double jump=cat::nutrition::VisualModifiers(state_->nutrition).jump*cat::species::ProfileFor(state_->preferences.character).jumpHeightMultiplier;
-            if(p.height-own.lift>520*jump) return false;
+            if(p.height-own.lift>cat::environment::WindowJumpRiseLimit(maxLift_+160,jump)) return false;
             const double target=std::clamp(c.primary.x+(own.x<c.primary.x?-65:65),p.left+35,p.right-35);
             if(!physics_.LaunchToPlatform(p.left,p.right,p.height,target,45*jump)) return false;
             supportId_=p.id; support_=p; interaction_=kind; socialUntil_=c.ticks+6000;
             contactRecorded_=false;
-            SetMotion(cat::animation::Motion::Jump,c.ticks,6000,0); event_=kind; return true;
+            SetMotion(cat::animation::Motion::Jump,c.ticks,6000,0,true); event_=kind; return true;
         }
         if(kind==Interaction::None || kind==Interaction::Startled || !c.primary.grounded ||
             std::abs(own.lift-c.primary.lift)>8 || std::abs(own.x-c.primary.x)>650) return false;
@@ -402,7 +425,8 @@ public:
         physics_.Reset(std::clamp(x,minX_,maxX_),minX_,maxX_); supportId_=0; support_={}; gait_.Reset();
         physics_.SetCeiling(maxLift_);
         state_->pet.position=std::clamp((physics_.CurrentPose().x-minX_)/(maxX_-minX_),0.0,1.0);
-        interaction_=Interaction::None; nextDecision_=careUntil_=0;
+        interaction_=Interaction::None; nextDecision_=careUntil_=landedAt_=0;
+        waitingForStop_=jumpPending_=false;
     }
     Snapshot View(std::uint64_t ticks) const {
         Snapshot s;
@@ -411,15 +435,18 @@ public:
         s.body=cat::nutrition::VisualModifiers(state_->nutrition); s.growthScale=cat::GrowthScale(state_->pet.bornUtc,state_->pet.updatedUtc);
         s.life=cat::life::Summarize(state_->life,state_->memory.bond); s.temperament=state_->life.temperament;
         s.bond=state_->memory.bond; s.archetype=brain_->GetArchetype(); s.motion=motion_; s.interaction=interaction_;
-        const auto displayed=s.physical.grounded && !cat::animation::Travels(motion_) &&
-            std::abs(s.physical.velocityX-s.physical.supportVelocityX)>2?walkingMotion_:motion_;
+        const double relativeVelocity=s.physical.velocityX-s.physical.supportVelocityX;
+        const auto displayed=cat::motion::DisplayedMotion(motion_,walkingMotion_,s.physical.grounded,waitingForStop_,relativeVelocity);
+        const int displayedFacing=s.physical.grounded && std::abs(relativeVelocity)>2?(relativeVelocity<0?-1:1):facing_;
         s.motion=displayed;
         const auto elapsed=ticks>=motionStart_?ticks-motionStart_:0;
         s.animation=displayed==cat::animation::Motion::Sleep?
-            cat::animation::EvaluateSleep(sleepVariant_,elapsed,ticks,facing_,s.physical.onPlatform):
-            cat::animation::Evaluate(displayed,elapsed,ticks,facing_,gait_);
+            cat::animation::EvaluateSleep(sleepVariant_,elapsed,ticks,displayedFacing,s.physical.onPlatform):
+            cat::animation::Evaluate(displayed,elapsed,ticks,displayedFacing,gait_);
         if(!s.physical.grounded) s.animation=cat::animation::AirbornePose(s.physical.velocityY,facing_);
-        else if((motion_==cat::animation::Motion::Jump || motion_==cat::animation::Motion::Pounce)) { s.animation={}; s.animation.frame=14; s.animation.flip=facing_<0; }
+        else if((displayed==cat::animation::Motion::Jump || displayed==cat::animation::Motion::Pounce) && !jumpPending_) {
+            s.animation=cat::animation::LandingPose(landedAt_ && ticks>=landedAt_?ticks-landedAt_:280,landingStrength_,displayedFacing);
+        }
         if(std::abs(s.physical.supportVelocityX)>2 && s.physical.onPlatform) s.animation.angle+=std::clamp(-s.physical.supportVelocityX/60.0,-4.0,4.0);
         return s;
     }
@@ -428,11 +455,11 @@ private:
     std::unique_ptr<cat::behavior::Brain> brain_;
     cat::physics::Controller physics_;
     cat::animation::Locomotion gait_;
-    bool ready_=false,contactRecorded_=false;
-    double minX_=40,maxX_=1000,maxLift_=700,speed_=0;
+    bool ready_=false,contactRecorded_=false,waitingForStop_=false,jumpPending_=false;
+    double minX_=40,maxX_=1000,maxLift_=700,speed_=0,landingStrength_=1;
     int direction_=1,facing_=1;
     unsigned sleepVariant_=0;
-    std::uint64_t rng_=1,nextDecision_=0,motionStart_=0,socialUntil_=0,lastTicks_=0,careUntil_=0;
+    std::uint64_t rng_=1,nextDecision_=0,motionStart_=0,socialUntil_=0,lastTicks_=0,careUntil_=0,landedAt_=0;
     std::uintptr_t supportId_=0;
     Platform support_;
     Context lastContext_;
@@ -453,12 +480,16 @@ private:
         cat::Advance(state_->pet,now); cat::nutrition::Advance(state_->nutrition,now); cat::memory::Advance(state_->memory,now);
         state_->pet.hunger=state_->nutrition.fullness;
     }
-    void SetMotion(cat::animation::Motion m,std::uint64_t ticks,std::uint64_t duration,double speed) {
-        if(motion_!=m) {
+    void SetMotion(cat::animation::Motion m,std::uint64_t ticks,std::uint64_t duration,double speed,bool alreadyAirborne=false) {
+        const bool jumping=m==cat::animation::Motion::Jump || m==cat::animation::Motion::Pounce;
+        if(motion_!=m || jumping) {
             motionStart_=ticks; motion_=m;
             if(m==cat::animation::Motion::Sleep) sleepVariant_=static_cast<unsigned>(Random()*6);
+            const auto physical=physics_.CurrentPose();
+            waitingForStop_=cat::motion::NeedsStop(m,physical.grounded,physical.velocityX-physical.supportVelocityX,alreadyAirborne);
+            jumpPending_=jumping && !alreadyAirborne;
         }
-        if(cat::animation::Travels(m)) walkingMotion_=m;
+        if(cat::animation::Walking(m)) walkingMotion_=m;
         nextDecision_=ticks+duration; speed_=speed;
     }
     static cat::animation::Motion MotionFor(cat::behavior::Action action) {
@@ -477,10 +508,6 @@ private:
         const auto plan=brain_->Next(context); auto motion=MotionFor(plan.action);
         if(Random()<.3) direction_=-direction_;
         SetMotion(motion,c.ticks,plan.durationMs,plan.speed);
-        const auto species=cat::species::ProfileFor(state_->preferences.character);
-        const double jump=cat::nutrition::VisualModifiers(state_->nutrition).jump*species.jumpHeightMultiplier;
-        if(motion==cat::animation::Motion::Jump) physics_.Jump(55*jump);
-        else if(motion==cat::animation::Motion::Pounce) physics_.Pounce(direction_,30*jump,72*species.movementSpeedMultiplier);
     }
     void UpdateSupport(const Context& c) {
         if(!supportId_) return;
@@ -489,7 +516,7 @@ private:
         if(candidate.valid) { support_=candidate; physics_.SetPlatform(candidate.left,candidate.right,candidate.height); }
         else {
             physics_.RemovePlatform(); supportId_=0; support_={}; interaction_=Interaction::None; event_=Interaction::Startled;
-            SetMotion(cat::animation::Motion::Jump,c.ticks,2500,0);
+            SetMotion(cat::animation::Motion::Jump,c.ticks,2500,0,true);
         }
     }
     void RecordContact(const Context& c) {
@@ -522,16 +549,25 @@ private:
             SetMotion(cat::animation::Motion::Walk,c.ticks,1500,18);
             return direction_*speed_;
         }
-        facing_=delta<0?-1:1; RecordContact(c);
-        if(interaction_==Interaction::RunTogether && std::abs(c.primary.velocityX)>5) {
-            SetMotion(cat::animation::Motion::Zoomies,c.ticks,2000,std::min(140.0,std::abs(c.primary.velocityX)));
-            return c.primary.velocityX;
+        facing_=delta<0?-1:1;
+        const double primarySpeed=c.primary.velocityX-c.primary.supportVelocityX;
+        if(interaction_==Interaction::RunTogether && std::abs(primarySpeed)>5) {
+            RecordContact(c);
+            // Box2D adds the supporting window's velocity exactly once. The
+            // paired target already is a real speed, not a second species/body
+            // multiplier applied to the first pet's measured movement.
+            const double multiplier=cat::nutrition::VisualModifiers(state_->nutrition).speed*
+                cat::species::ProfileFor(state_->preferences.character).movementSpeedMultiplier;
+            const double target=std::clamp(primarySpeed,-140.0,140.0)/std::max(.1,multiplier);
+            SetMotion(cat::animation::Motion::Zoomies,c.ticks,2000,std::abs(target));
+            return target;
         }
         const auto motion=interaction_==Interaction::Paw?cat::animation::Motion::ToyPaw:
             interaction_==Interaction::SharedSleep?cat::animation::Motion::Sleep:
             interaction_==Interaction::Sniff?cat::animation::Motion::Sniff:
             interaction_==Interaction::FoodCompetition?cat::animation::Motion::Knead:cat::animation::Motion::Watch;
         SetMotion(motion,c.ticks,2000,0);
+        if(cat::motion::ReadyToStart(own.grounded,own.velocityX-own.supportVelocityX)) RecordContact(c);
         return 0;
     }
 };

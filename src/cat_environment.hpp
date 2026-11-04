@@ -12,7 +12,7 @@ struct CursorInput {
     std::uint64_t nowMs = 0;
     double cursorX = 0, cursorHeight = 0, catX = 0, minX = 0, maxX = 0;
     bool available = false, enabled = false, canStart = false, canContinue = false;
-    // Random draws are consulted only at a new opportunity or the end of sniffing.
+    // Interest controls response timing; a random draw only chooses rare sitting.
     double interest = .5, roll = .5;
 };
 
@@ -45,6 +45,8 @@ public:
 
     CursorOutput Step(const CursorInput& input) {
         const auto before = action_;
+        if (input.enabled && !enabled_) nextStart_ = input.nowMs;
+        enabled_ = input.enabled;
         if (!Valid(input) || !input.enabled || !input.canContinue || !input.available) {
             if (Active()) Cancel(input.nowMs);
             sampled_ = false;
@@ -83,16 +85,18 @@ public:
         }
         if (!Active()) {
             if (!input.canStart || input.nowMs < nextStart_ || distance > 225) return Result(input, before);
-            nextStart_ = input.nowMs + 8000;
-            if (input.roll >= std::clamp(input.interest, 0.0, 1.0)) return Result(input, before);
+            // Enabling cursor play is an explicit request for a response. A
+            // personality lottery followed by an eight-second retry could
+            // make low-curiosity animals ignore a nearby pointer for minutes.
+            episodeInterest_ = std::clamp(input.interest, 0.0, 1.0);
             began_ = input.nowMs; fastMs_ = 0;
             Change(CursorAction::Watch, input.nowMs);
         } else {
             const auto elapsed = input.nowMs - changedAt_;
-            const bool reachable = input.cursorHeight >= 8 && input.cursorHeight <= 95;
+            const bool reachable = input.cursorHeight >= -8 && input.cursorHeight <= 130;
             switch (action_) {
             case CursorAction::Watch:
-                if (elapsed >= 650 && reachable && speed < 240) {
+                if (elapsed >= static_cast<std::uint64_t>(650 + 400*(1-episodeInterest_)) && reachable && speed < 240) {
                     if (distance <= 48 && speed < 60) Change(CursorAction::Sniff, input.nowMs);
                     else if (distance > 48) Change(CursorAction::Hunt, input.nowMs);
                 } else if (elapsed >= 2500) Finish(input.nowMs);
@@ -106,7 +110,7 @@ public:
                 if (!reachable || distance > 60 || speed > 120) Change(CursorAction::Watch, input.nowMs);
                 else if (elapsed >= 1050) {
                     if (input.nowMs >= nextSit_ && input.nowMs - stillSince_ >= 1200 &&
-                            input.cursorHeight <= 55 && input.cursorX >= input.minX && input.cursorX <= input.maxX &&
+                            input.cursorHeight >= 0 && input.cursorHeight <= 55 && input.cursorX >= input.minX && input.cursorX <= input.maxX &&
                             input.roll < .12) {
                         seatX_ = input.cursorX; seatHeight_ = input.cursorHeight;
                         nextSit_ = input.nowMs + 180000;
@@ -142,7 +146,8 @@ private:
     std::uint64_t stillSince_ = 0, nextSit_ = 0;
     double lastX_ = 0, lastHeight_ = 0;
     double stillX_ = 0, stillHeight_ = 0, seatX_ = 0, seatHeight_ = 0;
-    bool sampled_ = false, stillTracked_ = false;
+    double episodeInterest_ = .5;
+    bool sampled_ = false, stillTracked_ = false, enabled_ = false;
     int direction_ = 1;
 
     static bool Valid(const CursorInput& input) {
@@ -151,7 +156,10 @@ private:
             std::isfinite(input.interest) && std::isfinite(input.roll) && input.minX <= input.maxX;
     }
     void Change(CursorAction action, std::uint64_t now) { action_ = action; changedAt_ = now; }
-    void Finish(std::uint64_t now) { action_ = CursorAction::None; nextStart_ = now + 25000; }
+    void Finish(std::uint64_t now) {
+        action_ = CursorAction::None;
+        nextStart_ = now + static_cast<std::uint64_t>(18000 - 6000*episodeInterest_);
+    }
     CursorOutput Result(const CursorInput& input, CursorAction before) {
         CursorOutput output;
         output.action = action_; output.changed = before != action_;
@@ -168,6 +176,67 @@ private:
         return output;
     }
 };
+
+struct CursorMotionState {
+    bool ownsMotion = true, waitingForStop = false;
+    std::uint64_t motionStarted = 0;
+};
+
+// This is the production host adapter, shared with the Box2D integration tests.
+// Action clocks may be rebased by the stop gate or pause handling; another
+// action's clock/identity must instead cancel cursor control without replacing it.
+class CursorSession {
+public:
+    bool Active() const { return planner_.Active(); }
+    CursorAction Action() const { return planner_.Action(); }
+    double Velocity() const { return velocity_; }
+    void AdoptMotion(std::uint64_t started, bool waitingForStop) {
+        motionStarted_ = started; wasWaiting_ = waitingForStop;
+    }
+    void Pause(std::uint64_t elapsedMs, const CursorMotionState& motion) {
+        planner_.Pause(elapsedMs); velocity_ = 0;
+        AdoptMotion(motion.motionStarted, motion.waitingForStop);
+    }
+    CursorOutput Step(CursorInput input, std::uint64_t elapsedMs, const CursorMotionState& motion) {
+        if (Active() && wasWaiting_ && !motion.waitingForStop && motion.ownsMotion)
+            motionStarted_ = motion.motionStarted;
+        const bool owns = motion.ownsMotion && (motion.motionStarted == motionStarted_ ||
+            (wasWaiting_ && motion.waitingForStop));
+        if (Active() && !owns) {
+            planner_.Cancel(input.nowMs); velocity_ = 0; wasWaiting_ = false;
+            return {}; // Keep the interrupting action, including the same named action.
+        }
+        // OFF, missing cursor and manual/busy states are checked before the
+        // braking pause. Otherwise toggling OFF could leave an active session.
+        if (Active() && (!input.enabled || !input.canContinue || !input.available)) {
+            const auto output = planner_.Step(input);
+            velocity_ = 0; wasWaiting_ = false;
+            return output;
+        }
+        if (Active() && motion.waitingForStop) {
+            Pause(elapsedMs, motion);
+            return {planner_.Action(), false, 0, direction_};
+        }
+        wasWaiting_ = false;
+        const auto output = planner_.Step(input);
+        velocity_ = output.velocity;
+        direction_ = output.direction;
+        return output;
+    }
+private:
+    CursorReaction planner_;
+    std::uint64_t motionStarted_ = 0;
+    bool wasWaiting_ = false;
+    double velocity_ = 0;
+    int direction_ = 1;
+};
+
+inline double WindowJumpRiseLimit(double workAreaHeight, double jumpScale) {
+    if (!std::isfinite(workAreaHeight) || !std::isfinite(jumpScale) || jumpScale <= 0) return 0;
+    const double scale = std::clamp(jumpScale, .25, 1.2);
+    const double headroom = std::max(0.0, workAreaHeight - 160 - 45*scale);
+    return std::min(900.0, headroom) * scale;
+}
 
 // A broad finite ledge needs both a landing point and room to brake. Trying a
 // deterministic small set of points allows the physics controller to reject

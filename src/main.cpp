@@ -48,7 +48,7 @@
 #include "cat_hanging_rig.hpp"
 #include "cat_preferences.hpp"
 #include "cat_species.hpp"
-#include "cat_audio.hpp"
+#include <mmsystem.h> // Millisecond animation timing only; no audio playback.
 #include "screen_prank.hpp"
 #include "update_client.hpp"
 #include "update_swap.hpp"
@@ -64,17 +64,21 @@ constexpr wchar_t kTitle[] = L"옆자리 고양이";
 constexpr UINT kTrayMessage = WM_APP + 1;
 constexpr UINT kShowExisting = WM_APP + 2;
 constexpr UINT_PTR kTickTimer = 1;
-constexpr int kFeedHotkey = 1, kSnackHotkey = 2, kHideHotkey = 3, kBoxHotkey = 4;
+constexpr int kFeedHotkey = 1, kSnackHotkey = 2, kHideHotkey = 3;
 constexpr UINT kCharacterCommandBase = 2500, kOutfitCommandBase = 2520;
 bool OutfitAvailable(cat::Outfit outfit);
 bool WinterScarfRecommended();
 constexpr UINT kWorkInterferenceCommand = 2300, kSeasonalEventsCommand = 2301;
-enum Command { FeedCommand = 1010, SnackCommand, StatusCommand, PauseCommand, HideCommand, BackupCommand, FolderCommand, QuitCommand, PunchCommand,
-               JumpCommand, CreamCommand, SilverCommand, EarCommand, TailCommand, UpdateCheckCommand, UpdateViewCommand, UpdateAutomaticCommand,
-               SoundToggleCommand, SoundQuietCommand, SoundNormalCommand, SoundLouderCommand, SoundPreviewCommand,
-               OutfitNoneCommand, OutfitBowCommand, OutfitScarfCommand, OutfitCrownCommand,
-               ToyBallCommand, ToyBoxCommand, ToyClearCommand, LoafCommand, KneadCommand, BellyCommand,
-               ToyPaperBagCommand, ToyCatnipCommand, ToyFishingRodCommand, ToyCushionCommand };
+// Keep the original IDs: retired action, toy and sound IDs are never reused.
+enum Command {
+    FeedCommand = 1010, SnackCommand = 1011, StatusCommand = 1012,
+    PauseCommand = 1013, HideCommand = 1014, BackupCommand = 1015,
+    FolderCommand = 1016, QuitCommand = 1017,
+    CreamCommand = 1020, SilverCommand = 1021,
+    UpdateCheckCommand = 1024, UpdateViewCommand = 1025, UpdateAutomaticCommand = 1026,
+    OutfitNoneCommand = 1032, OutfitBowCommand = 1033,
+    OutfitScarfCommand = 1034, OutfitCrownCommand = 1035
+};
 using Motion = cat::animation::Motion;
 constexpr cat::update::Version kVersion{YEOPJARI_VERSION_MAJOR, YEOPJARI_VERSION_MINOR, YEOPJARI_VERSION_PATCH};
 
@@ -170,6 +174,7 @@ struct WindowPerch {
     bool preparing = false;
     bool startled = false;
     bool sawUnreachableLedge = false;
+    bool walkAfterLanding = false;
     ULONGLONG nextTry = 0, leaveAfter = 0, nextLookDown = 0, nextBalance = 0, observedAt = 0;
     double targetX = 0.0;
 };
@@ -201,20 +206,14 @@ struct App {
     cat::toy::PhysicsBall toyBall;
     cat::toy::Lure toyLure;
     cat::toy::Session toySession;
+    cat::toy::Automatic automaticToy;
     bool toyEngaged = false, toyDispatching = false, toyRewardPending = false;
     Motion toyMotion = Motion::Watch;
     unsigned toyAppliedRevision = 0;
     HWND toyWindow = nullptr;
     Surface toySurface;
     ULONGLONG nextToyAction = 0;
-    cat::audio::Settings soundSettings;
-    cat::audio::Player audio;
-    bool soundSettingsRecovered = false, soundSettingsInvalid = false;
-    bool motionSoundPending = false, motionSoundAutomatic = true, punchSoundAutomatic = true;
-    bool gestureSoundPending = false, gestureSoundAutomatic = true;
-    cat::audio::Cue punchCue = cat::audio::Cue::Punch;
-    ULONGLONG ambientSoundAfter = 0;
-    ULONGLONG nextSoundAfter = 0, nextAutomaticSoundAfter = 0;
+    ULONGLONG updateAnnounceAfter = 0;
     HICON trayIcon = nullptr;
     NOTIFYICONDATAW tray{};
     UINT taskbarCreated = 0;
@@ -250,8 +249,7 @@ struct App {
     cat::physics::Controller physics;
     cat::animation::Locomotion gait;
     bool physicsReady = false, jumpPending = false, jumpLaunched = false;
-    bool waitingForStop = false, stopSoundPending = false, stopSoundAutomatic = false;
-    cat::audio::Cue stopSoundCue = cat::audio::Cue::Pet;
+    bool waitingForStop = false;
     bool preciseTimer = false;
     UINT timerInterval = 0;
     double lastPhysicsTime = 0, landingStrength = 0;
@@ -618,8 +616,7 @@ int UpdateMessage(const wchar_t* text, const wchar_t* title, UINT flags) {
     const bool wasMenuOpen = g.menuOpen;
     g.menuOpen = true;
     g.prank.Clear();
-    g.audio.Stop();
-    const int choice = MessageBoxW(g.window, text, title, flags);
+    const int choice = MessageBoxW(g.window, text, title, flags & ~MB_ICONMASK);
     g.menuOpen = wasMenuOpen;
     return choice;
 }
@@ -742,7 +739,7 @@ INT_PTR CALLBACK UpdateDialogProc(HWND dialog, UINT message, WPARAM wParam, LPAR
 void ShowUpdateDetails() {
     if (!updates.hasUpdate || updates.operation != UpdateState::Operation::None || g.closing || g.menuOpen || updates.applying) return;
     const bool wasMenuOpen = g.menuOpen;
-    g.menuOpen = true; g.prank.Clear(); g.audio.Stop();
+    g.menuOpen = true; g.prank.Clear();
     const auto choice = DialogBoxParamW(g.instance, MAKEINTRESOURCEW(201), g.window, UpdateDialogProc, reinterpret_cast<LPARAM>(&updates.available));
     g.menuOpen = wasMenuOpen;
     if (choice == IDOK) StartUpdateDownload();
@@ -795,11 +792,11 @@ void PollUpdates() {
 bool LoadPet() {
     wchar_t local[MAX_PATH]{};
     if (FAILED(SHGetFolderPathW(nullptr, CSIDL_LOCAL_APPDATA | CSIDL_FLAG_CREATE, nullptr, SHGFP_TYPE_CURRENT, local))) {
-        MessageBoxW(nullptr, L"윈도우 개인 저장 폴더를 찾을 수 없어요. 기록을 잃지 않도록 실행을 멈춥니다.", kTitle, MB_ICONERROR); return false;
+        MessageBoxW(nullptr, L"윈도우 개인 저장 폴더를 찾을 수 없어요. 기록을 잃지 않도록 실행을 멈춥니다.", kTitle, 0); return false;
     }
     g.directory = std::wstring(local) + L"\\YeopjariCat";
     if (!CreateDirectoryW(g.directory.c_str(), nullptr) && GetLastError() != ERROR_ALREADY_EXISTS) {
-        MessageBoxW(nullptr, L"고양이 기록 폴더를 만들 수 없어요. 폴더 접근 권한과 디스크 공간을 확인해 주세요.", kTitle, MB_ICONERROR); return false;
+        MessageBoxW(nullptr, L"고양이 기록 폴더를 만들 수 없어요. 폴더 접근 권한과 디스크 공간을 확인해 주세요.", kTitle, 0); return false;
     }
     g.savePath = g.directory + L"\\pet.ini"; g.backupPath = g.directory + L"\\pet.bak";
     if (ValidSave(g.savePath, g.pet)) { cat::Advance(g.pet, UtcNow()); return true; }
@@ -827,11 +824,11 @@ bool LoadPet() {
         if (Exists(g.savePath)) CopyFileW(g.savePath.c_str(), (g.directory + L"\\pet-unreadable-" + suffix + L".ini").c_str(), TRUE);
         if (Exists(g.backupPath)) CopyFileW(g.backupPath.c_str(), (g.directory + L"\\backup-unreadable-" + suffix + L".ini").c_str(), TRUE);
         std::wstring message = L"기존 고양이 기록과 백업을 읽을 수 없어요. 생일을 바꾸거나 새 고양이로 덮어쓰지 않고 실행을 멈췄어요.\n\n월별 백업 또는 따로 보관한 기록을 확인해 주세요. 기존 파일은 보존했어요.\n\n기록 폴더:\n" + g.directory;
-        MessageBoxW(nullptr, message.c_str(), kTitle, MB_OK | MB_ICONERROR); return false;
+        MessageBoxW(nullptr, message.c_str(), kTitle, MB_OK | 0); return false;
     }
     const auto now = UtcNow();
     if (now < 946684800LL || now > 32503680000LL) {
-        MessageBoxW(nullptr, L"컴퓨터의 날짜를 먼저 확인해 주세요. 정확한 생일을 기록한 다음 함께 살기 시작할게요.", kTitle, MB_ICONWARNING); return false;
+        MessageBoxW(nullptr, L"컴퓨터의 날짜를 먼저 확인해 주세요. 정확한 생일을 기록한 다음 함께 살기 시작할게요.", kTitle, 0); return false;
     }
     g.pet = cat::NewPet(now); g.newlyCreatedPet = true; return true;
 }
@@ -871,83 +868,6 @@ bool SavePreferences(const cat::Preferences& preferences) {
     }
     if (!MoveFileExW(temporary.c_str(), path.c_str(), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) return fail();
     return true;
-}
-
-bool ReadSoundSettings(const std::wstring& path, cat::audio::Settings& settings) {
-    std::string bytes, error;
-    return ReadBytes(path, bytes) && cat::audio::ParseSettings(bytes, settings, error);
-}
-void LoadSoundSettings() {
-    const auto path = g.directory + L"\\sound-settings.ini";
-    const auto backup = g.directory + L"\\sound-settings.bak";
-    if (!ReadSoundSettings(path, g.soundSettings)) {
-        if (ReadSoundSettings(backup, g.soundSettings)) g.soundSettingsRecovered = true;
-        else {
-            g.soundSettings = {};
-            g.soundSettingsInvalid = Exists(path) || Exists(backup);
-            // An unreadable old preference must not unexpectedly unmute a pet.
-            if (g.soundSettingsInvalid) g.soundSettings.enabled = false;
-        }
-    }
-    g.audio.SetSettings(g.soundSettings);
-    for (unsigned index = 0; index < static_cast<unsigned>(cat::audio::Cue::Count); ++index)
-        g.audio.LoadResource(static_cast<cat::audio::Cue>(index), g.instance, 301 + static_cast<int>(index));
-}
-bool SaveSoundSettings(const cat::audio::Settings& settings, bool reportError = true) {
-    const auto path = g.directory + L"\\sound-settings.ini";
-    const auto backup = g.directory + L"\\sound-settings.bak";
-    const auto temporary = path + L".tmp", backupTemporary = backup + L".tmp";
-    const auto bytes = cat::audio::SerializeSettings(settings);
-    auto fail = [&]() {
-        DeleteFileW(temporary.c_str()); DeleteFileW(backupTemporary.c_str());
-        if (reportError) Balloon(L"소리 설정을 저장하지 못했어요", L"현재 소리 설정을 유지해요. 기록 폴더의 권한과 공간을 확인해 주세요.", true);
-        return false;
-    };
-    if (bytes.empty() || !WriteBytes(temporary, bytes)) return fail();
-    cat::audio::Settings previous, previousBackup;
-    const bool currentValid = ReadSoundSettings(path, previous);
-    const bool backupValid = ReadSoundSettings(backup, previousBackup);
-    const auto preserve = [&](const std::wstring& source, const wchar_t* label) {
-        if (!Exists(source)) return true;
-        static std::uint64_t sequence = 0;
-        const auto damaged = g.directory + L"\\" + label + L"-" + std::to_wstring(UtcNow()) + L"-" +
-            std::to_wstring(GetCurrentProcessId()) + L"-" + std::to_wstring(GetTickCount64()) +
-            L"-" + std::to_wstring(++sequence) + L".ini";
-        return CopyFileW(source.c_str(), damaged.c_str(), TRUE) != FALSE;
-    };
-    if (!currentValid && !preserve(path, L"sound-settings-damaged")) return fail();
-    if (!backupValid && !preserve(backup, L"sound-settings-backup-damaged")) return fail();
-    if (currentValid || !backupValid) {
-        std::string checkpoint = bytes;
-        if (currentValid && !ReadBytes(path, checkpoint)) return fail();
-        if (!WriteBytes(backupTemporary, checkpoint) ||
-            !MoveFileExW(backupTemporary.c_str(), backup.c_str(), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) return fail();
-    }
-    if (!MoveFileExW(temporary.c_str(), path.c_str(), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) return fail();
-    return true;
-}
-void PlayCatSound(cat::audio::Cue cue, bool automatic = false) {
-    if (!g.initialized || g.hidden || g.menuOpen || g.dragging || g.closing || updates.applying || g.motion == Motion::BellyRoll) return;
-    if (g.waitingForStop) {
-        g.stopSoundPending = true; g.stopSoundCue = cue; g.stopSoundAutomatic = automatic;
-        return;
-    }
-    const auto ticks = GetTickCount64();
-    if (automatic && ticks < g.ambientSoundAfter) return;
-    if (g.audio.Play(cue, ticks, automatic)) {
-        g.nextSoundAfter = ticks + cat::audio::RateGate::GlobalGapMs;
-        if (automatic) g.nextAutomaticSoundAfter = ticks + cat::audio::RateGate::AutomaticGapMs;
-    }
-}
-void ChangeSoundSettings(bool toggle, unsigned volume = 25) {
-    if (g.closing || updates.applying || g.menuOpen) return;
-    auto settings = g.soundSettings;
-    if (toggle) settings.enabled = !settings.enabled;
-    else settings.volume = volume;
-    if (!SaveSoundSettings(settings)) return;
-    g.soundSettings = settings;
-    g.soundSettingsRecovered = g.soundSettingsInvalid = false;
-    g.audio.SetSettings(settings);
 }
 
 void LoadInteractionSettings() {
@@ -1102,9 +1022,9 @@ bool LoadAtlasResource(int resourceId, SpriteAtlas& sheet, int columns = 4, int 
     // cropped texture, never allocates a full atlas on every animation frame.
     for (int index = 0; index < frameCount; ++index) {
         const bool needsSkin = resourceId == 112 || resourceId == 111 || resourceId == 110 || resourceId == 109 || resourceId == 107 ||
-            (resourceId == 105 && (index == 0 || index == 4)) ||
-            ((resourceId == 101 || resourceId == 103) && (index == 4 || index == 5 || index == 6)) ||
-            ((resourceId == 102 || resourceId == 104) && (index == 1 || index == 2));
+            (resourceId == 105 && (index == 0 || index == 2 || index == 4 || index == 6)) ||
+            ((resourceId == 101 || resourceId == 103) && index >= 4) ||
+            ((resourceId == 102 || resourceId == 104) && (index == 0 || index == 1 || index == 2 || index == 7));
         if (!needsSkin) continue;
         const auto& source = frames[index];
         auto& skin = sheet.skins[index];
@@ -1201,7 +1121,7 @@ void ResetMovement() {
     g.physicsReady = true;
     g.gait.Reset();
     g.jumpPending = g.jumpLaunched = false;
-    g.waitingForStop = false; g.stopSoundPending = false;
+    g.waitingForStop = false;
     g.landedAt = 0;
     g.facing = g.direction;
     g.lastPhysicsTime = MotionClock();
@@ -1262,9 +1182,6 @@ void KeepOnWorkArea(bool reposition = false) {
     if (changed || dpiChanged || reposition || !g.physicsReady) ResetMovement();
 }
 double Random(double low, double high) { return std::uniform_real_distribution<double>(low, high)(g.random); }
-bool VoiceChance(double probability) {
-    return Random(0, 1) < std::clamp(probability * cat::species::ProfileFor(g.preferences.character).talkFrequency, 0.0, 1.0);
-}
 void SetMotion(Motion motion, ULONGLONG duration) {
     if (!g.lifeDispatching) {
         g.lifeSequenceCount = 0; g.smallBoxEvent = false; g.lifeCrossing = {};
@@ -1278,7 +1195,6 @@ void SetMotion(Motion motion, ULONGLONG duration) {
         g.walkingMotion = g.motion;
     g.waitingForStop = g.physicsReady && cat::motion::NeedsStop(motion,
         g.physics.CurrentPose().grounded, WalkingVelocity(g.physics.CurrentPose()), g.perch.transitioning);
-    g.stopSoundPending = false;
     const auto ticks = GetTickCount64(); g.motion = motion; g.motionStart = ticks; g.nextDecision = ticks + duration;
     if (!g.toyDispatching && g.toyEngaged) {
         g.toyEngaged = false;
@@ -1287,13 +1203,10 @@ void SetMotion(Motion motion, ULONGLONG duration) {
         g.nextToyAction = ticks + duration + 1500;
     }
     g.punchHits = 0;
-    g.motionSoundPending = false;
-    g.gestureSoundPending = false;
     g.jumpPending = motion == Motion::Jump || motion == Motion::Pounce;
     g.jumpLaunched = false;
     g.approachingToy = false; g.toyContact = false;
     g.approachingUser = false; g.memorySequenceCount = 0;
-    if (motion == Motion::Sleep || motion == Motion::BellyRoll || g.waitingForStop) g.audio.Stop();
     RefreshAnimationTimer();
 }
 struct PerchCandidate { HWND hwnd = nullptr; RECT rect{}; double score = 0.0; };
@@ -1303,12 +1216,15 @@ double PerchJumpScale() {
         cat::nutrition::VisualModifiers(g.nutrition).jump;
 }
 double PerchClearance() { return 45 * PerchJumpScale(); }
+double PerchRiseLimit() {
+    return cat::environment::WindowJumpRiseLimit((g.work.bottom - g.work.top) / g.dpiScale, PerchJumpScale());
+}
 
 bool PlanPerchLanding(const RECT& rect, double& target) {
     const double left = (std::max(rect.left, g.work.left) - g.work.left) / g.dpiScale;
     const double right = (std::min(rect.right, g.work.right) - g.work.left) / g.dpiScale;
     const double height = (g.work.bottom - rect.top) / g.dpiScale;
-    if (height - g.physics.CurrentPose().lift > 520 * PerchJumpScale())
+    if (height - g.physics.CurrentPose().lift > PerchRiseLimit())
         return false;
     return cat::environment::ChooseLanding(g.physics.CurrentPose().x, left, right,
         [&](double x) { return g.physics.CanLaunchToPlatform(left, right, height, x, PerchClearance()); }, target);
@@ -1350,7 +1266,7 @@ BOOL CALLBACK CollectPerchWindows(HWND hwnd, LPARAM parameter) {
     if (!QueryPerchRect(hwnd, rect)) return TRUE;
     double targetX = 0;
     if (!PlanPerchLanding(rect, targetX)) {
-        if ((g.work.bottom - rect.top) / g.dpiScale - g.physics.CurrentPose().lift > 520 * PerchJumpScale())
+        if ((g.work.bottom - rect.top) / g.dpiScale - g.physics.CurrentPose().lift > PerchRiseLimit())
             g.perch.sawUnreachableLedge = true;
         return TRUE;
     }
@@ -1386,6 +1302,7 @@ void CancelPerch() {
     g.perch.active = g.perch.transitioning = g.perch.preparing = false;
     g.perch.landingOnWindow = false;
     g.perch.startled = false;
+    g.perch.walkAfterLanding = false;
     g.perch.rect = {};
     if (g.physicsReady) g.physics.RemovePlatform();
 }
@@ -1423,6 +1340,7 @@ void BeginPerchTransition(HWND hwnd, const RECT& rect, bool landingOnWindow) {
     }
     if (g.brain) g.brain->Interrupt(ticks);
     g.perch.active = false;
+    g.perch.walkAfterLanding = false;
     g.perch.transitioning = true;
     g.perch.landingOnWindow = landingOnWindow;
     g.perch.preparing = landingOnWindow;
@@ -1439,6 +1357,7 @@ void FinishPerchTransition(ULONGLONG ticks) {
     g.perch.transitioning = g.perch.preparing = false;
     g.perch.sourceHwnd = nullptr; g.perch.sourceRect = {};
     g.perch.active = landedOnWindow;
+    g.perch.walkAfterLanding = landedOnWindow;
     if (landedOnWindow) {
         g.perch.leaveAfter = ticks + static_cast<ULONGLONG>(Random(22000, 52000));
         g.perch.nextTry = ticks + static_cast<ULONGLONG>(Random(18000, 35000));
@@ -1454,9 +1373,8 @@ void FinishPerchTransition(ULONGLONG ticks) {
     }
     g.physics.SetTargetVelocity(0);
     SetMotion(g.perch.startled ? Motion::Startled : Motion::Watch,
-        static_cast<ULONGLONG>(Random(1700, 3000)));
+        static_cast<ULONGLONG>(landedOnWindow ? 1000 : Random(1700, 3000)));
     g.perch.startled = false;
-    if (landedOnWindow && VoiceChance(.38)) PlayCatSound(cat::audio::Cue::Greeting, true);
 }
 
 void AbortPlannedPerchTransfer(ULONGLONG ticks) {
@@ -1524,7 +1442,6 @@ void UpdatePerchTransition(ULONGLONG ticks, double elapsed) {
                     (g.work.bottom - g.perch.rect.top) / g.dpiScale, g.perch.targetX, PerchClearance())) {
                 g.jumpLaunched = true;
                 g.perch.sourceHwnd = nullptr; g.perch.sourceRect = {};
-                PlayCatSound(cat::audio::Cue::Jump, true);
             } else {
                 AbortPlannedPerchTransfer(ticks);
                 return;
@@ -1547,7 +1464,6 @@ void MaintainPerch(ULONGLONG ticks) {
     RECT current{};
     if (!QueryPerchRect(g.perch.hwnd, current)) {
         g.perch.startled = true;
-        PlayCatSound(cat::audio::Cue::Gesture, true);
         BeginPerchTransition(nullptr, {}, false);
         return;
     }
@@ -1559,6 +1475,18 @@ void MaintainPerch(ULONGLONG ticks) {
     g.perch.rect = current;
     g.perch.observedAt = ticks;
     if (g.physics.Hanging()) return; // Keep its real support tracked; do not start another action.
+    if (g.perch.walkAfterLanding && (g.motion != Motion::Watch || g.pet.roamingPaused))
+        g.perch.walkAfterLanding = false;
+    if (g.perch.walkAfterLanding && !g.waitingForStop && !EnvironmentBusy() &&
+            !g.lifeSequenceCount && !g.lifeCrossing.Active() && !g.toyEngaged &&
+            g.physics.OnPlatform() && ticks >= g.nextDecision) {
+        g.perch.walkAfterLanding = false;
+        const auto bounds = MovementBoundsLogical();
+        g.direction = g.physics.CurrentPose().x < (bounds.first + bounds.second)*.5 ? 1 : -1;
+        const bool run = bounds.second - bounds.first >= 250 && Random(0, 1) < .35;
+        g.speed = (run ? 90 : 42) * g.dpiScale;
+        SetMotion(run ? Motion::Zoomies : Motion::Walk, run ? 2100 : 4200);
+    }
     const bool available = !EnvironmentBusy() && !g.lifeSequenceCount && !g.lifeCrossing.Active() &&
         !g.toyEngaged && !g.waitingForStop && g.physics.OnPlatform() &&
         (g.motion == Motion::Idle || g.motion == Motion::Watch || g.motion == Motion::Walk || g.motion == Motion::Balance);
@@ -1586,14 +1514,14 @@ void MaybeVisitWindow(ULONGLONG ticks) {
     if (g.motion != Motion::Idle && g.motion != Motion::Walk && g.motion != Motion::Watch && g.motion != Motion::Groom) return;
     PerchCandidate candidate;
     if (!FindPerch(candidate)) {
-        g.perch.nextTry = ticks + static_cast<ULONGLONG>(Random(90000, 180000));
+        g.perch.nextTry = ticks + static_cast<ULONGLONG>(Random(30000, 70000));
         if (g.preferences.character == cat::Character::Munchkin && g.perch.sawUnreachableLedge && Random(0, 1) < .3)
             SetMotion(Motion::LookDown, 1700); // Assess an unreachable ledge without a fake hop.
         return;
     }
     // It should feel like a rare bit of cat logic, not a constant window tour.
     if (Random(0, 1) > .58) {
-        g.perch.nextTry = ticks + static_cast<ULONGLONG>(Random(80000, 180000));
+        g.perch.nextTry = ticks + static_cast<ULONGLONG>(Random(30000, 70000));
         return;
     }
     BeginPerchTransition(candidate.hwnd, candidate.rect, true);
@@ -1787,9 +1715,14 @@ void DrawPet(Graphics& graphics, int frame, REAL center, REAL bottom, REAL scale
                                          : RectF(-width / 2, -height, width, height);
     ImageAttributes attrs; attrs.SetWrapMode(WrapModeTileFlipXY);
     const auto shape = frame == 16 ? cat::deform::Shape::Airborne :
+        frame == 8 ? cat::deform::Shape::Stretch :
+        frame == 15 ? cat::deform::Shape::TailChase :
+        frame == 7 ? cat::deform::Shape::Eating :
+        frame == 9 || frame == 10 ? cat::deform::Shape::Grooming :
+        frame == 18 ? cat::deform::Shape::Treat :
         frame == 25 ? cat::deform::Shape::ReclineBack :
         frame == 24 || frame == 6 || frame >= 27 ? cat::deform::Shape::ReclineSide : cat::deform::Shape::Sitting;
-    const bool articulated = newArt || frame == 4 || frame == 6 || frame == 9 || frame == 10 || frame == 16 || frame >= 24;
+    const bool articulated = newArt || frame == 4 || frame == 6 || frame == 7 || frame == 8 || frame == 9 || frame == 10 || frame == 15 || frame == 16 || frame == 18 || frame >= 24;
     if (articulated) {
         auto& skin = atlas->skins[cell];
         if (PrepareSkin(skin, frame, joints, shape, bodyOnly,character)) {
@@ -2060,10 +1993,8 @@ void Render() {
     const REAL scale = static_cast<REAL>(110.0 * g.dpiScale * cat::GrowthScale(g.pet.bornUtc, now) / CurrentArt().base.standingHeight);
     const auto physical = g.physics.RenderPose();
     const auto actionElapsed = ticks >= g.motionStart ? ticks - g.motionStart : 0;
-    Motion displayed = g.motion;
-    // Keep the last walking gait through the short braking distance.
-    if (g.waitingForStop || ((displayed == Motion::Idle || displayed == Motion::Watch) && physical.grounded && std::abs(WalkingVelocity(physical)) > 2))
-        displayed = g.walkingMotion;
+    const Motion displayed = cat::motion::DisplayedMotion(g.motion,g.walkingMotion,
+        physical.grounded,g.waitingForStop,WalkingVelocity(physical));
     auto pose = cat::animation::Evaluate(displayed, actionElapsed, ticks, g.facing, g.gait);
     if(displayed==Motion::Sleep) pose=cat::animation::EvaluateSleep(static_cast<unsigned>(g.motionStart%6),actionElapsed,ticks,g.facing,g.perch.active);
     if (displayed == Motion::Jump || displayed == Motion::Pounce) pose.lift = 0;
@@ -2073,24 +2004,15 @@ void Render() {
     } else if (!physical.grounded) {
         // Box2D owns height and landing time. Art follows the actual vertical
         // velocity, so changing weight or interrupting a jump cannot desync it.
-        pose = {};
-        pose.groundContact = false;
-        pose.flip = g.facing < 0;
-        if (g.airborneMotion == Motion::Pounce) {
-            pose.frame = 1;
-            pose.scaleX = 1.04;
-            pose.angle = -g.facing * std::clamp(physical.velocityY / 22.0, -6.0, 6.0);
-        } else {
-            pose = cat::animation::AirbornePose(physical.velocityY, g.facing);
-        }
+        pose = cat::animation::AirbornePose(physical.velocityY, g.facing);
     } else if (!g.perch.preparing && !g.waitingForStop && (g.jumpLaunched || !g.jumpPending) &&
-            (g.motion == Motion::Jump || g.motion == Motion::Pounce)) {
-        pose = {}; pose.frame = 14; pose.flip = g.facing < 0;
+            (displayed == Motion::Jump || displayed == Motion::Pounce)) {
+        pose = cat::animation::LandingPose(g.landedAt && ticks>=g.landedAt ? ticks-g.landedAt : 280,
+            g.landingStrength,g.facing);
     }
-    if (!pose.bellyRig && g.landedAt && ticks >= g.landedAt && ticks - g.landedAt < 280) {
-        const double settle = std::sin((ticks - g.landedAt) / 280.0 * cat::animation::kPi) * g.landingStrength;
-        pose.scaleX *= 1 + .035 * settle;
-        pose.scaleY *= 1 - .085 * settle;
+    if (!pose.bellyRig && pose.frame==4 && physical.grounded && g.landedAt && ticks>=g.landedAt) {
+        pose.joints.crouch=std::max(pose.joints.crouch,
+            cat::animation::LandingPose(ticks-g.landedAt,g.landingStrength,g.facing).joints.crouch);
     }
     Graphics graphics(g.surface.image.get());
     graphics.SetCompositingMode(CompositingModeSourceCopy); graphics.Clear(Color(0, 0, 0, 0));
@@ -2170,22 +2092,18 @@ void Speak(const std::wstring& message, ULONGLONG duration = 2600) { g.bubble = 
 #include "companion_host.hpp"
 void MaybeAnnounceUpdate(ULONGLONG ticks) {
     cat::update::NoticeContext context;
-    context.now = ticks; context.notBefore = g.ambientSoundAfter;
+    context.now = ticks; context.notBefore = g.updateAnnounceAfter;
     context.enabled = updates.automatic && updates.hasUpdate;
     context.visible = !g.hidden;
     context.calm = g.motion == Motion::Idle || g.motion == Motion::Watch || g.motion == Motion::Walk;
     context.busy = g.closing || g.menuOpen || g.dragging || updates.applying ||
         updates.operation != UpdateState::Operation::None || g.prank.Active() ||
-        !g.physics.CurrentPose().grounded || g.audio.IsPlaying() ||
-        (g.soundSettings.enabled && g.soundSettings.volume > 0 &&
-         (ticks < g.nextSoundAfter || ticks < g.nextAutomaticSoundAfter));
+        !g.physics.CurrentPose().grounded;
     context.bubbleVisible = ticks < g.bubbleUntil;
     if (!updates.announcement.Ready(context)) return;
     Speak(cat::update::kCatUpdateMessage, 6500);
-    PlayCatSound(cat::audio::Cue::Greeting, true);
     updates.announcement.MarkAnnounced();
-    // Optional notice history is independent of birthday, nutrition and sound
-    // preferences. An unwritable history must not interrupt the desktop pet.
+    // Optional notice history is independent of birthday and nutrition records. An unwritable history must not interrupt the desktop pet.
     const std::wstring path = g.directory + L"\\update-notice.ini", temporary = path + L".tmp";
     if (!WriteBytes(temporary, updates.announcement.Serialize()) ||
         !MoveFileExW(temporary.c_str(), path.c_str(), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH))
@@ -2210,7 +2128,6 @@ void Care(bool snack) {
             static constexpr const wchar_t* replies[]{L"배불러…\n조금 이따 먹을래", L"지금은 배가 빵빵해 ♡", L"조금만 쉬었다 먹을래"};
             Speak(replies[std::uniform_int_distribution<int>(0, 2)(g.random)], 3400);
         } else Speak(L"아직 소화 중이야 ♡", 2600);
-        PlayCatSound(cat::audio::Cue::Refuse);
         Render();
         return;
     }
@@ -2225,9 +2142,6 @@ void Care(bool snack) {
     g.nextCareReply = ticks + 6500;
     SetMotion(snack ? Motion::Treat : Motion::Eat, snack ? cat::animation::kTreatDurationMs : 3300);
     Speak(snack ? L"츄르다! 할짝할짝 ♡" : L"냠냠, 잘 먹을게 ♡", 3000);
-    static constexpr cat::audio::Cue mealCues[]{cat::audio::Cue::Meal, cat::audio::Cue::Meal,
-        cat::audio::Cue::Meal, cat::audio::Cue::MealFish, cat::audio::Cue::MealNogari};
-    PlayCatSound(snack ? cat::audio::Cue::Treat : mealCues[std::uniform_int_distribution<int>(0, 4)(g.random)]);
     SavePet(); Render();
 }
 void MaybeAskForFood(ULONGLONG ticks) {
@@ -2241,15 +2155,13 @@ void MaybeAskForFood(ULONGLONG ticks) {
     if (!request) return;
     static constexpr const wchar_t* requests[]{L"냥… 밥 조금 줄래?", L"배가 꼬르륵… 밥 줄래?", L"밥 먹고 같이 쉬자 ♡"};
     Speak(requests[std::uniform_int_distribution<int>(0, 2)(g.random)], 4200);
-    PlayCatSound(g.nutrition.fullness <= 25 ? cat::audio::Cue::FoodRequest : cat::audio::Cue::Hungry, true);
     SavePet(false); // Persist the two-hour request cooldown across restarts.
 }
 void ToggleHidden() {
     g.hidden = !g.hidden;
     g.prank.Clear();
-    g.audio.Stop();
     if (g.hidden) { ShowWindow(g.window, SW_HIDE); if (g.toyWindow) ShowWindow(g.toyWindow, SW_HIDE); }
-    else { g.foodRequestAfter = std::max(g.foodRequestAfter, GetTickCount64() + 30000); g.ambientSoundAfter = std::max(g.ambientSoundAfter, GetTickCount64() + 30000); KeepOnWorkArea(); Render(); ShowWindow(g.window, SW_SHOWNOACTIVATE); SetWindowPos(g.window, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE); }
+    else { g.foodRequestAfter = std::max(g.foodRequestAfter, GetTickCount64() + 30000); g.updateAnnounceAfter = std::max(g.updateAnnounceAfter, GetTickCount64() + 30000); KeepOnWorkArea(); Render(); ShowWindow(g.window, SW_SHOWNOACTIVATE); SetWindowPos(g.window, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE); }
     RefreshAnimationTimer();
 }
 const wchar_t* PrimaryPersonalityLabel() {
@@ -2258,33 +2170,14 @@ const wchar_t* PrimaryPersonalityLabel() {
     return g.brain ? cat::behavior::ArchetypeName(g.brain->GetArchetype()) : L"시크냥";
 }
 const wchar_t* PersonalityLabel() { return PrimaryPersonalityLabel(); }
-void StartPunch(bool forced) {
+void StartPunch() {
     if (g.hidden) ToggleHidden();
     // A paw contact effect requires the cat to be standing at its drawn feet.
     if (g.perch.transitioning || !g.physics.CurrentPose().grounded) return;
     g.prank.Clear();
-    if (forced && g.brain) g.brain->MarkPunch(GetTickCount64());
     g.direction = g.centerX < (g.work.left + g.work.right) / 2.0 ? 1 : -1;
     g.bubbleUntil = 0;
     SetMotion(Motion::Punch, cat::animation::kPunchDurationMs);
-    g.punchSoundAutomatic = !forced;
-    g.punchCue = Random(0, 1) < .5 ? cat::audio::Cue::Punch : cat::audio::Cue::PunchSecond;
-}
-void StartJump() {
-    if (g.hidden) ToggleHidden();
-    if (g.perch.transitioning || !g.physics.CurrentPose().grounded) return;
-    if (g.brain) g.brain->Interrupt(GetTickCount64());
-    g.prank.Clear(); g.bubbleUntil = 0; g.speed = 0;
-    SetMotion(Motion::Jump, cat::animation::kJumpDurationMs);
-    g.motionSoundPending = true; g.motionSoundAutomatic = false;
-}
-void StartGesture(Motion motion) {
-    if (g.hidden) ToggleHidden();
-    if (g.perch.transitioning || !g.physics.CurrentPose().grounded) return;
-    if (g.brain) g.brain->Interrupt(GetTickCount64());
-    g.prank.Clear(); g.bubbleUntil = 0; g.speed = 0;
-    SetMotion(motion, motion == Motion::EarFlick ? cat::animation::kEarFlickDurationMs : cat::animation::kTailRaiseDurationMs);
-    g.gestureSoundPending = true; g.gestureSoundAutomatic = false;
 }
 void SelectCharacter(cat::Character character) {
     if (!cat::IsValid(character)) return;
@@ -2302,7 +2195,6 @@ void SelectCharacter(cat::Character character) {
     if (previous) DestroyIcon(previous);
     UpdateTrayTip();
     Speak(cat::CharacterName(character), 2200);
-    PlayCatSound(cat::audio::Cue::Greeting);
     Render();
 }
 
@@ -2314,17 +2206,17 @@ void SelectOutfit(cat::Outfit outfit) {
     g.preferences = selected;
     g.preferencesRecovered = g.preferencesInvalid = false;
     Speak(cat::OutfitName(outfit), 2200);
-    PlayCatSound(cat::audio::Cue::Greeting);
     Render();
 }
 
 void PlaceToy(ToyKind toy) {
-    if (g.hidden) ToggleHidden();
+    if (g.hidden && toy!=ToyKind::None) return;
     const auto ticks=GetTickCount64();
     if (g.brain) g.brain->Interrupt(ticks);
     g.toy = toy;
     g.toyEngaged=false; g.approachingToy=false; g.toyContact=false;
-    g.toyRewardPending=toy!=ToyKind::None;
+    // Items now appear through autonomous events, never through user care.
+    g.toyRewardPending=false;
     g.toyLure={};
     if (toy == ToyKind::None) {
         g.toySession.Cancel();
@@ -2361,7 +2253,6 @@ void PlaceToy(ToyKind toy) {
     default: break;
     }
     Speak(message,2200);
-    PlayCatSound(cat::audio::Cue::Greeting);
     Render();
 }
 bool CursorNear(POINT* position = nullptr) {
@@ -2375,35 +2266,20 @@ bool CursorNear(POINT* position = nullptr) {
 }
 
 struct CursorInteraction {
-    cat::environment::CursorReaction planner;
+    cat::environment::CursorSession session;
     Motion motion = Motion::Watch;
-    ULONGLONG motionStart = 0;
-    double velocity = 0;
-    bool wasWaitingForStop = false;
 } cursorInteraction;
 
-bool EnvironmentBusy() { return cursorInteraction.planner.Active(); }
-double CursorReactionVelocity() { return cursorInteraction.velocity; }
+bool EnvironmentBusy() { return cursorInteraction.session.Active(); }
+double CursorReactionVelocity() { return cursorInteraction.session.Velocity(); }
 
 void PauseCursorReaction(ULONGLONG elapsedMs) {
-    cursorInteraction.planner.Pause(elapsedMs);
-    cursorInteraction.motionStart = g.motionStart;
-    cursorInteraction.velocity = 0;
-    cursorInteraction.wasWaitingForStop = g.waitingForStop;
+    cursorInteraction.session.Pause(elapsedMs,
+        {g.motion == cursorInteraction.motion, g.waitingForStop, g.motionStart});
 }
 
 void UpdateCursorReaction(ULONGLONG ticks, ULONGLONG elapsedMs) {
     auto& interaction = cursorInteraction;
-    if (interaction.planner.Active() && interaction.wasWaitingForStop && !g.waitingForStop &&
-            g.motion == interaction.motion) interaction.motionStart = g.motionStart;
-    interaction.wasWaitingForStop = g.waitingForStop;
-    if (interaction.planner.Active() && g.waitingForStop && g.motion == interaction.motion) {
-        PauseCursorReaction(elapsedMs);
-        return;
-    }
-    bool interrupted = interaction.planner.Active() &&
-        (g.motion != interaction.motion || g.motionStart != interaction.motionStart);
-    if (interrupted) { interaction.planner.Cancel(ticks); interaction.velocity = 0; }
     cat::environment::CursorInput input;
     input.nowMs = ticks;
     input.enabled = WorkInterferenceEnabled();
@@ -2413,9 +2289,9 @@ void UpdateCursorReaction(ULONGLONG ticks, ULONGLONG elapsedMs) {
         !g.perch.transitioning && !g.lifeSequenceCount && !g.lifeCrossing.Active() && !g.physics.Hanging() &&
         !g.approachingToy && !g.toyEngaged && !g.approachingUser &&
         !g.memorySequenceCount && g.pendingCare < 0;
-    input.canStart = input.canContinue && !interrupted && !g.waitingForStop && !g.companionModel.Busy() &&
-        std::abs(WalkingVelocity(physical)) < 2 &&
-        (g.motion == Motion::Idle || g.motion == Motion::Watch);
+    input.canStart = input.canContinue && !g.waitingForStop && !g.companionModel.Busy() &&
+        (g.motion == Motion::Idle || g.motion == Motion::Watch || g.motion == Motion::Walk ||
+         g.motion == Motion::Stalk || g.motion == Motion::Loaf);
     POINT cursor{};
     input.available = GetCursorPos(&cursor) && MonitorFromPoint(cursor, MONITOR_DEFAULTTONULL) == g.monitor;
     input.cursorX = (cursor.x - g.work.left) / g.dpiScale;
@@ -2426,8 +2302,8 @@ void UpdateCursorReaction(ULONGLONG ticks, ULONGLONG elapsedMs) {
     input.interest = (g.brain ? g.brain->GetPersonality().curiosity : .5) *
         cat::species::ProfileFor(g.preferences.character).cursorInterest;
     input.roll = Random(0, 1);
-    const auto output = interaction.planner.Step(input);
-    interaction.velocity = output.velocity;
+    const auto output = interaction.session.Step(input, elapsedMs,
+        {g.motion == interaction.motion, g.waitingForStop, g.motionStart});
     if (output.changed) {
         using Action = cat::environment::CursorAction;
         switch (output.action) {
@@ -2438,17 +2314,13 @@ void UpdateCursorReaction(ULONGLONG ticks, ULONGLONG elapsedMs) {
         case Action::Abandon: interaction.motion = Motion::EarFlick; break;
         default: interaction.motion = Motion::Watch; break;
         }
-        // A manual action takes precedence when it ends the observation.
-        if (output.action != Action::None || !interrupted) {
-            SetMotion(interaction.motion, output.action == Action::None ? 1800 : 8000);
-            interaction.motionStart = g.motionStart;
-        }
+        SetMotion(interaction.motion, output.action == Action::None ? 1800 : 8000);
+        interaction.session.AdoptMotion(g.motionStart, g.waitingForStop);
         if (output.action == Action::Paw) {
             Remember(cat::memory::Event::Play);
-            PlayCatSound(cat::audio::Cue::Gesture, true);
         }
     }
-    if (interaction.planner.Active()) g.direction = output.direction;
+    if (interaction.session.Active()) g.direction = output.direction;
 }
 
 void PetCat() {
@@ -2463,7 +2335,6 @@ void PetCat() {
     const double familiarity = g.memory.enabled() ? .3 + .7 * cat::memory::Summarize(g.memory.state).bond / 100.0 : 1.0;
     if (Random(0, 1) < (.15 + sociability * .6) * familiarity) {
         Speak(L"골골… ♡", 1800); SetMotion(Motion::Idle, 1800);
-        PlayCatSound(cat::audio::Cue::Pet);
     } else {
         g.bubbleUntil = 0; SetMotion(Motion::Watch, 2200);
     }
@@ -2504,7 +2375,7 @@ void ExportBackup() {
     dialog.lpstrFilter = L"고양이 성장 기록 (*.ini)\0*.ini\0모든 파일\0*.*\0"; dialog.lpstrFile = file; dialog.nMaxFile = ARRAYSIZE(file);
     dialog.lpstrDefExt = L"ini"; dialog.lpstrTitle = L"고양이의 생일과 기록을 안전한 곳에 보관하기";
     dialog.Flags = OFN_OVERWRITEPROMPT | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR;
-    g.menuOpen = true; g.prank.Clear(); g.audio.Stop();
+    g.menuOpen = true; g.prank.Clear();
     const BOOL selected = GetSaveFileNameW(&dialog);
     g.menuOpen = false;
     if (selected) {
@@ -2525,7 +2396,7 @@ void ExportBackup() {
             UpdateMessage(L"지금 사용 중인 기록 파일 대신 다른 폴더나 파일 이름을 선택해 주세요.", kTitle, MB_OK | MB_ICONINFORMATION); return;
         }
         const std::wstring temporary = std::wstring(file) + L".tmp";
-        if (WriteBytes(temporary, cat::Serialize(g.pet)) && MoveFileExW(temporary.c_str(), file, MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) Balloon(L"기록을 보관했어요", L"이 파일은 첫 동물의 생일·성장 기록이에요. 두 번째 동물·친밀도·기분·의상·소리까지 옮기려면 기록 폴더 전체를 함께 보관해 주세요.");
+        if (WriteBytes(temporary, cat::Serialize(g.pet)) && MoveFileExW(temporary.c_str(), file, MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) Balloon(L"기록을 보관했어요", L"이 파일은 첫 동물의 생일·성장 기록이에요. 두 번째 동물·친밀도·기분·의상·설정까지 옮기려면 기록 폴더 전체를 함께 보관해 주세요.");
         else UpdateMessage(L"선택한 위치에 백업하지 못했어요. 다른 폴더를 선택해 주세요.", kTitle, MB_OK | MB_ICONERROR);
     }
 }
@@ -2547,39 +2418,20 @@ void RunCommand(UINT command) {
     case BackupCommand: ExportBackup(); break;
     case FolderCommand: ShellExecuteW(g.window, L"open", g.directory.c_str(), nullptr, nullptr, SW_SHOWNORMAL); break;
     case QuitCommand: PostMessageW(g.window, WM_CLOSE, 0, 0); break;
-    case PunchCommand: StartPunch(true); Render(); break;
-    case JumpCommand: StartJump(); Render(); break;
     case CreamCommand: SelectCharacter(cat::Character::Cream); break;
     case SilverCommand: SelectCharacter(cat::Character::SilverTabby); break;
     case OutfitNoneCommand: SelectOutfit(cat::Outfit::None); break;
     case OutfitBowCommand: SelectOutfit(cat::Outfit::BowTie); break;
     case OutfitScarfCommand: SelectOutfit(cat::Outfit::Scarf); break;
     case OutfitCrownCommand: SelectOutfit(cat::Outfit::Crown); break;
-    case ToyBallCommand: PlaceToy(ToyKind::Ball); break;
-    case ToyBoxCommand: PlaceToy(ToyKind::Box); break;
-    case ToyPaperBagCommand: PlaceToy(ToyKind::PaperBag); break;
-    case ToyCatnipCommand: PlaceToy(ToyKind::Catnip); break;
-    case ToyFishingRodCommand: PlaceToy(ToyKind::FishingRod); break;
-    case ToyCushionCommand: PlaceToy(ToyKind::Cushion); break;
-    case ToyClearCommand: PlaceToy(ToyKind::None); break;
-    case LoafCommand: if (g.perch.transitioning || !g.physics.CurrentPose().grounded) break; if (g.brain) g.brain->Interrupt(GetTickCount64()); SetMotion(Motion::Loaf, 9000); Render(); break;
-    case KneadCommand: if (g.perch.transitioning || !g.physics.CurrentPose().grounded) break; if (g.brain) g.brain->Interrupt(GetTickCount64()); SetMotion(Motion::Knead, 5200); PlayCatSound(cat::audio::Cue::Pet); Render(); break;
-    case BellyCommand: if (g.perch.transitioning || !g.physics.CurrentPose().grounded) break; if (g.brain) g.brain->Interrupt(GetTickCount64()); SetMotion(Motion::BellyRoll, 4400); Render(); break;
-    case EarCommand: StartGesture(Motion::EarFlick); Render(); break;
-    case TailCommand: StartGesture(Motion::TailRaise); Render(); break;
     case UpdateCheckCommand: StartUpdateCheck(true); break;
     case UpdateViewCommand: ShowUpdateDetails(); break;
     case UpdateAutomaticCommand: ToggleAutomaticUpdates(); break;
-    case SoundToggleCommand: ChangeSoundSettings(true); break;
-    case SoundQuietCommand: ChangeSoundSettings(false, 25); break;
-    case SoundNormalCommand: ChangeSoundSettings(false, 45); break;
-    case SoundLouderCommand: ChangeSoundSettings(false, 70); break;
-    case SoundPreviewCommand: PlayCatSound(cat::audio::Cue::Greeting); break;
     }
 }
-void ShowMenu(POINT point) {
-    if (g.menuOpen || g.closing || updates.applying) return;
+HMENU BuildPetMenu() {
     HMENU menu = CreatePopupMenu();
+    if (!menu) return nullptr;
     const auto age = cat::Age(g.pet.bornUtc, UtcNow());
     const std::wstring title = L"옆자리 고양이 · 함께 " + std::to_wstring(age.days + 1) + L"일";
     AppendMenuW(menu, MF_STRING | MF_GRAYED, 0, title.c_str()); AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
@@ -2610,40 +2462,6 @@ void ShowMenu(POINT point) {
     }
     CheckMenuRadioItem(wardrobe,kOutfitCommandBase,kOutfitCommandBase+cat::kOutfitCount-1,kOutfitCommandBase+static_cast<int>(g.preferences.outfit),MF_BYCOMMAND);
     AppendMenuW(menu, MF_POPUP | MF_STRING, reinterpret_cast<UINT_PTR>(wardrobe), L"옷장");
-    HMENU toys = CreatePopupMenu();
-    AppendMenuW(toys, MF_STRING, ToyBallCommand, L"공 꺼내기");
-    AppendMenuW(toys, MF_STRING, ToyBoxCommand, L"박스 꺼내기\tCtrl+Alt+B");
-    AppendMenuW(toys, MF_STRING, ToyPaperBagCommand, L"종이봉투 꺼내기");
-    AppendMenuW(toys, MF_STRING, ToyCatnipCommand, L"캣닢 꺼내기");
-    AppendMenuW(toys, MF_STRING, ToyFishingRodCommand, L"깃털 낚싯대 꺼내기");
-    AppendMenuW(toys, MF_STRING, ToyCushionCommand, L"쿠션 꺼내기");
-    AppendMenuW(toys, MF_STRING | (g.toy == ToyKind::None ? MF_GRAYED : MF_ENABLED), ToyClearCommand, L"장난감 치우기");
-    AppendMenuW(menu, MF_POPUP | MF_STRING, reinterpret_cast<UINT_PTR>(toys), L"장난감");
-    HMENU actions = CreatePopupMenu();
-    AppendMenuW(actions, MF_STRING, BellyCommand, L"배 까고 뒹굴기");
-    AppendMenuW(actions, MF_STRING, LoafCommand, L"식빵 자세");
-    AppendMenuW(actions, MF_STRING, KneadCommand, L"꾹꾹이");
-    AppendMenuW(actions, MF_STRING, JumpCommand, L"점프");
-    AppendMenuW(actions, MF_STRING, EarCommand, L"귀 움직이기");
-    AppendMenuW(actions, MF_STRING, TailCommand, L"꼬리 세우기");
-    AppendMenuW(menu, MF_POPUP | MF_STRING, reinterpret_cast<UINT_PTR>(actions), L"귀여운 행동 보기");
-    AppendMenuW(menu, MF_STRING, JumpCommand, L"점프 한 번 보기");
-    AppendMenuW(menu, MF_STRING, PunchCommand, L"냥냥펀치 한 번 보기");
-    HMENU soundMenu = CreatePopupMenu();
-    AppendMenuW(soundMenu, MF_STRING | (g.soundSettings.enabled ? MF_CHECKED : MF_UNCHECKED), SoundToggleCommand, L"고양이 소리 켜기");
-    AppendMenuW(soundMenu, MF_SEPARATOR, 0, nullptr);
-    AppendMenuW(soundMenu, MF_STRING, SoundQuietCommand, L"작게 · 25% (기본)");
-    AppendMenuW(soundMenu, MF_STRING, SoundNormalCommand, L"보통 · 45%");
-    AppendMenuW(soundMenu, MF_STRING, SoundLouderCommand, L"크게 · 70%");
-    const UINT volumeCommand = g.soundSettings.volume == 25 ? SoundQuietCommand
-        : g.soundSettings.volume == 45 ? SoundNormalCommand
-        : g.soundSettings.volume == 70 ? SoundLouderCommand : 0;
-    if (volumeCommand) CheckMenuRadioItem(soundMenu, SoundQuietCommand, SoundLouderCommand, volumeCommand, MF_BYCOMMAND);
-    AppendMenuW(soundMenu, MF_SEPARATOR, 0, nullptr);
-    AppendMenuW(soundMenu, MF_STRING | ((!g.soundSettings.enabled || g.hidden) ? MF_GRAYED : MF_ENABLED), SoundPreviewCommand, L"소리 미리 듣기");
-    if (g.soundSettingsRecovered) AppendMenuW(soundMenu, MF_STRING | MF_GRAYED, 0, L"이전 소리 설정에서 복구했어요");
-    else if (g.soundSettingsInvalid) AppendMenuW(soundMenu, MF_STRING | MF_GRAYED, 0, L"설정을 읽지 못해 소리를 껐어요");
-    AppendMenuW(menu, MF_POPUP | MF_STRING, reinterpret_cast<UINT_PTR>(soundMenu), L"고양이 소리");
     AppendMenuW(menu, MF_STRING, StatusCommand, L"생일과 성장 기록"); AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
     AppendMenuW(menu, MF_STRING | (g.pet.roamingPaused ? MF_CHECKED : MF_UNCHECKED), PauseCommand, L"이 자리에서 쉬기");
     AppendMenuW(menu, MF_STRING | (g.workInterference ? MF_CHECKED : MF_UNCHECKED), kWorkInterferenceCommand, L"업무 방해 모드 · 커서와 놀기");
@@ -2666,8 +2484,14 @@ void ShowMenu(POINT point) {
     AppendMenuW(menu, MF_POPUP | MF_STRING, reinterpret_cast<UINT_PTR>(updateMenu), L"프로그램 업데이트");
     AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
     AppendMenuW(menu, MF_STRING, QuitCommand, L"오늘은 여기까지 · 종료");
+    return menu;
+}
+void ShowMenu(POINT point) {
+    if (g.menuOpen || g.closing || updates.applying) return;
+    HMENU menu = BuildPetMenu();
+    if (!menu) return;
     if (point.x == -1 && point.y == -1) GetCursorPos(&point);
-    g.menuOpen = true; g.prank.Clear(); g.audio.Stop();
+    g.menuOpen = true; g.prank.Clear();
     SetForegroundWindow(g.window); // Only after an explicit context-menu request, never from a timer or care hotkey.
     UINT choice = TrackPopupMenu(menu, TPM_RETURNCMD | TPM_NONOTIFY | TPM_RIGHTBUTTON, point.x, point.y, 0, g.window, nullptr);
     PostMessageW(g.window, WM_NULL, 0, 0); DestroyMenu(menu); g.menuOpen = false;
@@ -2691,6 +2515,35 @@ void AdvanceToyObjects(double elapsed) {
         g.toyBall.Advance(elapsed,g.work.left/g.dpiScale+low,g.work.left/g.dpiScale+high,paused);
         g.toyX=g.toyBall.x*g.dpiScale;
     } else if (g.toy==ToyKind::FishingRod) g.toyLure.Advance(elapsed,paused);
+}
+
+void AdvanceAutomaticToy(double elapsed) {
+    const auto physical=g.physics.CurrentPose();
+    cat::toy::AutoInput input;
+    input.paused=g.pet.roamingPaused || g.hidden || g.menuOpen || g.dragging;
+    if (input.paused || !std::isfinite(elapsed) || elapsed<=0 || elapsed>.25) return;
+    input.visibleKind=g.toy;
+    input.phase=g.toySession.phase;
+    input.ballSettled=g.toyBall.grounded && std::abs(g.toyBall.velocity)<.5 &&
+        std::abs(g.toyBall.verticalVelocity)<.5;
+    input.protectedUse=g.smallBoxEvent;
+    const bool calm=g.motion==Motion::Idle || g.motion==Motion::Watch || g.motion==Motion::Loaf;
+    input.eligible=calm && ToyInteractionAvailable() && std::abs(WalkingVelocity(physical))<=2 &&
+        !g.toyEngaged && !g.approachingUser && !g.memorySequenceCount && !EnvironmentBusy() &&
+        !g.companionModel.Busy() && g.pendingCare<0 && !g.jumpPending && !g.jumpLaunched;
+    const auto decision=g.automaticToy.Advance(elapsed,input,static_cast<std::uint32_t>(g.random()));
+    if (decision.action==cat::toy::AutoAction::Place) {
+        PlaceToy(decision.kind);
+    } else if (decision.action==cat::toy::AutoAction::Retire && g.toy==decision.kind) {
+        const bool wasEngaged=g.toyEngaged;
+        g.toy=ToyKind::None; g.toyEngaged=false; g.approachingToy=false;
+        g.toyContact=false; g.toyRewardPending=false; g.toySession.Cancel();
+        g.toyLure={}; g.nextToyAction=0;
+        // Expiry can interrupt a stuck approach, but a finished item's cleanup
+        // must not replace a meal, companion interaction or other new action.
+        if (wasEngaged) SetMotion(Motion::Watch,900);
+        if (g.toyWindow) ShowWindow(g.toyWindow,SW_HIDE);
+    }
 }
 
 Motion ToySessionMotion() {
@@ -2730,15 +2583,17 @@ void ApplyToyPhase(ULONGLONG ticks) {
     g.toyDispatching=true; SetMotion(g.toyMotion,duration); g.toyDispatching=false;
     g.speed=38*g.dpiScale;
     g.approachingToy=cat::toy::Travels(phase);
-    if (phase==cat::toy::Phase::Interact && g.toyRewardPending &&
-            g.toy!=ToyKind::Ball && g.toy!=ToyKind::FishingRod) {
-        Remember(cat::memory::Event::Play); g.toyRewardPending=false;
-    }
+    // Autonomous play is not evidence that the user provided care.
+    g.toyRewardPending=false;
 }
 
 bool MaybePlayWithToy(ULONGLONG ticks) {
     if (g.toy==ToyKind::None || !ToyInteractionAvailable()) return false;
+    if (g.automaticToy.ActiveKind()==g.toy &&
+            (g.automaticToy.WaitingToRetire() || g.toySession.phase==cat::toy::Phase::Wait)) return false;
     if (g.toyEngaged) return true;
+    if (EnvironmentBusy() || g.memorySequenceCount || g.companionModel.Busy() ||
+            g.approachingUser || g.pendingCare>=0) return false;
     if (ticks<g.nextToyAction) return false;
     if (g.motion!=Motion::Idle && g.motion!=Motion::Walk && g.motion!=Motion::Watch &&
             g.motion!=Motion::Loaf && g.motion!=Motion::Groom) return false;
@@ -2752,7 +2607,6 @@ bool MaybePlayWithToy(ULONGLONG ticks) {
 void DecideMotion() {
     if (!g.brain) { SetMotion(Motion::Idle, 10000); return; }
     const auto ticks = GetTickCount64();
-    const bool wasSleeping = g.motion == Motion::Sleep;
     SYSTEMTIME local{}; GetLocalTime(&local);
     POINT cursor{}; const bool nearby = CursorNear(&cursor);
     const auto age = cat::Age(g.pet.bornUtc, UtcNow());
@@ -2781,7 +2635,7 @@ void DecideMotion() {
     case Action::Pounce: selected = Motion::Pounce; break;
     case Action::Zoomies: selected = Motion::Zoomies; break;
     case Action::TailChase: selected = Motion::TailChase; break;
-    case Action::Punch: StartPunch(false); return;
+    case Action::Punch: StartPunch(); return;
     case Action::Jump: selected = Motion::Jump; break;
     case Action::EarFlick: selected = Motion::EarFlick; break;
     case Action::TailRaise: selected = Motion::TailRaise; break;
@@ -2797,20 +2651,8 @@ void DecideMotion() {
     else if (selected == Motion::Walk || selected == Motion::Zoomies) g.direction = Random(0, 1) < .5 ? -1 : 1;
     g.speed = plan.speed * g.dpiScale;
     SetMotion(selected, plan.durationMs);
-    if ((selected == Motion::Jump || selected == Motion::Pounce) && VoiceChance(.45)) {
-        g.motionSoundPending = true; g.motionSoundAutomatic = true;
-    } else if (wasSleeping && selected == Motion::Stretch && VoiceChance(.35))
-        PlayCatSound(cat::audio::Cue::Wake, true);
-    if ((selected == Motion::EarFlick || selected == Motion::TailRaise) && VoiceChance(.34)) {
-        g.gestureSoundPending = true; g.gestureSoundAutomatic = true;
-    }
-    if (selected == Motion::Knead && VoiceChance(.42))
-        PlayCatSound(cat::audio::Cue::Pet, true);
-    if ((selected == Motion::Peek || selected == Motion::Scratch) && VoiceChance(.32))
-        PlayCatSound(cat::audio::Cue::Gesture, true);
     if (selected == Motion::Sneeze) {
         Speak(L"에취!", 1200);
-        if (VoiceChance(.55)) PlayCatSound(cat::audio::Cue::Gesture, true);
     }
 }
 bool ContinueMemorySequence() {
@@ -3068,7 +2910,6 @@ void UpdateLifeEvent(ULONGLONG ticks, double elapsed) {
 }
 
 void Tick() {
-    g.audio.Poll();
     PollUpdates();
     if (g.closing) return;
     const auto ticks = GetTickCount64();
@@ -3093,6 +2934,12 @@ void Tick() {
         // already reset gait through ResetMovement().
 
     }
+    if (!suspended && elapsed>0 && g.pet.roamingPaused && g.toyEngaged) {
+        // A paused toy keeps its contact/pose clock aligned with Session time.
+        // The physics update below still brakes any remaining walking speed.
+        const auto frozen=std::min(clockDelta,ticks>=g.motionStart ? ticks-g.motionStart : 0);
+        g.motionStart+=frozen; g.nextDecision+=frozen;
+    }
     g.prank.Tick(ticks);
     if (ticks >= g.nextMaintenance) {
         KeepOnWorkArea(); SyncNutrition(UtcNow()); UpdateTrayTip(); g.nextMaintenance = ticks + 1500;
@@ -3105,6 +2952,7 @@ void Tick() {
     if (!suspended) {
         UpdateLifeEvent(ticks,elapsed);
         AdvanceToyObjects(elapsed);
+        AdvanceAutomaticToy(elapsed);
         MaintainPerch(ticks);
         if (g.perch.transitioning) {
             UpdatePerchTransition(ticks, elapsed);
@@ -3117,13 +2965,8 @@ void Tick() {
         if (!EnvironmentBusy() && !g.lifeCrossing.Active() && !g.waitingForStop && !g.approachingToy && !g.approachingUser && ticks >= g.nextDecision && g.physics.CurrentPose().grounded) {
             if (!ContinueLifeSequence() && !ContinueMemorySequence() && !MaybeLifeEvent(ticks,true) && !MaybePlayWithToy(ticks)) DecideMotion();
         }
-        if (cat::motion::AdvanceStopGate(g.waitingForStop, g.physics.CurrentPose().grounded,
-                WalkingVelocity(g.physics.CurrentPose()), ticks, g.motionStart, g.nextDecision) && g.stopSoundPending) {
-            const auto cue = g.stopSoundCue;
-            const bool automatic = g.stopSoundAutomatic;
-            g.stopSoundPending = false;
-            PlayCatSound(cue, automatic);
-        }
+        cat::motion::AdvanceStopGate(g.waitingForStop, g.physics.CurrentPose().grounded,
+            WalkingVelocity(g.physics.CurrentPose()), ticks, g.motionStart, g.nextDecision);
         const auto actionElapsed = ticks >= g.motionStart ? ticks - g.motionStart : 0;
         const auto body = cat::nutrition::VisualModifiers(g.nutrition);
         const double growth = cat::GrowthScale(g.pet.bornUtc, UtcNow());
@@ -3177,7 +3020,6 @@ void Tick() {
                     if (g.toy==ToyKind::Ball) g.toyBall.Kick(g.direction,90);
                     else if (g.toy==ToyKind::FishingRod) g.toyLure.Touch(g.direction);
                     if (g.toyRewardPending) { Remember(cat::memory::Event::Play); g.toyRewardPending=false; }
-                    PlayCatSound(cat::audio::Cue::Gesture,true);
                 }
             }
         }
@@ -3203,17 +3045,6 @@ void Tick() {
                 if (launched) {
                     g.jumpLaunched = true; g.airborneMotion = g.motion;
                 }
-                if (launched && g.motionSoundPending)
-                    PlayCatSound(cat::audio::Cue::Jump, g.motionSoundAutomatic);
-                g.motionSoundPending = false;
-            }
-        }
-        if (!g.waitingForStop && g.gestureSoundPending) {
-            const ULONGLONG starts = g.motion == Motion::EarFlick ? 160 : 120;
-            if (actionElapsed >= starts) {
-                g.gestureSoundPending = false;
-                if (actionElapsed < starts + 160 && g.physics.CurrentPose().grounded)
-                    PlayCatSound(cat::audio::Cue::Gesture, g.gestureSoundAutomatic);
             }
         }
         const double previousX = g.physics.CurrentPose().x;
@@ -3228,10 +3059,9 @@ void Tick() {
         }
         if (std::abs(WalkingVelocity(physical)) > 2) g.facing = WalkingVelocity(physical) < 0 ? -1 : 1;
         else g.facing = g.direction;
-        Motion gaitMotion = g.motion;
         if (g.motion == Motion::Walk || g.motion == Motion::Stalk || g.motion == Motion::Zoomies) g.walkingMotion = g.motion;
-        else if (g.waitingForStop || ((g.motion == Motion::Idle || g.motion == Motion::Watch) && physical.grounded && std::abs(WalkingVelocity(physical)) > 2))
-            gaitMotion = g.walkingMotion;
+        const Motion gaitMotion=cat::motion::DisplayedMotion(g.motion,g.walkingMotion,
+            physical.grounded,g.waitingForStop,WalkingVelocity(physical));
         g.gait.Advance(gaitMotion, (physical.x - previousX - physical.supportTravelX) / growth, elapsed);
         if (physical.landed) {
             g.landedAt = ticks;
@@ -3258,7 +3088,6 @@ void Tick() {
                     POINT paw{static_cast<LONG>(std::round(g.centerX + g.direction * 38 * bodyScale * body.bodyWidth)),
                               static_cast<LONG>(std::round(CurrentGroundY(ticks) - 74 * bodyScale * body.bodyHeight))};
                     g.prank.Trigger(paw, g.work, g.dpiScale);
-                    if (hits == 1) PlayCatSound(g.punchCue, g.punchSoundAutomatic);
                 }
             }
             if (actionElapsed >= 1000 && g.bubbleUntil < g.motionStart) Speak(L"…나 아니야", 1300);
@@ -3295,7 +3124,6 @@ LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
     }
     case WM_LBUTTONDOWN: {
         g.prank.Clear();
-        g.audio.Stop();
         GetCursorPos(&g.dragStart); g.dragOffset = g.centerX - g.dragStart.x;
         if (g.brain) g.brain->Interrupt(GetTickCount64());
         g.approachingToy = g.approachingUser = false; g.memorySequenceCount = 0;
@@ -3327,11 +3155,10 @@ LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
         if (wParam == kFeedHotkey) Care(false);
         else if (wParam == kSnackHotkey) Care(true);
         else if (wParam == kHideHotkey) ToggleHidden();
-        else if (wParam == kBoxHotkey) PlaceToy(ToyKind::Box);
         return 0;
     case kShowExisting:
         if (g.hidden) ToggleHidden();
-        Speak(L"나 여기 있어 ♡", 3000); PlayCatSound(cat::audio::Cue::Greeting); Render(); return 0;
+        Speak(L"나 여기 있어 ♡", 3000); Render(); return 0;
     case kTrayMessage: {
         if (g.menuOpen || g.closing || updates.applying) return 0;
         const UINT event = LOWORD(lParam);
@@ -3343,15 +3170,13 @@ LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
     }
     case WM_DISPLAYCHANGE: case WM_SETTINGCHANGE: if (g.initialized) { g.prank.Clear(); KeepOnWorkArea(); Render(); } return 0;
     case WM_DPICHANGED: if (g.initialized) { g.prank.Clear(); KeepOnWorkArea(); Render(); } return 0;
-    case WM_QUERYENDSESSION: g.audio.Stop(); SavePet(false); return TRUE;
-    case WM_ENDSESSION: if (wParam) { g.audio.Shutdown(); SavePet(false); } return 0;
-    case WM_CLOSE: if (!g.closing) { g.closing = true; g.audio.Shutdown(); updates.cancel.store(true); SavePet(false); DestroyWindow(window); } return 0;
+    case WM_QUERYENDSESSION: SavePet(false); return TRUE;
+    case WM_ENDSESSION: if (wParam) { SavePet(false); } return 0;
+    case WM_CLOSE: if (!g.closing) { g.closing = true; updates.cancel.store(true); SavePet(false); DestroyWindow(window); } return 0;
     case WM_DESTROY:
-        g.audio.Shutdown();
         g.prank.Shutdown();
         if (g.preciseTimer) { timeEndPeriod(1); g.preciseTimer = false; }
         KillTimer(window, kTickTimer); UnregisterHotKey(window, kFeedHotkey); UnregisterHotKey(window, kSnackHotkey); UnregisterHotKey(window, kHideHotkey);
-        UnregisterHotKey(window, kBoxHotkey);
         if (g.tray.hWnd) Shell_NotifyIconW(NIM_DELETE, &g.tray);
         PostQuitMessage(0); return 0;
     }
@@ -3752,13 +3577,210 @@ int NativeToyHostTest() {
             PlaceToy(ToyKind::None);
             if (g.toy!=ToyKind::None || g.toyEngaged || g.approachingToy || g.toyWindow ||
                     cat::Serialize(g.pet)!=birthdayRecord) return 204;
+
+            // Drive the real automatic host hook, with all persistence still
+            // blocked. Remember() changes this interaction clock even when
+            // memory writes are blocked, so it detects accidental care credit.
+            g.automaticToy={}; g.random.seed(42);
+            g.approachingUser=false; g.memorySequenceCount=0;
+            cursorInteraction={};
+            SetMotion(Motion::Watch,5000);
+            const auto interactionClock=g.lifeInteractionUntil;
+            const auto memoryBefore=cat::memory::Serialize(g.memory.state);
+            const auto positionBefore=g.physics.CurrentPose().x;
+            g.pet.roamingPaused=true;
+            for (unsigned step=0;step<1000;++step) AdvanceAutomaticToy(.25);
+            if (g.toy!=ToyKind::None || g.automaticToy.RemainingSeconds()!=0) return 205;
+            g.pet.roamingPaused=false;
+            AdvanceAutomaticToy(7200); // Resuming the computer must not replay offline events.
+            if (g.toy!=ToyKind::None || g.automaticToy.RemainingSeconds()!=0) return 205;
+            g.memorySequenceCount=1;
+            for (unsigned step=0;step<1000;++step) AdvanceAutomaticToy(.25);
+            if (g.toy!=ToyKind::None || g.automaticToy.RemainingSeconds()!=0) return 206;
+            g.memorySequenceCount=0;
+            AdvanceAutomaticToy(.25);
+            if (g.toy==ToyKind::None || g.automaticToy.ActiveKind()!=g.toy || !g.toyEngaged ||
+                    g.toyRewardPending || g.physics.CurrentPose().x!=positionBefore) return 207;
+            g.toySession.Set(cat::toy::Phase::Interact); ApplyToyPhase(GetTickCount64());
+            if (g.toyRewardPending || g.lifeInteractionUntil!=interactionClock ||
+                    cat::memory::Serialize(g.memory.state)!=memoryBefore ||
+                    cat::Serialize(g.pet)!=birthdayRecord) return 208;
+            g.toySession.Set(cat::toy::Phase::Wait); ApplyToyPhase(GetTickCount64());
+            if (MaybePlayWithToy(GetTickCount64()+60000)) return 209;
+            SetMotion(Motion::Eat,2100); // Cleanup must leave this newer care action alone.
+            const auto careStart=g.motionStart,careEnd=g.nextDecision;
+            AdvanceAutomaticToy(.25);
+            if (g.toy!=ToyKind::None || g.toyEngaged || g.approachingToy ||
+                    g.motion!=Motion::Eat || g.motionStart!=careStart || g.nextDecision!=careEnd ||
+                    g.automaticToy.ActiveKind()!=ToyKind::None || g.automaticToy.RemainingSeconds()<180 ||
+                    g.physics.CurrentPose().x!=positionBefore || cat::Serialize(g.pet)!=birthdayRecord) return 210;
+
+            // A paused item must yield on resumption as well as first placement.
+            PlaceToy(ToyKind::Box); SetMotion(Motion::Watch,5000); g.nextToyAction=0;
+            const auto ownerStart=g.motionStart;
+            const auto resumeBlocked=[&] {
+                return !MaybePlayWithToy(GetTickCount64()) && !g.toyEngaged && g.motionStart==ownerStart;
+            };
+            g.memorySequenceCount=1;
+            if (!resumeBlocked()) return 211;
+            g.memorySequenceCount=0;
+            cat::environment::CursorInput cursor;
+            cursor.nowMs=GetTickCount64(); cursor.catX=g.physics.CurrentPose().x;
+            cursor.cursorX=cursor.catX+30; cursor.cursorHeight=40;
+            cursor.minX=96; cursor.maxX=1184;
+            cursor.available=cursor.enabled=cursor.canStart=cursor.canContinue=true;
+            cursorInteraction.session.Step(cursor,16,{true,false,ownerStart});
+            if (!EnvironmentBusy() || !resumeBlocked()) return 212;
+            cursorInteraction={};
+            g.approachingUser=true;
+            if (!resumeBlocked()) return 213;
+            g.approachingUser=false; g.pendingCare=0;
+            if (!resumeBlocked()) return 213;
+            g.pendingCare=-1;
+            g.companionStore.state=cat::companion::NewState(now);
+            g.companionModel.Bind(g.companionStore.state);
+            g.companionModel.Reset(96,1184,740);
+            cat::companion::Context social;
+            social.nowUtc=now; social.ticks=GetTickCount64(); social.primaryVisible=true;
+            social.primary=g.physics.CurrentPose(); social.primaryMotion=Motion::Watch;
+            if (!g.companionModel.TrySocial(cat::companion::Interaction::Follow,social) ||
+                    !g.companionModel.Busy() || !resumeBlocked()) return 214;
+            g.companionStore.state.enabled=false;
+            if (!MaybePlayWithToy(GetTickCount64()) || !g.toyEngaged) return 215;
             return 0;
         }();
     }
     GdiplusShutdown(token);
     g.toy=ToyKind::None; g.toyEngaged=false; g.approachingToy=false; g.toySession.Cancel();
+    g.automaticToy={}; g.memorySequenceCount=0;
+    cursorInteraction={}; g.approachingUser=false; g.pendingCare=-1;
+    g.companionStore.state.enabled=false;
     g.pet.roamingPaused=false; g.perch={}; g.physics.SetTargetVelocity(0);
     return result;
+}
+
+// Inspect actual Win32 menus, including nested radio/check/disabled state.
+// The fixture runs only in --self-test, before LoadPet or any application files.
+int NativeMenuContractTest() {
+    static_assert(FeedCommand == 1010 && SnackCommand == 1011 && StatusCommand == 1012 &&
+        PauseCommand == 1013 && HideCommand == 1014 && BackupCommand == 1015 &&
+        FolderCommand == 1016 && QuitCommand == 1017 && CreamCommand == 1020 &&
+        SilverCommand == 1021 && UpdateCheckCommand == 1024 && UpdateViewCommand == 1025 &&
+        UpdateAutomaticCommand == 1026 && OutfitNoneCommand == 1032 &&
+        OutfitBowCommand == 1033 && OutfitScarfCommand == 1034 && OutfitCrownCommand == 1035,
+        "Retired command IDs must not renumber the remaining commands");
+    // Old installed versions used these IDs for manual motions, sound and toys.
+    constexpr UINT retired[]{1018, 1019, 1022, 1023, 1027, 1028, 1029, 1030, 1031,
+        1036, 1037, 1038, 1039, 1040, 1041, 1042, 1043, 1044, 1045};
+    struct Item { UINT id, state, type; };
+    const auto collect = [](auto&& self, HMENU menu, std::vector<Item>& items) -> bool {
+        const int count = GetMenuItemCount(menu);
+        if (count < 0) return false;
+        for (int index = 0; index < count; ++index) {
+            MENUITEMINFOW item{}; item.cbSize = sizeof(item);
+            item.fMask = MIIM_ID | MIIM_STATE | MIIM_FTYPE | MIIM_SUBMENU;
+            if (!GetMenuItemInfoW(menu, index, TRUE, &item)) return false;
+            if (item.hSubMenu) { if (!self(self, item.hSubMenu, items)) return false; }
+            else if (!(item.fType & MFT_SEPARATOR) && item.wID != 0)
+                items.push_back({item.wID, item.fState, item.fType});
+        }
+        return true;
+    };
+    const auto now = UtcNow();
+    g.window = nullptr; g.initialized = true; g.closing = false;
+    g.hidden = false; g.menuOpen = false; g.dragging = false;
+    g.pet = cat::NewPet(now - 86400); g.pet.updatedUtc = now;
+    g.nutrition = cat::nutrition::NewState(g.pet.bornUtc, now, 65);
+    g.preferences = {cat::Character::SilverTabby, cat::Outfit::Scarf};
+    g.life.outcome = cat::life::storage::Outcome::Blocked;
+    g.memory.outcome = cat::memory::storage::Outcome::Blocked;
+    g.companionStore.state = cat::companion::NewState(now);
+    g.companionStore.outcome = cat::companion::Outcome::Adopted;
+    updates.applying = false;
+    for (int variant = 0; variant < 3; ++variant) {
+        const bool enabled = variant == 0;
+        g.pet.roamingPaused = enabled; g.workInterference = enabled;
+        g.interactionSettings.seasonalEvents = enabled;
+        g.companionStore.state.enabled = enabled;
+        if (variant == 2) g.companionStore.outcome = cat::companion::Outcome::Missing;
+        updates.operation = enabled ? UpdateState::Operation::None : UpdateState::Operation::Checking;
+        updates.automatic = enabled; updates.hasUpdate = enabled;
+        updates.feed = enabled ? "https://example.invalid/latest.txt" : "";
+        updates.available.versionText = "2.0.2";
+        HMENU menu = BuildPetMenu();
+        if (!menu) return 220;
+        std::vector<Item> items;
+        const bool read = collect(collect, menu, items);
+        DestroyMenu(menu);
+        if (!read) return 221;
+        std::vector<UINT> actual, expected{1010, 1011, 1012, 1013, 1014, 1015, 1016, 1017,
+            1024, 1026, 2300, 2301, 2400};
+        if (enabled) expected.push_back(1025);
+        if (variant != 2) for (UINT id : {2401u, 2402u, 2403u}) expected.push_back(id);
+        for (int i = 0; i < cat::kCharacterCount; ++i) expected.push_back(2500 + i);
+        for (int i = 0; i < cat::kOutfitCount; ++i) expected.push_back(2520 + i);
+        for (const auto& item : items) actual.push_back(item.id);
+        std::sort(actual.begin(), actual.end()); std::sort(expected.begin(), expected.end());
+        if (actual != expected) return 222; // Also catches duplicates and removed commands in submenus.
+        for (UINT id : retired) if (std::binary_search(actual.begin(), actual.end(), id)) return 223;
+        const auto state = [&](UINT id) {
+            for (const auto& item : items) if (item.id == id) return item.state;
+            return static_cast<UINT>(-1);
+        };
+        for (UINT id : {1013u, 2300u, 2301u, 2400u, 1026u})
+            if (((state(id) & MFS_CHECKED) != 0) != enabled) return 224;
+        for (int i = 0; i < cat::kCharacterCount; ++i)
+            if (((state(2500 + i) & MFS_CHECKED) != 0) !=
+                    (i == static_cast<int>(g.preferences.character))) return 225;
+        for (int i = 0; i < cat::kOutfitCount; ++i)
+            if (((state(2520 + i) & MFS_CHECKED) != 0) !=
+                    (i == static_cast<int>(g.preferences.outfit))) return 225;
+        for (UINT id : {1024u, 1026u})
+            if (((state(id) & MFS_DISABLED) != 0) == enabled) return 226;
+        if (variant != 2) for (UINT id : {2401u, 2402u})
+            if (((state(id) & MFS_DISABLED) != 0) == enabled) return 226;
+        for (UINT id : {1010u, 1011u, 1012u, 1013u, 1014u, 1015u, 1016u, 1017u, 2400u})
+            if (state(id) & MFS_DISABLED) return 226;
+    }
+    // Exercise the real dispatcher with all normal dispatch preconditions met.
+    // No retained command is invoked: those may open dialogs or persist care.
+    updates.operation = UpdateState::Operation::None;
+    g.pet.roamingPaused = false; g.brain.reset(); g.perch = {};
+    g.work = {0, 0, 1200, 900}; g.dpiScale = 1; g.centerX = 600;
+    g.physics.Reset(600, 50, 1150); g.physicsReady = true;
+    g.motion = Motion::Watch; g.motionStart = 1234; g.nextDecision = 5678;
+    g.pendingCare = -1; g.bubble = L"menu fixture"; g.bubbleUntil = 8765;
+    g.toy = ToyKind::Ball; g.toySession.Start(ToyKind::Ball);
+    g.approachingToy = false; g.toyEngaged = false;
+    const auto snapshot = [] {
+        const auto physical = g.physics.CurrentPose();
+        std::wostringstream out; out.precision(17);
+        out << cat::Serialize(g.pet).c_str() << cat::SerializePreferences(g.preferences).c_str()
+            << cat::nutrition::Serialize(g.nutrition).c_str()
+            << cat::companion::Serialize(g.companionStore.state).c_str()
+            << static_cast<int>(g.motion) << L'|' << g.motionStart << L'|' << g.nextDecision
+            << L'|' << g.hidden << L'|' << g.initialized << L'|' << g.closing << L'|' << g.menuOpen
+            << L'|' << g.direction << L'|' << g.facing << L'|' << g.speed << L'|' << g.centerX
+            << L'|' << g.bubble << L'|' << g.bubbleUntil << L'|' << g.pendingCare
+            << L'|' << static_cast<int>(g.toy) << L'|' << g.toyX << L'|' << g.toyEngaged
+            << L'|' << g.approachingToy << L'|' << g.toyContact << L'|' << g.nextToyAction
+            << L'|' << static_cast<int>(g.toySession.kind) << L'|' << static_cast<int>(g.toySession.phase)
+            << L'|' << g.toySession.revision << L'|' << g.toySession.activeMs
+            << L'|' << physical.x << L'|' << physical.lift << L'|' << physical.velocityX
+            << L'|' << physical.velocityY << L'|' << physical.grounded << L'|' << physical.onPlatform
+            << L'|' << g.jumpPending << L'|' << g.jumpLaunched << L'|' << g.waitingForStop
+            << L'|' << g.workInterference << L'|' << g.interactionSettings.seasonalEvents
+            << L'|' << static_cast<int>(updates.operation) << L'|' << updates.automatic
+            << L'|' << updates.hasUpdate << L'|' << updates.applying;
+        return out.str();
+    };
+    const auto unchanged = snapshot();
+    for (UINT id : retired) { RunCommand(id); if (snapshot() != unchanged) return 227; }
+    // A stale Ctrl+Alt+B WM_HOTKEY notification must also have no effect.
+    WindowProc(nullptr, WM_HOTKEY, 4, 0);
+    if (snapshot() != unchanged) return 228;
+    g.initialized = false; g.toy = ToyKind::None; g.toySession.Cancel();
+    return 0;
 }
 
 int SelfTest(HINSTANCE instance) {
@@ -3776,17 +3798,14 @@ int SelfTest(HINSTANCE instance) {
     if (anniversary.year != 2034 || anniversary.month != 2 || anniversary.day != 28) return 14;
     const auto before = parsed.bornUtc;
     if (cat::Parse("broken", parsed, error) || parsed.bornUtc != before) return 15;
-    // Verify the exact embedded WAVs through the production Windows resource
-    // loader and PCM parser. No device is opened and no sound is played here.
-    cat::audio::Player audio;
-    for (unsigned index = 0; index < cat::audio::CueCount; ++index) {
-        const auto cue = static_cast<cat::audio::Cue>(index);
-        if (!audio.LoadResource(cue, instance, 301 + static_cast<int>(index)) || !audio.HasClip(cue))
-            return 100 + static_cast<int>(index);
-    }
+    // Retired sound resources must never reappear in a silent release.
+    for (int id = 301; id <= 314; ++id)
+        if (FindResourceW(instance, MAKEINTRESOURCEW(id), RT_RCDATA)) return id;
     const int lifeResult = NativeLifeHostTest();
     if (lifeResult) return lifeResult;
-    return NativeToyHostTest();
+    const int toyResult = NativeToyHostTest();
+    if (toyResult) return toyResult;
+    return NativeMenuContractTest();
 }
 
 int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
@@ -3801,7 +3820,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
     if (!g.instanceMutex || GetLastError() == ERROR_ALREADY_EXISTS) {
         if (g.instanceMutex) CloseHandle(g.instanceMutex);
         if (HWND existing = FindWindowW(kClass, nullptr)) { PostMessageW(existing, kShowExisting, 0, 0); return 0; }
-        MessageBoxW(nullptr, L"고양이는 이미 곁에 있어요.\n\nCtrl+Alt+H로 보이게 하거나, 작업표시줄 오른쪽 숨겨진 아이콘에서 고양이를 찾아 주세요.", kTitle, MB_OK | MB_ICONINFORMATION); return 0;
+        MessageBoxW(nullptr, L"고양이는 이미 곁에 있어요.\n\nCtrl+Alt+H로 보이게 하거나, 작업표시줄 오른쪽 숨겨진 아이콘에서 고양이를 찾아 주세요.", kTitle, MB_OK | 0); return 0;
     }
     const HRESULT com = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
     if (!LoadPet()) { ReleaseMutex(g.instanceMutex); CloseHandle(g.instanceMutex); if (SUCCEEDED(com)) CoUninitialize(); return 1; }
@@ -3810,7 +3829,6 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
     LoadLife();
     LoadCompanion();
     LoadPreferences();
-    LoadSoundSettings();
     LoadInteractionSettings();
     InitializeUpdates();
     g.brain = std::make_unique<cat::behavior::Brain>(g.pet.bornUtc,
@@ -3818,7 +3836,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
     SyncExperience();
     GdiplusStartupInput startup;
     if (GdiplusStartup(&g.gdiplusToken, &startup, nullptr) != Ok || !LoadAtlas()) {
-        MessageBoxW(nullptr, L"고양이 그림을 불러오지 못했어요. 실행 파일을 다시 받아 주세요. 성장 기록은 그대로 남아 있어요.", kTitle, MB_ICONERROR);
+        MessageBoxW(nullptr, L"고양이 그림을 불러오지 못했어요. 실행 파일을 다시 받아 주세요. 성장 기록은 그대로 남아 있어요.", kTitle, 0);
         ReleaseAtlases();
         if (g.gdiplusToken) GdiplusShutdown(g.gdiplusToken);
         ReleaseMutex(g.instanceMutex); CloseHandle(g.instanceMutex); if (SUCCEEDED(com)) CoUninitialize(); return 2;
@@ -3838,17 +3856,13 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
     if (!RegisterHotKey(g.window, kFeedHotkey, modifiers, 'F')) g.hotkeyFailures.push_back(L"Ctrl+Alt+F (밥)");
     if (!RegisterHotKey(g.window, kSnackHotkey, modifiers, 'T')) g.hotkeyFailures.push_back(L"Ctrl+Alt+T (츄르)");
     if (!RegisterHotKey(g.window, kHideHotkey, modifiers, 'H')) g.hotkeyFailures.push_back(L"Ctrl+Alt+H (숨기기)");
-    if (!RegisterHotKey(g.window, kBoxHotkey, modifiers, 'B')) g.hotkeyFailures.push_back(L"Ctrl+Alt+B (박스)");
     g.initialized = true; g.lastTick = GetTickCount64(); g.nextMaintenance = g.lastTick + 1500; g.nextSave = g.lastTick + 60000;
     g.foodRequestAfter = g.lastTick + 180000;
-    g.ambientSoundAfter = g.lastTick + 60000;
+    g.updateAnnounceAfter = g.lastTick + 30000;
     g.nextCuriosity = g.lastTick + 20000;
-    g.perch.nextTry = g.lastTick + static_cast<ULONGLONG>(Random(90000, 180000));
+    g.perch.nextTry = g.lastTick + static_cast<ULONGLONG>(Random(30000, 60000));
     SetMotion(Motion::Idle, 5000); Speak(L"안녕. 오늘도 네 옆에 ♡", 4500);
     Render(); ShowWindow(g.window, SW_SHOWNOACTIVATE); RefreshAnimationTimer();
-    if (!Exists(g.directory + L"\\sound-settings.ini") && !Exists(g.directory + L"\\sound-settings.bak"))
-        SaveSoundSettings(g.soundSettings, false);
-    PlayCatSound(cat::audio::Cue::Greeting);
     if (!SavePet()) UpdateMessage(L"고양이 기록을 저장할 수 없어요. 기록 폴더의 권한과 디스크 공간을 확인해 주세요. 지금은 정상 저장을 보장할 수 없어요.", kTitle, MB_OK | MB_ICONWARNING);
     if (!g.nutritionNotice.empty()) {
         if (g.restoredBackup) g.nutritionNotice += L" 성장 기록도 백업에서 복구했어요.";
@@ -3867,7 +3881,6 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
     while (GetMessageW(&message, nullptr, 0, 0) > 0) { TranslateMessage(&message); DispatchMessageW(&message); }
     updates.Stop();
     g.companionWindow.Close();
-    g.audio.Shutdown();
     if (g.toyWindow) DestroyWindow(g.toyWindow);
     g.toySurface.Reset();
     g.prank.Shutdown(); g.surface.Reset(); g.blendFrom.Reset(); g.blendTo.Reset(); ReleaseAtlases();

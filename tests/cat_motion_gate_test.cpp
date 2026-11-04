@@ -11,6 +11,66 @@ int checks = 0;
     std::string(__FILE__) + ":" + std::to_string(__LINE__) + " failed: " #condition); } while (false)
 using cat::animation::Motion;
 
+void EveryGroundedMovingActionUsesActualFootsteps() {
+    for(double fps:{30.,60.,120.})for(double speed:{-150.,28.,150.})
+    for(int index=0;index<=static_cast<int>(Motion::Pride);++index){
+        const auto requested=static_cast<Motion>(index);
+        const auto previous=index%3==0?Motion::Walk:index%3==1?Motion::Stalk:Motion::Zoomies;
+        cat::physics::Controller physics;physics.Reset(800,96,1824);
+        physics.SetTargetVelocity(speed);const double dt=1/fps;
+        for(int i=0;i<static_cast<int>(fps);++i)physics.Update(dt);
+        bool waiting=cat::motion::NeedsStop(requested,true,physics.CurrentPose().velocityX);
+        cat::animation::Locomotion gait;
+        std::uint64_t start=1000,deadline=6000;double distance=0;bool becameStill=false;
+        for(int i=1;i<=static_cast<int>(fps);++i){
+            const auto ticks=1000+static_cast<std::uint64_t>(std::lround(i*1000/fps));
+            cat::motion::AdvanceStopGate(waiting,physics.CurrentPose().grounded,physics.CurrentPose().velocityX,ticks,start,deadline);
+            physics.SetTargetVelocity(cat::animation::Walking(requested)?speed:0);
+            const auto before=physics.CurrentPose();physics.Update(dt);const auto after=physics.CurrentPose();
+            const double relative=after.velocityX-after.supportVelocityX;
+            const auto displayed=cat::motion::DisplayedMotion(requested,previous,after.grounded,waiting,relative);
+            CHECK(gait.Advance(displayed,after.x-before.x-after.supportTravelX,dt));
+            const auto pose=cat::animation::Evaluate(displayed,ticks-start,ticks,relative<0?-1:1,gait);
+            if(after.grounded&&std::abs(relative)>cat::motion::kStoppedSpeed){
+                CHECK(cat::animation::Walking(displayed));
+                CHECK(pose.frame>=0&&pose.frame<4); // All10 atlases map these to walking art.
+                CHECK(pose.blendFrame<4);
+                CHECK(pose.x==0&&pose.lift==0&&pose.scaleX==1&&pose.scaleY==1&&pose.angle==0);
+                distance+=std::abs(after.x-before.x);
+            }else if(!waiting){CHECK(displayed==requested);becameStill=true;}
+        }
+        CHECK(distance>1);
+        if(!cat::animation::Walking(requested))CHECK(becameStill);
+    }
+    CHECK(cat::motion::DisplayedMotion(Motion::Sleep,Motion::Walk,true,false,0)==Motion::Sleep);
+    CHECK(cat::motion::DisplayedMotion(Motion::Jump,Motion::Walk,false,false,150)==Motion::Jump);
+    CHECK(cat::motion::DisplayedMotion(Motion::Pounce,Motion::Idle,true,false,50)==Motion::Walk);
+}
+
+void PounceLandingKeepsSteppingThroughItsRealBrakingDistance() {
+    for(double fps:{30.,60.,120.})for(int direction:{-1,1}){
+        cat::physics::Controller physics;physics.Reset(800,96,1824);
+        CHECK(physics.Pounce(direction,35,170));
+        physics.SetTargetVelocity(0);cat::animation::Locomotion gait;
+        bool airborne=false,coasting=false,stopped=false;double coastDistance=0;
+        const double dt=1/fps;
+        for(int i=0;i<static_cast<int>(fps*3);++i){
+            const auto before=physics.CurrentPose();physics.Update(dt);const auto after=physics.CurrentPose();
+            const auto displayed=cat::motion::DisplayedMotion(Motion::Pounce,Motion::Walk,after.grounded,false,after.velocityX);
+            gait.Advance(displayed,after.x-before.x,dt);
+            if(!after.grounded){airborne=true;continue;}
+            if(!airborne)continue;
+            if(std::abs(after.velocityX)>2){
+                coasting=true;coastDistance+=std::abs(after.x-before.x);
+                const auto pose=cat::animation::Evaluate(displayed,1500,1500,direction,gait);
+                CHECK(displayed==Motion::Walk&&pose.frame<4&&pose.blendFrame<4);
+                CHECK(pose.lift==0&&pose.scaleX==1&&pose.scaleY==1);
+            }else {stopped=true;CHECK(displayed==Motion::Pounce);break;}
+        }
+        CHECK(airborne&&coasting&&stopped&&coastDistance>3);
+    }
+}
+
 void StopBeforeActionWithActualMotor() {
     for (double fps : {30.0, 60.0, 120.0})
         for (double speed : {-200.0, -24.0, 24.0, 200.0})
@@ -312,6 +372,8 @@ void RealMotorStopsBeforeFiniteLedgeEdges() {
 int main() {
     try {
         StopBeforeActionWithActualMotor();
+        EveryGroundedMovingActionUsesActualFootsteps();
+        PounceLandingKeepsSteppingThroughItsRealBrakingDistance();
         InterruptionsAndPauseKeepPhase();
         RestingActionsBrakeOnActualElevatedContact();
         LostLedgeCannotFreezeGravityBehindTheStopGate();

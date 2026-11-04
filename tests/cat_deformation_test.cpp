@@ -66,7 +66,7 @@ void IdentityAndBodyPixels() {
 void WatertightAndFinite() {
     constexpr int w=101,h=103;
     std::vector<std::uint32_t> src(w*h,0xff684020),dst(w*h);
-    for(Shape shape:{Shape::Sitting,Shape::ReclineSide,Shape::ReclineBack})
+    for(Shape shape:{Shape::Sitting,Shape::ReclineSide,Shape::ReclineBack,Shape::Eating,Shape::Grooming,Shape::Treat,Shape::Stretch,Shape::TailChase})
     for(int phase=0;phase<12;++phase) {
         const double t=phase/11.;
         Joints j{t,1-t,2*t-1,t,1-t,t,1-2*t,t};
@@ -119,6 +119,28 @@ void CrouchPreservesHeadAndGround() {
     for(int y=0;y<h;++y)for(int x=0;x<w;++x)
         if((y+.5)/h>=.98) CHECK(src[y*w+x]==dst[y*w+x]);
 }
+void CareArtKeepsFeetBowlAndActivePartsSeparate() {
+    const Joints active{0,0,1,1,1,1,1,0};
+    constexpr int w=97,h=111;
+    std::vector<std::uint32_t> src(w*h),dst(w*h);
+    for(int y=0;y<h;++y)for(int x=0;x<w;++x)src[y*w+x]=0xff000000|((x*13+y*23)&0xffffff);
+    for(Shape shape:{Shape::Eating,Shape::Grooming,Shape::Treat,Shape::Stretch,Shape::TailChase}) {
+        CHECK(Warp(src.data(),w,h,w*4,dst.data(),w*4,active,shape));
+        const double fixed=shape==Shape::Eating ? .86 : shape==Shape::Grooming||shape==Shape::Treat ? .90 : .94;
+        int changed=0;
+        for(int y=0;y<h;++y)for(int x=0;x<w;++x) {
+            if((y+.5)/h>=fixed)CHECK(dst[y*w+x]==src[y*w+x]);
+            changed+=dst[y*w+x]!=src[y*w+x];
+        }
+        CHECK(changed>30);
+    }
+    Joints paw;paw.frontRight=1;
+    CHECK(CarePoint({.81,.61},paw,Shape::Grooming).y<.60);
+    CHECK(Same(CarePoint({.40,.35},paw,Shape::Grooming),{.40,.35}));
+    Joints lick;lick.frontLeft=1;
+    CHECK(CarePoint({.70,.54},lick,Shape::Treat).y>.54);
+    CHECK(Same(CarePoint({.85,.80},lick,Shape::Treat),{.85,.80}));
+}
 void InvalidInputDoesNotWrite() {
     std::vector<std::uint32_t> src(100,0xff223344),dst(100,0x98765432);
     Joints invalid;invalid.leftEar=std::numeric_limits<double>::quiet_NaN();
@@ -136,7 +158,7 @@ void InvalidInputDoesNotWrite() {
 }
 }
 int main() {
-    try { LocalJointsStayAttached();IdentityAndBodyPixels();WatertightAndFinite();CrouchPreservesHeadAndGround();InvalidInputDoesNotWrite();
+    try { LocalJointsStayAttached();IdentityAndBodyPixels();WatertightAndFinite();CrouchPreservesHeadAndGround();CareArtKeepsFeetBowlAndActivePartsSeparate();InvalidInputDoesNotWrite();
         std::cout<<"Local deformation: "<<checks<<" checks passed\n";
     }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}
 }

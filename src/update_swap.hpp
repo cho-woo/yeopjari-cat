@@ -51,7 +51,7 @@ inline bool LaunchProgram(const std::wstring& target) {
     CloseHandle(process.hThread); CloseHandle(process.hProcess); return true;
 }
 inline void HelperMessage(const std::wstring& text) {
-    MessageBoxW(nullptr, text.c_str(), L"옆자리 고양이 · 업데이트", MB_OK | MB_ICONWARNING | MB_SETFOREGROUND);
+    MessageBoxW(nullptr, text.c_str(), L"옆자리 고양이 · 업데이트", MB_OK | MB_SETFOREGROUND);
 }
 inline bool IsStagePath(const std::wstring& stage) {
     const std::wstring folder = ParentDirectory(stage);

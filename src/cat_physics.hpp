@@ -23,6 +23,9 @@ struct Pose {
 };
 
 inline constexpr double kFixedStepSeconds = 1.0 / 60.0;
+// Per-animal plans may use a smaller rise budget. Absolute altitude follows
+// the work-area ceiling, so a high source can reach another high ledge.
+inline constexpr double kMaximumLaunchRisePixels = 1100.0;
 
 // Owns a real Box2D world, a dynamic capsule and static floor/edge colliders.
 // No simulation state is persisted; reset when dragging or changing monitors.

@@ -20,11 +20,10 @@ int NativeExpandedRenderTest(std::string& context) {
     };
     auto copy = [&] { return std::vector<BYTE>(canvas.pixels,canvas.pixels+420*320*4); };
     std::array<std::uint64_t,cat::kCharacterCount> identities{};
-    constexpr Motion motions[]{Motion::Idle,Motion::Walk,Motion::Sleep,Motion::Eat,
-        Motion::ToyPaw,Motion::BellyRoll,Motion::Yawn,Motion::Hang,Motion::Pride};
     for (int c=0;c<cat::kCharacterCount;++c) {
         const auto character=static_cast<cat::Character>(c);
-        for (const auto motion:motions) {
+        for (int index=0;index<=static_cast<int>(Motion::Pride);++index) {
+            const auto motion=static_cast<Motion>(index);
             const auto pose=cat::animation::Evaluate(motion,1600,500000,1);
             if(!draw(character,cat::Outfit::None,pose)) return 121;
             const auto baseline=copy();

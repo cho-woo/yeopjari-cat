@@ -194,12 +194,98 @@ void ContainerPathsAndFeather() {
     for (int tick=0;tick<60*8;++tick) lure.Advance(1.0/60);
     CHECK(std::abs(lure.offset)<.01 && std::abs(lure.velocity)<.02);
 }
+
+cat::toy::AutoDecision AdvanceAutomatic(cat::toy::Automatic& automatic,
+        const cat::toy::AutoInput& input, double seconds, std::uint32_t entropy=0) {
+    cat::toy::AutoDecision result;
+    for (int tick=0;tick<static_cast<int>(seconds*4);++tick) {
+        result=automatic.Advance(.25,input,entropy);
+        if (result.action!=cat::toy::AutoAction::None) break;
+    }
+    return result;
+}
+
+void AutomaticTimingAndArbitration() {
+    using namespace cat::toy;
+    CHECK(Automatic::Delay(true,0)==90);
+    CHECK(Automatic::Delay(true,UINT32_MAX)==240);
+    CHECK(Automatic::Delay(false,0)==180);
+    CHECK(Automatic::Delay(false,UINT32_MAX)==420);
+    std::vector<Kind> catalog;
+    for (unsigned entropy=0;entropy<6;++entropy) catalog.push_back(Automatic::Choose(entropy));
+    CHECK((catalog==std::vector<Kind>{Kind::Ball,Kind::Box,Kind::PaperBag,Kind::Catnip,Kind::FishingRod,Kind::Cushion}));
+    Automatic automatic;
+    AutoInput input; input.eligible=true;
+    CHECK(AdvanceAutomatic(automatic,input,45).action==AutoAction::None);
+    CHECK(Near(automatic.RemainingSeconds(),45));
+    input.paused=true;
+    CHECK(AdvanceAutomatic(automatic,input,3600).action==AutoAction::None);
+    CHECK(Near(automatic.RemainingSeconds(),45));
+    input.paused=false;
+    CHECK(automatic.Advance(7200,input,0).action==AutoAction::None);
+    CHECK(Near(automatic.RemainingSeconds(),45)); // No offline or scheduler-stall catchup.
+    input.eligible=false;
+    CHECK(AdvanceAutomatic(automatic,input,600).action==AutoAction::None);
+    CHECK(automatic.RemainingSeconds()==0);
+    input.eligible=true; input.visibleKind=Kind::Cushion;
+    CHECK(automatic.Advance(.25,input,0).action==AutoAction::None);
+    input.visibleKind=Kind::None;
+    const auto placed=automatic.Advance(.25,input,0);
+    CHECK(placed.action==AutoAction::Place && placed.kind==Kind::Ball);
+    input.visibleKind=placed.kind; input.phase=Phase::Discover;
+    CHECK(automatic.Advance(.25,input,0).action==AutoAction::None); // Exactly one placement.
+    CHECK(automatic.ActiveKind()==Kind::Ball);
+}
+
+void AutomaticCompletionAndTeardown() {
+    using namespace cat::toy;
+    Automatic automatic; AutoInput input; input.eligible=true;
+    CHECK(AdvanceAutomatic(automatic,input,91).action==AutoAction::Place);
+    input.visibleKind=Kind::Ball; input.phase=Phase::Interact; input.ballSettled=true;
+    CHECK(AdvanceAutomatic(automatic,input,1).action==AutoAction::None); // Resting between strikes is not completion.
+    input.phase=Phase::Wait; input.ballSettled=false;
+    CHECK(AdvanceAutomatic(automatic,input,5).action==AutoAction::None);
+    CHECK(automatic.WaitingToRetire());
+    input.phase=Phase::Discover; // Completion stays latched if a host mistakenly restarts its session.
+    input.ballSettled=true; input.protectedUse=true;
+    CHECK(automatic.Advance(.25,input,0).action==AutoAction::None);
+    input.protectedUse=false;
+    const auto retired=automatic.Advance(.25,input,0);
+    CHECK(retired.action==AutoAction::Retire && retired.kind==Kind::Ball && !retired.timedOut);
+    CHECK(automatic.ActiveKind()==Kind::None && automatic.RemainingSeconds()==180);
+    input.visibleKind=Kind::None; input.phase=Phase::None;
+    CHECK(AdvanceAutomatic(automatic,input,179).action==AutoAction::None);
+    CHECK(AdvanceAutomatic(automatic,input,1).action==AutoAction::Place);
+    // A monitor reset or failed placement cannot immediately replay that item.
+    CHECK(automatic.Advance(.25,input,0).action==AutoAction::None);
+    CHECK(automatic.ActiveKind()==Kind::None && automatic.RemainingSeconds()==180);
+    CHECK(AdvanceAutomatic(automatic,input,180).action==AutoAction::Place);
+    input.visibleKind=Kind::Box; // Another activity replaced our ball.
+    CHECK(automatic.Advance(.25,input,0).action==AutoAction::None);
+    CHECK(automatic.ActiveKind()==Kind::None); // Never delete the other owner's item.
+}
+
+void AutomaticWatchdog() {
+    using namespace cat::toy;
+    Automatic automatic; AutoInput input; input.eligible=true;
+    CHECK(AdvanceAutomatic(automatic,input,91,1).kind==Kind::Box);
+    input.visibleKind=Kind::Box; input.phase=Phase::Approach; input.protectedUse=true;
+    CHECK(AdvanceAutomatic(automatic,input,120).action==AutoAction::None);
+    CHECK(automatic.WaitingToRetire());
+    input.paused=true; input.protectedUse=false;
+    CHECK(automatic.Advance(.25,input,0).action==AutoAction::None);
+    input.paused=false;
+    const auto result=automatic.Advance(.25,input,0);
+    CHECK(result.action==AutoAction::Retire && result.kind==Kind::Box && result.timedOut);
+    CHECK(automatic.ActiveKind()==Kind::None);
+}
 }
 
 int main() {
     try {
         ReachableTargets(); ContactAndContinuousRoll(); EdgesRemainReachable(); FrameRateAndPause();
         RealContactGate(); DistinctActivitiesAndInterruptions(); ContainerPathsAndFeather();
+        AutomaticTimingAndArbitration(); AutomaticCompletionAndTeardown(); AutomaticWatchdog();
         std::cout << "Toy interaction: " << checks << " checks passed\n";
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
 }

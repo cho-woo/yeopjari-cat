@@ -213,20 +213,35 @@ void RareSitCooldownAndSpeciesInterestAreReal() {
     }
     CHECK(sits.size() == 2);
     CHECK(sits[1] - sits[0] >= 180000);
-    int creamStarts = 0, dogStarts = 0;
-    for (int roll = 0; roll < 100; ++roll) {
-        for (auto character : {cat::Character::Cream, cat::Character::Dog}) {
-            CursorReaction sample;
-            auto opportunity = Input();
-            opportunity.interest = .5 * cat::species::ProfileFor(character).cursorInterest;
-            opportunity.roll = roll / 100.0;
-            if (sample.Step(opportunity).action == CursorAction::Watch) {
-                if (character == cat::Character::Dog) ++dogStarts;
-                else ++creamStarts;
-            }
+    std::uint64_t creamHunt = 0, dogHunt = 0;
+    for (auto character : {cat::Character::Cream, cat::Character::Dog}) {
+        CursorReaction sample;
+        auto opportunity = Input();
+        opportunity.interest = .5 * cat::species::ProfileFor(character).cursorInterest;
+        opportunity.roll = .999; // Even an unlucky roll must visibly acknowledge ON.
+        CHECK(sample.Step(opportunity).action == CursorAction::Watch);
+        for (int i = 1; i < 100; ++i) {
+            opportunity.nowMs = i*16;
+            if (sample.Step(opportunity).action != CursorAction::Hunt) continue;
+            (character == cat::Character::Dog ? dogHunt : creamHunt) = opportunity.nowMs;
+            break;
         }
     }
-    CHECK(dogStarts > creamStarts);
+    CHECK(dogHunt > 0 && dogHunt < creamHunt);
+}
+
+void WindowRiseBudgetUsesWorkAreaAndSpecies() {
+    using cat::environment::WindowJumpRiseLimit;
+    CHECK(WindowJumpRiseLimit(1200, 1) == 900);
+    CHECK(WindowJumpRiseLimit(1200, .78) == 702);
+    CHECK(WindowJumpRiseLimit(1200, 1.18) == 1062);
+    CHECK(WindowJumpRiseLimit(1000, 1) == 795);
+    CHECK(WindowJumpRiseLimit(1200, 1) >= 800);
+    CHECK(WindowJumpRiseLimit(1200, .78) < 800);
+    CHECK(WindowJumpRiseLimit(1200, 100) <= cat::environment::WindowJumpRiseLimit(1200, 1.2));
+    CHECK(WindowJumpRiseLimit(100, 1) == 0);
+    CHECK(WindowJumpRiseLimit(1200, 0) == 0);
+    CHECK(WindowJumpRiseLimit(std::numeric_limits<double>::quiet_NaN(), 1) == 0);
 }
 }
 
@@ -237,6 +252,7 @@ int main() {
         PauseAndInvalidSamplesCannotCauseLatePaw(); LandingSelectionUsesReachabilityAndKeepsFailedDestination();
         StillCursorGetsRareShortSitAtEveryFrameRate(); SittingRequiresStillLowReachableCursorAndEndsWhenUserMoves();
         RareSitCooldownAndSpeciesInterestAreReal();
+        WindowRiseBudgetUsesWorkAreaAndSpecies();
         std::cout << "Environment reactions: " << checks << " checks passed\n";
     } catch (const std::exception& e) { std::cerr << e.what() << '\n'; return 1; }
 }

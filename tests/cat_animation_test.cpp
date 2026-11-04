@@ -160,7 +160,8 @@ void PounceTravelAndLanding() {
         movingMilliseconds += static_cast<int>(factor);
         // Box2D supplies the only root-height arc, including delayed landings.
         CHECK(p.lift == 0);
-        CHECK(p.frame == (t < 240 ? 11 : t < 840 ? 1 : 14));
+        CHECK(p.frame == (t < 240 ? 4 : t < 840 ? 16 : 4));
+        CHECK(p.scaleX==1 && p.scaleY==1);
         if (t >= 840) CHECK(factor == 0);
     }
     CHECK(travelIntervals == 1);
@@ -182,12 +183,12 @@ void StationaryJumpArtDoesNotAddHeight() {
     for (std::uint64_t t = 0; t <= kJumpDurationMs + 500; ++t) {
         const auto p = Evaluate(Motion::Jump,t,t,1);
         stationary = stationary && p.x == 0 && TravelFactor(Motion::Jump,t) == 0;
-        expectedFrames = expectedFrames && (p.frame == 11 || p.frame == 16 || p.frame == 17 || p.frame == 14);
+        expectedFrames = expectedFrames && (p.frame == 4 || p.frame == 16);
         physicalHeightOnly = physicalHeightOnly && p.lift == 0;
-        const bool airborne = p.frame == 16 || p.frame == 17;
+        const bool airborne = p.frame == 16;
         if (airborne && !wasAirborne) ++airborneIntervals;
         wasAirborne = airborne;
-        if (t >= kJumpDurationMs) settled = settled && p.frame == 14 && p.lift == 0
+        if (t >= kJumpDurationMs) settled = settled && p.frame == 4 && p.lift == 0
             && std::abs(p.scaleX-1) < 1e-12 && std::abs(p.scaleY-1) < 1e-12;
     }
     CHECK(stationary);
@@ -195,15 +196,15 @@ void StationaryJumpArtDoesNotAddHeight() {
     CHECK(physicalHeightOnly);
     CHECK(settled);
     CHECK(airborneIntervals == 1);
-    CHECK(Evaluate(Motion::Jump,219,219,1).frame == 11);
+    CHECK(Evaluate(Motion::Jump,219,219,1).frame == 4);
     CHECK(Evaluate(Motion::Jump,220,220,1).frame == 16);
     CHECK(Evaluate(Motion::Jump,639,639,1).frame == 16);
-    CHECK(Evaluate(Motion::Jump,640,640,1).frame == 17);
-    CHECK(Evaluate(Motion::Jump,1059,1059,1).frame == 17);
-    CHECK(Evaluate(Motion::Jump,1060,1060,1).frame == 14);
-    CHECK(Evaluate(Motion::Jump,1190,1190,1).scaleY < .95);
+    CHECK(Evaluate(Motion::Jump,640,640,1).frame == 16);
+    CHECK(Evaluate(Motion::Jump,1059,1059,1).frame == 16);
+    CHECK(Evaluate(Motion::Jump,1060,1060,1).frame == 4);
+    CHECK(Evaluate(Motion::Jump,1190,1190,1).joints.crouch > .65);
     const auto late = Evaluate(Motion::Jump,std::numeric_limits<std::uint64_t>::max(),0,1);
-    CHECK(late.frame == 14 && late.lift == 0);
+    CHECK(late.frame == 4 && late.lift == 0);
     CHECK(TravelFactor(Motion::Jump,std::numeric_limits<std::uint64_t>::max()) == 0);
 }
 
@@ -212,24 +213,23 @@ void TreatLickingRemainsSeparateAndGrounded() {
     CHECK(kTreatDurationMs == 4200);
     CHECK(!Travels(Motion::Treat));
     bool stationary = true, distinct = true, subtle = true;
-    int lickingTransitions = 0, previous = -1;
+    double minimumTongue=1,maximumTongue=0;
     for (std::uint64_t t = 0; t < kTreatDurationMs; t += 20) {
         const auto treat = Evaluate(Motion::Treat,t,t,1);
         const auto food = Evaluate(Motion::Eat,t,t,1);
         stationary = stationary && treat.x == 0 && TravelFactor(Motion::Treat,t) == 0;
-        distinct = distinct && (treat.frame == 18 || treat.frame == 19) && food.frame == 7
-            && (treat.blendFrame == -1 || treat.blendFrame == 18 || treat.blendFrame == 19);
+        distinct = distinct && treat.frame == 18 && food.frame == 7 && treat.blendFrame == -1;
         subtle = subtle && treat.lift >= 0 && treat.lift < 1
             && treat.scaleY > .98 && treat.scaleY < 1.02;
-        if (previous != -1 && previous != treat.frame) ++lickingTransitions;
-        previous = treat.frame;
+        minimumTongue=std::min(minimumTongue,treat.joints.frontLeft);
+        maximumTongue=std::max(maximumTongue,treat.joints.frontLeft);
     }
     CHECK(stationary);
     CHECK(distinct);
     CHECK(subtle);
-    CHECK(lickingTransitions == 20);
+    CHECK(minimumTongue<.01 && maximumTongue>.99);
     CHECK(Evaluate(Motion::Treat,199,199,1).frame == 18);
-    CHECK(Evaluate(Motion::Treat,200,200,1).frame == 19);
+    CHECK(Evaluate(Motion::Treat,200,200,1).frame == 18);
     CHECK(Evaluate(Motion::Treat,400,400,1).frame == 18);
     CHECK(TravelFactor(Motion::Treat,std::numeric_limits<std::uint64_t>::max()) == 0);
 }
@@ -274,7 +274,7 @@ void BlendedLoopsAndGestureContinuity() {
     CHECK(Evaluate(Motion::Walk,72,72,1).blend > .45);
     CHECK(Evaluate(Motion::Walk,72,72,1).blend < .55);
     CHECK(Evaluate(Motion::Treat,149,149,1).blend == 0);
-    CHECK(Evaluate(Motion::Treat,175,175,1).blend == .5);
+    CHECK(Evaluate(Motion::Treat,175,175,1).blend == 0);
     CHECK(WeightDistance(Evaluate(Motion::Treat,199,199,1),Evaluate(Motion::Treat,200,200,1)) < .005);
 }
 
@@ -314,6 +314,34 @@ void EarAndTailRemainStationaryWithHolds() {
             CHECK(cat::deform::Zero(late.joints));
         }
     }
+}
+
+void GroundedActionsKeepBodyScaleAndSupportedLandings() {
+    using namespace cat::animation;
+    for(int m=0;m<=static_cast<int>(Motion::Pride);++m)for(unsigned t=0;t<=8000;t+=13) {
+        const auto p=Evaluate(static_cast<Motion>(m),t,t,-1);
+        CHECK(p.scaleX==1 && p.scaleY==1 && p.lift==0);
+        CHECK(p.flip); // Action timing never flips facing in place.
+    }
+    for(double strength:{0.0,.35,1.0})for(unsigned t=0;t<=400;++t) {
+        const auto p=LandingPose(t,strength,-1);
+        CHECK(p.frame==4 && p.blendFrame==-1 && p.flip && p.groundContact);
+        CHECK(p.x==0 && p.lift==0 && p.angle==0 && p.scaleX==1 && p.scaleY==1);
+        const cat::deform::Point a{.40,.47},b{.70,.45};
+        const auto qa=cat::deform::SittingPoint(a,p.joints),qb=cat::deform::SittingPoint(b,p.joints);
+        CHECK(std::abs(std::hypot(qa.x-qb.x,qa.y-qb.y)-std::hypot(a.x-b.x,a.y-b.y))<1e-12);
+        CHECK(cat::deform::SittingPoint({.5,1},p.joints).y==1);
+        CHECK(std::abs(p.joints.crouch-LandingPose(t+1,strength,-1).joints.crouch)<.008);
+        if(t>=280)CHECK(cat::deform::Zero(p.joints));
+    }
+    CHECK(cat::deform::Zero(LandingPose(140,std::numeric_limits<double>::quiet_NaN(),1).joints));
+    for(unsigned t=0;t<3000;t+=7) {
+        const auto grooming=Evaluate(Motion::Groom,t,t,1),scratch=Evaluate(Motion::Scratch,t,t,1);
+        CHECK(grooming.frame==9 && grooming.blendFrame==-1);
+        CHECK(scratch.frame==9 && scratch.blendFrame==-1);
+    }
+    CHECK(Evaluate(Motion::Groom,440,440,1).joints.frontRight==1);
+    CHECK(Evaluate(Motion::Scratch,180,180,1).joints.frontRight==1);
 }
 
 void BellyUsesSupportedAnatomyInsteadOfScreenRotation() {
@@ -359,7 +387,11 @@ void LocalJointControlsStayContinuousAndMirroredOnce() {
             CHECK(after == JointValues(mirrored.joints));
             for (std::size_t joint = 0; joint < after.size(); ++joint) {
                 CHECK(std::isfinite(after[joint]) && std::abs(after[joint]) <= 1);
-                CHECK(std::abs(after[joint] - before[joint]) < .02);
+                // Controls belong to the current anatomical rig. Switching
+                // from planted crouch to real airborne paws changes rigs;
+                // comparing those unrelated coordinates is not continuity.
+                if(pose.frame==previous.frame)
+                    CHECK(std::abs(after[joint] - before[joint]) < .02);
             }
             previous = pose;
         }
@@ -412,7 +444,7 @@ void DistanceDrivenGaitSurvivesSpeedAndActionChanges() {
     const auto heldPhase = frequent.Phase();
     CHECK(frequent.Advance(Motion::Idle, 0, .1));
     CHECK(frequent.Phase() == heldPhase);
-    CHECK(frequent.Advance(Motion::Walk, 1.4, .1));
+    CHECK(frequent.Advance(Motion::Walk, 4.4, .1));
     CHECK(std::abs(frequent.Phase() - std::fmod(heldPhase + .1, 1.0)) < 1e-12);
 
     // Actual distance, including slower feeding/weight states, sets cadence.
@@ -443,7 +475,7 @@ void BlockedOrStoppedGaitsDoNotKeepStepping() {
     CHECK(WeightDistance(stopped, late) == 0);
 
     // A reversal changes facing, never rewinds the gait or adds a phantom step.
-    CHECK(gait.Advance(Motion::Walk, -1.4, .1));
+    CHECK(gait.Advance(Motion::Walk, -4.4, .1));
     CHECK(std::abs(gait.Phase() - std::fmod(phase + .1, 1.0)) < 1e-12);
     gait.Reset();
     CHECK(gait.Phase() == 0 && gait.Speed() == 0);
@@ -451,9 +483,9 @@ void BlockedOrStoppedGaitsDoNotKeepStepping() {
 
 void DistanceDrivenFrameTransitionsRemainContinuous() {
     using namespace cat::animation;
-    for (const auto motion : {Motion::Walk, Motion::Zoomies}) {
+    for (const auto motion : {Motion::Walk, Motion::Zoomies, Motion::Stalk}) {
         Locomotion gait;
-        const double stride = motion == Motion::Zoomies ? 38.0 : 14.0;
+        const double stride = StrideLength(motion);
         auto previous = Evaluate(motion, 0, 700, 1, gait);
         bool continuous = true, normalized = true;
         for (int i = 1; i <= 2800; ++i) {
@@ -473,7 +505,7 @@ void DistanceDrivenFrameTransitionsRemainContinuous() {
     // Most of a step has one clear sprite, not two continuously ghosted paws.
     for (const double phase : {.05, .10, .30, .35, .55, .60, .80, .85}) {
         Locomotion gait;
-        CHECK(gait.Advance(Motion::Walk, phase * 14, .1));
+        CHECK(gait.Advance(Motion::Walk, phase * 44, .1));
         CHECK(Evaluate(Motion::Walk, 0, 0, 1, gait).blendFrame == -1);
     }
 }
@@ -519,6 +551,7 @@ int main() {
         TreatLickingRemainsSeparateAndGrounded();
         BlendedLoopsAndGestureContinuity();
         EarAndTailRemainStationaryWithHolds();
+        GroundedActionsKeepBodyScaleAndSupportedLandings();
         BellyUsesSupportedAnatomyInsteadOfScreenRotation();
         LocalJointControlsStayContinuousAndMirroredOnce();
         FacingAndMirroring();

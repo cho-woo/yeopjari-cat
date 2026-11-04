@@ -158,6 +158,46 @@ void CelebrationsWaitForActions(){
     CHECK(PeekEvent(state,context)==Event::FirstYear);
     CHECK(CommitEvent(state,context,Event::FirstYear));CHECK(Valid(state));
 }
+void AutomaticRareVariety(){
+    std::array<unsigned,static_cast<unsigned>(Event::FifthYear)+1> counts{};
+    for(unsigned seed=1;seed<=32;++seed){
+        const auto born=Utc(2020,1,1)+seed,begin=Utc(2026,6,1);
+        auto state=Legacy(born,begin);cat::behavior::Brain brain(born,seed);
+        std::uint64_t ticks=0;auto last=cat::behavior::Action::Idle;
+        while(ticks<30ULL*Day*1000){
+            auto c=Context(begin+ticks/1000);c.sleeping=last==cat::behavior::Action::Sleep;
+            // Available scenery and an established bond, with no manual
+            // gesture, forced event, feeding or petting calls in this run.
+            c.bond=100;c.crownWorn=true;c.boxAvailable=true;c.screenCrossingSafe=true;
+            if(last==cat::behavior::Action::Punch)c.trigger=Trigger::Punch;
+            else if(last==cat::behavior::Action::TailChase)c.trigger=Trigger::TailChase;
+            else if(last==cat::behavior::Action::Sneeze)c.trigger=Trigger::Sneeze;
+            const auto event=PeekEvent(state,c);
+            if(CommitEvent(state,c,event)){
+                ++counts[static_cast<unsigned>(event)];CHECK(Valid(state));
+                brain.Interrupt(ticks);ticks+=10000;
+            }
+            cat::behavior::Context input;input.ticks=ticks;input.ageYears=6;
+            input.localHour=(ticks/3600000)%24;
+            const auto next=brain.Next(input);last=next.action;ticks+=next.durationMs;
+        }
+    }
+    unsigned total=0;for(auto count:counts)total+=count;
+    const unsigned reactions=counts[static_cast<unsigned>(Event::PunchStartle)]+
+        counts[static_cast<unsigned>(Event::TailStartle)]+counts[static_cast<unsigned>(Event::SneezeStartle)];
+    CHECK(total>400);CHECK(reactions>100&&reactions*4<total*3);
+    for(auto e:{Event::Yawn,Event::SleepTalk,Event::Peek,Event::SmallBox,Event::CrownPride,
+            Event::ScreenCrossing,Event::BondKnead,Event::BondGreeting,Event::BondLifetime})
+        CHECK(counts[static_cast<unsigned>(e)]>=10);
+    auto s=Legacy();auto c=Context(s.updatedUtc);c.trigger=Trigger::Punch;
+    unsigned offered=0;
+    for(int slot=0;slot<1000;++slot){
+        const auto first=PeekEvent(s,c);offered+=first==Event::PunchStartle;
+        for(int frame=0;frame<60;++frame)CHECK(PeekEvent(s,c)==first);
+        c.nowUtc+=300;c.localDay=c.nowUtc/Day;
+    }
+    CHECK(offered>20&&offered<100);
+}
 void CrossingTimeline(){
     ScreenCrossing c;CHECK(!c.Active());CHECK(c.Opacity()==1);c.Start();
     CHECK(c.Active());CHECK(c.Opacity()==1);CHECK(!c.Advance(200,false));CHECK(c.elapsedMs==0);
@@ -240,4 +280,4 @@ void BehaviorEffect(){
     CHECK(sleepySleep>activeSleep*2);CHECK(activeMove>sleepyMove*1.5);
 }
 }
-int main(){try{IdentityAndParser();HiddenMood();RareCadence();EventConditions();Calendar();LifetimeUnlocks();CelebrationsWaitForActions();CrossingTimeline();UpgradeCooldown();Persistence();BehaviorEffect();std::cout<<"Life/mood/events: "<<checks<<" checks passed\n";return 0;}catch(const std::exception&e){std::cerr<<e.what()<<'\n';return 1;}}
+int main(){try{IdentityAndParser();HiddenMood();RareCadence();EventConditions();Calendar();LifetimeUnlocks();CelebrationsWaitForActions();AutomaticRareVariety();CrossingTimeline();UpgradeCooldown();Persistence();BehaviorEffect();std::cout<<"Life/mood/events: "<<checks<<" checks passed\n";return 0;}catch(const std::exception&e){std::cerr<<e.what()<<'\n';return 1;}}

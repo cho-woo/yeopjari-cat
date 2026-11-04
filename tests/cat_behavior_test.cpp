@@ -71,9 +71,26 @@ void NewActionsAndSequencesAppear() {
             ctx.localHour=static_cast<int>((ctx.ticks/Hour+6)%24);
         }
     }
-    for(auto a:{Action::Loaf,Action::Knead,Action::Peek,Action::Scratch,Action::Sneeze,Action::BellyRoll,Action::TailRaise,Action::Jump})
-        CHECK(seen[static_cast<unsigned>(a)]>0);
+    // Every autonomous action, including all gestures removed from the menu,
+    // must remain reachable without invoking a manual action API.
+    for(const auto count:seen)CHECK(count>0);
     CHECK(kneadSequence); CHECK(bellySequence); CHECK(zoomSequence);
+}
+
+void AutomaticGesturesDoNotRequireCursorOrCommands() {
+    std::array<unsigned,static_cast<unsigned>(Action::Sneeze)+1> seen{};
+    for(unsigned seed=1;seed<=24;++seed){
+        Brain brain(Birthday+seed,seed);Context ctx;
+        while(ctx.ticks<48*Hour){
+            const auto p=brain.Next(ctx);++seen[static_cast<unsigned>(p.action)];
+            ctx.ticks+=p.durationMs;ctx.localHour=static_cast<int>((ctx.ticks/Hour+8)%24);
+        }
+    }
+    CHECK(seen[static_cast<unsigned>(Action::Stalk)]==0);
+    CHECK(seen[static_cast<unsigned>(Action::Pounce)]==0);
+    for(auto a:{Action::Walk,Action::Zoomies,Action::Jump,Action::Punch,Action::EarFlick,
+            Action::TailRaise,Action::BellyRoll,Action::Loaf,Action::Knead})
+        CHECK(seen[static_cast<unsigned>(a)]>20);
 }
 
 void PausingAnActiveStoryCancelsItsTravel() {
@@ -264,7 +281,7 @@ void FeedingAndPettingCreateCalmFollowups() {
 
 int main(){
     try{
-        StablePersonalityAndName(); DeterministicDailyOrder(); PausedCatStaysPut(); PausingAnActiveStoryCancelsItsTravel(); InteractionsCancelStaleStories(); NewActionsAndSequencesAppear(); FeedingAndPettingCreateCalmFollowups(); ExperiencePreservesBirthAndBoundsLearning(); DailyRoutineChangesActualChoices(); LearnedCareChangesResponsesWithoutForcingThem();
+        StablePersonalityAndName(); DeterministicDailyOrder(); PausedCatStaysPut(); PausingAnActiveStoryCancelsItsTravel(); InteractionsCancelStaleStories(); NewActionsAndSequencesAppear(); AutomaticGesturesDoNotRequireCursorOrCommands(); FeedingAndPettingCreateCalmFollowups(); ExperiencePreservesBirthAndBoundsLearning(); DailyRoutineChangesActualChoices(); LearnedCareChangesResponsesWithoutForcingThem();
         std::cout<<"PASS: personality, new actions and sequences; "<<checks<<" checks\n"; return 0;
     } catch(const std::exception& e){ std::cerr<<e.what()<<'\n'; return 1; }
 }

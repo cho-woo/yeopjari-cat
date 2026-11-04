@@ -343,6 +343,18 @@ def inspect_release_exe(data: bytes, expected_version: str) -> dict[str, str]:
             verifier.verify_update_dialog(data)
         except verifier.ResourceError as exc:
             raise ReleaseError("업데이트 창의 한글 리소스 검증에 실패했습니다: " + str(exc)) from exc
+    # Sound-enabled historical releases keep their original verification rules.
+    # Starting with v2.0.1, inspect the actual PE directories so renaming a WAV
+    # or leaving a playback dependency behind cannot produce a silent release.
+    if version_tuple(details["FileVersion"]) >= (2, 0, 1):
+        spec = importlib.util.spec_from_file_location(
+            "yeopjari_silent_resources", Path(__file__).with_name("verify_silent_exe.py"))
+        verifier = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(verifier)
+        try:
+            verifier.verify_silent_exe(data)
+        except verifier.SilentError as exc:
+            raise ReleaseError("무음 실행 파일 검증에 실패했습니다: " + str(exc)) from exc
     return details
 
 
