@@ -30,6 +30,8 @@ struct Controller::Impl {
     b2ShapeId ground = b2_nullShapeId;
     b2BodyId platform = b2_nullBodyId;
     b2ShapeId platformShape = b2_nullShapeId;
+    b2JointId hangJoint = b2_nullJointId;
+    int hangSide = 1;
     double platformLeft = 0, platformRight = 0, platformHeight = 0;
     double platformTargetX = 0, platformTargetY = 0;
     bool platformCanCollide = false, ballistic = false;
@@ -49,6 +51,7 @@ struct Controller::Impl {
         ground = b2_nullShapeId;
         platform = b2_nullBodyId;
         platformShape = b2_nullShapeId;
+        hangJoint = b2_nullJointId;
         platformCanCollide = ballistic = false;
     }
 
@@ -101,7 +104,7 @@ struct Controller::Impl {
             const bool platformB = B2_ID_EQUALS(b, self.platformShape);
             if (!platformA && !platformB) return true;
             const float upwardNormal = platformA ? manifold->normal.y : -manifold->normal.y;
-            return self.platformCanCollide && upwardNormal > .5f;
+            return !self.current.hanging && self.platformCanCollide && upwardNormal > .5f;
         }, this);
 
         b2BodyDef bodyDef = b2DefaultBodyDef();
@@ -153,8 +156,8 @@ struct Controller::Impl {
     }
 
     bool LaunchVelocity(double targetX, double targetHeight, double clearance,
-                        double& vx, double& vy) const {
-        if (!current.grounded || !std::isfinite(targetX) || !std::isfinite(targetHeight) ||
+                        double& vx, double& vy, bool checkCurrentPlatform = true, bool allowHanging = false) const {
+        if ((!current.grounded && !(allowHanging && current.hanging)) || !std::isfinite(targetX) || !std::isfinite(targetHeight) ||
                 !std::isfinite(clearance) || targetX < minX || targetX > maxX ||
                 targetHeight < 0 || targetHeight > 520 || clearance < 10 || clearance > 120)
             return false;
@@ -166,7 +169,7 @@ struct Controller::Impl {
         const double duration = (vy + std::sqrt(vy * vy - 2 * gravity * rise)) / gravity;
         vx = (targetX - current.x) / duration;
         if (!std::isfinite(vx) || duration <= 0 || duration > 3 || std::abs(vx) > 450) return false;
-        if (B2_IS_NON_NULL(platform) && std::abs(targetHeight - platformHeight) < .5) {
+        if (checkCurrentPlatform && B2_IS_NON_NULL(platform) && std::abs(targetHeight - platformHeight) < .5) {
             // Landing retains momentum. Require enough top surface for the
             // ordinary ground motor to brake instead of aiming off an edge.
             const double stopX = targetX + std::copysign(vx*vx/(2*680.0) + 12, vx);
@@ -176,8 +179,40 @@ struct Controller::Impl {
         return true;
     }
 
+    bool PlatformLaunchVelocity(double left, double right, double height, double targetX,
+                                double clearance, double& vx, double& vy) const {
+        if (!std::isfinite(left) || !std::isfinite(right) || !std::isfinite(height) ||
+                height <= 0 || height > 520 || height > ceiling || right - left < 72)
+            return false;
+        left = std::max(left, minX - 96); right = std::min(right, maxX + 96);
+        if (right - left < 72 || !LaunchVelocity(targetX, height, clearance, vx, vy, false)) return false;
+        const double stopX = targetX + std::copysign(vx*vx/(2*680.0) + 12, vx);
+        return targetX >= left + 24 && targetX <= right - 24 &&
+            stopX >= left + 24 && stopX <= right - 24;
+    }
+
+    void ApplyLaunch(double vx, double vy) {
+        const auto before = b2Body_GetLinearVelocity(body);
+        const auto mass = b2Body_GetMass(body);
+        b2Body_ApplyLinearImpulseToCenter(body,
+            {mass * static_cast<float>(vx/kPixelsPerMeter-before.x),
+             mass * static_cast<float>(vy/kPixelsPerMeter-before.y)}, true);
+        current.velocityX = vx; current.velocityY = vy;
+        current.grounded = current.onPlatform = current.landed = false;
+        current.supportVelocityX = current.supportTravelX = 0;
+        current.landingSpeed = 0;
+        previous = current;
+        ballistic = true;
+    }
+
     void Step(int remainingSteps) {
         previous = current;
+        if (B2_IS_NON_NULL(hangJoint)) {
+            // Shorten a physical constraint gradually. The solver, gravity and
+            // momentum move the body; no pose/position override performs the catch.
+            b2DistanceJoint_SetLength(hangJoint,
+                std::max(.08f, b2DistanceJoint_GetLength(hangJoint) - .6f*static_cast<float>(kFixedStepSeconds)));
+        }
         const b2Vec2 before = b2Body_GetLinearVelocity(body);
         b2Vec2 platformVelocity{};
         const double platformBeforeX = B2_IS_NON_NULL(platform) ? b2Body_GetPosition(platform).x : 0;
@@ -192,7 +227,7 @@ struct Controller::Impl {
             const auto catPosition = b2Body_GetPosition(body);
             // Pass through from below/upward. Only a top contact reached from
             // above while descending relative to the ledge can support the cat.
-            platformCanCollide = catPosition.y - kFootOffset >= position.y - .02f &&
+            platformCanCollide = !current.hanging && catPosition.y - kFootOffset >= position.y - .02f &&
                 before.y <= platformVelocity.y + .05f;
         }
         const double vx = before.x * kPixelsPerMeter;
@@ -201,7 +236,7 @@ struct Controller::Impl {
         const bool braking = std::abs(desired) < std::abs(vx) || desired * vx < 0.0;
         const double response = braking ? 0.10 : 0.13;
         const double maxAcceleration = current.grounded ? (braking ? 680.0 : 460.0) : 180.0;
-        const double acceleration = ballistic && !current.grounded ? 0.0 :
+        const double acceleration = current.hanging || (ballistic && !current.grounded) ? 0.0 :
             std::clamp((desired-vx)/response, -maxAcceleration, maxAcceleration);
         const float mass = b2Body_GetMass(body);
         if (std::abs(acceleration) > .001)
@@ -292,6 +327,7 @@ void Controller::SetPlatform(double left, double right, double height) {
     const bool create = B2_IS_NULL(impl_->platform);
     const bool changed = create || left != impl_->platformLeft || right != impl_->platformRight || height != impl_->platformHeight;
     const bool resize = create || std::abs((right-left) - (impl_->platformRight-impl_->platformLeft)) > .01;
+    if (resize && impl_->current.hanging) EndHang(false);
     impl_->platformLeft = left; impl_->platformRight = right; impl_->platformHeight = height;
     impl_->platformTargetX = (left+right)*.5/kPixelsPerMeter;
     impl_->platformTargetY = height/kPixelsPerMeter;
@@ -315,10 +351,15 @@ void Controller::SetPlatform(double left, double right, double height) {
 }
 
 void Controller::RemovePlatform() {
+    const bool supported = impl_->current.onPlatform || impl_->current.hanging;
+    if (B2_IS_NON_NULL(impl_->hangJoint)) b2DestroyJoint(impl_->hangJoint);
+    impl_->hangJoint = b2_nullJointId;
+    impl_->current.hanging = false;
+    if (supported) b2Body_SetLinearDamping(impl_->body, 0);
     if (B2_IS_NON_NULL(impl_->platform)) b2DestroyBody(impl_->platform);
     impl_->platform = b2_nullBodyId; impl_->platformShape = b2_nullShapeId;
     impl_->platformCanCollide = false;
-    if (impl_->current.onPlatform) {
+    if (supported) {
         impl_->current.grounded = impl_->current.onPlatform = false;
         impl_->current.supportVelocityX = impl_->current.supportTravelX = 0;
         impl_->current.landed = false; impl_->current.landingSpeed = 0;
@@ -330,6 +371,67 @@ void Controller::RemovePlatform() {
 
 bool Controller::OnPlatform() const { return impl_->current.onPlatform; }
 
+bool Controller::Hanging() const { return impl_->current.hanging; }
+
+bool Controller::BeginHang(double edgeX, double height) {
+    if (!impl_->current.onPlatform || impl_->current.hanging || !std::isfinite(edgeX) ||
+            !std::isfinite(height) || height < 90 || std::abs(height - impl_->platformHeight) > 2 ||
+            std::abs(edgeX - impl_->current.x) > 90 || edgeX < impl_->minX + 30 || edgeX > impl_->maxX - 30)
+        return false;
+    const double leftDistance = std::abs(edgeX - impl_->platformLeft);
+    const double rightDistance = std::abs(edgeX - impl_->platformRight);
+    if (std::min(leftDistance, rightDistance) > 2) return false;
+    impl_->hangSide = leftDistance < rightDistance ? -1 : 1;
+    const auto platformPosition = b2Body_GetPosition(impl_->platform);
+    const float halfWidth = static_cast<float>((impl_->platformRight - impl_->platformLeft)*.5/kPixelsPerMeter);
+    if (std::abs((platformPosition.x + impl_->hangSide*halfWidth)*kPixelsPerMeter - impl_->current.x) > 90)
+        return false;
+    b2DistanceJointDef joint = b2DefaultDistanceJointDef();
+    joint.bodyIdA = impl_->platform; joint.bodyIdB = impl_->body;
+    joint.localAnchorA = {impl_->hangSide*halfWidth, 0};
+    joint.localAnchorB = {impl_->hangSide*.25f, .24f};
+    const auto hand = b2Body_GetWorldPoint(impl_->body, joint.localAnchorB);
+    const float dx = hand.x - (platformPosition.x + joint.localAnchorA.x);
+    const float dy = hand.y - platformPosition.y;
+    joint.length = std::max(.08f, std::sqrt(dx*dx + dy*dy));
+    joint.collideConnected = false;
+    impl_->hangJoint = b2CreateDistanceJoint(impl_->world, &joint);
+    // Forepaws absorb swing energy during the catch. Without grip damping,
+    // shortening the tether conserves angular momentum and spins the capsule.
+    b2Body_SetLinearDamping(impl_->body, 10.0f);
+    impl_->current.hanging = true;
+    impl_->current.grounded = impl_->current.onPlatform = impl_->current.landed = false;
+    impl_->current.supportVelocityX = impl_->current.supportTravelX = impl_->current.landingSpeed = 0;
+    impl_->targetVelocity = 0; impl_->ballistic = true;
+    impl_->previous = impl_->current;
+    b2Body_SetAwake(impl_->body, true);
+    return true;
+}
+
+bool Controller::EndHang(bool climb) {
+    if (!impl_->current.hanging || B2_IS_NULL(impl_->hangJoint)) return false;
+    double vx = 0, vy = 0;
+    const auto platformPosition = b2Body_GetPosition(impl_->platform);
+    const double halfWidth = (impl_->platformRight - impl_->platformLeft)*.5;
+    const double center = platformPosition.x*kPixelsPerMeter;
+    const double low = std::max(impl_->minX, center-halfWidth+30);
+    const double high = std::min(impl_->maxX, center+halfWidth-30);
+    const double target = low <= high ? std::clamp(center + impl_->hangSide*(halfWidth - 90), low, high) : center;
+    const bool launched = climb && low <= high && impl_->LaunchVelocity(target, platformPosition.y*kPixelsPerMeter,
+        35, vx, vy, false, true);
+    b2DestroyJoint(impl_->hangJoint); impl_->hangJoint = b2_nullJointId;
+    b2Body_SetLinearDamping(impl_->body, 0);
+    impl_->current.hanging = false;
+    if (launched) impl_->ApplyLaunch(vx, vy);
+    else {
+        impl_->current.grounded = impl_->current.onPlatform = false;
+        impl_->ballistic = true;
+        impl_->previous = impl_->current;
+    }
+    b2Body_SetAwake(impl_->body, true);
+    return launched;
+}
+
 bool Controller::CanLaunchTo(double targetX, double targetHeight, double clearance) const {
     double vx = 0, vy = 0;
     return impl_->LaunchVelocity(targetX, targetHeight, clearance, vx, vy);
@@ -338,17 +440,23 @@ bool Controller::CanLaunchTo(double targetX, double targetHeight, double clearan
 bool Controller::LaunchTo(double targetX, double targetHeight, double clearance) {
     double vx = 0, vy = 0;
     if (!impl_->LaunchVelocity(targetX, targetHeight, clearance, vx, vy)) return false;
-    const auto before = b2Body_GetLinearVelocity(impl_->body);
-    const auto mass = b2Body_GetMass(impl_->body);
-    b2Body_ApplyLinearImpulseToCenter(impl_->body,
-        {mass * static_cast<float>(vx/kPixelsPerMeter-before.x),
-         mass * static_cast<float>(vy/kPixelsPerMeter-before.y)}, true);
-    impl_->current.velocityX = vx; impl_->current.velocityY = vy;
-    impl_->current.grounded = impl_->current.onPlatform = impl_->current.landed = false;
-    impl_->current.supportVelocityX = impl_->current.supportTravelX = 0;
-    impl_->current.landingSpeed = 0;
-    impl_->previous = impl_->current;
-    impl_->ballistic = true;
+    impl_->ApplyLaunch(vx, vy);
+    return true;
+}
+
+bool Controller::CanLaunchToPlatform(double left, double right, double height,
+                                     double targetX, double clearance) const {
+    double vx = 0, vy = 0;
+    return impl_->PlatformLaunchVelocity(left, right, height, targetX, clearance, vx, vy);
+}
+
+bool Controller::LaunchToPlatform(double left, double right, double height,
+                                  double targetX, double clearance) {
+    double vx = 0, vy = 0;
+    if (!impl_->PlatformLaunchVelocity(left, right, height, targetX, clearance, vx, vy)) return false;
+    impl_->ApplyLaunch(vx, vy);
+    RemovePlatform();
+    SetPlatform(left, right, height);
     return true;
 }
 

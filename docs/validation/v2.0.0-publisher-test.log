@@ -1,0 +1,9 @@
+Testing with a local-only gh mock; all publication messages below are simulated.
+Published v2.0.0. Existing clients can discover it through latest.txt.
+Publisher runtime scenario passed: push-false
+Published v2.0.0. Existing clients can discover it through latest.txt.
+Publisher runtime scenario passed: missing-role
+Publisher runtime scenario passed: denied
+Publisher runtime scenario passed: published
+Publisher runtime scenario passed: hash-mismatch
+Publisher runtime tests passed: 44 checks; no network calls.

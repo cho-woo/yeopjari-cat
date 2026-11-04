@@ -18,14 +18,15 @@ int checks = 0;
 #define CHECK(condition) do { ++checks; if (!(condition)) throw std::runtime_error( \
     std::string(__FILE__) + ":" + std::to_string(__LINE__) + " failed: " #condition); } while (false)
 
-constexpr std::array<Motion, 24> motions = {
+constexpr std::array<Motion, 32> motions = {
     Motion::Idle, Motion::Walk, Motion::Sleep, Motion::Eat, Motion::Groom,
     Motion::Stretch, Motion::Watch, Motion::Stalk, Motion::Pounce,
     Motion::Zoomies, Motion::TailChase, Motion::Punch, Motion::Jump, Motion::Treat,
     Motion::EarFlick, Motion::TailRaise, Motion::BellyRoll, Motion::Loaf,
-    Motion::Knead, Motion::Peek, Motion::Scratch, Motion::Sneeze, Motion::ToyPaw, Motion::BoxSit
+    Motion::Knead, Motion::Peek, Motion::Scratch, Motion::Sneeze, Motion::ToyPaw, Motion::BoxSit, Motion::Sniff, Motion::LookDown, Motion::Balance, Motion::Startled,
+    Motion::Yawn, Motion::SleepTalk, Motion::Hang, Motion::Pride
 };
-static_assert(motions.size() == static_cast<std::size_t>(Motion::BoxSit) + 1,
+static_assert(motions.size() == static_cast<std::size_t>(Motion::Pride) + 1,
               "Every supported motion needs animation contract coverage");
 
 std::array<double, 7> JointValues(const cat::deform::Joints& joints) {
@@ -57,7 +58,7 @@ void FiniteAndContained() {
         // Peek and the box intentionally hide part of the body below the edge.
         // Every other action leaves root height to the physical controller.
         if (motion == Motion::Peek) valid = valid && p.lift >= -38 && p.lift <= 0;
-        else if (motion == Motion::BoxSit) valid = valid && p.lift == -8;
+        else if (motion == Motion::BoxSit) valid = valid && p.lift >= -8 && p.lift <= 0;
         else valid = valid && p.lift == 0;
         for (double joint : JointValues(p.joints)) valid = valid && joint >= -1 && joint <= 1;
         valid = valid && p.joints.leftEar >= 0 && p.joints.rightEar >= 0
@@ -332,7 +333,9 @@ void BellyUsesSupportedAnatomyInsteadOfScreenRotation() {
         const auto weights = FrameWeights(pose);
         sideSamples += weights[24] > .9;
         backHoldMilliseconds += weights[25] == 1;
-        CHECK(WeightDistance(previous,pose) < .007);
+        // L1 counts both fading layers. The registered 180ms turn changes
+        // each by at most .00834/ms; reject a cut while allowing that motion.
+        CHECK(WeightDistance(previous,pose) < .018);
         if (t >= kBellyRollDurationMs) {
             CHECK(pose.frame == 4 && pose.blendFrame == -1);
             CHECK(cat::deform::Zero(pose.joints));

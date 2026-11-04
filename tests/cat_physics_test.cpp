@@ -1,4 +1,5 @@
 #include "../src/cat_physics.hpp"
+#include "../src/cat_environment.hpp"
 #include <box2d/box2d.h>
 
 #include <algorithm>
@@ -483,6 +484,210 @@ void TallViewportContainsRaisedPlatformLaunch() {
     }
 }
 
+void DirectWindowTransfersKeepSourceUntilTakeoff() {
+    for (double destinationHeight : {80., 180., 320.}) {
+        Controller cat;
+        cat.Reset(500, 40, 1560);
+        cat.SetPlatform(250, 750, 180);
+        CHECK(cat.LaunchTo(500, 180));
+        Run(cat, 3);
+        const auto before = cat.CurrentPose();
+        for (int i = 0; i < 20; ++i) {
+            CHECK(cat.CanLaunchToPlatform(650, 1100, destinationHeight, 780));
+            CHECK(cat.OnPlatform());
+            CHECK(Near(cat.CurrentPose().lift, before.lift, 0));
+            CHECK(Near(cat.CurrentPose().x, before.x, 0));
+        }
+        CHECK(!cat.LaunchToPlatform(650, 1100, destinationHeight, 1090));
+        CHECK(cat.OnPlatform() && Near(cat.CurrentPose().lift, before.lift, 0));
+        CHECK(cat.LaunchToPlatform(650, 1100, destinationHeight, 780));
+        CHECK(!cat.OnPlatform() && !cat.CurrentPose().grounded);
+        CHECK(Near(cat.CurrentPose().x, before.x, 0));
+        CHECK(Near(cat.CurrentPose().lift, before.lift, 0));
+        int landings = 0;
+        for (int i = 0; i < 240; ++i) {
+            cat.Update(step);
+            if (cat.CurrentPose().landed) ++landings;
+        }
+        CHECK(landings == 1);
+        CHECK(cat.OnPlatform());
+        CHECK(Near(cat.CurrentPose().lift, destinationHeight, .6));
+        CHECK(cat.CurrentPose().x > 650 && cat.CurrentPose().x < 1100);
+    }
+}
+
+void DisablingCursorPlayLeavesOrdinaryWindowPlanningAvailable() {
+    cat::environment::CursorReaction reaction;
+    cat::environment::CursorInput input;
+    input.available = input.enabled = input.canStart = input.canContinue = true;
+    input.catX = 500; input.cursorX = 650; input.cursorHeight = 60;
+    input.minX = 40; input.maxX = 960; input.interest = 1; input.roll = 0;
+    for (int i = 0; i <= 45; ++i) {
+        input.nowMs = i*16;
+        reaction.Step(input);
+    }
+    CHECK(reaction.Action() == cat::environment::CursorAction::Hunt);
+    input.nowMs += 16; input.enabled = false;
+    CHECK(reaction.Step(input).action == cat::environment::CursorAction::None);
+    CHECK(!reaction.Active());
+
+    // Window visits are the pre-existing roaming behavior. Cursor play's
+    // default-off setting must not revoke their independent physical plan.
+    Controller cat;
+    cat.Reset(500, 40, 960);
+    double landing = 0;
+    CHECK(cat::environment::ChooseLanding(cat.CurrentPose().x, 250, 900,
+        [&](double x) { return cat.CanLaunchToPlatform(250, 900, 180, x); }, landing));
+    CHECK(cat.LaunchToPlatform(250, 900, 180, landing));
+    Run(cat, 3);
+    CHECK(cat.OnPlatform() && Near(cat.CurrentPose().lift, 180, .6));
+    CHECK(!reaction.Active());
+}
+
+void CursorSitApproachesWithMotorAndWaitsForBraking() {
+    for (int fps : {30, 60, 120, 144}) {
+        Controller cat;
+        cat.Reset(400, 96, 960);
+        cat::environment::CursorReaction reaction;
+        cat::environment::CursorInput input;
+        input.available = input.enabled = input.canStart = input.canContinue = true;
+        input.cursorX = 430; input.cursorHeight = 30; input.minX = 96; input.maxX = 960;
+        input.interest = 1; input.roll = 0;
+        bool braking = false, approached = false, sat = false, finished = false;
+        std::uint64_t previousTime = 0;
+        for (int frame = 0; frame < fps*9; ++frame) {
+            input.nowMs = static_cast<std::uint64_t>(std::round(frame*1000.0/fps));
+            input.catX = cat.CurrentPose().x;
+            if (braking) {
+                reaction.Pause(input.nowMs - previousTime);
+                cat.SetTargetVelocity(0);
+                braking = std::abs(cat.CurrentPose().velocityX) > 2;
+            } else {
+                const auto output = reaction.Step(input);
+                approached = approached || output.action == cat::environment::CursorAction::ApproachSit;
+                braking = output.changed && output.action == cat::environment::CursorAction::Sit &&
+                    std::abs(cat.CurrentPose().velocityX) > 2;
+                cat.SetTargetVelocity(braking ? 0 : output.velocity);
+                if (output.action == cat::environment::CursorAction::Sit && !braking) {
+                    sat = true;
+                    CHECK(std::abs(cat.CurrentPose().velocityX) <= 2);
+                    CHECK(std::abs(cat.CurrentPose().x - input.cursorX) <= 4);
+                }
+                finished = finished || (sat && output.action == cat::environment::CursorAction::None);
+            }
+            cat.Update(1.0/fps);
+            CHECK(cat.CurrentPose().grounded);
+            previousTime = input.nowMs;
+        }
+        CHECK(approached && sat && finished);
+        CHECK(std::abs(cat.CurrentPose().x - input.cursorX) <= 4);
+    }
+}
+
+void LedgeGripUsesJointAndReleasesMomentum() {
+    for (int side : {-1, 1}) {
+        for (bool climb : {false, true}) {
+            Controller cat;
+            const double x = side < 0 ? 330 : 670;
+            const double edge = side < 0 ? 250 : 750;
+            cat.Reset(x, 40, 960);
+            cat.SetCeiling(500);
+            cat.SetPlatform(250, 750, 180);
+            CHECK(!cat.BeginHang(edge, 180)); // Floor is not a ledge grip.
+            CHECK(cat.LaunchTo(x, 180));
+            Run(cat, 3);
+            const auto before = cat.CurrentPose();
+            CHECK(!cat.BeginHang(500, 180)); // Grip must be an actual finite edge.
+            CHECK(!cat.BeginHang(edge, 300));
+            CHECK(cat.BeginHang(edge, 180));
+            CHECK(cat.Hanging() && cat.CurrentPose().hanging);
+            CHECK(!cat.OnPlatform() && !cat.CurrentPose().grounded);
+            CHECK(Near(cat.CurrentPose().x, before.x, 0));
+            CHECK(Near(cat.CurrentPose().lift, before.lift, 0));
+            CHECK(!cat.BeginHang(edge, 180) && !cat.Jump());
+            for (int i = 0; i < 90; ++i) {
+                cat.SetTargetVelocity(450); // A joint grip suppresses the walking motor.
+                cat.Update(step);
+                const auto p = cat.CurrentPose();
+                CHECK(p.hanging && !p.grounded);
+                CHECK(p.lift > 75 && p.lift < 181);
+                CHECK(std::abs(p.velocityX) < 200 && std::abs(p.velocityY) < 200);
+            }
+            const auto held = cat.CurrentPose();
+            CHECK(held.lift > 110 && held.lift < 125);
+            cat.Update(30);
+            CHECK(Near(cat.CurrentPose().lift, held.lift, 0));
+            CHECK(cat.EndHang(climb) == climb);
+            CHECK(!cat.Hanging());
+            CHECK(Near(cat.CurrentPose().x, held.x, 0));
+            CHECK(Near(cat.CurrentPose().lift, held.lift, 0));
+            if (!climb) {
+                CHECK(Near(cat.CurrentPose().velocityX, held.velocityX, 0));
+                CHECK(Near(cat.CurrentPose().velocityY, held.velocityY, 0));
+                cat.Update(step);
+                CHECK(Near(cat.CurrentPose().velocityY, held.velocityY - 15, .03));
+            }
+            cat.SetTargetVelocity(0);
+            Run(cat, 3);
+            CHECK(cat.CurrentPose().grounded);
+            CHECK(cat.OnPlatform() == climb);
+            CHECK(Near(cat.CurrentPose().lift, climb ? 180 : 0, .6));
+        }
+    }
+}
+
+void MovingOrClosingGripNeverTeleports() {
+    Controller cat;
+    cat.Reset(330, 40, 960);
+    cat.SetPlatform(250, 750, 180);
+    CHECK(cat.LaunchTo(330, 180));
+    Run(cat, 3);
+    CHECK(cat.BeginHang(250, 180));
+    Run(cat, 1.5);
+    const auto beforeMove = cat.CurrentPose();
+    cat.SetPlatform(280, 780, 180);
+    CHECK(Near(cat.CurrentPose().x, beforeMove.x, 0));
+    CHECK(Near(cat.CurrentPose().lift, beforeMove.lift, 0));
+    Run(cat, .5);
+    CHECK(cat.Hanging());
+    CHECK(cat.CurrentPose().x > beforeMove.x + 20);
+    const auto held = cat.CurrentPose();
+    cat.RemovePlatform();
+    CHECK(!cat.Hanging() && !cat.CurrentPose().grounded);
+    CHECK(Near(cat.CurrentPose().lift, held.lift, 0));
+    CHECK(Near(cat.CurrentPose().velocityY, held.velocityY, 0));
+    cat.Update(step);
+    CHECK(Near(cat.CurrentPose().velocityY, held.velocityY - 15, .03));
+    Run(cat, 2);
+    CHECK(cat.CurrentPose().grounded && cat.CurrentPose().lift < 1);
+}
+
+void HangingFixedStepsAndWorldCleanup() {
+    cat::physics::Pose reference;
+    for (double dt : {1./60, 1./30, 1./120, 1./144, .2, .25}) {
+        Controller cat;
+        cat.Reset(330, 40, 960);
+        cat.SetPlatform(250, 750, 180);
+        CHECK(cat.LaunchTo(330, 180));
+        Run(cat, 3);
+        CHECK(cat.BeginHang(250, 180));
+        Run(cat, 1, dt);
+        if (dt == 1./60) reference = cat.CurrentPose();
+        CHECK(Near(cat.CurrentPose().x, reference.x, .001));
+        CHECK(Near(cat.CurrentPose().lift, reference.lift, .001));
+        CHECK(Near(cat.CurrentPose().velocityX, reference.velocityX, .001));
+    }
+    const int before = b2GetByteCount();
+    {
+        Controller cat;
+        cat.Reset(330, 40, 960); cat.SetPlatform(250, 750, 180);
+        CHECK(cat.LaunchTo(330, 180)); Run(cat, 3);
+        CHECK(cat.BeginHang(250, 180)); Run(cat, .5);
+        // Destroy a live joint together with its world, as shutdown/drag does.
+    }
+    CHECK(b2GetByteCount() == before);
+}
+
 void WorldLifetime() {
     const int before = b2GetByteCount();
     for (int i = 0; i < 10; ++i) {
@@ -515,6 +720,12 @@ int main() {
         PlatformFrameRatesAndCatchUp();
         CeilingAndReachability();
         TallViewportContainsRaisedPlatformLaunch();
+        DirectWindowTransfersKeepSourceUntilTakeoff();
+        DisablingCursorPlayLeavesOrdinaryWindowPlanningAvailable();
+        CursorSitApproachesWithMotorAndWaitsForBraking();
+        LedgeGripUsesJointAndReleasesMomentum();
+        MovingOrClosingGripNeverTeleports();
+        HangingFixedStepsAndWorldCleanup();
         WorldLifetime();
         std::cout << "Box2D physics: " << checks << " checks passed\n";
         return 0;

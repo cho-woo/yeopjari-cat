@@ -4,10 +4,11 @@
 #include <cmath>
 #include <cstdint>
 #include "cat_deformation.hpp"
+#include "cat_expression.hpp"
 
 namespace cat::animation {
 
-enum class Motion { Idle, Walk, Sleep, Eat, Groom, Stretch, Watch, Stalk, Pounce, Zoomies, TailChase, Punch, Jump, Treat, EarFlick, TailRaise, BellyRoll, Loaf, Knead, Peek, Scratch, Sneeze, ToyPaw, BoxSit };
+enum class Motion { Idle, Walk, Sleep, Eat, Groom, Stretch, Watch, Stalk, Pounce, Zoomies, TailChase, Punch, Jump, Treat, EarFlick, TailRaise, BellyRoll, Loaf, Knead, Peek, Scratch, Sneeze, ToyPaw, BoxSit, Sniff, LookDown, Balance, Startled, Yawn, SleepTalk, Hang, Pride };
 constexpr std::uint64_t kFirstPunchMs = 300;
 constexpr std::uint64_t kSecondPunchMs = 600;
 constexpr std::uint64_t kPunchDurationMs = 2900;
@@ -18,7 +19,7 @@ constexpr std::uint64_t kTailRaiseDurationMs = 3400;
 constexpr std::uint64_t kPeekDurationMs = 3600;
 constexpr std::uint64_t kBellyRollDurationMs = 4300;
 constexpr double kPi = 3.14159265358979323846;
-constexpr int kSpriteCount = 26;
+constexpr int kSpriteCount = 29;
 
 // Offsets are logical pixels; the native renderer applies monitor DPI and real-age growth.
 struct Pose {
@@ -31,6 +32,7 @@ struct Pose {
     cat::deform::Joints joints;
     bool groundContact = true;
     bool bellyRig = false;
+    cat::expression::Face face;
 };
 
 inline double SmoothStep(double fraction) {
@@ -126,7 +128,8 @@ inline Pose Evaluate(Motion motion, std::uint64_t elapsed, std::uint64_t ticks, 
     };
     switch (motion) {
     case Motion::Idle:
-        p.frame = ticks % 6100 < 170 ? 5 : 4;
+        p.frame = 4;
+        p.face.blink = SmoothStep((170.0 - std::abs(static_cast<double>(ticks % 6100) - 170.0)) / 100.0);
         break;
     case Motion::Walk:
         p.frame = static_cast<int>(elapsed / 145 % 4);
@@ -134,7 +137,7 @@ inline Pose Evaluate(Motion motion, std::uint64_t elapsed, std::uint64_t ticks, 
         break;
     case Motion::Sleep:
         p.frame = 6;
-        p.scaleY = 1 + .008 * std::sin(t / 1500.0);
+        p.joints.breath = .45 * std::sin(t / 1500.0);
         break;
     case Motion::Eat:
         p.frame = 7;
@@ -278,27 +281,81 @@ inline Pose Evaluate(Motion motion, std::uint64_t elapsed, std::uint64_t ticks, 
         p.joints.headNod = -.95 * snap;
         p.joints.leftEar = p.joints.rightEar = .45 * snap;
         p.joints.breath = -.6 * snap;
+        p.face.blink = snap; p.face.mouth = .5 * snap;
         break;
     }
     case Motion::ToyPaw:
-        p.frame = elapsed / 330 % 2 ? 12 : 13;
-        p.x = direction * (2.0 + 3.0 * std::max(0.0, std::sin(t / 330.0 * kPi)));
+        p.frame = elapsed < 330 ? 12 : elapsed < 660 ? 13 : 4;
+        p.x = elapsed >= 330 && elapsed < 660 ? direction * 3.0 * std::sin((t-330) / 330.0 * kPi) : 0;
         break;
     case Motion::BoxSit:
         p.frame = 4;
         p.joints.crouch = .65 * SmoothStep(t / 350.0);
-        p.lift = -8.0;
+        p.lift = -8.0 * SmoothStep(t / 350.0);
         break;
+    case Motion::Yawn:
+        p.face.mouth = std::pow(std::sin(std::clamp(t / 2400.0, 0.0, 1.0) * kPi), 2);
+        p.face.blink = SmoothStep(p.face.mouth/.35);
+        p.joints.headNod = -.3 * p.face.mouth;
+        break;
+    case Motion::SleepTalk:
+        p.face.blink = 1;
+        p.face.mouth = .3 * std::max(0.0, std::sin(t / 130.0));
+        p.joints.crouch = 1;
+        break;
+    case Motion::Hang:
+        p.frame = 26;
+        p.bellyRig = true; // Reuse the single canonical head with hanging body/paws.
+        p.groundContact = false;
+        p.joints.headNod = .45;
+        p.joints.frontLeft = .5 * (.5 + .5 * std::sin(t / 340.0));
+        p.joints.frontRight = .5 * (.5 + .5 * std::cos(t / 340.0));
+        p.face.wide = .4; p.face.brow = .3;
+        break;
+    case Motion::Pride:
+        p.joints.headNod = -.4 * SmoothStep(t / 450.0);
+        p.joints.tailRaise = .8;
+        p.face.blink = .35; p.face.smile = .7;
+        break;
+    case Motion::Sniff:
+        p.frame = 4;
+        p.joints.headNod = .20 * std::sin(t / 140.0);
+        p.joints.breath = .25 * std::sin(t / 110.0);
+        break;
+    case Motion::LookDown:
+        p.frame = 4;
+        p.joints.headNod = .75 * SmoothStep(t / 480.0);
+        break;
+    case Motion::Balance:
+        p.frame = 4;
+        p.joints.headNod = .4 * std::sin(t / 170.0) * (1 - SmoothStep(t / 1300.0));
+        p.joints.frontLeft = .6 * std::max(0.0, std::sin(t / 170.0));
+        p.joints.frontRight = .6 * std::max(0.0, -std::sin(t / 170.0));
+        break;
+    case Motion::Startled: {
+        p.frame = 4;
+        const double recovery = 1 - SmoothStep(t / 1200.0);
+        p.joints.leftEar = p.joints.rightEar = .65 * recovery;
+        p.joints.headNod = -.5 * recovery;
+        p.face.wide = recovery; p.face.brow = -.75 * recovery; p.face.mouth = .35 * recovery;
+        break;
+    }
     case Motion::BellyRoll: {
         // Anatomical side/back poses keep the supported spine down and the
         // face upright. A screen-plane spin cannot represent a belly roll.
         p.joints = {};
         p.bellyRig = true;
-        if (elapsed < 520) crossfade(4, 24, t / 520.0);
-        else if (elapsed < 1120) crossfade(24, 25, (t - 520) / 600.0);
+        // Register each pose change in a brief smooth movement. A half-second
+        // hold at partial opacity exposed two separate sets of paws/tails.
+        // The sole head bone uses this exact weight and never detaches.
+        const auto turn=[&](int first,int second,double local,double duration){
+            crossfade(first,second,(local-(duration-180)/2)/180);
+        };
+        if (elapsed < 520) turn(4, 24, t, 520);
+        else if (elapsed < 1120) turn(24, 25, t - 520, 600);
         else if (elapsed < 3140) p.frame = 25;
-        else if (elapsed < 3740) crossfade(25, 24, (t - 3140) / 600.0);
-        else if (elapsed < kBellyRollDurationMs) crossfade(24, 4, (t - 3740) / 560.0);
+        else if (elapsed < 3740) turn(25, 24, t - 3140, 600);
+        else if (elapsed < kBellyRollDurationMs) turn(24, 4, t - 3740, 560);
         else p.frame = 4;
         const double settle = SmoothStep((t - 800) / 500) * (1 - SmoothStep((t - 3000) / 600));
         p.joints.frontLeft = settle * (.5 + .5 * std::sin(t / 360.0));
@@ -308,6 +365,19 @@ inline Pose Evaluate(Motion motion, std::uint64_t elapsed, std::uint64_t ticks, 
         break;
     }
     }
+    return p;
+}
+
+// Sleep variants are chosen once by the controller, never by rendering time.
+// Every variant retains a physical ground baseline and one registered face.
+inline Pose EvaluateSleep(unsigned variant, std::uint64_t elapsed, std::uint64_t ticks, int direction, bool perched = false) {
+    Pose p=Evaluate(Motion::Sleep,elapsed,ticks,direction);
+    if(variant%6==1) { p.frame=24; p.bellyRig=true; p.face.blink=1; }
+    else if(variant%6==2) {p.frame=4;p.joints.crouch=1;p.face.blink=1;}
+    else if(variant%6==3) {p.frame=25;p.bellyRig=true;p.face.blink=1;}
+    else if(variant%6==4) p.frame=27;
+    else if(variant%6==5) p.frame=28;
+    if(perched){p.frame=4;p.bellyRig=false;p.joints.crouch=.35;p.joints.headNod=.45+.25*std::sin(elapsed/2300.0);p.face.blink=.9+.1*std::sin(elapsed/3100.0);}
     return p;
 }
 

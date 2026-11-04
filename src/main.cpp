@@ -38,16 +38,25 @@
 #include "cat_animation.hpp"
 #include "cat_motion_gate.hpp"
 #include "cat_physics.hpp"
+#include "cat_environment.hpp"
 #include "cat_toy.hpp"
+#include "cat_ball_physics.hpp"
 #include "cat_render_geometry.hpp"
 #include "cat_render_placement.hpp"
 #include "cat_belly_rig.hpp"
+#include "cat_species_belly.hpp"
+#include "cat_hanging_rig.hpp"
 #include "cat_preferences.hpp"
+#include "cat_species.hpp"
 #include "cat_audio.hpp"
 #include "screen_prank.hpp"
 #include "update_client.hpp"
 #include "update_swap.hpp"
 #include "cat_update_notice.hpp"
+#include "cat_interaction_settings.hpp"
+#include "cat_life_storage.hpp"
+#include "cat_species.hpp"
+#include "cat_companion.hpp"
 
 using namespace Gdiplus;
 constexpr wchar_t kClass[] = L"YeopjariCat.Native.v1";
@@ -55,12 +64,17 @@ constexpr wchar_t kTitle[] = L"옆자리 고양이";
 constexpr UINT kTrayMessage = WM_APP + 1;
 constexpr UINT kShowExisting = WM_APP + 2;
 constexpr UINT_PTR kTickTimer = 1;
-constexpr int kFeedHotkey = 1, kSnackHotkey = 2, kHideHotkey = 3;
+constexpr int kFeedHotkey = 1, kSnackHotkey = 2, kHideHotkey = 3, kBoxHotkey = 4;
+constexpr UINT kCharacterCommandBase = 2500, kOutfitCommandBase = 2520;
+bool OutfitAvailable(cat::Outfit outfit);
+bool WinterScarfRecommended();
+constexpr UINT kWorkInterferenceCommand = 2300, kSeasonalEventsCommand = 2301;
 enum Command { FeedCommand = 1010, SnackCommand, StatusCommand, PauseCommand, HideCommand, BackupCommand, FolderCommand, QuitCommand, PunchCommand,
                JumpCommand, CreamCommand, SilverCommand, EarCommand, TailCommand, UpdateCheckCommand, UpdateViewCommand, UpdateAutomaticCommand,
                SoundToggleCommand, SoundQuietCommand, SoundNormalCommand, SoundLouderCommand, SoundPreviewCommand,
                OutfitNoneCommand, OutfitBowCommand, OutfitScarfCommand, OutfitCrownCommand,
-               ToyBallCommand, ToyBoxCommand, ToyClearCommand, LoafCommand, KneadCommand, BellyCommand };
+               ToyBallCommand, ToyBoxCommand, ToyClearCommand, LoafCommand, KneadCommand, BellyCommand,
+               ToyPaperBagCommand, ToyCatnipCommand, ToyFishingRodCommand, ToyCushionCommand };
 using Motion = cat::animation::Motion;
 constexpr cat::update::Version kVersion{YEOPJARI_VERSION_MAJOR, YEOPJARI_VERSION_MINOR, YEOPJARI_VERSION_PATCH};
 
@@ -123,20 +137,20 @@ struct Surface {
 struct SpriteAtlas {
     IStream* stream = nullptr;
     std::unique_ptr<Bitmap> image;
-    std::array<Rect, 8> frames{};
+    std::array<Rect, 32> frames{};
     int standingHeight = 1;
     struct Skin {
         int width = 0, height = 0;
-        std::vector<std::uint32_t> source, deformed, body, head;
-        std::unique_ptr<Bitmap> image, bodyImage, headImage;
+        std::vector<std::uint32_t> source, deformed, body, head, expression;
+        std::unique_ptr<Bitmap> image, bodyImage, headImage, expressionImage;
         std::array<int, 8> controls{};
         bool valid = false, partsValid = false;
     };
-    std::array<Skin, 8> skins;
+    std::array<Skin, 32> skins;
     void Reset() {
         for (auto& skin : skins) {
-            skin.image.reset(); skin.bodyImage.reset(); skin.headImage.reset();
-            skin.source.clear(); skin.deformed.clear(); skin.body.clear(); skin.head.clear(); skin.valid = skin.partsValid = false;
+            skin.image.reset(); skin.bodyImage.reset(); skin.headImage.reset(); skin.expressionImage.reset();
+            skin.source.clear(); skin.deformed.clear(); skin.body.clear(); skin.head.clear(); skin.expression.clear(); skin.valid = skin.partsValid = false;
         }
         image.reset();
         if (stream) { stream->Release(); stream = nullptr; }
@@ -148,11 +162,15 @@ struct CharacterArt { SpriteAtlas base, actions; };
 struct WindowPerch {
     HWND hwnd = nullptr;
     RECT rect{};
+    HWND sourceHwnd = nullptr;
+    RECT sourceRect{};
     bool active = false;
     bool transitioning = false;
     bool landingOnWindow = false;
     bool preparing = false;
-    ULONGLONG nextTry = 0, leaveAfter = 0;
+    bool startled = false;
+    bool sawUnreachableLedge = false;
+    ULONGLONG nextTry = 0, leaveAfter = 0, nextLookDown = 0, nextBalance = 0, observedAt = 0;
     double targetX = 0.0;
 };
 
@@ -163,19 +181,29 @@ struct App {
     HWND window = nullptr;
     HANDLE instanceMutex = nullptr;
     ULONG_PTR gdiplusToken = 0;
-    std::array<CharacterArt, 2> characters;
+    std::array<CharacterArt, cat::kCharacterCount> characters;
+    Surface styleBlendFrom, styleBlendTo;
     SpriteAtlas jumpTreat;
     SpriteAtlas gestures;
     SpriteAtlas recline;
+    SpriteAtlas hanging, companionBack, sleepStyles;
     std::array<int, 2> extraStandingHeight{1, 1};
     std::array<int, 2> gestureStandingHeight{1, 1};
     cat::Preferences preferences;
+    cat::interaction::Settings interactionSettings;
+    bool workInterference = false;
+    bool newlyCreatedPet = false;
     bool preferencesRecovered = false, preferencesInvalid = false;
     ToyKind toy = ToyKind::None;
     double toyX = 0.0;
     bool approachingToy = false, toyContact = false;
     int pendingCare = -1;
-    cat::toy::Ball toyBall;
+    cat::toy::PhysicsBall toyBall;
+    cat::toy::Lure toyLure;
+    cat::toy::Session toySession;
+    bool toyEngaged = false, toyDispatching = false, toyRewardPending = false;
+    Motion toyMotion = Motion::Watch;
+    unsigned toyAppliedRevision = 0;
     HWND toyWindow = nullptr;
     Surface toySurface;
     ULONGLONG nextToyAction = 0;
@@ -196,6 +224,21 @@ struct App {
     WindowPerch perch;
     cat::PetState pet;
     cat::memory::storage::Store memory;
+    cat::life::storage::Store life;
+    bool lifeSaveErrorShown = false;
+    std::int64_t lifeInteractionUntil = 0;
+    ULONGLONG nextLifeEventAttempt = 0;
+    std::array<Motion, 3> lifeSequence{};
+    unsigned lifeSequenceCount = 0;
+    bool smallBoxEvent = false, lifeDispatching = false;
+    cat::life::ScreenCrossing lifeCrossing;
+    ULONGLONG lifeHangUntil = 0;
+    cat::companion::Store companionStore;
+    cat::companion::Model companionModel;
+    cat::companion::Window companionWindow;
+    bool companionSaveErrorShown = false;
+    RECT companionWork{};
+    double companionDpi = 0;
     bool memorySaveErrorShown = false;
     ULONGLONG nextMemoryRoutineAttempt = 0;
     std::wstring memoryNotice;
@@ -239,6 +282,8 @@ struct App {
     std::mt19937 random{std::random_device{}()};
 } g;
 
+bool WorkInterferenceEnabled() { return g.workInterference; }
+
 // A monotonic, high resolution clock drives a fixed-step physics simulation.
 // It is independent of the UTC clock that owns the cat's age and care history.
 double MotionClock() {
@@ -253,11 +298,18 @@ void ResetMovement();
 void RefreshAnimationTimer();
 LONG CurrentGroundY(ULONGLONG ticks);
 void CancelPerch();
+bool WorkInterferenceEnabled();
+bool EnvironmentBusy();
+bool OutfitAvailable(cat::Outfit outfit);
+void ObserveLife(ULONGLONG ticks);
+bool MaybeLifeEvent(ULONGLONG ticks, bool decisionBoundary = false);
+bool ContinueLifeSequence();
+void UpdateLifeEvent(ULONGLONG ticks, double elapsed);
 
-std::size_t CharacterIndex() {
-    return g.preferences.character == cat::Character::SilverTabby ? 1U : 0U;
+std::size_t CharacterIndex(cat::Character character = g.preferences.character) {
+    return cat::IsValid(character) ? static_cast<std::size_t>(character) : 0U;
 }
-CharacterArt& CurrentArt() { return g.characters[CharacterIndex()]; }
+CharacterArt& CurrentArt(cat::Character character = g.preferences.character) { return g.characters[CharacterIndex(character)]; }
 
 std::int64_t UtcNow() {
     FILETIME ft{}; GetSystemTimeAsFileTime(&ft);
@@ -439,11 +491,18 @@ struct MemoryTransaction {
 };
 void SyncExperience() {
     if (!g.brain) return;
-    if (!g.memory.enabled()) { g.brain->SetExperience({}); return; }
-    cat::memory::Advance(g.memory.state, UtcNow());
-    const auto p = cat::memory::Summarize(g.memory.state);
-    g.brain->SetExperience({p.bond, p.petPreference, p.treatPreference,
-        p.sociabilityShift, p.energyShift, p.curiosityShift, p.mischiefShift});
+    double bond = 0;
+    if (!g.memory.enabled()) g.brain->SetExperience({});
+    else {
+        cat::memory::Advance(g.memory.state, UtcNow());
+        const auto p = cat::memory::Summarize(g.memory.state); bond = p.bond;
+        g.brain->SetExperience({p.bond, p.petPreference, p.treatPreference,
+            p.sociabilityShift, p.energyShift, p.curiosityShift, p.mischiefShift});
+    }
+    const auto p = g.life.enabled() ? cat::life::Summarize(g.life.state, bond) : cat::life::Profile{};
+    const auto species = cat::species::ProfileFor(g.preferences.character);
+    g.brain->SetDisposition(p.activityScale * species.movementSpeedMultiplier, p.restScale,
+        p.socialScale, p.curiosityScale * species.cursorInterest, p.foodScale * species.foodInterest);
 }
 void LoadMemory() {
     MemoryIO io;
@@ -467,7 +526,40 @@ bool SaveMemory(bool reportError = true) {
     g.memorySaveErrorShown = true;
     return false;
 }
+void LoadLife() {
+    MemoryIO io; MemoryTransaction transaction;
+    if (transaction.held) g.life.Load(io, g.pet, UtcNow(), g.newlyCreatedPet,
+        (static_cast<std::uint64_t>(g.random()) << 32) | g.random());
+    if(g.life.outcome==cat::life::storage::Outcome::Migrated && g.memory.enabled() &&
+            g.memory.state.bornUtc==g.life.state.bornUtc && g.memory.state.lastRareUtc)
+        cat::life::InheritRareCooldown(g.life.state,g.memory.state.lastRareUtc);
+    if (!g.life.enabled()) g.memoryNotice += L" 기분·계절 기록을 읽지 못해 원본을 보존하고 해당 학습을 쉬어요.";
+}
+bool SaveLife(bool reportError = true) {
+    if (!g.life.enabled()) return true;
+    MemoryIO io; MemoryTransaction transaction;
+    if (transaction.held && g.life.Save(io)) { g.lifeSaveErrorShown = false; return true; }
+    if (reportError && !g.lifeSaveErrorShown)
+        Balloon(L"생활 기록을 저장하지 못했어요", L"이전 기분·기념일 기록을 보존했어요. 기록 폴더의 권한과 공간을 확인해 주세요.", true);
+    g.lifeSaveErrorShown = true; return false;
+}
+void LoadCompanion() {
+    MemoryIO io; MemoryTransaction transaction;
+    if (transaction.held) g.companionStore.Load(io, UtcNow());
+    if (g.companionStore.available()) g.companionModel.Bind(g.companionStore.state);
+    else if (g.companionStore.outcome == cat::companion::Outcome::Blocked)
+        g.memoryNotice += L" 두 번째 동물의 기록을 읽지 못해 원본을 보존했어요.";
+}
+bool SaveCompanion(bool reportError = true) {
+    if (!g.companionStore.available()) return true;
+    MemoryIO io; MemoryTransaction transaction;
+    if (transaction.held && g.companionStore.Save(io)) { g.companionSaveErrorShown = false; return true; }
+    if (reportError && !g.companionSaveErrorShown)
+        Balloon(L"두 번째 동물의 기록을 저장하지 못했어요", L"기존 기록을 보존했어요. 기록 폴더의 권한과 공간을 확인해 주세요.", true);
+    g.companionSaveErrorShown = true; return false;
+}
 void Remember(cat::memory::Event event) {
+    g.lifeInteractionUntil = UtcNow() + 30;
     if (!g.memory.enabled()) return;
     if (cat::memory::Record(g.memory.state, event, UtcNow())) {
         SyncExperience();
@@ -510,7 +602,9 @@ bool SavePet(bool reportError = true) {
     // the original schema-1 birthday and lifetime-care record.
     const bool nutritionSaved = SaveNutrition(reportError);
     const bool memorySaved = SaveMemory(reportError);
-    return nutritionSaved && memorySaved;
+    const bool lifeSaved = SaveLife(reportError);
+    const bool companionSaved = SaveCompanion(reportError);
+    return nutritionSaved && memorySaved && lifeSaved && companionSaved;
 }
 std::wstring UpdateText(const std::string& value) {
     if (value.empty()) return {};
@@ -739,7 +833,7 @@ bool LoadPet() {
     if (now < 946684800LL || now > 32503680000LL) {
         MessageBoxW(nullptr, L"컴퓨터의 날짜를 먼저 확인해 주세요. 정확한 생일을 기록한 다음 함께 살기 시작할게요.", kTitle, MB_ICONWARNING); return false;
     }
-    g.pet = cat::NewPet(now); return true;
+    g.pet = cat::NewPet(now); g.newlyCreatedPet = true; return true;
 }
 
 bool ReadPreferences(const std::wstring& path, cat::Preferences& preferences) {
@@ -833,7 +927,7 @@ bool SaveSoundSettings(const cat::audio::Settings& settings, bool reportError = 
     return true;
 }
 void PlayCatSound(cat::audio::Cue cue, bool automatic = false) {
-    if (!g.initialized || g.hidden || g.menuOpen || g.dragging || g.closing || updates.applying) return;
+    if (!g.initialized || g.hidden || g.menuOpen || g.dragging || g.closing || updates.applying || g.motion == Motion::BellyRoll) return;
     if (g.waitingForStop) {
         g.stopSoundPending = true; g.stopSoundCue = cue; g.stopSoundAutomatic = automatic;
         return;
@@ -856,7 +950,68 @@ void ChangeSoundSettings(bool toggle, unsigned volume = 25) {
     g.audio.SetSettings(settings);
 }
 
-bool LoadAtlasResource(int resourceId, SpriteAtlas& sheet, int columns = 4, int frameCount = 8) {
+void LoadInteractionSettings() {
+    std::string bytes;
+    cat::interaction::Settings saved;
+    const auto path = g.directory + L"\\interaction-settings.ini";
+    if (ReadBytes(path, bytes) && cat::interaction::Parse(bytes, saved)) g.interactionSettings = saved;
+    else if (ReadBytes(path + L".bak", bytes) && cat::interaction::Parse(bytes, saved)) g.interactionSettings = saved;
+    g.workInterference = g.interactionSettings.workInterference;
+}
+void ChangeInteractionSettings(bool changeInterference) {
+    const auto path = g.directory + L"\\interaction-settings.ini";
+    const auto temp = path + L".tmp", backup = path + L".bak", backupTemp = backup + L".tmp";
+    bool ownsTransaction=false;
+    auto fail = [&]() {
+        if (ownsTransaction) { DeleteFileW(temp.c_str()); DeleteFileW(backupTemp.c_str()); }
+        UpdateMessage(L"놀이 설정을 저장하지 못했어요. 기존 설정을 유지할게요.", kTitle, MB_OK | MB_ICONWARNING);
+    };
+    // The same AppData folder can be open in another Windows session. Merge
+    // this menu's explicit change into its latest verified settings under the
+    // cross-session lock, preserving the other option changed elsewhere.
+    MemoryTransaction transaction;
+    if (!transaction.held) { fail(); return; }
+    ownsTransaction=true;
+    MemoryIO io;
+    const bool hadMain=io.Exists("interaction-settings.ini");
+    bool hadBackup=io.Exists("interaction-settings.ini.bak");
+    std::string previous, previousBackup;
+    if ((hadMain && !ReadBytes(path,previous)) || (hadBackup && !ReadBytes(backup,previousBackup))) { fail(); return; }
+    auto unchanged=[&]() {
+        std::string current;
+        return io.Exists("interaction-settings.ini")==hadMain &&
+            (!hadMain || (ReadBytes(path,current) && current==previous)) &&
+            io.Exists("interaction-settings.ini.bak")==hadBackup &&
+            (!hadBackup || (ReadBytes(backup,current) && current==previousBackup));
+    };
+    auto candidate=g.interactionSettings;
+    cat::interaction::Settings parsed;
+    const bool mainValid=hadMain && cat::interaction::Parse(previous,parsed);
+    if (mainValid) candidate=parsed;
+    else if (hadBackup && cat::interaction::Parse(previousBackup,parsed)) candidate=parsed;
+    if (changeInterference) candidate.workInterference=!g.interactionSettings.workInterference;
+    else candidate.seasonalEvents=!g.interactionSettings.seasonalEvents;
+    const auto verifiedWrite = [&](const std::wstring& destination, const std::string& bytes) {
+        std::string readback; cat::interaction::Settings checked;
+        return WriteBytes(destination,bytes) && ReadBytes(destination,readback) &&
+            readback==bytes && cat::interaction::Parse(readback,checked);
+    };
+    if (hadMain) {
+        if (mainValid) {
+            if (hadBackup && !cat::interaction::Parse(previousBackup,parsed) &&
+                !io.Preserve("interaction-settings.ini.bak")) { fail(); return; }
+            if (!verifiedWrite(backupTemp, previous) || !unchanged() ||
+                !MoveFileExW(backupTemp.c_str(), backup.c_str(), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) { fail(); return; }
+            hadBackup=true; previousBackup=previous;
+        } else if (!io.Preserve("interaction-settings.ini")) { fail(); return; }
+    }
+    if (!verifiedWrite(temp, cat::interaction::Serialize(candidate)) || !unchanged() ||
+        !MoveFileExW(temp.c_str(), path.c_str(), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) { fail(); return; }
+    g.interactionSettings = candidate;
+    g.workInterference = candidate.workInterference;
+}
+
+bool LoadAtlasResource(int resourceId, SpriteAtlas& sheet, int columns = 4, int frameCount = 8, int sheetRow = -1) {
     auto& stream = sheet.stream; auto& atlas = sheet.image;
     auto& frames = sheet.frames; auto& standingHeight = sheet.standingHeight;
     HRSRC resource = FindResourceW(g.instance, MAKEINTRESOURCEW(resourceId), RT_RCDATA);
@@ -881,11 +1036,39 @@ bool LoadAtlasResource(int resourceId, SpriteAtlas& sheet, int columns = 4, int 
     }
     const int rows = frameCount / columns;
     std::vector<int> rowCuts(rows + 1);
-    for (int row = 0; row <= rows; ++row) rowCuts[row] = row * height / rows;
+    for (int row = 0; row <= rows; ++row) rowCuts[row] = sheetRow < 0 ? row * height / rows : (sheetRow + row) * height / 8;
+    if (sheetRow >= 0) {
+        // Generated contact sheets have uneven transparent row gutters. Find
+        // the nearest empty scanline so no paws/ears leak into another pet.
+        for (int edge=0; edge<=1; ++edge) {
+            const int split=sheetRow+edge;
+            if(split==0){rowCuts[edge]=0;continue;}
+            if(split==8){rowCuts[edge]=height;continue;}
+            const int target=split*height/8,radius=height/32;
+            int best=target,fewest=width+1;
+            for(int y=std::max(0,target-radius);y<std::min(height,target+radius+1);++y){
+                const auto* row=static_cast<const BYTE*>(data.Scan0)+static_cast<ptrdiff_t>(y)*data.Stride;
+                int occupied=0;for(int x=0;x<width;++x)if(row[x*4+3]>16)++occupied;
+                if(occupied<fewest||(occupied==fewest&&std::abs(y-target)<std::abs(best-target))){best=y;fewest=occupied;}
+            }
+            rowCuts[edge]=best;
+        }
+    }
+    std::vector<int> columnCuts(columns+1);
+    for(int col=0;col<=columns;++col)columnCuts[col]=col*width/columns;
+    if(sheetRow>=0) for(int split=1;split<columns;++split){
+        const int target=split*width/columns,radius=width/columns/5;
+        int best=target,fewest=height+1;
+        for(int x=std::max(columnCuts[split-1]+1,target-radius);x<std::min(width,target+radius+1);++x){
+            int occupied=0;for(int y=rowCuts[0];y<rowCuts[1];++y){const auto* row=static_cast<const BYTE*>(data.Scan0)+static_cast<ptrdiff_t>(y)*data.Stride;if(row[x*4+3]>16)++occupied;}
+            if(occupied<fewest||(occupied==fewest&&std::abs(x-target)<std::abs(best-target))){best=x;fewest=occupied;}
+        }
+        columnCuts[split]=best;
+    }
     // Portrait sheets have deliberately generous, sometimes uneven gutters.
     // Locate the nearest transparent scanline so a tall ear cannot leak into
     // the sprite above it. Original artwork bytes remain unchanged.
-    if (columns == 2) for (int split = 1; split < rows; ++split) {
+    if (columns == 2 || resourceId == 112) for (int split = 1; split < rows; ++split) {
         const int target = split * height / rows, radius = height / rows / 4;
         int best = target, fewest = width + 1;
         for (int y = std::max(rowCuts[split - 1] + 1, target - radius);
@@ -901,7 +1084,7 @@ bool LoadAtlasResource(int resourceId, SpriteAtlas& sheet, int columns = 4, int 
     }
     for (int index = 0; index < frameCount; ++index) {
         const int col = index % columns, rowIndex = index / columns;
-        const int x0 = col * width / columns, x1 = (col + 1) * width / columns;
+        const int x0 = columnCuts[col], x1 = columnCuts[col+1];
         const int y0 = rowCuts[rowIndex], y1 = rowCuts[rowIndex + 1];
         int left = x1, top = y1, right = x0 - 1, bottom = y0 - 1;
         for (int y = y0; y < y1; ++y) {
@@ -918,9 +1101,9 @@ bool LoadAtlasResource(int resourceId, SpriteAtlas& sheet, int columns = 4, int 
     // Prepare reusable premultiplied crops once. Joint animation deforms a
     // cropped texture, never allocates a full atlas on every animation frame.
     for (int index = 0; index < frameCount; ++index) {
-        const bool needsSkin = resourceId == 107 ||
+        const bool needsSkin = resourceId == 112 || resourceId == 111 || resourceId == 110 || resourceId == 109 || resourceId == 107 ||
             (resourceId == 105 && (index == 0 || index == 4)) ||
-            ((resourceId == 101 || resourceId == 103) && index == 4) ||
+            ((resourceId == 101 || resourceId == 103) && (index == 4 || index == 5 || index == 6)) ||
             ((resourceId == 102 || resourceId == 104) && (index == 1 || index == 2));
         if (!needsSkin) continue;
         const auto& source = frames[index];
@@ -928,7 +1111,7 @@ bool LoadAtlasResource(int resourceId, SpriteAtlas& sheet, int columns = 4, int 
         skin.width = source.Width; skin.height = source.Height;
         skin.source.resize(static_cast<std::size_t>(skin.width) * skin.height);
         skin.deformed.resize(skin.source.size());
-        skin.body.resize(skin.source.size()); skin.head.resize(skin.source.size());
+        skin.body.resize(skin.source.size()); skin.head.resize(skin.source.size()); skin.expression.resize(skin.source.size());
         for (int y = 0; y < skin.height; ++y) {
             const auto* row = static_cast<const BYTE*>(data.Scan0) +
                 static_cast<ptrdiff_t>(y + source.Y) * data.Stride + source.X * 4;
@@ -940,6 +1123,8 @@ bool LoadAtlasResource(int resourceId, SpriteAtlas& sheet, int columns = 4, int 
                     ((pixel[1] * a + 127) / 255 << 8) | ((pixel[0] * a + 127) / 255);
             }
         }
+        skin.expressionImage = std::make_unique<Bitmap>(skin.width, skin.height, skin.width * 4,
+            PixelFormat32bppPARGB, reinterpret_cast<BYTE*>(skin.expression.data()));
         skin.image = std::make_unique<Bitmap>(skin.width, skin.height, skin.width * 4,
             PixelFormat32bppPARGB, reinterpret_cast<BYTE*>(skin.deformed.data()));
         skin.bodyImage = std::make_unique<Bitmap>(skin.width, skin.height, skin.width * 4,
@@ -956,8 +1141,14 @@ bool LoadAtlas() {
         // The relaxed sitting pose is the size reference across a character's sheets.
         art.actions.standingHeight = std::max(1, art.actions.frames[6].Height);
     }
+    for (int i = 2; i < cat::kCharacterCount; ++i) {
+        if (!LoadAtlasResource(109, g.characters[i].base, 8, 8, i-2)) return false;
+        g.characters[i].base.standingHeight = g.characters[i].base.frames[0].Height;
+    }
     if (!LoadAtlasResource(105, g.jumpTreat, 2) || !LoadAtlasResource(106, g.gestures, 2) ||
-        !LoadAtlasResource(107, g.recline, 2, 4)) return false;
+        !LoadAtlasResource(107, g.recline, 2, 4) ||
+        !LoadAtlasResource(110, g.hanging, 5, 10) || !LoadAtlasResource(111, g.companionBack, 4, 8) ||
+        !LoadAtlasResource(112, g.sleepStyles, 4, 20)) return false;
     for (int i = 0; i < 2; ++i) {
         g.extraStandingHeight[i] = std::max(g.jumpTreat.frames[i * 4 + 2].Height, g.jumpTreat.frames[i * 4 + 3].Height);
         g.gestureStandingHeight[i] = std::max(g.gestures.frames[i * 4].Height, g.gestures.frames[i * 4 + 1].Height);
@@ -965,8 +1156,9 @@ bool LoadAtlas() {
     return true;
 }
 void ReleaseAtlases() {
+    g.styleBlendFrom.Reset(); g.styleBlendTo.Reset();
     for (auto& art : g.characters) { art.base.Reset(); art.actions.Reset(); }
-    g.jumpTreat.Reset(); g.gestures.Reset(); g.recline.Reset();
+    g.jumpTreat.Reset(); g.gestures.Reset(); g.recline.Reset(); g.hanging.Reset(); g.companionBack.Reset(); g.sleepStyles.Reset();
 }
 
 UINT MonitorDpi(HMONITOR monitor) {
@@ -1020,7 +1212,17 @@ double WalkingVelocity(const cat::physics::Pose& pose) {
 
 void RefreshAnimationTimer() {
     if (!g.window) return;
+    bool companionResting = true;
+    if (g.companionStore.enabled() && g.companionModel.Bound()) {
+        const auto second = g.companionModel.View(GetTickCount64());
+        companionResting = second.motion == Motion::Sleep && second.physical.grounded &&
+            std::abs(second.physical.velocityX) < .5;
+    }
+    const bool toysResting = (g.toy != ToyKind::Ball ||
+        (std::abs(g.toyBall.velocity) < .5 && std::abs(g.toyBall.verticalVelocity) < .5 && g.toyBall.lift < .2)) &&
+        !(g.toy == ToyKind::FishingRod && g.toyEngaged);
     const bool resting = (g.motion == Motion::Sleep || g.motion == Motion::Loaf || g.motion == Motion::BoxSit) &&
+        companionResting && toysResting &&
         (!g.physicsReady || (g.physics.CurrentPose().grounded && std::abs(WalkingVelocity(g.physics.CurrentPose())) < .5));
     const UINT interval = g.hidden ? 250 : (g.menuOpen || g.dragging || resting ? 40 : 16);
     const bool precise = interval == 16;
@@ -1060,7 +1262,16 @@ void KeepOnWorkArea(bool reposition = false) {
     if (changed || dpiChanged || reposition || !g.physicsReady) ResetMovement();
 }
 double Random(double low, double high) { return std::uniform_real_distribution<double>(low, high)(g.random); }
+bool VoiceChance(double probability) {
+    return Random(0, 1) < std::clamp(probability * cat::species::ProfileFor(g.preferences.character).talkFrequency, 0.0, 1.0);
+}
 void SetMotion(Motion motion, ULONGLONG duration) {
+    if (!g.lifeDispatching) {
+        g.lifeSequenceCount = 0; g.smallBoxEvent = false; g.lifeCrossing = {};
+    }
+    if (motion != Motion::Hang && g.physics.Hanging()) {
+        g.physics.EndHang(false); g.lifeHangUntil = 0;
+    }
     if (motion == Motion::Peek) duration = cat::animation::kPeekDurationMs;
     if (motion == Motion::BellyRoll) duration = cat::animation::kBellyRollDurationMs;
     if (g.motion == Motion::Walk || g.motion == Motion::Stalk || g.motion == Motion::Zoomies)
@@ -1069,6 +1280,12 @@ void SetMotion(Motion motion, ULONGLONG duration) {
         g.physics.CurrentPose().grounded, WalkingVelocity(g.physics.CurrentPose()), g.perch.transitioning);
     g.stopSoundPending = false;
     const auto ticks = GetTickCount64(); g.motion = motion; g.motionStart = ticks; g.nextDecision = ticks + duration;
+    if (!g.toyDispatching && g.toyEngaged) {
+        g.toyEngaged = false;
+        g.toySession.Start(g.toy);
+        // Resume discovering after the explicit action has had its full time.
+        g.nextToyAction = ticks + duration + 1500;
+    }
     g.punchHits = 0;
     g.motionSoundPending = false;
     g.gestureSoundPending = false;
@@ -1076,10 +1293,26 @@ void SetMotion(Motion motion, ULONGLONG duration) {
     g.jumpLaunched = false;
     g.approachingToy = false; g.toyContact = false;
     g.approachingUser = false; g.memorySequenceCount = 0;
-    if (motion == Motion::Sleep || g.waitingForStop) g.audio.Stop();
+    if (motion == Motion::Sleep || motion == Motion::BellyRoll || g.waitingForStop) g.audio.Stop();
     RefreshAnimationTimer();
 }
 struct PerchCandidate { HWND hwnd = nullptr; RECT rect{}; double score = 0.0; };
+
+double PerchJumpScale() {
+    return cat::species::ProfileFor(g.preferences.character).jumpHeightMultiplier *
+        cat::nutrition::VisualModifiers(g.nutrition).jump;
+}
+double PerchClearance() { return 45 * PerchJumpScale(); }
+
+bool PlanPerchLanding(const RECT& rect, double& target) {
+    const double left = (std::max(rect.left, g.work.left) - g.work.left) / g.dpiScale;
+    const double right = (std::min(rect.right, g.work.right) - g.work.left) / g.dpiScale;
+    const double height = (g.work.bottom - rect.top) / g.dpiScale;
+    if (height - g.physics.CurrentPose().lift > 520 * PerchJumpScale())
+        return false;
+    return cat::environment::ChooseLanding(g.physics.CurrentPose().x, left, right,
+        [&](double x) { return g.physics.CanLaunchToPlatform(left, right, height, x, PerchClearance()); }, target);
+}
 
 bool QueryPerchRect(HWND hwnd, RECT& rect) {
     if (!hwnd || hwnd == g.window || !IsWindow(hwnd) || !IsWindowVisible(hwnd) || IsIconic(hwnd) || IsZoomed(hwnd)) return false;
@@ -1112,16 +1345,17 @@ bool QueryPerchRect(HWND hwnd, RECT& rect) {
 
 BOOL CALLBACK CollectPerchWindows(HWND hwnd, LPARAM parameter) {
     auto* list = reinterpret_cast<std::vector<PerchCandidate>*>(parameter);
+    if (hwnd == g.perch.hwnd) return TRUE;
     RECT rect{};
     if (!QueryPerchRect(hwnd, rect)) return TRUE;
-    const double left = std::max(rect.left, g.work.left) + 72 * g.dpiScale;
-    const double right = std::min(rect.right, g.work.right) - 72 * g.dpiScale;
-    if (right <= left) return TRUE;
-    const double targetX = std::clamp(g.centerX, left, right);
-    if (!g.physics.CanLaunchTo((targetX - g.work.left) / g.dpiScale,
-            (g.work.bottom - rect.top) / g.dpiScale)) return TRUE;
-    const double horizontal = std::abs(targetX - g.centerX);
-    const double vertical = std::max(0L, g.work.bottom - rect.top);
+    double targetX = 0;
+    if (!PlanPerchLanding(rect, targetX)) {
+        if ((g.work.bottom - rect.top) / g.dpiScale - g.physics.CurrentPose().lift > 520 * PerchJumpScale())
+            g.perch.sawUnreachableLedge = true;
+        return TRUE;
+    }
+    const double horizontal = std::abs(targetX - g.physics.CurrentPose().x);
+    const double vertical = std::abs((g.work.bottom - rect.top) / g.dpiScale - g.physics.CurrentPose().lift);
     // Prefer a nearby window, with a small bias toward lower/easier ledges.
     list->push_back({hwnd, rect, horizontal + vertical * .18});
     return TRUE;
@@ -1129,6 +1363,7 @@ BOOL CALLBACK CollectPerchWindows(HWND hwnd, LPARAM parameter) {
 
 bool FindPerch(PerchCandidate& choice) {
     std::vector<PerchCandidate> candidates;
+    g.perch.sawUnreachableLedge = false;
     EnumWindows(CollectPerchWindows, reinterpret_cast<LPARAM>(&candidates));
     if (candidates.empty()) return false;
     std::sort(candidates.begin(), candidates.end(), [](const auto& a, const auto& b) { return a.score < b.score; });
@@ -1147,8 +1382,10 @@ LONG CurrentGroundY(ULONGLONG) {
 
 void CancelPerch() {
     g.perch.hwnd = nullptr;
+    g.perch.sourceHwnd = nullptr; g.perch.sourceRect = {};
     g.perch.active = g.perch.transitioning = g.perch.preparing = false;
     g.perch.landingOnWindow = false;
+    g.perch.startled = false;
     g.perch.rect = {};
     if (g.physicsReady) g.physics.RemovePlatform();
 }
@@ -1162,26 +1399,26 @@ void SetPerchCollider(const RECT& rect) {
 void BeginPerchTransition(HWND hwnd, const RECT& rect, bool landingOnWindow) {
     const auto ticks = GetTickCount64();
     if (landingOnWindow) {
-        const double margin = 78 * g.dpiScale;
-        const double low = std::max(rect.left, g.work.left) + margin;
-        const double high = std::min(rect.right, g.work.right) - margin;
-        if (high < low) return;
-        const double desired = std::clamp(g.centerX + Random(-130, 130) * g.dpiScale, low, high);
-        const double target = (desired - g.work.left) / g.dpiScale;
-        if (!g.physics.CanLaunchTo(target, (g.work.bottom - rect.top) / g.dpiScale)) {
+        double target = 0;
+        if (!PlanPerchLanding(rect, target)) {
             g.perch.nextTry = ticks + 60000;
             return;
         }
+        // Retain the real source ledge while the cat brakes and crouches.
+        // The destination collider is installed atomically at takeoff.
+        g.perch.sourceHwnd = g.perch.active ? g.perch.hwnd : nullptr;
+        g.perch.sourceRect = g.perch.active ? g.perch.rect : RECT{};
         g.perch.targetX = target;
         g.perch.hwnd = hwnd;
         g.perch.rect = rect;
-        SetPerchCollider(rect);
-        g.direction = desired < g.centerX ? -1 : 1;
+        g.perch.startled = false;
+        g.direction = target < g.physics.CurrentPose().x ? -1 : 1;
     } else {
         // Closing/removing a support never restarts the trajectory or invents
         // an upward hop. Gravity acts on the current body and velocity.
         g.physics.RemovePlatform();
         g.perch.hwnd = nullptr;
+        g.perch.sourceHwnd = nullptr; g.perch.sourceRect = {};
         g.perch.rect = {};
     }
     if (g.brain) g.brain->Interrupt(ticks);
@@ -1200,10 +1437,12 @@ void FinishPerchTransition(ULONGLONG ticks) {
     const auto physical = g.physics.CurrentPose();
     const bool landedOnWindow = physical.onPlatform && g.perch.landingOnWindow;
     g.perch.transitioning = g.perch.preparing = false;
+    g.perch.sourceHwnd = nullptr; g.perch.sourceRect = {};
     g.perch.active = landedOnWindow;
     if (landedOnWindow) {
         g.perch.leaveAfter = ticks + static_cast<ULONGLONG>(Random(22000, 52000));
-        g.perch.nextTry = ticks + static_cast<ULONGLONG>(Random(150000, 300000));
+        g.perch.nextTry = ticks + static_cast<ULONGLONG>(Random(18000, 35000));
+        g.perch.nextLookDown = ticks + 7000; g.perch.observedAt = ticks;
     } else {
         g.physics.RemovePlatform();
         g.perch.hwnd = nullptr; g.perch.rect = {};
@@ -1214,49 +1453,81 @@ void FinishPerchTransition(ULONGLONG ticks) {
         g.landingStrength = std::clamp(physical.landingSpeed / 230.0, .35, 1.0);
     }
     g.physics.SetTargetVelocity(0);
-    SetMotion(Motion::Watch, static_cast<ULONGLONG>(Random(1700, 3000)));
-    if (landedOnWindow && Random(0, 1) < .38) PlayCatSound(cat::audio::Cue::Greeting, true);
+    SetMotion(g.perch.startled ? Motion::Startled : Motion::Watch,
+        static_cast<ULONGLONG>(Random(1700, 3000)));
+    g.perch.startled = false;
+    if (landedOnWindow && VoiceChance(.38)) PlayCatSound(cat::audio::Cue::Greeting, true);
+}
+
+void AbortPlannedPerchTransfer(ULONGLONG ticks) {
+    RECT source{};
+    const bool supported = g.perch.sourceHwnd && QueryPerchRect(g.perch.sourceHwnd, source);
+    g.perch.hwnd = supported ? g.perch.sourceHwnd : nullptr;
+    g.perch.rect = supported ? source : RECT{};
+    g.perch.active = supported;
+    g.perch.sourceHwnd = nullptr; g.perch.sourceRect = {};
+    if (supported) SetPerchCollider(source);
+    else g.physics.RemovePlatform();
+    g.perch.landingOnWindow = supported;
+    g.perch.preparing = false;
+    g.perch.transitioning = !supported && !g.physics.CurrentPose().grounded;
+    g.perch.nextTry = ticks + 30000;
+    g.waitingForStop = g.jumpPending = g.jumpLaunched = false;
+    g.physics.SetTargetVelocity(0);
+    if (!g.perch.transitioning && g.motion == Motion::Jump) SetMotion(Motion::Watch, 1800);
 }
 
 void UpdatePerchTransition(ULONGLONG ticks, double elapsed) {
     if (!g.perch.transitioning) return;
     if (g.perch.preparing && (g.pet.roamingPaused || g.motion != Motion::Jump)) {
-        // Rest/manual commands can cancel a planned jump before its impulse.
-        // Airborne transfers keep their real trajectory until a contact.
-        g.physics.RemovePlatform();
-        g.perch.landingOnWindow = g.perch.preparing = false;
-        g.perch.hwnd = nullptr; g.perch.rect = {};
+        // A canceled preparation leaves its original ledge intact. Only a
+        // closed source removes support; an airborne transfer keeps momentum.
+        AbortPlannedPerchTransfer(ticks);
+        return;
+    }
+    if (g.perch.preparing && g.perch.sourceHwnd) {
+        RECT source{};
+        if (!QueryPerchRect(g.perch.sourceHwnd, source)) {
+            g.perch.startled = true;
+            AbortPlannedPerchTransfer(ticks);
+            return;
+        }
+        SetPerchCollider(source);
+        g.perch.sourceRect = source;
     }
     if (g.perch.landingOnWindow) {
         RECT current{};
         if (!QueryPerchRect(g.perch.hwnd, current)) {
+            if (g.perch.preparing) { AbortPlannedPerchTransfer(ticks); return; }
             g.physics.RemovePlatform();
             g.perch.landingOnWindow = g.perch.preparing = false;
+            g.perch.startled = true;
             g.perch.hwnd = nullptr; g.perch.rect = {};
         } else {
             // Before takeoff a moved target can change the planned impulse.
             // Once airborne only the ledge moves; the cat keeps its momentum.
             if (g.perch.preparing) {
-                g.perch.targetX = std::clamp(g.perch.targetX + (current.left - g.perch.rect.left) / g.dpiScale,
-                    (std::max(current.left, g.work.left) - g.work.left) / g.dpiScale + 78,
-                    (std::min(current.right, g.work.right) - g.work.left) / g.dpiScale - 78);
-            }
-            SetPerchCollider(current);
+                if (!PlanPerchLanding(current, g.perch.targetX)) { AbortPlannedPerchTransfer(ticks); return; }
+            } else SetPerchCollider(current);
             g.perch.rect = current;
         }
     }
     if (g.perch.preparing) {
         g.physics.SetTargetVelocity(0);
         const auto physical = g.physics.CurrentPose();
-        g.waitingForStop = std::abs(WalkingVelocity(physical)) > 2;
+        g.waitingForStop = !physical.grounded || std::abs(WalkingVelocity(physical)) > 2;
         if (g.waitingForStop) g.motionStart = ticks;
         else if (ticks >= g.motionStart + 220) {
-            if (g.physics.LaunchTo(g.perch.targetX, (g.work.bottom - g.perch.rect.top) / g.dpiScale)) {
+            if (g.physics.LaunchToPlatform(
+                    (std::max(g.perch.rect.left, g.work.left) - g.work.left) / g.dpiScale,
+                    (std::min(g.perch.rect.right, g.work.right) - g.work.left) / g.dpiScale,
+                    (g.work.bottom - g.perch.rect.top) / g.dpiScale, g.perch.targetX, PerchClearance())) {
                 g.jumpLaunched = true;
+                g.perch.sourceHwnd = nullptr; g.perch.sourceRect = {};
                 PlayCatSound(cat::audio::Cue::Jump, true);
             } else {
-                g.physics.RemovePlatform();
-                g.perch.landingOnWindow = false;
+                AbortPlannedPerchTransfer(ticks);
+                return;
             }
             g.perch.preparing = false;
         }
@@ -1275,23 +1546,49 @@ void MaintainPerch(ULONGLONG ticks) {
     if (!g.perch.active || g.perch.transitioning) return;
     RECT current{};
     if (!QueryPerchRect(g.perch.hwnd, current)) {
+        g.perch.startled = true;
+        PlayCatSound(cat::audio::Cue::Gesture, true);
         BeginPerchTransition(nullptr, {}, false);
         return;
     }
+    const double seconds = g.perch.observedAt && ticks > g.perch.observedAt ? (ticks - g.perch.observedAt) / 1000.0 : 0;
+    const double strength = seconds > 0 && seconds <= .25 ? cat::environment::BalanceStrength(
+        (current.left - g.perch.rect.left) / g.dpiScale / seconds,
+        (current.top - g.perch.rect.top) / g.dpiScale / seconds) : 0;
     SetPerchCollider(current);
     g.perch.rect = current;
+    g.perch.observedAt = ticks;
+    if (g.physics.Hanging()) return; // Keep its real support tracked; do not start another action.
+    const bool available = !EnvironmentBusy() && !g.lifeSequenceCount && !g.lifeCrossing.Active() &&
+        !g.toyEngaged && !g.waitingForStop && g.physics.OnPlatform() &&
+        (g.motion == Motion::Idle || g.motion == Motion::Watch || g.motion == Motion::Walk || g.motion == Motion::Balance);
+    if (available && strength > .08 && ticks >= g.perch.nextBalance) {
+        SetMotion(Motion::Balance, 1100);
+        g.perch.nextBalance = ticks + 1500;
+    } else if (available && ticks >= g.perch.nextLookDown && strength < .02 &&
+            std::abs(WalkingVelocity(g.physics.CurrentPose())) < 2) {
+        SetMotion(Motion::LookDown, 1900);
+        g.perch.nextLookDown = ticks + static_cast<ULONGLONG>(Random(18000, 35000));
+    }
     if (!g.pet.roamingPaused && !g.waitingForStop && ticks >= g.perch.leaveAfter && g.physics.CurrentPose().grounded &&
-        (g.motion == Motion::Idle || g.motion == Motion::Walk || g.motion == Motion::Watch || g.motion == Motion::Groom))
-        BeginPerchTransition(nullptr, {}, false);
+        !EnvironmentBusy() && !g.lifeSequenceCount && !g.lifeCrossing.Active() && !g.toyEngaged &&
+        (g.motion == Motion::Idle || g.motion == Motion::Walk || g.motion == Motion::Watch || g.motion == Motion::Groom)) {
+        PerchCandidate next;
+        if (FindPerch(next)) BeginPerchTransition(next.hwnd, next.rect, true);
+        else BeginPerchTransition(nullptr, {}, false);
+    }
 }
 
 void MaybeVisitWindow(ULONGLONG ticks) {
-    if (g.perch.active || g.perch.transitioning || g.approachingToy || g.approachingUser || g.memorySequenceCount || g.pet.roamingPaused || ticks < g.perch.nextTry ||
+    if (EnvironmentBusy() || g.lifeSequenceCount || g.lifeCrossing.Active() || g.physics.Hanging() ||
+        g.perch.transitioning || g.toyEngaged || g.approachingToy || g.approachingUser || g.memorySequenceCount || g.pet.roamingPaused || ticks < g.perch.nextTry ||
         ticks < g.bubbleUntil || g.menuOpen || g.dragging || !g.physics.CurrentPose().grounded) return;
     if (g.motion != Motion::Idle && g.motion != Motion::Walk && g.motion != Motion::Watch && g.motion != Motion::Groom) return;
     PerchCandidate candidate;
     if (!FindPerch(candidate)) {
         g.perch.nextTry = ticks + static_cast<ULONGLONG>(Random(90000, 180000));
+        if (g.preferences.character == cat::Character::Munchkin && g.perch.sawUnreachableLedge && Random(0, 1) < .3)
+            SetMotion(Motion::LookDown, 1700); // Assess an unreachable ledge without a fake hop.
         return;
     }
     // It should feel like a rare bit of cat logic, not a constant window tour.
@@ -1307,30 +1604,47 @@ void RoundedRect(GraphicsPath& path, REAL x, REAL y, REAL w, REAL h, REAL radius
     path.AddArc(x, y, d, d, 180, 90); path.AddArc(x + w - d, y, d, d, 270, 90);
     path.AddArc(x + w - d, y + h - d, d, d, 0, 90); path.AddArc(x, y + h - d, d, d, 90, 90); path.CloseFigure();
 }
+void DrawOutfitBody(Graphics& graphics, int frame, REAL width, REAL height, bool centerPivot,
+                   cat::Outfit outfit, const cat::deform::Joints& joints, cat::deform::Shape shape) {
+    if(outfit!=cat::Outfit::Hoodie&&outfit!=cat::Outfit::Dinosaur&&outfit!=cat::Outfit::Shark)return;
+    const bool lying=frame==6||frame>=24;
+    const double bx=lying?.41:frame<4?.38:.57,by=lying?.66:frame<4?.73:.80;
+    const auto warped=cat::deform::DeformPoint({bx,by},joints,shape);
+    const auto body=cat::render::LocalPoint({warped.x,warped.y},width,height,centerPivot);
+    const REAL rx=width*static_cast<REAL>(lying?.22:.17),ry=height*static_cast<REAL>((lying?.18:.115)*(1-.3*joints.crouch));
+    const Color color=outfit==cat::Outfit::Hoodie?Color(238,180,141,199):outfit==cat::Outfit::Dinosaur?Color(238,91,159,104):Color(238,92,155,186);
+    SolidBrush cloth(color); Pen seam(Color(165,245,241,226),std::max(1.0f,width*.008f));
+    graphics.FillEllipse(&cloth,static_cast<REAL>(body.x)-rx,static_cast<REAL>(body.y)-ry,rx*2,ry*2);
+    graphics.DrawArc(&seam,static_cast<REAL>(body.x)-rx*.65f,static_cast<REAL>(body.y)-ry*.3f,rx*1.3f,ry,0,180);
+}
 void DrawOutfit(Graphics& graphics, int frame, REAL width, REAL height, bool centerPivot,
-                const cat::deform::Joints& joints = {}, cat::deform::Shape shape = cat::deform::Shape::Sitting) {
-    if (g.preferences.outfit == cat::Outfit::None) return;
-    const auto anchors = cat::render::AnchorsForFrame(frame);
+                const cat::deform::Joints& joints = {}, cat::deform::Shape shape = cat::deform::Shape::Sitting,
+                cat::Outfit outfit = g.preferences.outfit, cat::Character character = g.preferences.character, bool headOnly = false) {
+    if (outfit == cat::Outfit::None) return;
+    if(!headOnly)DrawOutfitBody(graphics,frame,width,height,centerPivot,outfit,joints,shape);
+    auto anchors = cat::render::AnchorsForFrame(frame);
+    if (cat::species::UsesNewArt(character) && frame == 4) anchors = {{.69,cat::belly::Neckline(character)},{.66,.16},.67};
+    if(character==cat::Character::Rabbit && frame==4)anchors.crown={.66,.35};
     const auto warpedNeck = cat::deform::DeformPoint({anchors.neck.x, anchors.neck.y}, joints, shape);
     const auto warpedCrown = cat::deform::DeformPoint({anchors.crown.x, anchors.crown.y}, joints, shape);
     const auto neckPoint = cat::render::LocalPoint({warpedNeck.x, warpedNeck.y}, width, height, centerPivot);
     const auto crownPoint = cat::render::LocalPoint({warpedCrown.x, warpedCrown.y}, width, height, centerPivot);
     const REAL x = static_cast<REAL>(neckPoint.x), neck = static_cast<REAL>(neckPoint.y);
     const REAL unit = static_cast<REAL>(anchors.headWidth * width / 80.0);
-    if (g.preferences.outfit == cat::Outfit::BowTie) {
+    if (outfit == cat::Outfit::BowTie) {
         SolidBrush ribbon(Color(235, 218, 70, 66));
         SolidBrush knot(Color(245, 245, 184, 68));
         graphics.FillEllipse(&ribbon, x - 18*unit, neck - 7*unit, 17*unit, 14*unit);
         graphics.FillEllipse(&ribbon, x + 1*unit, neck - 7*unit, 17*unit, 14*unit);
         graphics.FillEllipse(&knot, x - 5*unit, neck - 5*unit, 10*unit, 10*unit);
-    } else if (g.preferences.outfit == cat::Outfit::Scarf) {
+    } else if (outfit == cat::Outfit::Scarf) {
         Pen scarf(Color(235, 213, 92, 79), 8*unit);
         scarf.SetStartCap(LineCapRound); scarf.SetEndCap(LineCapRound);
         graphics.DrawArc(&scarf, x - 25*unit, neck - 12*unit, 50*unit, 25*unit, 12, 156);
         graphics.DrawLine(&scarf, x + 12*unit, neck + 4*unit, x + 22*unit, neck + 28*unit);
         Pen trim(Color(210, 245, 210, 170), 1.3f*unit);
         graphics.DrawLine(&trim, x + 17*unit, neck + 19*unit, x + 25*unit, neck + 20*unit);
-    } else if (g.preferences.outfit == cat::Outfit::Crown) {
+    } else if (outfit == cat::Outfit::Crown) {
         const REAL x = static_cast<REAL>(crownPoint.x);
         const REAL y = static_cast<REAL>(crownPoint.y - 14 * unit);
         PointF points[7] = {{x-18*unit,y+14*unit},{x-15*unit,y},{x-5*unit,y+9*unit},{x,y-3*unit},
@@ -1338,10 +1652,60 @@ void DrawOutfit(Graphics& graphics, int frame, REAL width, REAL height, bool cen
         SolidBrush gold(Color(240, 242, 190, 58)); Pen border(Color(235, 151, 103, 28), 1.2f*unit);
         graphics.FillPolygon(&gold, points, 7); graphics.DrawPolygon(&border, points, 7);
         SolidBrush jewel(Color(230, 218, 64, 80)); graphics.FillEllipse(&jewel, x-2.5f*unit, y+7*unit, 5*unit, 5*unit);
+    } else if (outfit == cat::Outfit::Tie) {
+        SolidBrush cloth(Color(248,45,89,146)); Pen edge(Color(240,25,49,88),unit);
+        PointF tie[5]={{x-5*unit,neck},{x+5*unit,neck},{x+8*unit,neck+28*unit},{x,neck+36*unit},{x-8*unit,neck+28*unit}};
+        graphics.FillPolygon(&cloth,tie,5); graphics.DrawPolygon(&edge,tie,5);
+        SolidBrush knot(Color(255,74,116,166));graphics.FillEllipse(&knot,x-6*unit,neck-4*unit,12*unit,10*unit);
+    } else if (outfit == cat::Outfit::Sunglasses) {
+        auto face=cat::species::FaceFor(character);
+        if(frame!=4) { face.leftEye={anchors.crown.x-.12,anchors.neck.y-.25};face.rightEye={anchors.crown.x+.13,anchors.neck.y-.27}; }
+        auto eye=[&](cat::deform::Point uv) {const auto q=cat::deform::DeformPoint(uv,joints,shape);return cat::render::LocalPoint({q.x,q.y},width,height,centerPivot);};
+        const auto l=eye(face.leftEye),r=eye(face.rightEye);
+        SolidBrush lens(Color(240,22,30,38));Pen rim(Color(255,12,17,24),2*unit);
+        graphics.FillEllipse(&lens,static_cast<REAL>(l.x)-11*unit,static_cast<REAL>(l.y)-8*unit,22*unit,16*unit);
+        graphics.FillEllipse(&lens,static_cast<REAL>(r.x)-11*unit,static_cast<REAL>(r.y)-8*unit,22*unit,16*unit);
+        graphics.DrawLine(&rim,static_cast<REAL>(l.x),static_cast<REAL>(l.y)-2*unit,static_cast<REAL>(r.x),static_cast<REAL>(r.y)-2*unit);
+        Pen shine(Color(150,185,219,232),1.5f*unit);
+        graphics.DrawLine(&shine,static_cast<REAL>(l.x)-6*unit,static_cast<REAL>(l.y)-4*unit,static_cast<REAL>(l.x)-unit,static_cast<REAL>(l.y)-6*unit);
+    } else {
+        const REAL hx=static_cast<REAL>(crownPoint.x),hy=static_cast<REAL>(crownPoint.y);
+        if(outfit==cat::Outfit::Santa || outfit==cat::Outfit::Birthday) {
+            const bool santa=outfit==cat::Outfit::Santa;
+            SolidBrush cloth(santa?Color(250,207,47,50):Color(250,126,90,199));
+            PointF cone[3]={{hx-22*unit,hy},{hx+22*unit,hy},{hx+(santa?14:0)*unit,hy-34*unit}};
+            graphics.FillPolygon(&cloth,cone,3);
+            SolidBrush trim(Color(255,250,246,230));graphics.FillEllipse(&trim,hx-24*unit,hy-5*unit,48*unit,10*unit);
+            graphics.FillEllipse(&trim,hx+(santa?10:-4)*unit,hy-39*unit,9*unit,9*unit);
+            if(!santa){SolidBrush spot(Color(255,255,210,92));graphics.FillEllipse(&spot,hx-6*unit,hy-17*unit,6*unit,6*unit);}
+        } else if(outfit==cat::Outfit::FishHat || outfit==cat::Outfit::Shark) {
+            const bool shark=outfit==cat::Outfit::Shark;
+            SolidBrush fish(shark?Color(248,92,155,186):Color(248,204,144,72));
+            graphics.FillEllipse(&fish,hx-25*unit,hy-19*unit,50*unit,23*unit);
+            PointF tail[3]={{hx-20*unit,hy-9*unit},{hx-35*unit,hy-22*unit},{hx-35*unit,hy+2*unit}};graphics.FillPolygon(&fish,tail,3);
+            PointF fin[3]={{hx-5*unit,hy-16*unit},{hx+3*unit,hy-34*unit},{hx+12*unit,hy-15*unit}};graphics.FillPolygon(&fish,fin,3);
+            SolidBrush eye(Color(255,24,39,51));graphics.FillEllipse(&eye,hx+13*unit,hy-12*unit,4*unit,4*unit);
+            if(shark){SolidBrush tooth(Color(255,250,250,246));PointF teeth[3]={{hx+9*unit,hy-2*unit},{hx+16*unit,hy-2*unit},{hx+13*unit,hy+3*unit}};graphics.FillPolygon(&tooth,teeth,3);}
+            else {Pen waffle(Color(190,133,83,34),unit);for(int i=-2;i<=2;++i){const REAL px=hx+i*6*unit;graphics.DrawLine(&waffle,px-5*unit,hy-13*unit,px+5*unit,hy-3*unit);graphics.DrawLine(&waffle,px-5*unit,hy-3*unit,px+5*unit,hy-13*unit);}}
+        } else if(outfit==cat::Outfit::Hoodie || outfit==cat::Outfit::Dinosaur) {
+            const bool dinosaur=outfit==cat::Outfit::Dinosaur;
+            Pen hood(dinosaur?Color(240,91,159,104):Color(240,180,141,199),7*unit);
+            graphics.DrawArc(&hood,hx-33*unit,hy-8*unit,66*unit,54*unit,175,190);
+            graphics.DrawLine(&hood,x-21*unit,neck-3*unit,x+21*unit,neck-3*unit);
+            Pen cord(Color(245,247,239,218),1.4f*unit);graphics.DrawLine(&cord,x-10*unit,neck,x-10*unit,neck+14*unit);graphics.DrawLine(&cord,x+10*unit,neck,x+10*unit,neck+14*unit);
+            if(dinosaur){SolidBrush spike(Color(248,219,193,83));for(int i=-1;i<=1;++i){const REAL dx=hx+i*16*unit;PointF tri[3]={{dx-7*unit,hy-5*unit},{dx,hy-20*unit},{dx+7*unit,hy-5*unit}};graphics.FillPolygon(&spike,tri,3);}}
+        } else if(outfit==cat::Outfit::Pumpkin) {
+            SolidBrush orange(Color(250,231,127,36)),green(Color(255,69,119,55)),dark(Color(255,67,43,28));
+            graphics.FillEllipse(&orange,hx-24*unit,hy-22*unit,48*unit,28*unit);graphics.FillRectangle(&green,hx-3*unit,hy-29*unit,6*unit,10*unit);
+            PointF left[3]={{hx-14*unit,hy-9*unit},{hx-9*unit,hy-16*unit},{hx-4*unit,hy-9*unit}},right[3]={{hx+4*unit,hy-9*unit},{hx+9*unit,hy-16*unit},{hx+14*unit,hy-9*unit}};
+            graphics.FillPolygon(&dark,left,3);graphics.FillPolygon(&dark,right,3);
+        }
+
     }
 }
 
-bool PrepareSkin(SpriteAtlas::Skin& skin, int frame, cat::deform::Joints& joints, cat::deform::Shape shape, bool parts = false) {
+bool PrepareSkin(SpriteAtlas::Skin& skin, int frame, cat::deform::Joints& joints, cat::deform::Shape shape, bool parts = false,
+                 cat::Character character = g.preferences.character) {
     std::array<double*, 8> values{{&joints.leftEar, &joints.rightEar, &joints.headNod,
         &joints.frontLeft, &joints.frontRight, &joints.tailRaise, &joints.breath, &joints.crouch}};
     std::array<int, 8> controls{};
@@ -1358,7 +1722,7 @@ bool PrepareSkin(SpriteAtlas::Skin& skin, int frame, cat::deform::Joints& joints
     if (skin.valid && parts && !skin.partsValid) {
         for (int y = 0; y < skin.height; ++y) for (int x = 0; x < skin.width; ++x) {
             const auto i = static_cast<std::size_t>(y) * skin.width + x;
-            const double coverage = cat::belly::HeadCoverage(frame,
+            const double coverage = cat::belly::HeadCoverage(character,frame,
                 {(x + .5) / skin.width, (y + .5) / skin.height});
             skin.body[i] = cat::belly::MaskPixel(skin.deformed[i], coverage, false);
             skin.head[i] = cat::belly::MaskPixel(skin.deformed[i], coverage, true);
@@ -1370,25 +1734,44 @@ bool PrepareSkin(SpriteAtlas::Skin& skin, int frame, cat::deform::Joints& joints
 
 void DrawPet(Graphics& graphics, int frame, REAL center, REAL bottom, REAL scale, bool flip,
              REAL scaleX = 1, REAL scaleY = 1, REAL angle = 0, bool centerPivot = false,
-             cat::deform::Joints joints = {}, bool groundContact = true, bool bodyOnly = false) {
+             cat::deform::Joints joints = {}, bool groundContact = true, bool bodyOnly = false,
+             cat::Character character = g.preferences.character, cat::Outfit outfit = g.preferences.outfit,
+             cat::expression::Face face = {}) {
     if (frame < 0 || frame >= cat::animation::kSpriteCount) return;
-    auto& art = CurrentArt();
+    auto& art = CurrentArt(character);
     SpriteAtlas* atlas = &art.base;
     int cell = frame;
-    if (frame >= 24) {
+    const bool newArt = cat::species::UsesNewArt(character);
+    if (frame >= 27) {
+        atlas=&g.sleepStyles;cell=static_cast<int>(CharacterIndex(character))*2+frame-27;
+        scale *= static_cast<REAL>(art.base.standingHeight)/300.0f;
+    } else if (frame == 26) {
+        atlas=&g.hanging; cell=static_cast<int>(CharacterIndex(character));
+        scale *= static_cast<REAL>(art.base.standingHeight) / atlas->frames[cell].Height;
+        scaleX *= static_cast<REAL>(cat::hanging::BodyWidthScale(character));
+    } else if (newArt && frame == 25) {
+        atlas=&g.companionBack; cell=cat::species::ArtCell(character);
+        scale *= static_cast<REAL>(art.base.standingHeight) / 250.0f;
+    } else if (newArt) {
+        const int originalFrame = frame;
+        cell = frame < 4 ? 1 + frame % 2 : frame == 6 ? 3 : frame == 7 || frame == 18 || frame == 19 ? 4 :
+            frame == 9 || frame == 10 ? 5 : frame == 16 || frame == 17 ? 6 : frame >= 24 || frame == 8 ? 7 : 0;
+        frame = cell == 0 ? 4 : cell == 3 ? 6 : cell == 4 ? 7 : cell == 5 ? 9 : cell == 6 ? 16 : cell == 7 ? 24 : 0;
+        if (originalFrame == 13) joints.frontRight = 1;
+    } else if (frame >= 24) {
         atlas = &g.recline;
-        cell = static_cast<int>(CharacterIndex()) * 2 + frame - 24;
+        cell = static_cast<int>(CharacterIndex(character)) * 2 + frame - 24;
         // A common head-size reference for all four reclining poses. Scaling
         // each pose to standing height would make the lying cat much larger.
         scale *= static_cast<REAL>(art.base.standingHeight) / 440.0f;
     } else if (frame >= 20) {
         atlas = &g.gestures;
-        cell = static_cast<int>(CharacterIndex()) * 4 + frame - 20;
-        scale *= static_cast<REAL>(art.base.standingHeight) / g.gestureStandingHeight[CharacterIndex()];
+        cell = static_cast<int>(CharacterIndex(character)) * 4 + frame - 20;
+        scale *= static_cast<REAL>(art.base.standingHeight) / g.gestureStandingHeight[CharacterIndex(character)];
     } else if (frame >= 16) {
         atlas = &g.jumpTreat;
-        cell = static_cast<int>(CharacterIndex()) * 4 + frame - 16;
-        scale *= static_cast<REAL>(art.base.standingHeight) / g.extraStandingHeight[CharacterIndex()];
+        cell = static_cast<int>(CharacterIndex(character)) * 4 + frame - 16;
+        scale *= static_cast<REAL>(art.base.standingHeight) / g.extraStandingHeight[CharacterIndex(character)];
     } else if (frame >= 8) {
         atlas = &art.actions; cell = frame - 8;
         scale *= static_cast<REAL>(art.base.standingHeight) / art.actions.standingHeight;
@@ -1405,38 +1788,71 @@ void DrawPet(Graphics& graphics, int frame, REAL center, REAL bottom, REAL scale
     ImageAttributes attrs; attrs.SetWrapMode(WrapModeTileFlipXY);
     const auto shape = frame == 16 ? cat::deform::Shape::Airborne :
         frame == 25 ? cat::deform::Shape::ReclineBack :
-        frame == 24 ? cat::deform::Shape::ReclineSide : cat::deform::Shape::Sitting;
-    const bool articulated = frame == 4 || frame == 9 || frame == 10 || frame == 16 || frame >= 24;
+        frame == 24 || frame == 6 || frame >= 27 ? cat::deform::Shape::ReclineSide : cat::deform::Shape::Sitting;
+    const bool articulated = newArt || frame == 4 || frame == 6 || frame == 9 || frame == 10 || frame == 16 || frame >= 24;
     if (articulated) {
         auto& skin = atlas->skins[cell];
-        if (PrepareSkin(skin, frame, joints, shape, bodyOnly)) graphics.DrawImage(bodyOnly ? skin.bodyImage.get() : skin.image.get(), destination, 0, 0,
-            static_cast<REAL>(skin.width), static_cast<REAL>(skin.height), UnitPixel, &attrs);
+        if (PrepareSkin(skin, frame, joints, shape, bodyOnly,character)) {
+            Bitmap* image = bodyOnly ? skin.bodyImage.get() : skin.image.get();
+            if (frame == 4 && !bodyOnly && !cat::expression::Zero(face)) {
+                const auto landmarks=cat::species::FaceFor(character);
+                const auto& closed=art.base.skins[5];
+                if (cat::expression::Apply(skin.deformed.data(), skin.width, skin.height,
+                        skin.expression.data(), face, landmarks, joints,{closed.source.data(),closed.width,closed.height,cat::species::ClosedFaceFor(character)})) image = skin.expressionImage.get();
+            }
+            graphics.DrawImage(image, destination, 0, 0, static_cast<REAL>(skin.width), static_cast<REAL>(skin.height), UnitPixel, &attrs);
+        }
     } else {
         graphics.DrawImage(atlas->image.get(), destination, static_cast<REAL>(source.X), static_cast<REAL>(source.Y), static_cast<REAL>(source.Width), static_cast<REAL>(source.Height), UnitPixel, &attrs);
         joints = {};
     }
-    if (!bodyOnly) DrawOutfit(graphics, frame, width, height, centerPivot, joints, shape);
+    if (!bodyOnly) DrawOutfit(graphics, frame, width, height, centerPivot, joints, shape, outfit, character);
+    else DrawOutfitBody(graphics,frame,width,height,centerPivot,outfit,joints,shape);
     graphics.Restore(saved);
 }
 
-void DrawBellyHead(Graphics& graphics, const cat::animation::Pose& pose, REAL center, REAL bottom, REAL scale) {
-    auto& art = CurrentArt();
-    const auto body = cat::nutrition::VisualModifiers(g.nutrition);
+void DrawBellyHead(Graphics& graphics, const cat::animation::Pose& pose, REAL center, REAL bottom, REAL scale,
+                   cat::Character character, cat::Outfit outfit, const cat::nutrition::Visual& body) {
+    const bool newArt=cat::species::UsesNewArt(character);
+    auto& art = CurrentArt(character);
     auto dimensions = [&](int frame) {
-        const auto& source = frame == 4 ? art.base.frames[4] :
-            g.recline.frames[static_cast<int>(CharacterIndex()) * 2 + frame - 24];
-        const REAL factor = frame == 4 ? scale : scale * art.base.standingHeight / 440.0f;
+        if(frame==26){const auto& source=g.hanging.frames[CharacterIndex(character)];const REAL factor=scale*art.base.standingHeight/source.Height;
+            return std::pair<double,double>{source.Width*factor*body.bodyWidth*cat::hanging::BodyWidthScale(character),source.Height*factor*body.bodyHeight};}
+        const auto& source = newArt ? (frame==4 ? art.base.frames[0] : frame==24 ? art.base.frames[7] : g.companionBack.frames[cat::species::ArtCell(character)]) :
+            (frame == 4 ? art.base.frames[4] : g.recline.frames[static_cast<int>(CharacterIndex(character)) * 2 + frame - 24]);
+        const REAL factor = newArt ? (frame==25 ? scale*art.base.standingHeight/250.0f : scale) : frame == 4 ? scale : scale * art.base.standingHeight / 440.0f;
         return std::pair<double, double>{source.Width * factor * body.bodyWidth,
             source.Height * factor * body.bodyHeight};
     };
     const int second = pose.blendFrame < 0 ? pose.frame : pose.blendFrame;
     const auto a = dimensions(pose.frame), b = dimensions(second), headSize = dimensions(4);
-    const auto bone = cat::belly::BlendBone(pose.frame, a.first, a.second,
+    auto bone = cat::belly::BlendBone(character,pose.frame, a.first, a.second,
         second, b.first, b.second, pose.blendFrame < 0 ? 0 : pose.blend);
+    const auto headAnchor=cat::belly::HeadAnchor(character);
+    const double headU=headAnchor.x,headV=headAnchor.y;
+    if(pose.frame==26){
+        // Hanging stretches the torso below the grip, never the face. The
+        // head retains precisely the neutral pixel dimensions while its neck
+        // meets the hanging body's unchanged paw/shoulder line.
+        bone=cat::hanging::BoneFor(character,a.second,headSize.second);
+    }
     auto joints = pose.joints;
     joints.frontLeft = joints.frontRight = joints.tailRaise = joints.breath = joints.crouch = 0;
-    auto& skin = art.base.skins[4];
-    if (!PrepareSkin(skin, 4, joints, cat::deform::Shape::Sitting, true)) return;
+    auto& skin = art.base.skins[newArt?0:4];
+    if (!PrepareSkin(skin, 4, joints, cat::deform::Shape::Sitting, true,character)) return;
+    Bitmap* headImage = skin.headImage.get();
+    if (pose.frame==26 || !cat::expression::Zero(pose.face)) {
+        const auto& closed=art.base.skins[5];
+        if (cat::expression::Apply(skin.deformed.data(), skin.width, skin.height, skin.expression.data(), pose.face, cat::species::FaceFor(character), joints,{closed.source.data(),closed.width,closed.height,cat::species::ClosedFaceFor(character)})) {
+            for (int y=0; y<skin.height; ++y) for (int x=0; x<skin.width; ++x) {
+                const auto i=static_cast<std::size_t>(y)*skin.width+x;
+                const cat::deform::Point uv{(x+.5)/skin.width,(y+.5)/skin.height};
+                const double coverage=pose.frame==26?cat::hanging::HeadCoverage(character,uv):cat::belly::HeadCoverage(character,4,uv);
+                skin.expression[i]=cat::belly::MaskPixel(skin.expression[i],coverage,true);
+            }
+            headImage=skin.expressionImage.get();
+        }
+    }
     const auto saved = graphics.Save();
     graphics.TranslateTransform(center, bottom);
     graphics.ScaleTransform(pose.flip ? -1.0f : 1.0f, 1.0f);
@@ -1444,29 +1860,29 @@ void DrawBellyHead(Graphics& graphics, const cat::animation::Pose& pose, REAL ce
     graphics.RotateTransform(static_cast<REAL>(bone.angle));
     const REAL width = static_cast<REAL>(headSize.first), height = static_cast<REAL>(headSize.second);
     ImageAttributes attrs; attrs.SetWrapMode(WrapModeTileFlipXY);
-    graphics.DrawImage(skin.headImage.get(), RectF(-.57f * width, -.40f * height, width, height),
+    graphics.DrawImage(headImage, RectF(static_cast<REAL>(-headU*width),static_cast<REAL>(-headV*height),width,height),
         0, 0, static_cast<REAL>(skin.width), static_cast<REAL>(skin.height), UnitPixel, &attrs);
-    graphics.TranslateTransform(-.07f * width, .60f * height);
-    DrawOutfit(graphics, 4, width, height, false, joints);
+    graphics.TranslateTransform(static_cast<REAL>((.5-headU)*width),static_cast<REAL>((1-headV)*height));
+    DrawOutfit(graphics, 4, width, height, false, joints, cat::deform::Shape::Sitting, outfit, character, true);
     graphics.Restore(saved);
 }
-void DrawAnimatedPet(Graphics& graphics, const cat::animation::Pose& pose,
-                     REAL center, REAL bottom, REAL scale) {
-    const auto body = cat::nutrition::VisualModifiers(g.nutrition);
+void DrawStyledAnimation(Graphics& graphics, cat::animation::Pose pose, REAL center, REAL bottom, REAL scale,
+                         cat::Character character, cat::Outfit outfit, const cat::nutrition::Visual& body,
+                         Surface& blendFrom, Surface& blendTo, int canvasWidth, int canvasHeight) {
     auto draw = [&](Graphics& target, int frame) {
         DrawPet(target, frame, center, bottom, scale, pose.flip,
                 static_cast<REAL>(pose.scaleX * body.bodyWidth),
                 static_cast<REAL>(pose.scaleY * body.bodyHeight), static_cast<REAL>(pose.angle), pose.centerPivot,
-                pose.joints, pose.groundContact, pose.bellyRig);
+                pose.joints, pose.groundContact, pose.bellyRig, character, outfit, pose.face);
     };
-    if (pose.blendFrame < 0 || pose.blend <= 0 || !g.blendFrom.image || !g.blendTo.image) {
+    if (pose.blendFrame < 0 || pose.blend <= 0 || !blendFrom.image || !blendTo.image) {
         draw(graphics, pose.frame);
-        if (pose.bellyRig) DrawBellyHead(graphics, pose, center, bottom, scale);
+        if (pose.bellyRig) DrawBellyHead(graphics, pose, center, bottom, scale, character, outfit, body);
         return;
     }
     if (pose.blend >= 1) {
         draw(graphics, pose.blendFrame);
-        if (pose.bellyRig) DrawBellyHead(graphics, pose, center, bottom, scale);
+        if (pose.bellyRig) DrawBellyHead(graphics, pose, center, bottom, scale, character, outfit, body);
         return;
     }
     auto layer = [&](Surface& buffer, int frame) {
@@ -1478,17 +1894,33 @@ void DrawAnimatedPet(Graphics& graphics, const cat::animation::Pose& pose,
         target.SetPixelOffsetMode(PixelOffsetModeHighQuality);
         draw(target, frame); target.Flush(FlushIntentionSync);
     };
-    layer(g.blendFrom, pose.frame); layer(g.blendTo, pose.blendFrame);
+    layer(blendFrom, pose.frame); layer(blendTo, pose.blendFrame);
     const unsigned weight = static_cast<unsigned>(std::lround(std::clamp(pose.blend, 0.0, 1.0) * 255));
-    const std::size_t bytes = static_cast<std::size_t>(g.surface.width) * g.surface.height * 4;
+    const std::size_t bytes = static_cast<std::size_t>(canvasWidth) * canvasHeight * 4;
     // Interpolate premultiplied BGRA itself. Drawing two translucent images over
     // one another would make the cat's opaque body transparent midway through.
     for (std::size_t i = 0; i < bytes; ++i)
-        g.blendFrom.pixels[i] = static_cast<BYTE>((g.blendFrom.pixels[i] * (255 - weight) +
-                                                 g.blendTo.pixels[i] * weight + 127) / 255);
-    graphics.DrawImage(g.blendFrom.image.get(), Rect(0, 0, g.surface.width, g.surface.height),
-                       0, 0, g.surface.width, g.surface.height, UnitPixel);
-    if (pose.bellyRig) DrawBellyHead(graphics, pose, center, bottom, scale);
+        blendFrom.pixels[i] = static_cast<BYTE>((blendFrom.pixels[i] * (255 - weight) +
+                                                 blendTo.pixels[i] * weight + 127) / 255);
+    graphics.DrawImage(blendFrom.image.get(), Rect(0, 0, canvasWidth, canvasHeight),
+                       0, 0, canvasWidth, canvasHeight, UnitPixel);
+    if (pose.bellyRig) DrawBellyHead(graphics, pose, center, bottom, scale, character, outfit, body);
+}
+
+void DrawAnimatedPet(Graphics& graphics, const cat::animation::Pose& pose, REAL center, REAL bottom, REAL scale) {
+    DrawStyledAnimation(graphics, pose, center, bottom, scale, g.preferences.character, g.preferences.outfit,
+        cat::nutrition::VisualModifiers(g.nutrition), g.blendFrom, g.blendTo, g.surface.width, g.surface.height);
+}
+void DrawPetStyle(Graphics& graphics, cat::Character character, cat::Outfit outfit,
+                  const cat::animation::Pose& pose, const cat::nutrition::Visual& body,
+                  REAL center, REAL bottom, REAL desiredHeight) {
+    auto& from=g.styleBlendFrom; auto& to=g.styleBlendTo;
+    RectF bounds; graphics.GetVisibleClipBounds(&bounds);
+    const int width=std::max(1,static_cast<int>(std::ceil(bounds.X+bounds.Width)));
+    const int height=std::max(1,static_cast<int>(std::ceil(bounds.Y+bounds.Height)));
+    if (from.width!=width || from.height!=height) { from.Create(width,height); to.Create(width,height); }
+    const REAL scale=desiredHeight/std::max(1,CurrentArt(character).base.standingHeight);
+    DrawStyledAnimation(graphics,pose,center,bottom,scale,character,outfit,body,from,to,width,height);
 }
 
 void DrawToyBackground(Graphics& graphics, REAL localX, REAL ground, ULONGLONG ticks) {
@@ -1496,26 +1928,91 @@ void DrawToyBackground(Graphics& graphics, REAL localX, REAL ground, ULONGLONG t
     const REAL u = static_cast<REAL>(g.dpiScale);
     (void)ticks;
     if (g.toy == ToyKind::Ball) {
-        const REAL bounce = 0;
-        SolidBrush shadow(Color(55, 50, 45, 40)); graphics.FillEllipse(&shadow, localX-13*u, ground-5*u, 26*u, 7*u);
-        SolidBrush ball(Color(245, 236, 111, 76)); Pen seam(Color(180, 159, 68, 46), 1.2f*u);
-        graphics.FillEllipse(&ball, localX-12*u, ground-25*u-bounce, 24*u, 24*u);
-        graphics.DrawArc(&seam, localX-9*u, ground-22*u-bounce, 18*u, 18*u, 210, 145);
-        SolidBrush shine(Color(170,255,255,255)); graphics.FillEllipse(&shine,localX-6*u,ground-20*u-bounce,5*u,5*u);
+        const REAL lift = static_cast<REAL>(g.toyBall.lift * g.dpiScale);
+        SolidBrush shadow(Color(55, 50, 45, 40)); graphics.FillEllipse(&shadow, localX-13*u, ground-4*u, 26*u, 4*u);
+        const auto saved = graphics.Save();
+        graphics.TranslateTransform(localX, ground-12*u-lift);
+        graphics.RotateTransform(static_cast<REAL>(-g.toyBall.angle * 180 / cat::animation::kPi));
+        SolidBrush ball(Color(255, 236, 111, 76)); Pen seam(Color(220, 159, 68, 46), 1.2f*u);
+        graphics.FillEllipse(&ball, -12*u, -12*u, 24*u, 24*u);
+        graphics.DrawArc(&seam, -9*u, -9*u, 18*u, 18*u, 210, 145);
+        graphics.Restore(saved);
+        SolidBrush shine(Color(170,255,255,255)); graphics.FillEllipse(&shine,localX-6*u,ground-20*u-lift,5*u,5*u);
     } else if (g.toy == ToyKind::Box) {
-        const REAL u = static_cast<REAL>(g.dpiScale * std::max(1.35, 1.55 * cat::GrowthScale(g.pet.bornUtc, UtcNow()) * cat::nutrition::VisualModifiers(g.nutrition).bodyWidth));
+        const REAL u = static_cast<REAL>(g.dpiScale * (g.smallBoxEvent ? .65 : 1.0) * std::max(1.35, 1.55 * cat::GrowthScale(g.pet.bornUtc, UtcNow()) * cat::nutrition::VisualModifiers(g.nutrition).bodyWidth));
         SolidBrush back(Color(235, 188, 137, 82)); Pen edge(Color(220, 126, 82, 48), 1.3f*u);
         RectF box(localX-39*u, ground-48*u, 78*u, 48*u);
         graphics.FillRectangle(&back, box); graphics.DrawRectangle(&edge, box);
         PointF flapL[3]={{localX-39*u,ground-48*u},{localX-15*u,ground-62*u},{localX,ground-48*u}};
         PointF flapR[3]={{localX,ground-48*u},{localX+17*u,ground-62*u},{localX+39*u,ground-48*u}};
         SolidBrush flap(Color(230, 208, 157, 96)); graphics.FillPolygon(&flap,flapL,3); graphics.FillPolygon(&flap,flapR,3);
+        SolidBrush inside(Color(255, 102, 71, 44)); graphics.FillEllipse(&inside,localX-32*u,ground-51*u,64*u,13*u);
+    } else if (g.toy == ToyKind::PaperBag) {
+        const REAL s = static_cast<REAL>(g.dpiScale * std::max(1.0, 1.16 * cat::GrowthScale(g.pet.bornUtc, UtcNow())));
+        SolidBrush paper(Color(255, 190, 151, 105)), fold(Color(255, 158, 120, 79)), inside(Color(255, 91, 68, 47));
+        Pen crease(Color(220, 130, 95, 61), 1.2f*s);
+        PointF bag[4]={{localX-40*s,ground},{localX-46*s,ground-77*s},{localX+42*s,ground-77*s},{localX+38*s,ground}};
+        graphics.FillPolygon(&paper,bag,4); graphics.DrawPolygon(&crease,bag,4);
+        graphics.FillEllipse(&inside,localX-43*s,ground-84*s,86*s,16*s);
+        PointF side[3]={{localX+26*s,ground},{localX+42*s,ground-77*s},{localX+38*s,ground}};
+        graphics.FillPolygon(&fold,side,3);
+        graphics.DrawLine(&crease,localX-29*s,ground-69*s,localX-24*s,ground-8*s);
+    } else if (g.toy == ToyKind::Catnip) {
+        SolidBrush cloth(Color(255, 197, 207, 146)), leaf(Color(255, 72, 139, 77)), light(Color(255, 117, 174, 95));
+        Pen stem(Color(220, 65, 110, 58), 1.3f*u);
+        graphics.FillEllipse(&cloth,localX-32*u,ground-8*u,64*u,8*u);
+        for (int index=0; index<5; ++index) {
+            const REAL x=localX+(index-2)*9*u, y=ground-(7+(index%2)*5)*u;
+            graphics.DrawLine(&stem,x-5*u,y+3*u,x+6*u,y-5*u);
+            graphics.FillEllipse(index%2 ? &leaf : &light,x-7*u,y-7*u,11*u,6*u);
+            graphics.FillEllipse(&leaf,x,y-12*u,9*u,6*u);
+        }
+    } else if (g.toy == ToyKind::FishingRod) {
+        Pen rod(Color(255, 105, 78, 63), 4*u), line(Color(200, 105, 111, 121), .9f*u);
+        const REAL featherX=localX+static_cast<REAL>(g.toyLure.offset)*u;
+        const REAL reachHeight=static_cast<REAL>(58*cat::GrowthScale(g.pet.bornUtc,UtcNow())*
+            cat::nutrition::VisualModifiers(g.nutrition).bodyHeight);
+        const REAL featherY=ground-(reachHeight-static_cast<REAL>(std::abs(g.toyLure.offset))*.12f)*u;
+        graphics.DrawLine(&rod,localX+49*u,ground-2*u,localX+34*u,ground-145*u);
+        graphics.DrawLine(&line,localX+34*u,ground-145*u,featherX,featherY-6*u);
+        SolidBrush base(Color(255, 138, 117, 99)); graphics.FillEllipse(&base,localX+34*u,ground-7*u,30*u,7*u);
+        SolidBrush pink(Color(255, 214, 119, 154)), gold(Color(255, 233, 180, 91));
+        graphics.FillEllipse(&pink,featherX-11*u,featherY-7*u,13*u,20*u);
+        graphics.FillEllipse(&gold,featherX-1*u,featherY-7*u,10*u,18*u);
+    } else if (g.toy == ToyKind::Cushion) {
+        const REAL s=static_cast<REAL>(g.dpiScale * std::max(.95, cat::GrowthScale(g.pet.bornUtc,UtcNow())));
+        SolidBrush edge(Color(255, 135, 151, 190)), top(Color(255, 178, 192, 222));
+        Pen seam(Color(220, 111, 129, 171), 1.0f*s);
+        graphics.FillEllipse(&edge,localX-64*s,ground-11*s,128*s,11*s);
+        graphics.FillEllipse(&top,localX-62*s,ground-12*s,124*s,9*s);
+        graphics.DrawEllipse(&seam,localX-57*s,ground-10*s,114*s,6*s);
     }
 }
 
 void DrawToyForeground(Graphics& graphics, REAL localX, REAL ground) {
-    if (g.toy != ToyKind::Box || g.perch.active || g.perch.transitioning || g.motion != Motion::BoxSit) return;
-    const REAL u = static_cast<REAL>(g.dpiScale * std::max(1.35, 1.55 * cat::GrowthScale(g.pet.bornUtc, UtcNow()) * cat::nutrition::VisualModifiers(g.nutrition).bodyWidth));
+    const bool smallBox=g.smallBoxEvent && g.toy==ToyKind::Box && g.motion==Motion::BoxSit;
+    if ((!g.toyEngaged && !smallBox) || g.perch.active || g.perch.transitioning || !g.physics.CurrentPose().grounded) return;
+    const auto phase=g.toySession.phase;
+    const double growth=cat::GrowthScale(g.pet.bornUtc,UtcNow());
+    if (std::abs(g.toyX-g.centerX)>60*g.dpiScale*growth ||
+            (!smallBox && (phase==cat::toy::Phase::Discover || phase==cat::toy::Phase::Approach || phase==cat::toy::Phase::Inspect))) return;
+    if (g.toy == ToyKind::PaperBag) {
+        const REAL u=static_cast<REAL>(g.dpiScale*std::max(1.0,1.16*growth));
+        SolidBrush front(Color(255, 201, 163, 118)); Pen edge(Color(230, 131, 95, 60),1.1f*u);
+        RectF panel(localX-39*u,ground-49*u,78*u,50*u);
+        graphics.FillRectangle(&front,panel); graphics.DrawRectangle(&edge,panel);
+        graphics.DrawLine(&edge,localX-30*u,ground-42*u,localX+29*u,ground-39*u);
+        graphics.DrawLine(&edge,localX+25*u,ground-40*u,localX+21*u,ground-3*u);
+        return;
+    }
+    if (g.toy == ToyKind::Cushion) {
+        const REAL u=static_cast<REAL>(g.dpiScale*std::max(.95,growth));
+        SolidBrush front(Color(255, 135, 151, 190));
+        graphics.FillEllipse(&front,localX-63*u,ground-3*u,126*u,4*u);
+        return;
+    }
+    if (g.toy != ToyKind::Box) return;
+    const REAL u = static_cast<REAL>(g.dpiScale * (smallBox ? .65 : 1.0) * std::max(1.35, 1.55 * cat::GrowthScale(g.pet.bornUtc, UtcNow()) * cat::nutrition::VisualModifiers(g.nutrition).bodyWidth));
     SolidBrush front(Color(248, 201, 146, 87)); Pen edge(Color(230, 126, 82, 48), 1.3f*u);
     RectF panel(localX-40*u, ground-29*u, 80*u, 30*u);
     graphics.FillRectangle(&front,panel); graphics.DrawRectangle(&edge,panel);
@@ -1538,8 +2035,8 @@ void RenderToy() {
             0, 0, 1, 1, nullptr, nullptr, g.instance, nullptr);
     }
     if (!g.toyWindow) return;
-    const int width = static_cast<int>(std::ceil(240 * g.dpiScale));
-    const int height = static_cast<int>(std::ceil(180 * g.dpiScale));
+    const int width = static_cast<int>(std::ceil(280 * g.dpiScale));
+    const int height = static_cast<int>(std::ceil(200 * g.dpiScale));
     if ((g.toySurface.width != width || g.toySurface.height != height) && !g.toySurface.Create(width, height)) return;
     Graphics graphics(g.toySurface.image.get());
     graphics.SetCompositingMode(CompositingModeSourceCopy); graphics.Clear(Color(0,0,0,0));
@@ -1568,8 +2065,12 @@ void Render() {
     if (g.waitingForStop || ((displayed == Motion::Idle || displayed == Motion::Watch) && physical.grounded && std::abs(WalkingVelocity(physical)) > 2))
         displayed = g.walkingMotion;
     auto pose = cat::animation::Evaluate(displayed, actionElapsed, ticks, g.facing, g.gait);
+    if(displayed==Motion::Sleep) pose=cat::animation::EvaluateSleep(static_cast<unsigned>(g.motionStart%6),actionElapsed,ticks,g.facing,g.perch.active);
     if (displayed == Motion::Jump || displayed == Motion::Pounce) pose.lift = 0;
-    if (!physical.grounded) {
+    if (physical.hanging) {
+        pose=cat::animation::Evaluate(Motion::Hang,actionElapsed,ticks,g.facing,g.gait);
+        pose.groundContact=false;
+    } else if (!physical.grounded) {
         // Box2D owns height and landing time. Art follows the actual vertical
         // velocity, so changing weight or interrupting a jump cannot desync it.
         pose = {};
@@ -1635,7 +2136,7 @@ void Render() {
     graphics.Flush(FlushIntentionSync);
     POINT destination{windowLeft, placement.windowTop};
     SIZE size{g.surface.width, g.surface.height}; POINT origin{};
-    BLENDFUNCTION blend{AC_SRC_OVER, 0, 255, AC_SRC_ALPHA};
+    BLENDFUNCTION blend{AC_SRC_OVER, 0, static_cast<BYTE>(std::lround(255*g.lifeCrossing.Opacity())), AC_SRC_ALPHA};
     HDC screen = GetDC(nullptr);
     UpdateLayeredWindow(g.window, screen, &destination, &size, g.surface.dc, &origin, 0, &blend, ULW_ALPHA);
     ReleaseDC(nullptr, screen);
@@ -1666,6 +2167,7 @@ void AddTray() {
     Shell_NotifyIconW(NIM_ADD, &g.tray); g.tray.uVersion = NOTIFYICON_VERSION_4; Shell_NotifyIconW(NIM_SETVERSION, &g.tray); UpdateTrayTip();
 }
 void Speak(const std::wstring& message, ULONGLONG duration = 2600) { g.bubble = message; g.bubbleUntil = GetTickCount64() + duration; }
+#include "companion_host.hpp"
 void MaybeAnnounceUpdate(ULONGLONG ticks) {
     cat::update::NoticeContext context;
     context.now = ticks; context.notBefore = g.ambientSoundAfter;
@@ -1717,6 +2219,7 @@ void Care(bool snack) {
     // Keep the established lifetime counts/affection, with nutrition as the
     // sole owner of fullness and elapsed-time body changes.
     cat::Feed(g.pet, g.nutrition.updatedUtc, snack);
+    NotifyCompanionFood();
     Remember(snack ? cat::memory::Event::Treat : cat::memory::Event::Meal);
     g.pet.hunger = g.nutrition.fullness;
     g.nextCareReply = ticks + 6500;
@@ -1749,9 +2252,12 @@ void ToggleHidden() {
     else { g.foodRequestAfter = std::max(g.foodRequestAfter, GetTickCount64() + 30000); g.ambientSoundAfter = std::max(g.ambientSoundAfter, GetTickCount64() + 30000); KeepOnWorkArea(); Render(); ShowWindow(g.window, SW_SHOWNOACTIVATE); SetWindowPos(g.window, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE); }
     RefreshAnimationTimer();
 }
-const wchar_t* PersonalityLabel() {
+const wchar_t* PrimaryPersonalityLabel() {
+    if (g.life.enabled() && g.life.state.temperament != cat::life::Temperament::Legacy)
+        return cat::life::TemperamentName(g.life.state.temperament);
     return g.brain ? cat::behavior::ArchetypeName(g.brain->GetArchetype()) : L"시크냥";
 }
+const wchar_t* PersonalityLabel() { return PrimaryPersonalityLabel(); }
 void StartPunch(bool forced) {
     if (g.hidden) ToggleHidden();
     // A paw contact effect requires the cat to be standing at its drawn feet.
@@ -1801,7 +2307,7 @@ void SelectCharacter(cat::Character character) {
 }
 
 void SelectOutfit(cat::Outfit outfit) {
-    if (!cat::IsValid(outfit)) return;
+    if (!cat::IsValid(outfit) || (!OutfitAvailable(outfit) && outfit != g.preferences.outfit)) return;
     if (outfit == g.preferences.outfit && !g.preferencesInvalid && !g.preferencesRecovered) return;
     const cat::Preferences selected{g.preferences.character, outfit};
     if (!SavePreferences(selected)) return;
@@ -1814,25 +2320,47 @@ void SelectOutfit(cat::Outfit outfit) {
 
 void PlaceToy(ToyKind toy) {
     if (g.hidden) ToggleHidden();
-    if (g.brain) g.brain->Interrupt(GetTickCount64());
+    const auto ticks=GetTickCount64();
+    if (g.brain) g.brain->Interrupt(ticks);
     g.toy = toy;
-    if (toy != ToyKind::None) Remember(cat::memory::Event::Play);
+    g.toyEngaged=false; g.approachingToy=false; g.toyContact=false;
+    g.toyRewardPending=toy!=ToyKind::None;
+    g.toyLure={};
     if (toy == ToyKind::None) {
+        g.toySession.Cancel();
         if (!g.perch.transitioning) SetMotion(Motion::Idle, 2600);
         Speak(L"장난감은 치워둘게 냥", 2200);
         Render();
         return;
     }
-    const double offset = (toy == ToyKind::Ball ? 105.0 : 88.0) * g.dpiScale;
+    const double offset = (toy == ToyKind::Ball || toy == ToyKind::FishingRod ? 105.0 : 110.0) * g.dpiScale;
     const double margin = std::min(96.0 * g.dpiScale, (g.work.right - g.work.left) / 2.0);
     const double low = g.work.left + margin, high = g.work.right - margin;
     g.toyX = cat::toy::ClampCenter(g.centerX + g.direction * offset, low, high);
-    g.toyBall = {g.toyX / g.dpiScale, 0};
+    g.toyBall.Reset(g.toyX / g.dpiScale);
     g.direction = g.toyX < g.centerX ? -1 : 1;
     g.facing = g.direction;
-    g.nextToyAction = GetTickCount64() + 900;
-    if (!g.perch.transitioning) SetMotion(Motion::Watch, 1800);
-    Speak(toy == ToyKind::Ball ? L"공이다!" : L"박스다!", 1800);
+    g.toySession.Start(toy,g.direction); g.toyAppliedRevision=0;
+    g.nextToyAction=ticks;
+    // A toy lives on the taskbar floor. Leave a supporting window through
+    // gravity instead of resetting the cat to the toy's position.
+    if (g.perch.active && !g.perch.transitioning && !g.pet.roamingPaused)
+        BeginPerchTransition(nullptr, {}, false);
+    if (!g.perch.transitioning && g.physics.CurrentPose().grounded && !g.pet.roamingPaused) {
+        g.toyDispatching=true; SetMotion(Motion::Watch,250); g.toyDispatching=false;
+        g.toyMotion=Motion::Watch; g.toyEngaged=true;
+    }
+    const wchar_t* message=L"새 장난감이다!";
+    switch(toy) {
+    case ToyKind::Ball: message=L"공이다! 잡아볼까냥"; break;
+    case ToyKind::Box: message=L"박스다! 들어가 봐야지"; break;
+    case ToyKind::PaperBag: message=L"바스락… 안에 뭐가 있을까?"; break;
+    case ToyKind::Catnip: message=L"킁킁… 좋은 냄새다냥"; break;
+    case ToyKind::FishingRod: message=L"깃털이다! 잡아줄게냥"; break;
+    case ToyKind::Cushion: message=L"폭신해 보인다 ♡"; break;
+    default: break;
+    }
+    Speak(message,2200);
     PlayCatSound(cat::audio::Cue::Greeting);
     Render();
 }
@@ -1845,6 +2373,84 @@ bool CursorNear(POINT* position = nullptr) {
         cursor.y >= CurrentGroundY(GetTickCount64()) - 230 * g.dpiScale &&
         cursor.y <= CurrentGroundY(GetTickCount64()) + 55 * g.dpiScale;
 }
+
+struct CursorInteraction {
+    cat::environment::CursorReaction planner;
+    Motion motion = Motion::Watch;
+    ULONGLONG motionStart = 0;
+    double velocity = 0;
+    bool wasWaitingForStop = false;
+} cursorInteraction;
+
+bool EnvironmentBusy() { return cursorInteraction.planner.Active(); }
+double CursorReactionVelocity() { return cursorInteraction.velocity; }
+
+void PauseCursorReaction(ULONGLONG elapsedMs) {
+    cursorInteraction.planner.Pause(elapsedMs);
+    cursorInteraction.motionStart = g.motionStart;
+    cursorInteraction.velocity = 0;
+    cursorInteraction.wasWaitingForStop = g.waitingForStop;
+}
+
+void UpdateCursorReaction(ULONGLONG ticks, ULONGLONG elapsedMs) {
+    auto& interaction = cursorInteraction;
+    if (interaction.planner.Active() && interaction.wasWaitingForStop && !g.waitingForStop &&
+            g.motion == interaction.motion) interaction.motionStart = g.motionStart;
+    interaction.wasWaitingForStop = g.waitingForStop;
+    if (interaction.planner.Active() && g.waitingForStop && g.motion == interaction.motion) {
+        PauseCursorReaction(elapsedMs);
+        return;
+    }
+    bool interrupted = interaction.planner.Active() &&
+        (g.motion != interaction.motion || g.motionStart != interaction.motionStart);
+    if (interrupted) { interaction.planner.Cancel(ticks); interaction.velocity = 0; }
+    cat::environment::CursorInput input;
+    input.nowMs = ticks;
+    input.enabled = WorkInterferenceEnabled();
+    const auto physical = g.physics.CurrentPose();
+    input.canContinue = g.physicsReady && physical.grounded && !g.pet.roamingPaused &&
+        !g.hidden && !g.menuOpen && !g.dragging && !g.closing && !updates.applying &&
+        !g.perch.transitioning && !g.lifeSequenceCount && !g.lifeCrossing.Active() && !g.physics.Hanging() &&
+        !g.approachingToy && !g.toyEngaged && !g.approachingUser &&
+        !g.memorySequenceCount && g.pendingCare < 0;
+    input.canStart = input.canContinue && !interrupted && !g.waitingForStop && !g.companionModel.Busy() &&
+        std::abs(WalkingVelocity(physical)) < 2 &&
+        (g.motion == Motion::Idle || g.motion == Motion::Watch);
+    POINT cursor{};
+    input.available = GetCursorPos(&cursor) && MonitorFromPoint(cursor, MONITOR_DEFAULTTONULL) == g.monitor;
+    input.cursorX = (cursor.x - g.work.left) / g.dpiScale;
+    input.cursorHeight = (CurrentGroundY(ticks) - cursor.y) / g.dpiScale;
+    input.catX = physical.x;
+    const auto bounds = MovementBoundsLogical();
+    input.minX = bounds.first; input.maxX = bounds.second;
+    input.interest = (g.brain ? g.brain->GetPersonality().curiosity : .5) *
+        cat::species::ProfileFor(g.preferences.character).cursorInterest;
+    input.roll = Random(0, 1);
+    const auto output = interaction.planner.Step(input);
+    interaction.velocity = output.velocity;
+    if (output.changed) {
+        using Action = cat::environment::CursorAction;
+        switch (output.action) {
+        case Action::Hunt: case Action::ApproachSit: interaction.motion = Motion::Stalk; break;
+        case Action::Sniff: interaction.motion = Motion::Sniff; break;
+        case Action::Paw: interaction.motion = Motion::ToyPaw; break;
+        case Action::Sit: interaction.motion = Motion::Loaf; break;
+        case Action::Abandon: interaction.motion = Motion::EarFlick; break;
+        default: interaction.motion = Motion::Watch; break;
+        }
+        // A manual action takes precedence when it ends the observation.
+        if (output.action != Action::None || !interrupted) {
+            SetMotion(interaction.motion, output.action == Action::None ? 1800 : 8000);
+            interaction.motionStart = g.motionStart;
+        }
+        if (output.action == Action::Paw) {
+            Remember(cat::memory::Event::Play);
+            PlayCatSound(cat::audio::Cue::Gesture, true);
+        }
+    }
+    if (interaction.planner.Active()) g.direction = output.direction;
+}
+
 void PetCat() {
     g.prank.Clear();
     const auto ticks = GetTickCount64();
@@ -1909,16 +2515,30 @@ void ExportBackup() {
             _wcsicmp(file, (g.directory + L"\\preferences.ini").c_str()) == 0 ||
             _wcsicmp(file, (g.directory + L"\\preferences.bak").c_str()) == 0 ||
             _wcsicmp(file, (g.directory + L"\\sound-settings.ini").c_str()) == 0 ||
-            _wcsicmp(file, (g.directory + L"\\sound-settings.bak").c_str()) == 0) {
+            _wcsicmp(file, (g.directory + L"\\sound-settings.bak").c_str()) == 0 ||
+            _wcsicmp(file, (g.directory + L"\\life.ini").c_str()) == 0 ||
+            _wcsicmp(file, (g.directory + L"\\life.bak").c_str()) == 0 ||
+            _wcsicmp(file, (g.directory + L"\\companion.ini").c_str()) == 0 ||
+            _wcsicmp(file, (g.directory + L"\\companion.bak").c_str()) == 0 ||
+            _wcsicmp(file, (g.directory + L"\\interaction-settings.ini").c_str()) == 0 ||
+            _wcsicmp(file, (g.directory + L"\\interaction-settings.ini.bak").c_str()) == 0) {
             UpdateMessage(L"지금 사용 중인 기록 파일 대신 다른 폴더나 파일 이름을 선택해 주세요.", kTitle, MB_OK | MB_ICONINFORMATION); return;
         }
         const std::wstring temporary = std::wstring(file) + L".tmp";
-        if (WriteBytes(temporary, cat::Serialize(g.pet)) && MoveFileExW(temporary.c_str(), file, MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) Balloon(L"기록을 보관했어요", L"이 파일은 생일·성장 기록이에요. 친밀도·의상·소리까지 옮기려면 기록 폴더 전체를 함께 보관해 주세요.");
+        if (WriteBytes(temporary, cat::Serialize(g.pet)) && MoveFileExW(temporary.c_str(), file, MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) Balloon(L"기록을 보관했어요", L"이 파일은 첫 동물의 생일·성장 기록이에요. 두 번째 동물·친밀도·기분·의상·소리까지 옮기려면 기록 폴더 전체를 함께 보관해 주세요.");
         else UpdateMessage(L"선택한 위치에 백업하지 못했어요. 다른 폴더를 선택해 주세요.", kTitle, MB_OK | MB_ICONERROR);
     }
 }
 void RunCommand(UINT command) {
+    if(command>=kCharacterCommandBase && command<kCharacterCommandBase+cat::kCharacterCount){SelectCharacter(static_cast<cat::Character>(command-kCharacterCommandBase));return;}
+    if(command>=kOutfitCommandBase && command<kOutfitCommandBase+cat::kOutfitCount){SelectOutfit(static_cast<cat::Outfit>(command-kOutfitCommandBase));return;}
     switch (command) {
+    case kWorkInterferenceCommand: ChangeInteractionSettings(true); break;
+    case kSeasonalEventsCommand: ChangeInteractionSettings(false); break;
+    case kCompanionToggle: ToggleCompanion(); break;
+    case kCompanionFeed: FeedCompanion(false); break;
+    case kCompanionTreat: FeedCompanion(true); break;
+    case kCompanionStatus: ShowCompanionStatus(); break;
     case FeedCommand: Care(false); break;
     case SnackCommand: Care(true); break;
     case StatusCommand: ShowPetStatus(); break;
@@ -1937,10 +2557,14 @@ void RunCommand(UINT command) {
     case OutfitCrownCommand: SelectOutfit(cat::Outfit::Crown); break;
     case ToyBallCommand: PlaceToy(ToyKind::Ball); break;
     case ToyBoxCommand: PlaceToy(ToyKind::Box); break;
+    case ToyPaperBagCommand: PlaceToy(ToyKind::PaperBag); break;
+    case ToyCatnipCommand: PlaceToy(ToyKind::Catnip); break;
+    case ToyFishingRodCommand: PlaceToy(ToyKind::FishingRod); break;
+    case ToyCushionCommand: PlaceToy(ToyKind::Cushion); break;
     case ToyClearCommand: PlaceToy(ToyKind::None); break;
     case LoafCommand: if (g.perch.transitioning || !g.physics.CurrentPose().grounded) break; if (g.brain) g.brain->Interrupt(GetTickCount64()); SetMotion(Motion::Loaf, 9000); Render(); break;
     case KneadCommand: if (g.perch.transitioning || !g.physics.CurrentPose().grounded) break; if (g.brain) g.brain->Interrupt(GetTickCount64()); SetMotion(Motion::Knead, 5200); PlayCatSound(cat::audio::Cue::Pet); Render(); break;
-    case BellyCommand: if (g.perch.transitioning || !g.physics.CurrentPose().grounded) break; if (g.brain) g.brain->Interrupt(GetTickCount64()); SetMotion(Motion::BellyRoll, 4400); PlayCatSound(cat::audio::Cue::Pet); Render(); break;
+    case BellyCommand: if (g.perch.transitioning || !g.physics.CurrentPose().grounded) break; if (g.brain) g.brain->Interrupt(GetTickCount64()); SetMotion(Motion::BellyRoll, 4400); Render(); break;
     case EarCommand: StartGesture(Motion::EarFlick); Render(); break;
     case TailCommand: StartGesture(Motion::TailRaise); Render(); break;
     case UpdateCheckCommand: StartUpdateCheck(true); break;
@@ -1961,25 +2585,38 @@ void ShowMenu(POINT point) {
     AppendMenuW(menu, MF_STRING | MF_GRAYED, 0, title.c_str()); AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
     AppendMenuW(menu, MF_STRING, FeedCommand, L"밥 주기\tCtrl+Alt+F");
     AppendMenuW(menu, MF_STRING, SnackCommand, L"츄르 주기\tCtrl+Alt+T");
+    HMENU companionMenu = CreatePopupMenu();
+    AppendMenuW(companionMenu, MF_STRING | (g.companionStore.enabled() ? MF_CHECKED : MF_UNCHECKED),
+        kCompanionToggle, g.companionStore.available() ? L"두 번째 동물 함께 지내기" : L"두 번째 동물 만나기");
+    if (g.companionStore.available()) {
+        const UINT enabled = g.companionStore.enabled() ? MF_ENABLED : MF_GRAYED;
+        AppendMenuW(companionMenu, MF_STRING | enabled, kCompanionFeed, L"두 번째 동물에게 밥 주기");
+        AppendMenuW(companionMenu, MF_STRING | enabled, kCompanionTreat, L"두 번째 동물에게 간식 주기");
+        AppendMenuW(companionMenu, MF_STRING, kCompanionStatus, L"두 번째 동물의 성장 기록");
+    }
+    AppendMenuW(menu, MF_POPUP, reinterpret_cast<UINT_PTR>(companionMenu), L"두 마리 함께 키우기");
     HMENU characters = CreatePopupMenu();
-    AppendMenuW(characters, MF_STRING, CreamCommand, cat::CharacterName(cat::Character::Cream));
-    AppendMenuW(characters, MF_STRING, SilverCommand, cat::CharacterName(cat::Character::SilverTabby));
-    CheckMenuRadioItem(characters, CreamCommand, SilverCommand,
-                      g.preferences.character == cat::Character::SilverTabby ? SilverCommand : CreamCommand, MF_BYCOMMAND);
+    for(int i=0;i<cat::kCharacterCount;++i) AppendMenuW(characters,MF_STRING,kCharacterCommandBase+i,cat::CharacterName(static_cast<cat::Character>(i)));
+    CheckMenuRadioItem(characters,kCharacterCommandBase,kCharacterCommandBase+cat::kCharacterCount-1,kCharacterCommandBase+static_cast<int>(g.preferences.character),MF_BYCOMMAND);
     AppendMenuW(menu, MF_POPUP | MF_STRING, reinterpret_cast<UINT_PTR>(characters), L"캐릭터 선택");
     HMENU wardrobe = CreatePopupMenu();
-    AppendMenuW(wardrobe, MF_STRING, OutfitNoneCommand, cat::OutfitName(cat::Outfit::None));
-    AppendMenuW(wardrobe, MF_STRING, OutfitBowCommand, cat::OutfitName(cat::Outfit::BowTie));
-    AppendMenuW(wardrobe, MF_STRING, OutfitScarfCommand, cat::OutfitName(cat::Outfit::Scarf));
-    AppendMenuW(wardrobe, MF_STRING, OutfitCrownCommand, cat::OutfitName(cat::Outfit::Crown));
-    const UINT outfitCommand = g.preferences.outfit == cat::Outfit::BowTie ? OutfitBowCommand :
-        g.preferences.outfit == cat::Outfit::Scarf ? OutfitScarfCommand :
-        g.preferences.outfit == cat::Outfit::Crown ? OutfitCrownCommand : OutfitNoneCommand;
-    CheckMenuRadioItem(wardrobe, OutfitNoneCommand, OutfitCrownCommand, outfitCommand, MF_BYCOMMAND);
+    for(int i=0;i<cat::kOutfitCount;++i) {
+        const auto outfit=static_cast<cat::Outfit>(i);
+        const bool available=OutfitAvailable(outfit)||outfit==g.preferences.outfit;
+        std::wstring label=cat::OutfitName(outfit);
+        if(outfit==cat::Outfit::Scarf && WinterScarfRecommended())label+=L" (겨울 추천)";
+        if(!available)label+=outfit==cat::Outfit::Santa?L" (크리스마스에 열려요)":outfit==cat::Outfit::Pumpkin?L" (할로윈에 열려요)":L" (생일에 열려요)";
+        AppendMenuW(wardrobe,MF_STRING|(available?0:MF_GRAYED),kOutfitCommandBase+i,label.c_str());
+    }
+    CheckMenuRadioItem(wardrobe,kOutfitCommandBase,kOutfitCommandBase+cat::kOutfitCount-1,kOutfitCommandBase+static_cast<int>(g.preferences.outfit),MF_BYCOMMAND);
     AppendMenuW(menu, MF_POPUP | MF_STRING, reinterpret_cast<UINT_PTR>(wardrobe), L"옷장");
     HMENU toys = CreatePopupMenu();
     AppendMenuW(toys, MF_STRING, ToyBallCommand, L"공 꺼내기");
-    AppendMenuW(toys, MF_STRING, ToyBoxCommand, L"박스 꺼내기");
+    AppendMenuW(toys, MF_STRING, ToyBoxCommand, L"박스 꺼내기\tCtrl+Alt+B");
+    AppendMenuW(toys, MF_STRING, ToyPaperBagCommand, L"종이봉투 꺼내기");
+    AppendMenuW(toys, MF_STRING, ToyCatnipCommand, L"캣닢 꺼내기");
+    AppendMenuW(toys, MF_STRING, ToyFishingRodCommand, L"깃털 낚싯대 꺼내기");
+    AppendMenuW(toys, MF_STRING, ToyCushionCommand, L"쿠션 꺼내기");
     AppendMenuW(toys, MF_STRING | (g.toy == ToyKind::None ? MF_GRAYED : MF_ENABLED), ToyClearCommand, L"장난감 치우기");
     AppendMenuW(menu, MF_POPUP | MF_STRING, reinterpret_cast<UINT_PTR>(toys), L"장난감");
     HMENU actions = CreatePopupMenu();
@@ -2009,6 +2646,8 @@ void ShowMenu(POINT point) {
     AppendMenuW(menu, MF_POPUP | MF_STRING, reinterpret_cast<UINT_PTR>(soundMenu), L"고양이 소리");
     AppendMenuW(menu, MF_STRING, StatusCommand, L"생일과 성장 기록"); AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
     AppendMenuW(menu, MF_STRING | (g.pet.roamingPaused ? MF_CHECKED : MF_UNCHECKED), PauseCommand, L"이 자리에서 쉬기");
+    AppendMenuW(menu, MF_STRING | (g.workInterference ? MF_CHECKED : MF_UNCHECKED), kWorkInterferenceCommand, L"업무 방해 모드 · 커서와 놀기");
+    AppendMenuW(menu, MF_STRING | (g.interactionSettings.seasonalEvents ? MF_CHECKED : MF_UNCHECKED), kSeasonalEventsCommand, L"계절·기념일 이벤트");
     AppendMenuW(menu, MF_STRING, HideCommand, g.hidden ? L"고양이 보이기\tCtrl+Alt+H" : L"잠깐 숨기기\tCtrl+Alt+H");
     AppendMenuW(menu, MF_SEPARATOR, 0, nullptr); AppendMenuW(menu, MF_STRING, BackupCommand, L"성장 기록 따로 백업하기…");
     AppendMenuW(menu, MF_STRING, FolderCommand, L"기록 폴더 열기");
@@ -2034,36 +2673,79 @@ void ShowMenu(POINT point) {
     PostMessageW(g.window, WM_NULL, 0, 0); DestroyMenu(menu); g.menuOpen = false;
     if (choice) RunCommand(choice);
 }
+bool ToyInteractionAvailable() {
+    const auto physical=g.physics.CurrentPose();
+    return cat::toy::InteractionAllowed(physical.grounded,physical.onPlatform,g.pet.roamingPaused,
+        g.hidden || g.menuOpen || g.dragging || g.perch.active || g.perch.transitioning || g.waitingForStop ||
+        g.lifeSequenceCount || g.lifeCrossing.Active() || g.physics.Hanging() || g.smallBoxEvent);
+}
+
+void AdvanceToyObjects(double elapsed) {
+    const bool paused=g.pet.roamingPaused || g.hidden || g.menuOpen || g.dragging;
+    if (g.toy==ToyKind::Ball) {
+        // Floor toys retain work-area bounds while the cat visits a window.
+        const double width=(g.work.right-g.work.left)/g.dpiScale;
+        const double margin=std::min(96.0,width*.5);
+        const double growth=cat::GrowthScale(g.pet.bornUtc,UtcNow());
+        const auto [low,high]=cat::toy::RollingBounds(width,margin,width-margin,36*growth);
+        g.toyBall.Advance(elapsed,g.work.left/g.dpiScale+low,g.work.left/g.dpiScale+high,paused);
+        g.toyX=g.toyBall.x*g.dpiScale;
+    } else if (g.toy==ToyKind::FishingRod) g.toyLure.Advance(elapsed,paused);
+}
+
+Motion ToySessionMotion() {
+    using Phase=cat::toy::Phase;
+    switch(g.toySession.phase) {
+    case Phase::Approach: case Phase::Exit: return Motion::Walk;
+    case Phase::Enter: return Motion::Stalk;
+    case Phase::Inspect: return g.toy==ToyKind::Catnip ? Motion::Groom : Motion::Watch;
+    case Phase::Interact:
+        if (g.toy==ToyKind::Ball || g.toy==ToyKind::FishingRod) return Motion::ToyPaw;
+        if (g.toy==ToyKind::Catnip) return Motion::BellyRoll;
+        if (g.toy==ToyKind::Cushion) return Motion::Knead;
+        return Motion::BoxSit;
+    case Phase::Rest: return g.toy==ToyKind::PaperBag ? Motion::Watch : Motion::Groom;
+    case Phase::Sleep: return Motion::Sleep;
+    default: return Motion::Watch;
+    }
+}
+
+void ApplyToyPhase(ULONGLONG ticks) {
+    if (g.toyAppliedRevision==g.toySession.revision) return;
+    g.toyAppliedRevision=g.toySession.revision;
+    const auto phase=g.toySession.phase;
+    if (phase==cat::toy::Phase::Wait) {
+        g.toyEngaged=false; g.approachingToy=false;
+        g.nextToyAction=ticks+static_cast<ULONGLONG>(cat::toy::Duration(g.toy,phase));
+        g.toyDispatching=true; SetMotion(Motion::Watch,900); g.toyDispatching=false;
+        return;
+    }
+    g.toyMotion=ToySessionMotion();
+    if (g.toyMotion==Motion::ToyPaw) {
+        const double target=g.toyX+(g.toy==ToyKind::FishingRod ? g.toyLure.offset*g.dpiScale : 0);
+        g.direction=target<g.centerX ? -1 : 1; g.facing=g.direction;
+    }
+    const auto duration=cat::toy::Travels(phase) ? 30000ULL :
+        static_cast<ULONGLONG>(cat::toy::Duration(g.toy,phase)+100);
+    g.toyDispatching=true; SetMotion(g.toyMotion,duration); g.toyDispatching=false;
+    g.speed=38*g.dpiScale;
+    g.approachingToy=cat::toy::Travels(phase);
+    if (phase==cat::toy::Phase::Interact && g.toyRewardPending &&
+            g.toy!=ToyKind::Ball && g.toy!=ToyKind::FishingRod) {
+        Remember(cat::memory::Event::Play); g.toyRewardPending=false;
+    }
+}
+
 bool MaybePlayWithToy(ULONGLONG ticks) {
-    if (g.toy == ToyKind::None || g.perch.active || g.perch.transitioning || g.pet.roamingPaused ||
-        g.hidden || g.menuOpen || g.dragging || ticks < g.nextToyAction || !g.physics.CurrentPose().grounded)
-        return false;
-    if (g.motion != Motion::Idle && g.motion != Motion::Walk && g.motion != Motion::Watch &&
-        g.motion != Motion::Loaf && g.motion != Motion::Groom) return false;
-    const auto [low, high] = MovementBoundsLogical();
-    const double growth = cat::GrowthScale(g.pet.bornUtc, UtcNow());
-    const double target = cat::toy::ApproachTarget(g.toy, g.toyX / g.dpiScale,
-        g.centerX / g.dpiScale, 36 * growth, g.work.left / g.dpiScale + low, g.work.left / g.dpiScale + high);
-    const double distance = target - g.centerX / g.dpiScale;
+    if (g.toy==ToyKind::None || !ToyInteractionAvailable()) return false;
+    if (g.toyEngaged) return true;
+    if (ticks<g.nextToyAction) return false;
+    if (g.motion!=Motion::Idle && g.motion!=Motion::Walk && g.motion!=Motion::Watch &&
+            g.motion!=Motion::Loaf && g.motion!=Motion::Groom) return false;
     if (g.brain) g.brain->Interrupt(ticks);
-    if (std::abs(distance) > 2 || std::abs(WalkingVelocity(g.physics.CurrentPose())) > 3) {
-        g.direction = distance < 0 ? -1 : 1;
-        g.speed = 38 * g.dpiScale;
-        SetMotion(Motion::Walk, 1000);
-        g.approachingToy = true;
-        return true;
-    }
-    if (g.toy == ToyKind::Ball) {
-        g.direction = g.toyX < g.centerX ? -1 : 1; g.facing = g.direction;
-        SetMotion(Motion::ToyPaw, 1050);
-        g.nextToyAction = ticks + static_cast<ULONGLONG>(Random(45000, 95000));
-    } else {
-        // Center only after the physical approach has settled within two pixels.
-        g.centerX = g.toyX; ResetMovement();
-        SetMotion(Motion::BoxSit, static_cast<ULONGLONG>(Random(9000, 22000)));
-        if (Random(0,1) < .42) { Speak(L"박스는 못 참지 ♡", 2600); PlayCatSound(cat::audio::Cue::Pet, true); }
-        g.nextToyAction = ticks + static_cast<ULONGLONG>(Random(65000, 130000));
-    }
+    g.toySession.Start(g.toy,g.toyX<g.centerX ? -1 : 1);
+    g.toyEngaged=true;
+    ApplyToyPhase(ticks);
     return true;
 }
 
@@ -2075,6 +2757,15 @@ void DecideMotion() {
     POINT cursor{}; const bool nearby = CursorNear(&cursor);
     const auto age = cat::Age(g.pet.bornUtc, UtcNow());
     SyncExperience();
+    if (g.life.enabled() && WorkInterferenceEnabled() && !g.pet.roamingPaused && nearby &&
+            !g.perch.active && std::abs(cursor.x-g.centerX)<90*g.dpiScale) {
+        const double bond=g.memory.enabled() ? cat::memory::Summarize(g.memory.state).bond : 0;
+        const auto feeling=cat::life::Summarize(g.life.state,bond);
+        if (bond<35 && Random(0,1)<.16*feeling.shyness) {
+            g.direction=cursor.x<g.centerX ? 1 : -1;g.speed=38*g.dpiScale;
+            SetMotion(Motion::Walk,1800);return;
+        }
+    }
     const auto plan = g.brain->Next({ticks, age.years, g.pet.hunger, g.pet.affection,
                                     static_cast<int>(local.wHour), nearby, g.pet.roamingPaused});
     Motion selected = Motion::Idle;
@@ -2106,20 +2797,20 @@ void DecideMotion() {
     else if (selected == Motion::Walk || selected == Motion::Zoomies) g.direction = Random(0, 1) < .5 ? -1 : 1;
     g.speed = plan.speed * g.dpiScale;
     SetMotion(selected, plan.durationMs);
-    if ((selected == Motion::Jump || selected == Motion::Pounce) && Random(0, 1) < .45) {
+    if ((selected == Motion::Jump || selected == Motion::Pounce) && VoiceChance(.45)) {
         g.motionSoundPending = true; g.motionSoundAutomatic = true;
-    } else if (wasSleeping && selected == Motion::Stretch && Random(0, 1) < .35)
+    } else if (wasSleeping && selected == Motion::Stretch && VoiceChance(.35))
         PlayCatSound(cat::audio::Cue::Wake, true);
-    if ((selected == Motion::EarFlick || selected == Motion::TailRaise) && Random(0, 1) < .34) {
+    if ((selected == Motion::EarFlick || selected == Motion::TailRaise) && VoiceChance(.34)) {
         g.gestureSoundPending = true; g.gestureSoundAutomatic = true;
     }
-    if ((selected == Motion::BellyRoll || selected == Motion::Knead) && Random(0, 1) < .42)
+    if (selected == Motion::Knead && VoiceChance(.42))
         PlayCatSound(cat::audio::Cue::Pet, true);
-    if ((selected == Motion::Peek || selected == Motion::Scratch) && Random(0, 1) < .32)
+    if ((selected == Motion::Peek || selected == Motion::Scratch) && VoiceChance(.32))
         PlayCatSound(cat::audio::Cue::Gesture, true);
     if (selected == Motion::Sneeze) {
         Speak(L"에취!", 1200);
-        if (Random(0, 1) < .55) PlayCatSound(cat::audio::Cue::Gesture, true);
+        if (VoiceChance(.55)) PlayCatSound(cat::audio::Cue::Gesture, true);
     }
 }
 bool ContinueMemorySequence() {
@@ -2143,8 +2834,10 @@ void MaybeMemoryRoutine(ULONGLONG ticks) {
     context.localDay = cat::DaysFromCivil(local.wYear, local.wMonth, local.wDay);
     context.localHour = local.wHour;
     context.roamingPaused = g.pet.roamingPaused;
+    context.allowRare = !g.life.enabled(); // Unified life quota owns migrated long-term sequences.
     context.busy = !g.initialized || g.hidden || g.menuOpen || g.dragging || g.closing || updates.applying ||
-        g.perch.transitioning || g.approachingToy || g.approachingUser || g.memorySequenceCount ||
+        g.perch.transitioning || EnvironmentBusy() || g.toyEngaged || g.approachingToy || g.approachingUser || g.memorySequenceCount ||
+        g.lifeSequenceCount || g.lifeCrossing.Active() || g.physics.Hanging() ||
         g.pendingCare >= 0 || ticks < g.bubbleUntil || g.prank.Active() || !g.physics.CurrentPose().grounded ||
         (g.motion != Motion::Idle && g.motion != Motion::Watch && g.motion != Motion::Walk);
     if (context.busy) return;
@@ -2158,7 +2851,7 @@ void MaybeMemoryRoutine(ULONGLONG ticks) {
     const auto [low, high] = MovementBoundsLogical();
     const double cursorX = (cursor.x - g.work.left) / g.dpiScale;
     const auto target = cat::memory::ApproachTarget((g.centerX - g.work.left) / g.dpiScale, cursorX, low, high);
-    context.cursorReachable = nearby && target.has_value();
+    context.cursorReachable = WorkInterferenceEnabled() && !g.companionModel.Busy() && nearby && target.has_value();
     const auto decision = cat::routine::Peek(g.memory.state, context, Random(0, 1));
     using Decision = cat::routine::Decision;
     if (decision == Decision::None) return;
@@ -2208,6 +2901,172 @@ void MaybeMemoryRoutine(ULONGLONG ticks) {
     }
 }
 
+cat::life::EventContext LifeEventContext(ULONGLONG ticks, bool decisionBoundary = false) {
+    cat::life::EventContext context;
+    context.nowUtc=UtcNow();
+    SYSTEMTIME local{};GetLocalTime(&local);
+    context.localDay=cat::DaysFromCivil(local.wYear,local.wMonth,local.wDay);
+    context.sleeping=g.motion==Motion::Sleep;
+    context.perched=g.perch.active;
+    context.roamingPaused=g.pet.roamingPaused;
+    context.seasonalEnabled=g.interactionSettings.seasonalEvents;
+    context.bond=g.memory.enabled() ? cat::memory::Summarize(g.memory.state).bond : 0;
+    context.inheritedRareUtc=g.memory.enabled() ? g.memory.state.lastRareUtc : 0;
+    context.fullness=g.nutrition.fullness;
+    context.crownWorn=g.preferences.outfit==cat::Outfit::Crown;
+    context.boxAvailable=g.toy==ToyKind::Box && std::abs(g.toyX-g.centerX)<42*g.dpiScale;
+    const auto elapsed=ticks>=g.motionStart ? ticks-g.motionStart : 0;
+    if(g.motion==Motion::Punch && elapsed>=650 && g.punchHits>=2 && g.prank.Active()) context.trigger=cat::life::Trigger::Punch;
+    else if(g.motion==Motion::TailChase && elapsed>=1600) context.trigger=cat::life::Trigger::TailChase;
+    else if(g.motion==Motion::Sneeze && elapsed>=1200) context.trigger=cat::life::Trigger::Sneeze;
+    const auto physical=g.physics.CurrentPose();
+    const auto [low,high]=MovementBoundsLogical();
+    context.edgeDistanceLogical=std::max(0.0,std::min(physical.x-low,high-physical.x));
+    const double width=(g.work.right-g.work.left)/g.dpiScale;
+    if(g.perch.active && g.physics.OnPlatform()) {
+        const double left=(std::max(g.perch.rect.left,g.work.left)-g.work.left)/g.dpiScale;
+        const double right=(std::min(g.perch.rect.right,g.work.right)-g.work.left)/g.dpiScale;
+        const double edge=physical.x<(left+right)/2 ? left : right;
+        context.edgeSupported=edge>=96 && edge<=width-96 && std::abs(physical.x-edge)<=90;
+    }
+    context.screenCrossingSafe=!g.perch.active && width>480 && context.edgeDistanceLogical<20 &&
+        !g.toyEngaged && !g.toyContact;
+    const bool calm=g.motion==Motion::Idle || g.motion==Motion::Watch || g.motion==Motion::Walk || context.sleeping;
+    context.busy=!g.initialized || g.hidden || g.menuOpen || g.dragging || g.closing || updates.applying ||
+        !g.physicsReady || !physical.grounded || g.perch.transitioning || g.waitingForStop || EnvironmentBusy() ||
+        g.approachingToy || g.toyEngaged || g.approachingUser || g.memorySequenceCount || g.lifeSequenceCount ||
+        g.lifeCrossing.Active() || g.physics.Hanging() || g.pendingCare>=0 || ticks<g.bubbleUntil ||
+        (g.prank.Active() && context.trigger!=cat::life::Trigger::Punch) ||
+        (!decisionBoundary && !calm && context.trigger==cat::life::Trigger::None);
+    return context;
+}
+
+bool OutfitAvailable(cat::Outfit outfit) {
+    if(!cat::IsValid(outfit))return false;
+    if(outfit==g.preferences.outfit)return true;
+    unsigned needed=0;
+    if(outfit==cat::Outfit::Santa)needed=cat::life::SantaHat;
+    if(outfit==cat::Outfit::Pumpkin)needed=cat::life::PumpkinHat;
+    if(outfit==cat::Outfit::Birthday)needed=cat::life::BirthdayHat;
+    if(!needed)return true;
+    if(!g.life.enabled())return false;
+    return ((g.life.state.unlockedHats|cat::life::SeasonalUnlocks(g.life.state,LifeEventContext(GetTickCount64())))&needed)!=0;
+}
+bool WinterScarfRecommended() {
+    return g.life.enabled() && cat::life::WinterScarfSuggested(g.life.state,LifeEventContext(GetTickCount64()));
+}
+
+void ObserveLife(ULONGLONG ticks) {
+    if(!g.life.enabled())return;
+    const auto now=UtcNow();SYSTEMTIME local{};GetLocalTime(&local);
+    cat::life::Observe(g.life.state,now,{static_cast<int>(local.wHour),g.motion==Motion::Sleep || g.motion==Motion::SleepTalk,
+        now<g.lifeInteractionUntil,!g.hidden && !g.menuOpen && !g.dragging && !g.closing,g.nutrition.fullness});
+    if(ticks<g.nextLifeEventAttempt)return;
+    const auto prior=g.life.state;
+    if(cat::life::UnlockSeasonal(g.life.state,LifeEventContext(ticks)) && !SaveLife(false)) {
+        g.life.state=prior;g.nextLifeEventAttempt=ticks+30000;
+    }
+}
+
+bool TryBeginEdgeHang() {
+    if(!g.perch.active || !g.physics.OnPlatform())return false;
+    const double left=(std::max(g.perch.rect.left,g.work.left)-g.work.left)/g.dpiScale;
+    const double right=(std::min(g.perch.rect.right,g.work.right)-g.work.left)/g.dpiScale;
+    const auto physical=g.physics.CurrentPose();
+    return g.physics.BeginHang(physical.x<(left+right)/2 ? left : right,(g.work.bottom-g.perch.rect.top)/g.dpiScale);
+}
+
+bool ContinueLifeSequence() {
+    if(!g.lifeSequenceCount)return false;
+    const auto next=g.lifeSequence[0];auto remainder=g.lifeSequence;
+    const auto count=g.lifeSequenceCount-1;
+    for(unsigned i=0;i<count;++i)remainder[i]=remainder[i+1];
+    const ULONGLONG duration=next==Motion::Sleep ? 60000 : next==Motion::Loaf ? 12000 :
+        next==Motion::Knead ? 5200 : next==Motion::Zoomies ? 1800 : next==Motion::Startled ? 1000 :
+        next==Motion::BellyRoll ? cat::animation::kBellyRollDurationMs : 3200;
+    if(g.pet.roamingPaused && cat::animation::Travels(next)) {
+        g.lifeSequenceCount=0;SetMotion(Motion::Watch,3200);return true;
+    }
+    g.lifeDispatching=true;SetMotion(next,duration);g.lifeDispatching=false;
+    g.lifeSequence=remainder;g.lifeSequenceCount=count;g.smallBoxEvent=false;
+    return true;
+}
+
+bool DispatchLifeEvent(cat::life::Event event, ULONGLONG ticks) {
+    using Event=cat::life::Event;
+    if(event==Event::None)return false;
+    if(event==Event::EdgeHang && !TryBeginEdgeHang())return false;
+    if(g.brain)g.brain->Interrupt(ticks);
+    switch(event) {
+    case Event::PunchStartle:case Event::TailStartle:case Event::SneezeStartle:
+        g.direction=g.centerX<(g.work.left+g.work.right)/2.0 ? 1 : -1;
+        g.speed=125*g.dpiScale;SetMotion(Motion::Startled,850);
+        g.lifeSequence[0]=Motion::Zoomies;g.lifeSequence[1]=Motion::Watch;g.lifeSequenceCount=2;
+        Speak(event==Event::PunchStartle ? L"내가 했나?!" : event==Event::SneezeStartle ? L"…깜짝이야!" : L"앗, 내 꼬리!",1200);break;
+    case Event::Yawn:SetMotion(Motion::Yawn,2400);break;
+    case Event::SleepTalk:
+        SetMotion(Motion::SleepTalk,2600);g.lifeSequence[0]=Motion::Sleep;g.lifeSequenceCount=1;
+        Speak(L"냐… 츄르…",1800);break;
+    case Event::Peek:SetMotion(Motion::Peek,cat::animation::kPeekDurationMs);break;
+    case Event::SmallBox:
+        SetMotion(Motion::BoxSit,2300);g.smallBoxEvent=true;
+        g.lifeSequence[0]=Motion::Startled;g.lifeSequence[1]=Motion::Watch;g.lifeSequenceCount=2;
+        Speak(L"분명 들어갔었는데…",2200);break;
+    case Event::CrownPride:SetMotion(Motion::Pride,3500);Speak(L"짐이 바로 고양이랴",2600);break;
+    case Event::EdgeHang:
+        SetMotion(Motion::Hang,1600);g.lifeHangUntil=ticks+1400;g.waitingForStop=false;break;
+    case Event::ScreenCrossing:
+        SetMotion(Motion::Watch,1800);g.lifeCrossing.Start();break;
+    case Event::BondKnead:
+        SetMotion(Motion::Knead,5200);g.lifeSequence[0]=Motion::Loaf;g.lifeSequenceCount=1;
+        Speak(L"네 옆이 편해졌어 ♡",3200);break;
+    case Event::BondGreeting:
+        SetMotion(Motion::TailRaise,cat::animation::kTailRaiseDurationMs);
+        g.lifeSequence[0]=Motion::BellyRoll;g.lifeSequence[1]=Motion::Watch;g.lifeSequenceCount=2;
+        Speak(L"오래 함께한 너니까 ♡",3200);break;
+    case Event::BondLifetime:
+        SetMotion(Motion::Stretch,3200);g.lifeSequence={Motion::Knead,Motion::Loaf,Motion::Sleep};g.lifeSequenceCount=3;
+        Speak(L"앞으로도 쭉…\n네 옆에 있을게",4200);break;
+    case Event::Birthday:case Event::FirstWeek:case Event::FirstYear:case Event::FifthYear:
+        SetMotion(Motion::TailRaise,cat::animation::kTailRaiseDurationMs);
+        g.lifeSequence[0]=Motion::Knead;g.lifeSequenceCount=1;
+        Speak(event==Event::FirstWeek ? L"우리 만난 지 일주일 ♡" : event==Event::FirstYear ? L"함께한 첫 일 년 ♡" :
+            event==Event::FifthYear ? L"벌써 오 년…\n내 집사는 너야 ♡" : L"오늘은 내 생일이랴 ♡",4200);break;
+    case Event::None:return false;
+    }
+    return true;
+}
+
+bool MaybeLifeEvent(ULONGLONG ticks, bool decisionBoundary) {
+    if(!g.life.enabled() || ticks<g.nextLifeEventAttempt)return false;
+    const auto context=LifeEventContext(ticks,decisionBoundary);
+    const auto event=cat::life::PeekEvent(g.life.state,context);
+    if(event==cat::life::Event::None)return false;
+    const auto prior=g.life.state;
+    if(!cat::life::CommitEvent(g.life.state,context,event))return false;
+    if(!SaveLife()) {g.life.state=prior;g.nextLifeEventAttempt=ticks+30000;return false;}
+    if(DispatchLifeEvent(event,ticks))return true;
+    // A moving ledge can invalidate the final physics acceptance. Restore the
+    // opportunity rather than spending the pet's daily event on a failed grip.
+    g.life.state=prior;SaveLife(false);g.nextLifeEventAttempt=ticks+30000;return false;
+}
+
+void UpdateLifeEvent(ULONGLONG ticks, double elapsed) {
+    if(g.physics.Hanging() && ticks>=g.lifeHangUntil) {
+        g.physics.EndHang(true);g.lifeHangUntil=0;
+        g.airborneMotion=Motion::Jump;SetMotion(Motion::Startled,2000);
+    }
+    if(!g.lifeCrossing.Active())return;
+    if(g.lifeCrossing.Advance(elapsed*1000,true)) {
+        const auto bounds=MovementBoundsLogical();
+        const bool fromLeft=g.physics.CurrentPose().x<(bounds.first+bounds.second)/2;
+        g.centerX=g.work.left+(fromLeft ? bounds.second : bounds.first)*g.dpiScale;
+        g.direction=fromLeft ? -1 : 1;
+        ResetMovement(); // Explicit rare event at opacity zero, on the floor.
+    }
+    if(!g.lifeCrossing.Active()) {g.speed=45*g.dpiScale;SetMotion(Motion::Walk,2400);}
+}
+
 void Tick() {
     g.audio.Poll();
     PollUpdates();
@@ -2226,7 +3085,9 @@ void Tick() {
         g.motionStart += frozen; g.nextDecision += frozen;
         if (g.perch.active) g.perch.leaveAfter += frozen;
         if (g.landedAt) g.landedAt += frozen;
+        if (g.lifeHangUntil) g.lifeHangUntil += frozen;
         g.physics.Update(0, true);
+        PauseCursorReaction(clockDelta);
         elapsed = 0;
         // A paused body resumes the same stride. Actual drag/teleport paths
         // already reset gait through ResetMovement().
@@ -2237,9 +3098,13 @@ void Tick() {
         KeepOnWorkArea(); SyncNutrition(UtcNow()); UpdateTrayTip(); g.nextMaintenance = ticks + 1500;
         if (!g.hidden) SetWindowPos(g.window, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
     }
+    TickCompanion(ticks, elapsed);
     if (ticks >= g.nextSave) { SavePet(); g.nextSave = ticks + 60000; }
     RefreshAnimationTimer();
+    ObserveLife(ticks);
     if (!suspended) {
+        UpdateLifeEvent(ticks,elapsed);
+        AdvanceToyObjects(elapsed);
         MaintainPerch(ticks);
         if (g.perch.transitioning) {
             UpdatePerchTransition(ticks, elapsed);
@@ -2248,8 +3113,9 @@ void Tick() {
         }
         if (!g.waitingForStop) MaybeVisitWindow(ticks);
         if (g.perch.transitioning) { UpdatePerchTransition(ticks, elapsed); Render(); return; }
-        if (!g.waitingForStop && !g.approachingToy && !g.approachingUser && ticks >= g.nextDecision && g.physics.CurrentPose().grounded) {
-            if (!ContinueMemorySequence() && !MaybePlayWithToy(ticks)) DecideMotion();
+        UpdateCursorReaction(ticks, clockDelta);
+        if (!EnvironmentBusy() && !g.lifeCrossing.Active() && !g.waitingForStop && !g.approachingToy && !g.approachingUser && ticks >= g.nextDecision && g.physics.CurrentPose().grounded) {
+            if (!ContinueLifeSequence() && !ContinueMemorySequence() && !MaybeLifeEvent(ticks,true) && !MaybePlayWithToy(ticks)) DecideMotion();
         }
         if (cat::motion::AdvanceStopGate(g.waitingForStop, g.physics.CurrentPose().grounded,
                 WalkingVelocity(g.physics.CurrentPose()), ticks, g.motionStart, g.nextDecision) && g.stopSoundPending) {
@@ -2264,12 +3130,15 @@ void Tick() {
         const bool pounceLanded = g.motion == Motion::Pounce && g.jumpLaunched && g.physics.CurrentPose().grounded;
         double targetSpeed = cat::animation::Travels(g.motion) && !g.pet.roamingPaused && !pounceLanded ?
             g.direction * g.speed / g.dpiScale * body.speed * cat::animation::TravelFactor(g.motion, actionElapsed) : 0;
+        if (EnvironmentBusy()) targetSpeed = CursorReactionVelocity() * body.speed;
+        if (g.lifeCrossing.Active() || g.physics.Hanging()) targetSpeed=0;
         if (g.approachingUser) {
             POINT cursor{};
             const auto [low, high] = MovementBoundsLogical();
             g.userTargetX = std::clamp(g.userTargetX, low, high);
             const double distance = g.userTargetX - (g.centerX - g.work.left) / g.dpiScale;
-            const bool gone = !CursorNear(&cursor) || std::abs((cursor.x - g.work.left) / g.dpiScale - g.userTargetX) > 150;
+            const bool gone = !WorkInterferenceEnabled() || !CursorNear(&cursor) ||
+                std::abs((cursor.x - g.work.left) / g.dpiScale - g.userTargetX) > 150;
             if (g.pet.roamingPaused || gone || ticks >= g.nextDecision ||
                 (std::abs(distance) <= 2 && std::abs(WalkingVelocity(g.physics.CurrentPose())) <= 3)) {
                 SetMotion(Motion::Watch, 5000); targetSpeed = 0;
@@ -2278,35 +3147,41 @@ void Tick() {
                 if (targetSpeed != 0) g.direction = targetSpeed < 0 ? -1 : 1;
             }
         }
-        if (g.approachingToy) {
-            const auto [low, high] = MovementBoundsLogical();
-            const double target = cat::toy::ApproachTarget(g.toy, g.toyX / g.dpiScale,
-                g.centerX / g.dpiScale, 36 * growth, g.work.left / g.dpiScale + low, g.work.left / g.dpiScale + high);
-            const double distance = target - g.centerX / g.dpiScale;
-            targetSpeed = g.pet.roamingPaused ? 0 : cat::toy::ApproachVelocity(distance, 38 * body.speed);
-            if (std::abs(distance) <= 2 && std::abs(WalkingVelocity(g.physics.CurrentPose())) <= 3) {
-                g.approachingToy = false;
-                g.nextToyAction = ticks;
-                MaybePlayWithToy(ticks);
-                targetSpeed = 0;
-            } else if (targetSpeed != 0) g.direction = targetSpeed < 0 ? -1 : 1;
-        }
-        if (g.toy == ToyKind::Ball) {
-            if (!g.waitingForStop && g.motion == Motion::ToyPaw && cat::toy::PawContact(ticks >= g.motionStart ? ticks - g.motionStart : 0, g.toyContact)) {
-                if (std::abs(g.toyX - g.centerX) <= 55 * g.dpiScale * growth) {
-                    g.toyBall.Kick(g.direction, 90);
-                    if (Random(0,1) < .32) PlayCatSound(cat::audio::Cue::Gesture, true);
+        if (g.toy==ToyKind::None) { g.toyEngaged=false; g.approachingToy=false; }
+        else if (!g.toyEngaged && ticks>=g.nextToyAction) MaybePlayWithToy(ticks);
+        if (g.toyEngaged) {
+            const bool available=ToyInteractionAvailable();
+            const auto toyBounds=MovementBoundsLogical();
+            const double toyCenter=g.toyX/g.dpiScale+(g.toy==ToyKind::FishingRod ? g.toyLure.offset : 0);
+            const auto distanceToTarget=[&]() {
+                return cat::toy::SessionTarget(g.toySession,toyCenter,g.centerX/g.dpiScale,growth,
+                    g.work.left/g.dpiScale+toyBounds.first,g.work.left/g.dpiScale+toyBounds.second)-g.centerX/g.dpiScale;
+            };
+            if (available) {
+                ApplyToyPhase(ticks);
+                const bool arrived=std::abs(distanceToTarget())<=2 &&
+                    std::abs(WalkingVelocity(g.physics.CurrentPose()))<=3;
+                if (g.toySession.Advance(elapsed,true,arrived)) ApplyToyPhase(ticks);
+            }
+            targetSpeed=0;
+            if (g.toyEngaged && available && cat::toy::Travels(g.toySession.phase)) {
+                const double speed=g.toySession.phase==cat::toy::Phase::Enter ? 22 :
+                    g.toy==ToyKind::Ball || g.toy==ToyKind::FishingRod ? 58 : 38;
+                targetSpeed=cat::toy::ApproachVelocity(distanceToTarget(),speed*body.speed);
+                if (targetSpeed!=0) g.direction=targetSpeed<0 ? -1 : 1;
+            }
+            if (g.toyEngaged && g.toySession.phase==cat::toy::Phase::Interact && g.motion==Motion::ToyPaw) {
+                const bool reachableHeight=g.toy!=ToyKind::Ball || g.toyBall.lift<=24*growth;
+                if (cat::toy::PawContactAt(ticks>=g.motionStart ? ticks-g.motionStart : 0,g.toyContact,
+                        toyCenter-g.centerX/g.dpiScale,55*growth,available && reachableHeight)) {
+                    if (g.toy==ToyKind::Ball) g.toyBall.Kick(g.direction,90);
+                    else if (g.toy==ToyKind::FishingRod) g.toyLure.Touch(g.direction);
+                    if (g.toyRewardPending) { Remember(cat::memory::Event::Play); g.toyRewardPending=false; }
+                    PlayCatSound(cat::audio::Cue::Gesture,true);
                 }
             }
-            const auto [low, high] = MovementBoundsLogical();
-            // Keep the ball reachable even for a young cat at a screen edge.
-            const double reach = 36 * growth;
-            const auto [ballLow, ballHigh] = cat::toy::RollingBounds(
-                (g.work.right - g.work.left) / g.dpiScale, low, high, reach);
-            g.toyBall.Advance(elapsed, g.work.left / g.dpiScale + ballLow,
-                g.work.left / g.dpiScale + ballHigh);
-            g.toyX = g.toyBall.x * g.dpiScale;
         }
+        targetSpeed *= cat::species::ProfileFor(g.preferences.character).movementSpeedMultiplier;
         if (g.perch.active && g.physics.OnPlatform() && targetSpeed != 0) {
             const auto support = g.physics.CurrentPose();
             const auto [low, high] = MovementBoundsLogical();
@@ -2322,8 +3197,9 @@ void Tick() {
             const ULONGLONG takeoff = g.motion == Motion::Jump ? 220 : 240;
             if (actionElapsed >= takeoff) {
                 g.jumpPending = false;
-                const bool launched = g.motion == Motion::Jump ? g.physics.Jump(55 * growth * body.jump) :
-                    g.physics.Pounce(g.direction, 30 * growth * body.jump, g.pet.roamingPaused ? 0 : std::abs(targetSpeed));
+                const double speciesJump = cat::species::ProfileFor(g.preferences.character).jumpHeightMultiplier;
+                const bool launched = g.motion == Motion::Jump ? g.physics.Jump(55 * growth * body.jump * speciesJump) :
+                    g.physics.Pounce(g.direction, 30 * growth * body.jump * speciesJump, g.pet.roamingPaused ? 0 : std::abs(targetSpeed));
                 if (launched) {
                     g.jumpLaunched = true; g.airborneMotion = g.motion;
                 }
@@ -2387,20 +3263,10 @@ void Tick() {
             }
             if (actionElapsed >= 1000 && g.bubbleUntil < g.motionStart) Speak(L"…나 아니야", 1300);
         }
-        // Brief, occasional curiosity. The cursor is only observed, never moved or captured.
-        if (!g.waitingForStop && (g.motion == Motion::Idle || g.motion == Motion::Walk) && ticks >= g.nextCuriosity && !g.pet.roamingPaused && !g.approachingToy && !g.approachingUser && !g.memorySequenceCount) {
-            POINT cursor{};
-            if (CursorNear(&cursor)) {
-                g.nextCuriosity = ticks + static_cast<ULONGLONG>(Random(45000, 100000));
-                if (g.brain && Random(0, 1) < g.brain->GetPersonality().curiosity) {
-                    g.direction = cursor.x < g.centerX ? -1 : 1;
-                    SetMotion(Motion::Watch, 2600);
-                }
-            }
-        }
         if (g.pendingCare >= 0 && physical.grounded) Care(g.pendingCare != 0);
         MaybeAnnounceUpdate(ticks);
-        if (!g.waitingForStop) {
+        if (!g.waitingForStop && !EnvironmentBusy()) {
+            MaybeLifeEvent(ticks);
             MaybeMemoryRoutine(ticks);
             MaybeAskForFood(ticks);
         }
@@ -2415,6 +3281,7 @@ LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
     case WM_ERASEBKGND: return 1;
     case WM_PAINT: { PAINTSTRUCT paint{}; BeginPaint(window, &paint); EndPaint(window, &paint); return 0; }
     case WM_NCHITTEST: {
+        if(g.lifeCrossing.Opacity()<.15)return HTTRANSPARENT;
         POINT point{GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
         // The visible body above the ledge remains clickable (including the
         // update menu). Only the supporting app's own rectangle passes through.
@@ -2432,6 +3299,7 @@ LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
         GetCursorPos(&g.dragStart); g.dragOffset = g.centerX - g.dragStart.x;
         if (g.brain) g.brain->Interrupt(GetTickCount64());
         g.approachingToy = g.approachingUser = false; g.memorySequenceCount = 0;
+        g.lifeSequenceCount=0;g.smallBoxEvent=false;g.lifeCrossing={};
         g.dragging = true; g.moved = false; SetCapture(window); return 0;
     }
     case WM_MOUSEMOVE: if (g.dragging) {
@@ -2459,6 +3327,7 @@ LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
         if (wParam == kFeedHotkey) Care(false);
         else if (wParam == kSnackHotkey) Care(true);
         else if (wParam == kHideHotkey) ToggleHidden();
+        else if (wParam == kBoxHotkey) PlaceToy(ToyKind::Box);
         return 0;
     case kShowExisting:
         if (g.hidden) ToggleHidden();
@@ -2482,6 +3351,7 @@ LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
         g.prank.Shutdown();
         if (g.preciseTimer) { timeEndPeriod(1); g.preciseTimer = false; }
         KillTimer(window, kTickTimer); UnregisterHotKey(window, kFeedHotkey); UnregisterHotKey(window, kSnackHotkey); UnregisterHotKey(window, kHideHotkey);
+        UnregisterHotKey(window, kBoxHotkey);
         if (g.tray.hWnd) Shell_NotifyIconW(NIM_DELETE, &g.tray);
         PostQuitMessage(0); return 0;
     }
@@ -2554,6 +3424,8 @@ int NativePerchHitTest() {
     UnregisterClassW(testClass, g.instance);
     return result;
 }
+
+#include "native_expanded_tests.hpp"
 
 int RenderSelfTest() {
     // Native GDI+ regression path: resources and offscreen DIBs only. This
@@ -2712,6 +3584,8 @@ int RenderSelfTest() {
                     return 44;
                 }
             }
+            const int expanded = NativeExpandedRenderTest(context);
+            if (expanded) return expanded;
             context = "native perch hit testing and mouse-down support";
             return NativePerchHitTest();
         }();
@@ -2725,6 +3599,165 @@ int RenderSelfTest() {
     CoUninitialize();
     const std::wstring diagnostic = L"YeopjariCat --render-self-test exit=" + std::to_wstring(result) + L"\n";
     OutputDebugStringW(diagnostic.c_str());
+    return result;
+}
+
+int NativeLifeHostTest() {
+    // Exercise the actual host dispatch with an isolated in-memory cat. No
+    // files, windows, audio devices, wall-clock aging or update requests.
+    const auto now=UtcNow();
+    g.pet=cat::NewPet(now-6*366*cat::life::Day);
+    g.pet.updatedUtc=now;g.nutrition=cat::nutrition::NewState(g.pet.bornUtc,now,80);
+    const auto savedPet=cat::Serialize(g.pet);
+    g.brain=std::make_unique<cat::behavior::Brain>(g.pet.bornUtc,42);
+    const std::wstring legacyPersonality=cat::behavior::ArchetypeName(g.brain->GetArchetype());
+    g.life.state=cat::life::FromLegacy(g.pet,now);g.life.outcome=cat::life::storage::Outcome::Migrated;
+    g.memory.state=cat::memory::FromLegacy(g.pet,now);g.memory.state.bond=80;
+    g.memory.outcome=cat::memory::storage::Outcome::Migrated;
+    g.work={0,0,1200,900};g.dpiScale=1;g.centerX=96;ResetMovement();
+    const auto ticks=GetTickCount64();
+    using Event=cat::life::Event;
+    for(const auto entry:{std::pair<Event,Motion>{Event::PunchStartle,Motion::Startled},
+        {Event::TailStartle,Motion::Startled},{Event::SneezeStartle,Motion::Startled},
+        {Event::Yawn,Motion::Yawn},{Event::SleepTalk,Motion::SleepTalk},{Event::Peek,Motion::Peek},
+        {Event::SmallBox,Motion::BoxSit},{Event::CrownPride,Motion::Pride},
+        {Event::BondKnead,Motion::Knead},{Event::BondGreeting,Motion::TailRaise},
+        {Event::BondLifetime,Motion::Stretch},{Event::Birthday,Motion::TailRaise},
+        {Event::FirstWeek,Motion::TailRaise},{Event::FirstYear,Motion::TailRaise},{Event::FifthYear,Motion::TailRaise}}) {
+        if(!DispatchLifeEvent(entry.first,ticks)||g.motion!=entry.second)return 160;
+        if(cat::Serialize(g.pet)!=savedPet)return 161;
+    }
+    DispatchLifeEvent(Event::BondLifetime,ticks);
+    for(const auto expected:{Motion::Knead,Motion::Loaf,Motion::Sleep})
+        if(!ContinueLifeSequence()||g.motion!=expected)return 162;
+    if(ContinueLifeSequence())return 163;
+    DispatchLifeEvent(Event::SmallBox,ticks);
+    if(!g.smallBoxEvent)return 164;
+    SetMotion(Motion::Watch,2000);
+    if(g.smallBoxEvent||g.lifeSequenceCount)return 165;
+    DispatchLifeEvent(Event::ScreenCrossing,ticks);
+    // A nearby companion must not replace Watch while this rare effect is
+    // fading; its normal social callback would otherwise cancel the crossing.
+    if(!CompanionContext(ticks,0).primaryBusy)return 175;
+    for(int i=1;i<=12;++i)UpdateLifeEvent(ticks+i*100,.1);
+    if(g.lifeCrossing.Active()||g.lifeCrossing.Opacity()!=1||g.physics.CurrentPose().x<1100 ||
+        !g.physics.CurrentPose().grounded||g.physics.CurrentPose().lift>.1)return 166;
+    g.centerX=500;ResetMovement();
+    if(!g.physics.LaunchToPlatform(300,900,400,370,45))return 167;
+    for(int i=0;i<600&&!g.physics.OnPlatform();++i)g.physics.Update(1.0/60);
+    if(!g.physics.OnPlatform())return 168;
+    g.perch.active=true;g.perch.rect={300,500,900,850};
+    if(!DispatchLifeEvent(Event::EdgeHang,ticks)||!g.physics.Hanging()||g.motion!=Motion::Hang)return 169;
+    for(int i=0;i<80;++i)g.physics.Update(1.0/60);
+    if(!g.physics.CurrentPose().hanging)return 170;
+    UpdateLifeEvent(ticks+1500,.016);
+    if(g.physics.Hanging())return 171;
+    g.life.state.temperament=cat::life::Temperament::Coward;
+    if(std::wstring(PrimaryPersonalityLabel())!=L"겁쟁이")return 172;
+    g.life.state.temperament=cat::life::Temperament::Legacy;
+    if(std::wstring(PrimaryPersonalityLabel())!=legacyPersonality)return 173;
+    if(cat::Serialize(g.pet)!=savedPet)return 174;
+    return 0;
+}
+
+int NativeToyHostTest() {
+    // This runs only from --self-test, after other in-memory host fixtures.
+    // No application window, AppData loader, audio startup, save or update path.
+    g.initialized=false; g.window=nullptr; g.hidden=g.menuOpen=g.dragging=g.closing=false;
+    g.memory.outcome=cat::memory::storage::Outcome::Blocked;
+    g.brain.reset();
+    g.lifeSequenceCount=0; g.lifeCrossing={}; g.smallBoxEvent=false;
+    g.lifeDispatching=false; g.toyDispatching=false;
+    const auto now=UtcNow();
+    g.pet=cat::NewPet(now-366*cat::life::Day);
+    g.pet.updatedUtc=now;
+    g.nutrition=cat::nutrition::NewState(g.pet.bornUtc,now,80);
+    g.work={0,0,1280,900}; g.dpiScale=1; g.centerX=400; g.direction=g.facing=1;
+    g.toy=ToyKind::None; g.toyEngaged=false; g.toySession.Cancel();
+    ResetMovement();
+    const auto birthdayRecord=cat::Serialize(g.pet);
+
+    ULONG_PTR token=0;
+    GdiplusStartupInput input;
+    if (GdiplusStartup(&token,&input,nullptr)!=Ok) return 190;
+    int result=0;
+    {
+        Surface canvas;
+        result=[&]() -> int {
+            if (!canvas.Create(320,220)) return 191;
+            const auto painted=[&](bool foreground) {
+                Graphics graphics(canvas.image.get());
+                graphics.SetCompositingMode(CompositingModeSourceCopy); graphics.Clear(Color(0,0,0,0));
+                graphics.SetCompositingMode(CompositingModeSourceOver);
+                if (foreground) DrawToyForeground(graphics,160,190);
+                else DrawToyBackground(graphics,160,190,GetTickCount64());
+                graphics.Flush(FlushIntentionSync);
+                unsigned count=0;
+                for (std::size_t pixel=0;pixel<320*220;++pixel) count+=canvas.pixels[pixel*4+3]>16;
+                return count;
+            };
+            const auto walkTo=[&](double target) {
+                for (unsigned frame=0;frame<1200;++frame) {
+                    const auto pose=g.physics.CurrentPose();
+                    const double distance=target-g.centerX;
+                    if (std::abs(distance)<=2 && std::abs(WalkingVelocity(pose))<=3) {
+                        g.physics.SetTargetVelocity(0);
+                        for (int settle=0;settle<20;++settle) g.physics.Update(1.0/60);
+                        g.centerX=g.physics.RenderPose().x;
+                        return true;
+                    }
+                    g.physics.SetTargetVelocity(cat::toy::ApproachVelocity(distance,38));
+                    g.physics.Update(1.0/60);
+                    g.centerX=g.physics.RenderPose().x;
+                }
+                return false;
+            };
+            const auto before=g.physics.CurrentPose().x;
+            PlaceToy(ToyKind::Box);
+            if (g.toy!=ToyKind::Box || !g.toyEngaged || g.toySession.phase!=cat::toy::Phase::Discover ||
+                    g.physics.CurrentPose().x!=before || !MaybePlayWithToy(GetTickCount64())) return 192;
+            g.toySession.Set(cat::toy::Phase::Approach); ApplyToyPhase(GetTickCount64());
+            if (g.motion!=Motion::Walk || !g.approachingToy) return 193;
+            const auto bounds=MovementBoundsLogical();
+            if (!walkTo(cat::toy::SessionTarget(g.toySession,g.toyX,g.centerX,1,bounds.first,bounds.second))) return 194;
+            g.toySession.Set(cat::toy::Phase::Enter); ApplyToyPhase(GetTickCount64());
+            if (g.motion!=Motion::Stalk || !walkTo(g.toyX)) return 195;
+            g.toySession.Set(cat::toy::Phase::Sleep); ApplyToyPhase(GetTickCount64());
+            if (g.motion!=Motion::Sleep || !g.toyEngaged || painted(true)<1000) return 196;
+            g.toySession.Set(cat::toy::Phase::Exit); ApplyToyPhase(GetTickCount64());
+            if (g.motion!=Motion::Walk || painted(true)<1000) return 197;
+            g.perch.active=true;
+            if (painted(true)!=0) return 198;
+            g.perch.active=false;
+
+            SetMotion(Motion::Eat,2100);
+            if (g.toyEngaged || g.approachingToy || g.nextToyAction<g.motionStart+3600 ||
+                    MaybePlayWithToy(g.motionStart+300)) return 199;
+            g.pet.roamingPaused=true;
+            PlaceToy(ToyKind::Ball);
+            if (g.toyEngaged || MaybePlayWithToy(GetTickCount64())) return 200;
+            const auto ballX=g.toyBall.x,ballVelocity=g.toyBall.velocity;
+            AdvanceToyObjects(.1);
+            if (g.toyBall.x!=ballX || g.toyBall.velocity!=ballVelocity) return 201;
+            g.pet.roamingPaused=false;
+
+            for (const auto entry:{std::pair<ToyKind,Motion>{ToyKind::PaperBag,Motion::BoxSit},
+                    {ToyKind::Catnip,Motion::BellyRoll},{ToyKind::FishingRod,Motion::ToyPaw},
+                    {ToyKind::Cushion,Motion::Knead}}) {
+                PlaceToy(entry.first);
+                if (!g.toyEngaged || painted(false)<100) return 202;
+                g.toySession.Set(cat::toy::Phase::Interact); ApplyToyPhase(GetTickCount64());
+                if (g.motion!=entry.second) return 203;
+            }
+            PlaceToy(ToyKind::None);
+            if (g.toy!=ToyKind::None || g.toyEngaged || g.approachingToy || g.toyWindow ||
+                    cat::Serialize(g.pet)!=birthdayRecord) return 204;
+            return 0;
+        }();
+    }
+    GdiplusShutdown(token);
+    g.toy=ToyKind::None; g.toyEngaged=false; g.approachingToy=false; g.toySession.Cancel();
+    g.pet.roamingPaused=false; g.perch={}; g.physics.SetTargetVelocity(0);
     return result;
 }
 
@@ -2751,7 +3784,9 @@ int SelfTest(HINSTANCE instance) {
         if (!audio.LoadResource(cue, instance, 301 + static_cast<int>(index)) || !audio.HasClip(cue))
             return 100 + static_cast<int>(index);
     }
-    return 0;
+    const int lifeResult = NativeLifeHostTest();
+    if (lifeResult) return lifeResult;
+    return NativeToyHostTest();
 }
 
 int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
@@ -2772,8 +3807,11 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
     if (!LoadPet()) { ReleaseMutex(g.instanceMutex); CloseHandle(g.instanceMutex); if (SUCCEEDED(com)) CoUninitialize(); return 1; }
     LoadNutrition();
     LoadMemory();
+    LoadLife();
+    LoadCompanion();
     LoadPreferences();
     LoadSoundSettings();
+    LoadInteractionSettings();
     InitializeUpdates();
     g.brain = std::make_unique<cat::behavior::Brain>(g.pet.bornUtc,
         static_cast<std::uint64_t>(g.random()) << 32 | g.random());
@@ -2800,6 +3838,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
     if (!RegisterHotKey(g.window, kFeedHotkey, modifiers, 'F')) g.hotkeyFailures.push_back(L"Ctrl+Alt+F (밥)");
     if (!RegisterHotKey(g.window, kSnackHotkey, modifiers, 'T')) g.hotkeyFailures.push_back(L"Ctrl+Alt+T (츄르)");
     if (!RegisterHotKey(g.window, kHideHotkey, modifiers, 'H')) g.hotkeyFailures.push_back(L"Ctrl+Alt+H (숨기기)");
+    if (!RegisterHotKey(g.window, kBoxHotkey, modifiers, 'B')) g.hotkeyFailures.push_back(L"Ctrl+Alt+B (박스)");
     g.initialized = true; g.lastTick = GetTickCount64(); g.nextMaintenance = g.lastTick + 1500; g.nextSave = g.lastTick + 60000;
     g.foodRequestAfter = g.lastTick + 180000;
     g.ambientSoundAfter = g.lastTick + 60000;
@@ -2827,6 +3866,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
     MSG message{};
     while (GetMessageW(&message, nullptr, 0, 0) > 0) { TranslateMessage(&message); DispatchMessageW(&message); }
     updates.Stop();
+    g.companionWindow.Close();
     g.audio.Shutdown();
     if (g.toyWindow) DestroyWindow(g.toyWindow);
     g.toySurface.Reset();

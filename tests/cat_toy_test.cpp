@@ -5,6 +5,7 @@
 #include <limits>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 namespace {
 int checks = 0;
@@ -111,11 +112,94 @@ void FrameRateAndPause() {
     Ball narrow{200, 100}; narrow.Advance(.1, 96, 64);
     CHECK(narrow.x == 80 && narrow.velocity == 0);
 }
+
+void RealContactGate() {
+    using namespace cat::toy;
+    bool consumed=false;
+    CHECK(!PawContactAt(340,consumed,90,55,true));
+    CHECK(!consumed); // A ball rolling into reach later in the paw window can be hit.
+    CHECK(!PawContactAt(400,consumed,35,55,false));
+    CHECK(!consumed); // Pause/window support must never create a floor impulse.
+    CHECK(PawContactAt(420,consumed,35,55,true));
+    CHECK(!PawContactAt(440,consumed,35,55,true));
+    consumed=false;
+    CHECK(!PawContactAt(660,consumed,20,55,true));
+    CHECK(consumed);
+    CHECK(!InteractionAllowed(false,false,false,false));
+    CHECK(!InteractionAllowed(true,true,false,false));
+    CHECK(!InteractionAllowed(true,false,true,false));
+    CHECK(!InteractionAllowed(true,false,false,true));
+    CHECK(InteractionAllowed(true,false,false,false));
+}
+
+std::vector<cat::toy::Phase> FirstActivity(cat::toy::Kind kind) {
+    using namespace cat::toy;
+    Session session; session.Start(kind);
+    std::vector<Phase> phases{session.phase};
+    for (int tick=0;tick<60*45 && session.phase!=Phase::Wait;++tick) {
+        if (session.Advance(1.0/60,true,true)) phases.push_back(session.phase);
+    }
+    CHECK(session.phase==Phase::Wait);
+    return phases;
+}
+
+void DistinctActivitiesAndInterruptions() {
+    using namespace cat::toy;
+    CHECK((FirstActivity(Kind::Box)==std::vector<Phase>{Phase::Discover,Phase::Approach,Phase::Inspect,
+        Phase::Enter,Phase::Interact,Phase::Sleep,Phase::Exit,Phase::Wait}));
+    CHECK((FirstActivity(Kind::PaperBag)==std::vector<Phase>{Phase::Discover,Phase::Approach,Phase::Inspect,
+        Phase::Enter,Phase::Interact,Phase::Rest,Phase::Exit,Phase::Wait}));
+    CHECK((FirstActivity(Kind::Catnip)==std::vector<Phase>{Phase::Discover,Phase::Approach,Phase::Inspect,
+        Phase::Interact,Phase::Rest,Phase::Exit,Phase::Wait}));
+    CHECK((FirstActivity(Kind::Cushion)==std::vector<Phase>{Phase::Discover,Phase::Approach,Phase::Inspect,
+        Phase::Interact,Phase::Sleep,Phase::Exit,Phase::Wait}));
+    for (Kind kind:{Kind::Ball,Kind::FishingRod}) {
+        const auto phases=FirstActivity(kind);
+        CHECK(std::count(phases.begin(),phases.end(),Phase::Interact)==4);
+        CHECK(Duration(kind,Phase::Wait)<=2500);
+    }
+    Session session; session.Start(Kind::Box,-1);
+    CHECK(session.phase==Phase::Discover);
+    CHECK(session.Advance(.25,true,false));
+    CHECK(session.phase==Phase::Approach); // Discovery begins immediately, not after a random decision.
+    for (int tick=0;tick<120;++tick) session.Advance(1.0/60,true,false);
+    CHECK(session.phase==Phase::Approach); // Time cannot teleport the cat into a box.
+    const auto before=session;
+    session.Advance(.25,false,true);
+    session.Advance(3,true,true);
+    CHECK(session.phase==before.phase && session.elapsedMs==before.elapsedMs);
+    CHECK(session.Advance(1.0/60,true,true));
+    CHECK(session.phase==Phase::Inspect);
+    session.Cancel();
+    CHECK(session.kind==Kind::None && session.phase==Phase::None);
+    CHECK(!session.Advance(.25,true,true));
+}
+
+void ContainerPathsAndFeather() {
+    using namespace cat::toy;
+    Session session; session.Start(Kind::Box,1); session.Set(Phase::Approach);
+    CHECK(SessionTarget(session,500,200,1,96,1500)==432);
+    session.Set(Phase::Enter);
+    CHECK(SessionTarget(session,500,432,1,96,1500)==500);
+    session.Set(Phase::Exit);
+    CHECK(SessionTarget(session,500,500,1,96,1500)==400);
+    CHECK(SessionTarget(session,100,100,1,96,1500)==200); // Leave through the available side at an edge.
+    CHECK(SessionTarget(session,80,80,1,96,64)==80);
+    Lure lure; lure.Touch(1);
+    lure.Advance(.1);
+    CHECK(lure.offset>0 && lure.offset<=26);
+    const auto before=lure;
+    lure.Advance(.1,true); lure.Advance(2);
+    CHECK(lure.offset==before.offset && lure.velocity==before.velocity);
+    for (int tick=0;tick<60*8;++tick) lure.Advance(1.0/60);
+    CHECK(std::abs(lure.offset)<.01 && std::abs(lure.velocity)<.02);
+}
 }
 
 int main() {
     try {
         ReachableTargets(); ContactAndContinuousRoll(); EdgesRemainReachable(); FrameRateAndPause();
+        RealContactGate(); DistinctActivitiesAndInterruptions(); ContainerPathsAndFeather();
         std::cout << "Toy interaction: " << checks << " checks passed\n";
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
 }

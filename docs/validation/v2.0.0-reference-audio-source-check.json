@@ -1,0 +1,18 @@
+{
+  "verified_cues": 14,
+  "source_seconds": 4.96,
+  "segments": 3,
+  "excluded_segments": [
+    {
+      "segment": "a",
+      "start_seconds": 0.18,
+      "end_seconds": 0.91,
+      "reason": "user_rejected"
+    }
+  ],
+  "source_sha256": "4e5981866b19199ba23c1e8388c16fc16a8b913bec1f12611b8580beba824e14",
+  "verification_mode": "source_and_outputs",
+  "source_video_verified": true,
+  "canonical_decode_verified": true,
+  "sample_reconstruction_verified": true
+}

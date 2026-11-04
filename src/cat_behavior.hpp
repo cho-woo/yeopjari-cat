@@ -86,6 +86,14 @@ public:
     Personality GetPersonality() const { return effectiveTraits_; }
     Archetype GetArchetype() const { return effectiveArchetype_; }
 
+    // Hidden mood and the stable new-pet temperament affect choices, never
+    // the birth-derived identity or legacy save values. Neutral is exact legacy.
+    void SetDisposition(double activity, double rest, double social, double curiosity, double food) {
+        const auto safe = [](double n) { return std::isfinite(n) ? std::clamp(n,.25,2.0) : 1.0; };
+        dispositionActivity_=safe(activity); dispositionRest_=safe(rest); dispositionSocial_=safe(social);
+        dispositionCuriosity_=safe(curiosity); dispositionFood_=safe(food);
+    }
+
     void SetExperience(const Experience& experience) {
         const auto bounded = [](double value, double low, double high) {
             return std::isfinite(value) ? std::clamp(value, low, high) : 0.0;
@@ -205,15 +213,15 @@ public:
         const double archetypeEnergy = effectiveArchetype_ == Archetype::Energetic ? 1.3 : effectiveArchetype_ == Archetype::Sleepy ? .75 : 1.0;
         const double archetypeRest = effectiveArchetype_ == Archetype::Sleepy ? 1.5 : effectiveArchetype_ == Archetype::Energetic ? .72 : 1.0;
         const double lively = ageActivity * (0.65 + effectiveTraits_.energy * 0.7) * (twilight ? 1.4 : 1.0) *
-            (content ? 0.65 : 1.0) * (night ? .55 : 1.0) * archetypeEnergy;
+            (content ? 0.65 : 1.0) * (night ? .55 : 1.0) * archetypeEnergy * dispositionActivity_;
         const double rest = (midday ? 1.5 : (twilight ? 0.6 : 1.0)) * (1.0 + std::min(age, 20) * 0.025) *
-            (content ? 1.35 : 1.0) * (night ? 2.4 : 1.0) * archetypeRest;
+            (content ? 1.35 : 1.0) * (night ? 2.4 : 1.0) * archetypeRest * dispositionRest_;
         const bool canSurprise = !paused && now >= nextSurprise_ && !content;
         const bool canStalk = !paused && context.cursorNear && now >= nextStalk_ && !content;
         const bool canPunch = !paused && now >= nextPunch_ && now >= nextSurprise_ && !content;
         const bool canGesture = now >= nextGesture_;
-        const double affectionate = effectiveArchetype_ == Archetype::Affectionate ? 1.65 : 1.0;
-        const double curious = effectiveArchetype_ == Archetype::Curious ? 1.65 : 1.0;
+        const double affectionate = (effectiveArchetype_ == Archetype::Affectionate ? 1.65 : 1.0) * dispositionSocial_;
+        const double curious = (effectiveArchetype_ == Archetype::Curious ? 1.65 : 1.0) * dispositionCuriosity_;
         const double mischievous = effectiveArchetype_ == Archetype::Mischievous ? 1.65 : 1.0;
         const double sleepy = effectiveArchetype_ == Archetype::Sleepy ? 1.65 : 1.0;
         const double cool = effectiveArchetype_ == Archetype::Cool ? 1.45 : 1.0;
@@ -225,7 +233,7 @@ public:
             {Action::Groom, lastAction_ == Action::Groom ? 3.0 : 9.5},
             {Action::Stretch, lastAction_ == Action::Stretch ? 0.0 : 2.8 * (morning ? 4.0 : 1.0)},
             {Action::Watch, (6.0 + (context.cursorNear ? (10.0 + effectiveTraits_.curiosity * 15.0) : 0.0)
-                + (hunger < 45.0 ? 4.0 : 0.0) + (affection > 80.0 ? effectiveTraits_.sociability * 2.0 : 0.0)) * curious},
+                + (hunger < 45.0 ? 4.0 * dispositionFood_ : 0.0) + (affection > 80.0 ? effectiveTraits_.sociability * 2.0 : 0.0)) * curious},
             {Action::Stalk, canStalk ? (3.0 + effectiveTraits_.curiosity * 6.0) * lively * curious : 0.0},
             {Action::Zoomies, canSurprise ? (2.8 + effectiveTraits_.energy * 4.8) * lively * (afternoon ? 2.1 : 1.0) : 0.0},
             {Action::TailChase, canSurprise ? (1.0 + effectiveTraits_.mischief * 3.0) * ageActivity * mischievous : 0.0},
@@ -289,6 +297,7 @@ private:
     std::uint64_t rng_;
     Personality traits_{}, effectiveTraits_{};
     Experience experience_{};
+    double dispositionActivity_=1, dispositionRest_=1, dispositionSocial_=1, dispositionCuriosity_=1, dispositionFood_=1;
     Archetype archetype_ = Archetype::Cool, effectiveArchetype_ = Archetype::Cool;
     bool lastFeedWasSnack_ = false;
     bool initialized_ = false, pendingGroom_ = false, pendingPet_ = false;

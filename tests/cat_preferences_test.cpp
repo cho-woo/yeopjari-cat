@@ -17,8 +17,10 @@ std::string Signed(const std::string& body) {
 }
 
 void RoundTripAllAppearances() {
-    for (auto character : {cat::Character::Cream, cat::Character::SilverTabby}) {
-        for (auto outfit : {cat::Outfit::None, cat::Outfit::BowTie, cat::Outfit::Scarf, cat::Outfit::Crown}) {
+    for (int ci=0;ci<cat::kCharacterCount;++ci) {
+        const auto character=static_cast<cat::Character>(ci);
+        for (int oi=0;oi<cat::kOutfitCount;++oi) {
+            const auto outfit=static_cast<cat::Outfit>(oi);
             cat::Preferences original{character, outfit}, restored;
             const auto text = cat::SerializePreferences(original);
             CHECK(text.rfind("schema=2\n", 0) == 0);

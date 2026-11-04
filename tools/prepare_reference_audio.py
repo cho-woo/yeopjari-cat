@@ -26,7 +26,7 @@ CANONICAL = ROOT / "build-inputs/audio-reference/reference-mono-22050.wav"
 OUTPUT = ROOT / "assets/audio"
 # Introduction version of this exact pinned sound set, independent of later app
 # releases that reuse these clips. Change only when reviewing a new sound set.
-SOUND_SET_VERSION = "1.10.3"
+SOUND_SET_VERSION = "2.0.0"
 SOURCE_SHA256 = "4e5981866b19199ba23c1e8388c16fc16a8b913bec1f12611b8580beba824e14"
 CANONICAL_SHA256 = "c696a270b57352c1278d11fa9550897a042796718134e36a5bb71dbb4368e877"
 PCM_SHA256 = "984b7ce5fedc87f7ba33f6a9bf127c1740b0d5088c1cf57b30d90ca6e90ea9a1"
@@ -39,8 +39,9 @@ FADE_OUT_MS = 45
 # Quiet margins surround intact waveform bursts. The final burst is cut off by
 # the uploaded video's end, so it is deliberately not used. These are waveform
 # labels, not claims that different animal vocalisations were identified by ear.
+REJECTED_RANGE = (.18, .91)
+ALLOWED_SEGMENT_NAMES = frozenset({"b", "c", "d"})
 SEGMENTS = {
-    "a": (.18, .91),
     "b": (2.12, 2.63),
     "c": (2.68, 3.22),
     "d": (4.00, 4.74),
@@ -48,12 +49,12 @@ SEGMENTS = {
 # Stable resource order (301..314), source segment and whole-clip target RMS.
 # Short source length means clips are reused; no extra calls are synthesised.
 CUES = [
-    ("hungry", "c", .075), ("meal", "a", .065),
+    ("hungry", "c", .075), ("meal", "d", .065),
     ("treat", "d", .070), ("refuse", "b", .055),
-    ("pet", "a", .050), ("jump", "b", .065),
+    ("pet", "b", .050), ("jump", "b", .065),
     ("punch", "c", .075), ("wake", "b", .045),
     ("food-request", "d", .075), ("meal-fish", "c", .060),
-    ("meal-nogari", "a", .060), ("punch-second", "b", .070),
+    ("meal-nogari", "c", .060), ("punch-second", "b", .070),
     ("gesture", "b", .050), ("greeting", "d", .075),
 ]
 
@@ -65,8 +66,8 @@ OUTPUT_PINS = {
         "gain": 3.764597251
     },
     "meal": {
-        "sha256": "1fcafc4b169dc05db9d204bf5e2ec65a11fde15abf23706844604a6ee49b9e62",
-        "gain": 3.749479145052905
+        "sha256": "3e13c48dd26c0cc337dbd66075fbcca238a03db50b984b71dd8d1377105feb82",
+        "gain": 2.9603610544310497
     },
     "treat": {
         "sha256": "815e98e7eee674e6b9aa8f9d55d52c8808a0f923edc253c6b476226545c88860",
@@ -77,8 +78,8 @@ OUTPUT_PINS = {
         "gain": 5.349002728595451
     },
     "pet": {
-        "sha256": "2733c9ecc05f57b7c31f565cd19aff598522c68424b89d2a96b95eab2dc0f747",
-        "gain": 2.884214726963773
+        "sha256": "9faf79e5ed535b6c56c946c13e187f3c01e3d0697f25c4679a15b96ea4dcd9e8",
+        "gain": 4.862729753268592
     },
     "jump": {
         "sha256": "26a68f2ed0f977637aeac5cfa847876a251a1af6d48c1ed06a3016c2e272bb21",
@@ -101,8 +102,8 @@ OUTPUT_PINS = {
         "gain": 3.0116778008000002
     },
     "meal-nogari": {
-        "sha256": "fc145ffa2da066ea1d010b48f979462c63ed3c1534e7eda2ff62262d2541c3e6",
-        "gain": 3.461057672356527
+        "sha256": "5ccb91c5b97f5cd75f5b3aa753c49ddc8d4e7add7cac3492846e62c325303baa",
+        "gain": 3.0116778008000002
     },
     "punch-second": {
         "sha256": "75d5cf5f0c1311dbdae76a6b50110a2c7fe92ac64218e8b4dc6f258b5d7bb8e6",
@@ -117,6 +118,28 @@ OUTPUT_PINS = {
         "gain": 3.4158012166512113
     }
 }
+
+def segment_bounds(segment: str) -> tuple[float, float]:
+    # The rejected first burst must not return through another cue name or a
+    # renamed segment. Enforce both the allowlist and source-range exclusion.
+    if segment not in ALLOWED_SEGMENT_NAMES or segment not in SEGMENTS:
+        raise ValueError("Forbidden or unknown reference segment")
+    start, end = SEGMENTS[segment]
+    if (not math.isfinite(start) or not math.isfinite(end) or not 0 <= start < end <= SOURCE_FRAMES / SAMPLE_RATE or
+            (start < REJECTED_RANGE[1] and end > REJECTED_RANGE[0])):
+        raise ValueError("Forbidden or invalid reference segment range")
+    return start, end
+
+
+def excerpt_reuse() -> dict[str, list[str]]:
+    return {segment: [name for name, selected, _ in CUES if selected == segment]
+            for segment in sorted(ALLOWED_SEGMENT_NAMES)}
+
+
+def excluded_segments() -> list[dict]:
+    return [{"segment": "a", "start_seconds": REJECTED_RANGE[0],
+             "end_seconds": REJECTED_RANGE[1], "reason": "user_rejected"}]
+
 
 def digest(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
@@ -158,9 +181,9 @@ def sources(source: Path = SOURCE, canonical: Path = CANONICAL) -> array:
 
 
 def prepare(pcm, segment: str, wanted_rms: float) -> tuple[bytes, dict]:
-    if segment not in SEGMENTS or not math.isfinite(wanted_rms) or not .01 <= wanted_rms <= .10:
+    if not math.isfinite(wanted_rms) or not .01 <= wanted_rms <= .10:
         raise ValueError("Invalid cue parameters")
-    start, end = SEGMENTS[segment]
+    start, end = segment_bounds(segment)
     first, last = round(start * SAMPLE_RATE), round(end * SAMPLE_RATE)
     values = [value / 32768.0 for value in pcm[first:last]]
     if len(values) != last - first:
@@ -213,6 +236,8 @@ def verify(output: Path = OUTPUT, source: Path = SOURCE, canonical: Path = CANON
         raise ValueError("Expected user-provided video audio manifest")
     if manifest.get("version") != SOUND_SET_VERSION:
         raise ValueError("Audio manifest version differs from the pinned sound-set version")
+    if manifest.get("excluded_segments") != excluded_segments() or manifest.get("excerpt_reuse") != excerpt_reuse():
+        raise ValueError("Incorrect rejected-segment exclusion or excerpt reuse metadata")
     if (manifest.get("source_sha256") != SOURCE_SHA256 or manifest.get("canonical_sha256") != CANONICAL_SHA256 or
             manifest.get("source") != "build-inputs/audio-reference/reference.mp4" or
             manifest.get("canonical") != "build-inputs/audio-reference/reference-mono-22050.wav" or
@@ -228,19 +253,22 @@ def verify(output: Path = OUTPUT, source: Path = SOURCE, canonical: Path = CANON
         raise ValueError("Unexpected WAV files in current audio set")
     by_name = {entry["cue"]: entry for entry in entries}
     for index, (name, segment, target_rms) in enumerate(CUES):
+        start, end = segment_bounds(segment)
         entry = by_name[name]
+        if entry.get("segment") not in ALLOWED_SEGMENT_NAMES:
+            raise ValueError("Forbidden reference segment in cue: " + name)
         payload = (output / (name + ".wav")).read_bytes()
         actual_hash = digest(payload)
         if actual_hash != OUTPUT_PINS[name]["sha256"] or entry.get("sha256") != actual_hash:
             raise ValueError("Cue differs from the pinned finished clip: " + name)
         samples = read_pcm(payload)
-        first, last = (round(t * SAMPLE_RATE) for t in SEGMENTS[segment])
+        first, last = (round(t * SAMPLE_RATE) for t in (start, end))
         if len(samples) != last - first or not .25 <= len(samples) / SAMPLE_RATE <= 4:
             raise ValueError("Invalid cue duration: " + name)
         peak = max(map(abs, samples)) / 32768.0
         rms = math.sqrt(sum(x*x for x in samples) / len(samples)) / 32768.0
         metadata = {
-            "segment": segment, "start_seconds": SEGMENTS[segment][0], "end_seconds": SEGMENTS[segment][1],
+            "segment": segment, "start_seconds": start, "end_seconds": end,
             "start_frame": first, "end_frame": last,
             "fade_in_ms": FADE_IN_MS, "fade_out_ms": FADE_OUT_MS,
             "target_rms": target_rms, "gain": OUTPUT_PINS[name]["gain"],
@@ -264,7 +292,8 @@ def verify(output: Path = OUTPUT, source: Path = SOURCE, canonical: Path = CANON
             if payload != expected:
                 raise ValueError("Cue differs from the private reference segment: " + name)
     return {"verified_cues": len(CUES), "source_seconds": SOURCE_FRAMES / SAMPLE_RATE,
-            "segments": len(SEGMENTS), "source_sha256": SOURCE_SHA256,
+            "segments": len(ALLOWED_SEGMENT_NAMES), "excluded_segments": excluded_segments(),
+            "source_sha256": SOURCE_SHA256,
             "verification_mode": "source_and_outputs" if pcm is not None else "outputs_only",
             "source_video_verified": source_present, "canonical_decode_verified": canonical_present,
             "sample_reconstruction_verified": pcm is not None}
@@ -303,7 +332,8 @@ def generate(output: Path = OUTPUT, source: Path = SOURCE, canonical: Path = CAN
         "license": None,
         "license_note": "User-provided reference supplied for this requested replacement; no CC0, authorship, or other license is asserted.",
         "pitch_changed": False, "speed_changed": False,
-        "edits": "Waveform-selected bounded bursts with quiet margins; mono downmix and resample, constant DC removal, level adjustment and 12ms/45ms raised-cosine fades. No looping, synthetic calls, pitch shift or time stretch. Four source excerpts are reused across fourteen cue slots. The truncated final source burst is excluded.",
+        "edits": "Waveform-selected bounded bursts with quiet margins; mono downmix and resample, constant DC removal, level adjustment and 12ms/45ms raised-cosine fades. No looping, synthetic calls, pitch shift or time stretch. Three source excerpts are reused across fourteen cue slots. The user-rejected first burst and truncated final source burst are excluded.",
+        "excluded_segments": excluded_segments(), "excerpt_reuse": excerpt_reuse(),
         "cues": cues,
     }
     (output / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

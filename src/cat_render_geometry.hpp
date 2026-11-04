@@ -13,7 +13,7 @@ struct Point { double x = 0, y = 0; };
 // Crown is its bottom-centre attachment; neck is the ribbon/scarf centre.
 struct OutfitAnchors { Point neck, crown; double headWidth = .65; };
 inline OutfitAnchors AnchorsForFrame(int frame) {
-    static constexpr std::array<OutfitAnchors, 26> anchors{{
+    static constexpr std::array<OutfitAnchors, 29> anchors{{
         {{.67,.70},{.66,.16},.60}, {{.67,.70},{.66,.16},.60},
         {{.67,.70},{.66,.16},.60}, {{.67,.70},{.66,.16},.60},
         {{.57,.68},{.57,.14},.82}, {{.57,.68},{.57,.14},.82},
@@ -29,8 +29,10 @@ inline OutfitAnchors AnchorsForFrame(int frame) {
         {{.56,.67},{.56,.16},.82}, {{.56,.67},{.56,.16},.82},
         {{.65,.67},{.65,.14},.72}, {{.65,.67},{.65,.14},.72},
         {{.79,.71},{.77,.12},.45}, {{.81,.73},{.80,.12},.45},
+        {{.57,.41},{.57,.07},.75}, // supported forepaws, dangling hind legs
+        {{.72,.78},{.69,.34},.57}, {{.72,.78},{.69,.34},.57}, // buried/covered sleeping face
     }};
-    return anchors[static_cast<std::size_t>(std::clamp(frame, 0, 25))];
+    return anchors[static_cast<std::size_t>(std::clamp(frame, 0, 28))];
 }
 
 inline Point LocalPoint(Point anchor, double width, double height, bool centerPivot) {

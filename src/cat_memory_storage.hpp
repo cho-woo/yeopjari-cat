@@ -16,7 +16,23 @@ inline constexpr const char* kMain = "memory.ini";
 inline constexpr const char* kBackup = "memory.bak";
 enum class Outcome { Loaded, Recovered, Migrated, Blocked };
 
-struct Store {
+struct MemoryModel {
+    using State = cat::memory::State;
+    static constexpr const char* Main = kMain;
+    static constexpr const char* Backup = kBackup;
+    static State Initialize(const cat::PetState& legacy, std::int64_t now) { return FromLegacy(legacy,now); }
+    static std::string Encode(const State& state) { return Serialize(state); }
+    static bool Decode(const std::string& bytes, State& state, std::string& error) { return Parse(bytes,state,error); }
+};
+
+// The persistence protocol is shared by birthday-owned sidecars, while each
+// model owns its filename, parser and migration. Existing memory callers retain
+// the same Store alias below and exactly the same on-disk schema.
+template<class Model>
+struct BasicStore {
+    using State = typename Model::State;
+    static constexpr const char* kMain = Model::Main;
+    static constexpr const char* kBackup = Model::Backup;
     State state{};
     Outcome outcome = Outcome::Blocked;
     std::string error;
@@ -24,7 +40,7 @@ struct Store {
     bool enabled() const { return outcome != Outcome::Blocked; }
 
     template<class IO>
-    void Load(IO& io, const cat::PetState& legacy, std::int64_t now) {
+    void Load(IO& io, const cat::PetState& legacy, std::int64_t now, const State* initial = nullptr) {
         outcome = Outcome::Blocked;
         error.clear();
         expectedBornUtc_ = legacy.bornUtc;
@@ -38,8 +54,8 @@ struct Store {
             state = backup.state;
             outcome = Outcome::Recovered;
         } else if (!main.exists && !backup.exists) {
-            State migrated = FromLegacy(legacy, now), checked;
-            const std::string bytes = Serialize(migrated);
+            State migrated = initial ? *initial : Model::Initialize(legacy, now), checked;
+            const std::string bytes = Model::Encode(migrated);
             if (bytes.empty() || !Validate(bytes, checked)) {
                 error = "Cannot initialize memory from the legacy birthday";
                 return;
@@ -59,7 +75,7 @@ struct Store {
         }
         error.clear();
         State checked;
-        const std::string bytes = Serialize(state);
+        const std::string bytes = Model::Encode(state);
         if (bytes.empty() || !Validate(bytes, checked)) {
             error = "Refusing to save invalid memory or a changed birthday";
             return false;
@@ -161,7 +177,7 @@ private:
 
     bool Validate(const std::string& bytes, State& parsed) const {
         std::string parseError;
-        return Parse(bytes, parsed, parseError) && parsed.bornUtc == expectedBornUtc_;
+        return Model::Decode(bytes, parsed, parseError) && parsed.bornUtc == expectedBornUtc_;
     }
 
     template<class IO>
@@ -203,5 +219,7 @@ private:
         return true;
     }
 };
+
+using Store = BasicStore<MemoryModel>;
 
 } // namespace cat::memory::storage

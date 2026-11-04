@@ -2,6 +2,7 @@
 
 #include "pet_state.hpp"
 #include <iomanip>
+#include <array>
 #include <locale>
 #include <sstream>
 #include <string>
@@ -10,21 +11,31 @@ namespace cat {
 
 // Appearance is independent of birthday and care records. Schema 2 adds outfits
 // while remaining fully compatible with schema-1 character-only saves.
-enum class Character { Cream = 0, SilverTabby = 1 };
-enum class Outfit { None = 0, BowTie = 1, Scarf = 2, Crown = 3 };
+enum class Character { Cream = 0, SilverTabby = 1, Black = 2, Calico = 3, Siamese = 4, Munchkin = 5, Dog = 6, Rabbit = 7, Tuxedo = 8, British = 9 };
+constexpr int kCharacterCount = 10;
+enum class Outfit { None = 0, BowTie = 1, Scarf = 2, Crown = 3, Santa = 4, FishHat = 5, Tie = 6, Hoodie = 7, Sunglasses = 8, Shark = 9, Dinosaur = 10, Pumpkin = 11, Birthday = 12 };
+constexpr int kOutfitCount = 13;
 struct Preferences { Character character = Character::Cream; Outfit outfit = Outfit::None; };
 
 inline bool IsValid(Character character) noexcept {
-    return character == Character::Cream || character == Character::SilverTabby;
+    return static_cast<int>(character) >= 0 && static_cast<int>(character) < kCharacterCount;
 }
 inline bool IsValid(Outfit outfit) noexcept {
-    return outfit == Outfit::None || outfit == Outfit::BowTie || outfit == Outfit::Scarf || outfit == Outfit::Crown;
+    return static_cast<int>(outfit) >= 0 && static_cast<int>(outfit) < kOutfitCount;
 }
 
 inline const wchar_t* CharacterName(Character character) noexcept {
     switch (character) {
         case Character::Cream: return L"크림 치즈냥";
         case Character::SilverTabby: return L"실버 태비냥";
+        case Character::Black: return L"까만냥";
+        case Character::Calico: return L"삼색냥";
+        case Character::Siamese: return L"샴냥";
+        case Character::Munchkin: return L"먼치킨냥";
+        case Character::Dog: return L"옆자리 멍멍이";
+        case Character::Rabbit: return L"옆자리 토끼";
+        case Character::Tuxedo: return L"턱시도냥";
+        case Character::British: return L"브리티시냥";
         default: return L"알 수 없는 고양이";
     }
 }
@@ -34,12 +45,33 @@ inline const wchar_t* OutfitName(Outfit outfit) noexcept {
         case Outfit::BowTie: return L"빨간 리본";
         case Outfit::Scarf: return L"포근한 목도리";
         case Outfit::Crown: return L"쪼꼬미 왕관";
+        case Outfit::Santa: return L"산타 모자";
+        case Outfit::FishHat: return L"붕어빵 모자";
+        case Outfit::Tie: return L"회사원 넥타이";
+        case Outfit::Hoodie: return L"포근한 후드티";
+        case Outfit::Sunglasses: return L"멋쟁이 선글라스";
+        case Outfit::Shark: return L"상어 옷";
+        case Outfit::Dinosaur: return L"공룡 옷";
+        case Outfit::Pumpkin: return L"할로윈 호박 모자";
+        case Outfit::Birthday: return L"생일 파티 모자";
         default: return L"알 수 없는 의상";
     }
 }
-inline const char* CharacterKey(Character c) noexcept { return c == Character::SilverTabby ? "silver_tabby" : "cream"; }
+inline const char* CharacterKey(Character c) noexcept {
+    static constexpr std::array<const char*, kCharacterCount> keys{{"cream", "silver_tabby", "black", "calico", "siamese", "munchkin", "dog", "rabbit", "tuxedo", "british"}};
+    return IsValid(c) ? keys[static_cast<std::size_t>(c)] : "cream";
+}
 inline const char* OutfitKey(Outfit o) noexcept {
-    switch (o) { case Outfit::BowTie: return "bow_tie"; case Outfit::Scarf: return "scarf"; case Outfit::Crown: return "crown"; default: return "none"; }
+    static constexpr std::array<const char*, kOutfitCount> keys{{"none", "bow_tie", "scarf", "crown", "santa", "fish_hat", "tie", "hoodie", "sunglasses", "shark", "dinosaur", "pumpkin", "birthday"}};
+    return IsValid(o) ? keys[static_cast<std::size_t>(o)] : "none";
+}
+// Unlocks gate new menu selections; an already saved outfit is always retained.
+inline bool OutfitAvailable(Outfit outfit, int month, bool birthday, bool seasonal = true) noexcept {
+    if (!IsValid(outfit)) return false;
+    if (outfit == Outfit::Santa) return seasonal && month == 12;
+    if (outfit == Outfit::Pumpkin) return seasonal && month == 10;
+    if (outfit == Outfit::Birthday) return seasonal && birthday;
+    return true;
 }
 
 inline std::string SerializePreferences(const Preferences& preferences) {
@@ -81,14 +113,15 @@ inline bool ParsePreferences(const std::string& text, Preferences& destination, 
             else if (!line.empty()) return fail("Unsupported preference field");
         }
         if (schema != "2") return fail("Unsupported preference schema");
-        if (character == "cream") parsed.character = Character::Cream;
-        else if (character == "silver_tabby") parsed.character = Character::SilverTabby;
-        else return fail("Unsupported character");
-        if (outfit == "none") parsed.outfit = Outfit::None;
-        else if (outfit == "bow_tie") parsed.outfit = Outfit::BowTie;
-        else if (outfit == "scarf") parsed.outfit = Outfit::Scarf;
-        else if (outfit == "crown") parsed.outfit = Outfit::Crown;
-        else return fail("Unsupported outfit");
+        bool characterFound = false, outfitFound = false;
+        for (int i = 0; i < kCharacterCount; ++i) if (character == CharacterKey(static_cast<Character>(i))) {
+            parsed.character = static_cast<Character>(i); characterFound = true; break;
+        }
+        for (int i = 0; i < kOutfitCount; ++i) if (outfit == OutfitKey(static_cast<Outfit>(i))) {
+            parsed.outfit = static_cast<Outfit>(i); outfitFound = true; break;
+        }
+        if (!characterFound) return fail("Unsupported character");
+        if (!outfitFound) return fail("Unsupported outfit");
     }
     destination = parsed; error.clear(); return true;
 }

@@ -61,6 +61,7 @@ struct Context {
     // request/feed interval; unlike food, it may ask at fullness 35..65.
     bool canRequestFood = false, canRequestTreat = false;
     double hunger = 88;
+    bool allowRare = true; // Disable when the life event scheduler owns the shared daily budget.
 };
 
 inline constexpr std::int64_t SharedGap = 120;
@@ -132,7 +133,7 @@ inline bool Eligible(const memory::State& state, const Context& context, Decisio
     case Decision::RareKnead:
     case Decision::RareGreeting:
     case Decision::RareBond: {
-        if (context.hunger <= 35 || !Due(now, state.lastRareUtc, RareGap) ||
+        if (!context.allowRare || context.hunger <= 35 || !Due(now, state.lastRareUtc, RareGap) ||
             Opportunity(state, slot, 0x9aeeULL) >= .03) return false;
         if (decision == Decision::RareKnead)
             return now - state.bornUtc >= 90LL * 86400 && profile.bond >= 25;

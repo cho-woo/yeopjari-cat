@@ -24,6 +24,11 @@ inline double HeadCoverage(int frame,deform::Point uv) {
         const double ellipse=1-deform::Smooth((radius-.88)/.18);
         return ellipse*(1-deform::Smooth((uv.y-.93)/.02));
     }
+    if(frame==26) {
+        // Keep the gripping paws and dangling body at their physical height;
+        // only the small painted head is replaced by the full-size canonical one.
+        return 1-deform::Smooth((uv.y-.415)/.030);
+    }
     return 0;
 }
 

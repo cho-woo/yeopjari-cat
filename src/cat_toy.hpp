@@ -8,7 +8,12 @@
 namespace cat::toy {
 
 // Transient interaction state only; this module never changes pet save records.
-enum class Kind { None, Ball, Box };
+enum class Kind { None, Ball, Box, PaperBag, Catnip, FishingRod, Cushion };
+
+inline bool IsContainer(Kind kind) { return kind == Kind::Box || kind == Kind::PaperBag; }
+inline bool UsesCenter(Kind kind) {
+    return IsContainer(kind) || kind == Kind::Catnip || kind == Kind::Cushion;
+}
 
 // Narrow work areas can invert the requested margins. Collapse them to their
 // midpoint instead of invoking std::clamp with an invalid lower/upper pair.
@@ -37,7 +42,7 @@ inline std::pair<double, double> RollingBounds(double workWidth, double minCente
 inline double ApproachTarget(Kind kind, double toyX, double catX, double reach,
                              double low, double high) {
     if (kind == Kind::None) return ClampCenter(catX, low, high);
-    if (kind == Kind::Box) return ClampCenter(toyX, low, high);
+    if (UsesCenter(kind)) return ClampCenter(toyX, low, high);
     reach = std::max(0.0, reach);
     const double preferred = toyX + (catX > toyX ? reach : -reach);
     const double alternate = toyX + (catX > toyX ? -reach : reach);
@@ -59,13 +64,136 @@ inline double ApproachVelocity(double distance, double maxSpeed = 38.0,
 inline constexpr std::uint64_t kPawContactMs = 330;
 inline constexpr std::uint64_t kPawContactEndMs = 660;
 
-// The extended paw frame starts at 330ms. One action can impulse a ball only
+// The active paw phase starts at 330ms. One action can impulse a ball only
 // once; a skipped contact window must not kick it after the paw has retracted.
 inline bool PawContact(std::uint64_t elapsed, bool& consumed) {
     if (consumed || elapsed < kPawContactMs) return false;
     consumed = true;
     return elapsed < kPawContactEndMs;
 }
+inline bool PawContactAt(std::uint64_t elapsed, bool& consumed, double distance,
+                         double reach, bool available) {
+    if (!available || !std::isfinite(distance) || !std::isfinite(reach) || reach < 0) return false;
+    if (elapsed >= kPawContactEndMs) { consumed = true; return false; }
+    if (std::abs(distance) > reach) return false;
+    return PawContact(elapsed, consumed);
+}
+
+// A placed item owns a short, interruptible activity rather than a long random
+// cooldown. Time advances only while the cat can interact on the taskbar floor.
+// Phases needing travel finish on real position AND low-speed arrival supplied
+// by the caller. No phase sets a cat position or resets a physics world.
+enum class Phase { None, Discover, Approach, Inspect, Enter, Interact, Rest, Sleep, Exit, Wait };
+
+inline bool Travels(Phase phase) {
+    return phase == Phase::Approach || phase == Phase::Enter || phase == Phase::Exit;
+}
+inline bool InteractionAllowed(bool grounded, bool onPlatform, bool paused, bool busy) {
+    return grounded && !onPlatform && !paused && !busy;
+}
+inline double Duration(Kind kind, Phase phase) {
+    switch (phase) {
+    case Phase::Discover: return 250;
+    case Phase::Inspect: return kind == Kind::Ball ? 150 : kind == Kind::FishingRod ? 350 : 700;
+    case Phase::Interact:
+        switch (kind) {
+        case Kind::Ball: case Kind::FishingRod: return 1050;
+        case Kind::Box: return 1700;
+        case Kind::PaperBag: return 2800;
+        case Kind::Catnip: return 4300;
+        case Kind::Cushion: return 5000;
+        default: return 0;
+        }
+    case Phase::Rest: return kind == Kind::PaperBag ? 1300 : 1700;
+    case Phase::Sleep: return kind == Kind::Cushion ? 12000 : 9000;
+    case Phase::Wait:
+        switch (kind) {
+        case Kind::Ball: return 2500;
+        case Kind::FishingRod: return 1800;
+        case Kind::Box: return 12000;
+        case Kind::PaperBag: return 6500;
+        case Kind::Catnip: return 7000;
+        case Kind::Cushion: return 15000;
+        default: return 0;
+        }
+    default: return 0;
+    }
+}
+
+struct Session {
+    Kind kind = Kind::None;
+    Phase phase = Phase::None;
+    double elapsedMs = 0, activeMs = 0;
+    unsigned rounds = 0, revision = 0;
+    int entryDirection = 1;
+
+    void Start(Kind selected, int direction = 1) {
+        kind = selected; entryDirection = direction < 0 ? -1 : 1;
+        rounds = 0; elapsedMs = activeMs = 0;
+        phase = selected == Kind::None ? Phase::None : Phase::Discover;
+        ++revision;
+    }
+    void Cancel() { Start(Kind::None); }
+    void Set(Phase next) { phase = next; elapsedMs = 0; ++revision; }
+    bool Advance(double seconds, bool enabled, bool arrived) {
+        if (!enabled || kind == Kind::None || phase == Phase::None || !std::isfinite(seconds) ||
+                seconds <= 0 || seconds > .25) return false;
+        activeMs += seconds * 1000;
+        elapsedMs += seconds * 1000;
+        if (Travels(phase) && !arrived) return false;
+        if (!Travels(phase) && elapsedMs + 1e-6 < Duration(kind, phase)) return false;
+        switch (phase) {
+        case Phase::Discover: Set(Phase::Approach); break;
+        case Phase::Approach: Set(Phase::Inspect); break;
+        case Phase::Inspect: Set(IsContainer(kind) ? Phase::Enter : Phase::Interact); break;
+        case Phase::Enter: Set(Phase::Interact); break;
+        case Phase::Interact:
+            if (kind == Kind::Ball || kind == Kind::FishingRod) {
+                ++rounds;
+                Set(rounds < 4 ? Phase::Approach : Phase::Wait);
+            } else if (kind == Kind::Box || kind == Kind::Cushion) Set(Phase::Sleep);
+            else Set(Phase::Rest);
+            break;
+        case Phase::Rest: case Phase::Sleep: Set(Phase::Exit); break;
+        case Phase::Exit: Set(Phase::Wait); break;
+        case Phase::Wait: rounds = 0; Set(Phase::Discover); break;
+        default: return false;
+        }
+        return true;
+    }
+};
+
+inline double SessionTarget(const Session& session, double toyX, double catX, double growth,
+                            double low, double high) {
+    growth = std::max(.1, growth);
+    if (session.phase == Phase::Exit) {
+        const double preferred = toyX - session.entryDirection * 100 * growth;
+        const double alternate = toyX + session.entryDirection * 100 * growth;
+        if (std::abs(ClampCenter(preferred, low, high) - toyX) >= 50 * growth)
+            return ClampCenter(preferred, low, high);
+        return ClampCenter(alternate, low, high);
+    }
+    if (session.phase == Phase::Approach && IsContainer(session.kind))
+        return ClampCenter(toyX - session.entryDirection * 68 * growth, low, high);
+    return ApproachTarget(session.kind, toyX, catX, 36 * growth, low, high);
+}
+
+// The fishing feather is attached to a damped spring. A paw impulse moves the
+// feather, not the cat; it remains within a short, physically reachable arc.
+struct Lure {
+    double offset = 0, velocity = 0;
+    void Touch(int direction) { velocity = (direction < 0 ? -1 : 1) * 90; }
+    void Advance(double seconds, bool paused = false) {
+        if (paused || !std::isfinite(seconds) || seconds <= 0 || seconds > .25) return;
+        const int steps = std::max(1, static_cast<int>(std::ceil(seconds * 240)));
+        const double step = seconds / steps;
+        for (int index = 0; index < steps; ++index) {
+            velocity += (-18 * offset - 3.5 * velocity) * step;
+            offset += velocity * step;
+            if (std::abs(offset) > 26) { offset = std::copysign(26.0, offset); velocity *= -.35; }
+        }
+    }
+};
 
 struct Ball {
     double x = 0.0;

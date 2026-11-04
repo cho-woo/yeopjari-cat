@@ -287,6 +287,9 @@ void RareAgeAndRate() {
     context.localDay = context.nowUtc / day;
     context = Opportunity(state, Decision::RareKnead, context);
     CHECK(Eligible(state, context, Decision::RareKnead));
+    auto sharedBudget=context;sharedBudget.allowRare=false;
+    CHECK(!Eligible(state,sharedBudget,Decision::RareKnead));
+    CHECK(!Commit(state,sharedBudget,Decision::RareKnead));
     CHECK(!Eligible(state, context, Decision::RareGreeting));
     CHECK(!Eligible(state, context, Decision::RareBond));
     state.bond = 24.99;

@@ -25,17 +25,19 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 
-Current cat effect recordings — v1.10.3
+Current cat effect recordings — v2.0.0
 
 All fourteen action-sound WAV files were prepared from the user-provided
 reference video. The user explicitly authorized their public distribution in
-this application update. Four intact short excerpts are reused across fourteen
+this application update. Three intact short excerpts are reused across fourteen
 cue slots; the pitch and timing are unchanged. Editing is limited to mono
 PCM16/22050Hz conversion, DC removal, level adjustment and short edge fades.
 The source and output hashes and edit ranges are recorded in
 assets/audio/manifest.json. No CC0 license, authorship or general reuse license
 is asserted for these user-provided recordings.
 
+The rejected 0.18–0.91-second excerpt from the first reference video is excluded
+from every cue. Only the three remaining allowed excerpts are used.
 Only the short prepared cues are distributed in this release. The original
 video and full decoded audio are not included in the public repository or ZIP.
 
@@ -45,11 +47,19 @@ The reclining-pose atlas assets/cat-recline.png was generated using the existing
 public repository artwork assets/cat.png and assets/cat-silver.png as image
 inputs. The six earlier character atlases remain unchanged.
 
+The companion pose, back, hanging and sleep atlases were generated for this requested
+update using the public character artwork as a style reference. They include
+eight new animals and species-specific sleeping/jump/hanging poses. Original
+user video frames were not used as image inputs. Action expressions and
+accessories are rendered locally by the application.
+
 Historical audio attribution (v1.5.0 through v1.10.2)
 
 Earlier releases used eleven user-supplied recordings introduced in v1.7.0 and
 three edited CC0 cues (refuse.wav, pet.wav, wake.wav) introduced in v1.5.0.
-Those historical sound sets are not the audio embedded in v1.10.3.
+Those historical sound sets are not the audio embedded in v2.0.0.
+The v1.10.3 video cue set is superseded; its rejected opening excerpt is no
+longer included in the current executable.
 The old user-provided recordings were never assigned a new CC0 license or
 authorship claim. Historical manifests and source materials retain their
 original notices in the repository history.

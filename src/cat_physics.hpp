@@ -13,6 +13,7 @@ struct Pose {
     double velocityY = 0.0;
     bool grounded = true;
     bool onPlatform = false;
+    bool hanging = false; // supported by a real ledge joint, not ground contact
     double supportVelocityX = 0.0; // world px/s of the contacted ledge, else zero
     double supportTravelX = 0.0; // ledge travel while supported in this Update
     // An event during the most recent Update, cleared by the next Update.
@@ -51,6 +52,15 @@ public:
     bool OnPlatform() const;
     bool CanLaunchTo(double targetX, double targetHeight, double clearance = 45.0) const;
     bool LaunchTo(double targetX, double targetHeight, double clearance = 45.0);
+    // Plan against a different finite ledge without moving the current support.
+    // A successful launch replaces that support only after the takeoff impulse.
+    bool CanLaunchToPlatform(double left, double right, double height,
+                             double targetX, double clearance = 45.0) const;
+    bool LaunchToPlatform(double left, double right, double height,
+                          double targetX, double clearance = 45.0);
+    bool BeginHang(double edgeX, double height);
+    bool EndHang(bool climb = true);
+    bool Hanging() const;
     void SetTargetVelocity(double logicalPixelsPerSecond);
     bool Jump(double apexPixels = 55.0);
     bool Pounce(int direction, double apexPixels = 30.0,
