@@ -144,7 +144,14 @@ jobs:
           }
       - name: Upload, download and hash-check draft assets, then publish stable
         shell: pwsh
-        run: '& ./package/publish-github.ps1 -Publish'
+        run: |
+          try {
+            & ./package/publish-github.ps1 -Publish
+          } catch {
+            $detail = ($_ | Out-String).Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
+            Write-Host "::error::$detail"
+            throw
+          }
       - name: Verify public latest feed and public downloads
         run: |
           python3 - <<'PY'
