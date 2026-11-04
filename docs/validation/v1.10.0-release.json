@@ -1,0 +1,54 @@
+{
+  "version": "1.10.0",
+  "release_url": "https://github.com/cho-woo/yeopjari-cat/releases/tag/v1.10.0",
+  "published_at": "2026-11-04T02:05:44Z",
+  "source_commit": "3ac1744b044d2703608a4b5c6652ec0d9db0354f",
+  "workflow_url": "https://github.com/cho-woo/yeopjari-cat/actions/runs/41758247578",
+  "workflow_conclusion": "success",
+  "jobs": {
+    "build": "success",
+    "windows-smoke": "success",
+    "publish": "success"
+  },
+  "windows_runtime": "Windows Server 2022 x64",
+  "windows_python": "3.12",
+  "exe_self_test_exit_code": 0,
+  "publisher_runtime_scenarios": 5,
+  "publisher_runtime_checks": 44,
+  "official_feed": "https://github.com/cho-woo/yeopjari-cat/releases/latest/download/latest.txt",
+  "public_assets": [
+    {
+      "browser_download_url": "https://github.com/cho-woo/yeopjari-cat/releases/download/v1.10.0/latest.txt",
+      "digest": "sha256:7d70ddc26d03d35197a526c2a7512c11e620425af547b6d4ec3f78790daee25a",
+      "name": "latest.txt",
+      "size": 3656
+    },
+    {
+      "browser_download_url": "https://github.com/cho-woo/yeopjari-cat/releases/download/v1.10.0/RELEASE_NOTES_KO.txt",
+      "digest": "sha256:074bd3106018337477914a5fa8de72144677bd27c33bdeb57a90b2877561ad38",
+      "name": "RELEASE_NOTES_KO.txt",
+      "size": 2543
+    },
+    {
+      "browser_download_url": "https://github.com/cho-woo/yeopjari-cat/releases/download/v1.10.0/SHA256SUMS.txt",
+      "digest": "sha256:2287709bc9e2dfa0a863031b02cf243a3e402b547df9512617971a0fec3c3d88",
+      "name": "SHA256SUMS.txt",
+      "size": 350
+    },
+    {
+      "browser_download_url": "https://github.com/cho-woo/yeopjari-cat/releases/download/v1.10.0/YeopjariCat-1.10.0.exe",
+      "digest": "sha256:8c2d4e043dfcf9c58a714442b88ddaf848a92abc3614d261c2a26eebe9e646b6",
+      "name": "YeopjariCat-1.10.0.exe",
+      "size": 11686912
+    },
+    {
+      "browser_download_url": "https://github.com/cho-woo/yeopjari-cat/releases/download/v1.10.0/YeopjariCat-Windows-1.10.0.zip",
+      "digest": "sha256:add4d3508f9daece54ec2b0a19c64a744d83f18c8bfcc0c4f1603b046b9adbc8",
+      "name": "YeopjariCat-Windows-1.10.0.zip",
+      "size": 9588162
+    }
+  ],
+  "limitations": [
+    "Windows 10/11 interactive GUI/audio/multi-monitor/live executable replacement not manually exercised"
+  ]
+}

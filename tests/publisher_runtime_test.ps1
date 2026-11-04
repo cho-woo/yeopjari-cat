@@ -5,6 +5,8 @@ $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $temporary = Join-Path ([IO.Path]::GetTempPath()) ('Yeopjari-publisher-test-' + [guid]::NewGuid().ToString('N'))
 [void](New-Item -ItemType Directory -Path $temporary)
+# The generated child script has its own script scope. Use distinct global
+# mock state names so function calls from that script share this test state.
 $global:PublisherRuntimePackage = if ($PackagePath) { (Resolve-Path -LiteralPath $PackagePath).Path } else { Join-Path $temporary 'package' }
 $global:PublisherRuntimeMock = $null
 $global:PublisherRuntimeChecks = 0
@@ -80,6 +82,7 @@ function gh {
 }
 
 try {
+    Write-Host 'Testing with a local-only gh mock; all publication messages below are simulated.'
     # Generate the real publisher from current source; the small fixtures test
     # publisher hashes and control flow, without needing a Windows build.
     if (-not $PackagePath) {
@@ -148,4 +151,5 @@ for name in names:
     Write-Host "Publisher runtime tests passed: $global:PublisherRuntimeChecks checks; no network calls."
 } finally {
     Remove-Item -LiteralPath $temporary -Recurse -Force -ErrorAction SilentlyContinue
+    Remove-Variable -Scope Global -Name PublisherRuntimePackage, PublisherRuntimeMock, PublisherRuntimeChecks -ErrorAction SilentlyContinue
 }
