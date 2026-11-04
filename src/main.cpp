@@ -2601,12 +2601,16 @@ int RenderSelfTest() {
                             ++changed;
                     for (int y = firstRow; y < 320; ++y) for (int x = 0; x < 420; ++x) {
                         const auto offset = static_cast<std::size_t>(y * 420 + x) * 4;
-                        if (baseline[offset + 3] != 255) continue;
+                        // The original published PNGs have interior alpha
+                        // mostly 252/253, with fewer than 30 alpha255 pixels
+                        // across an entire atlas. Compare their opaque-looking
+                        // body pixels exactly; do not require impossible alpha255.
+                        if (baseline[offset + 3] < 245) continue;
                         ++compared;
                         if (std::memcmp(baseline.data() + offset, g.surface.pixels + offset, 4) != 0)
                             return 39;
                     }
-                    if (compared < 500) return 40;
+                    if (compared < 500) { context += " compared=" + std::to_string(compared); return 40; }
                     if (elapsed && changed < 5) return 42;
                 }
 
@@ -2625,10 +2629,17 @@ int RenderSelfTest() {
                     if (wholeCat[offset + 3] < 32) continue;
                     ++visibleCompared;
                     const int loss = static_cast<int>(wholeCat[offset + 3]) - g.surface.pixels[offset + 3];
-                    if (loss > 12) return 43;
+                    if (loss > 12) {
+                        context += " loss=" + std::to_string(loss) + " x=" + std::to_string(offset / 4 % 420) +
+                            " y=" + std::to_string(offset / 4 / 420);
+                        return 43;
+                    }
                     if (loss > 8) ++visibleLoss;
                 }
-                if (visibleCompared < 2000 || visibleLoss > 12) return 44;
+                if (visibleCompared < 2000 || visibleLoss > 12) {
+                    context += " compared=" + std::to_string(visibleCompared) + " lossCount=" + std::to_string(visibleLoss);
+                    return 44;
+                }
             }
             return 0;
         }();
