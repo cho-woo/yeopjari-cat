@@ -1,0 +1,19 @@
+#!/bin/bash
+set -euo pipefail
+ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT"
+mkdir -p build/native-tests build/native-box2d
+for test in cat_behavior_test cat_toy_test cat_render_geometry_test cat_animation_test cat_nutrition_test cat_preferences_test cat_update_notice_test cat_audio_test pet_state_test update_protocol_test; do
+ g++ -std=c++17 -O2 -Wall -Wextra "tests/$test.cpp" -I src -o "build/native-tests/$test"
+ "build/native-tests/$test"
+done
+python3 -m unittest discover -s tests -p '*_test.py'
+for source in third_party/box2d/src/*.c; do
+ gcc -std=c17 -D_POSIX_C_SOURCE=200809L -O2 -DNDEBUG -ffp-contract=off -mno-avx -mno-avx2 -Ithird_party/box2d/include -Ithird_party/box2d/src -c "$source" -o "build/native-box2d/$(basename "${source%.c}").o"
+done
+ar rcs build/native-box2d/libbox2d.a build/native-box2d/*.o
+g++ -std=c++17 -O2 -Wall -Wextra tests/cat_physics_test.cpp src/cat_physics.cpp -Ithird_party/box2d/include build/native-box2d/libbox2d.a -lm -o build/native-tests/cat_physics_test
+build/native-tests/cat_physics_test
+
+g++ -std=c++17 -O2 -Wall -Wextra tests/cat_toy_physics_test.cpp src/cat_physics.cpp -Ithird_party/box2d/include build/native-box2d/libbox2d.a -lm -o build/native-tests/cat_toy_physics_test
+build/native-tests/cat_toy_physics_test

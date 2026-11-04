@@ -1,0 +1,30 @@
+PASS: personality, new actions and sequences; 11621 checks
+13 animation groups; 12031 checks passed
+cat nutrition: 1482 checks passed (10 scenario groups)
+PASS: preferences schema 2 and legacy compatibility; 66 checks
+Update notice: 4 groups; 47 checks passed
+cat audio: 1927 checks passed (8 scenario groups)
+PASS Gregorian dates, Unix epoch, UTC/timezone independence
+PASS Actual ten-year calendar boundary and no expiry
+PASS February 29 birthdays and exact anniversary time
+PASS Gradual year-long growth, no care-based age acceleration
+PASS Clock rollback, monotonic updatedUtc, tick-size consistency
+PASS 25-year offline absence, comfortable floors, continued care
+PASS Checksum reference vectors and complete save round-trip
+PASS Truncated/corrupt/invalid saves preserve destination
+All 8 groups passed; 288 checks.
+PASS: 7 update protocol groups; 684 checks
+.................s..
+----------------------------------------------------------------------
+Ran 20 tests in 0.039s
+
+OK (skipped=1)
+Box2D physics: 414 checks passed
+{"resource_type": "RT_DIALOG", "resource_id": 201, "languages": [1033], "korean_strings_verified": 5, "passed": true}
+Built: /workspace/yeopjari-cat/release/YeopjariCat.exe
+배포 파일 준비 완료: /workspace/yeopjari-cat/release/publish/check-1.9.0-mLkwlM/package
+사용자 ZIP: YeopjariCat-Windows-1.9.0.zip
+아직 공개 배포하지 않았습니다.
+publish-github.ps1 실행 → 검증된 초안 업로드; 같은 스크립트에 -Publish 지정 → 공개 배포
+검증 완료: 옆자리 고양이 1.9.0 / /workspace/yeopjari-cat/release/publish/check-1.9.0-mLkwlM/package
+Verified local package: /workspace/yeopjari-cat/release/publish/check-1.9.0-mLkwlM/package

@@ -1,0 +1,12 @@
+{
+  "byte_identical": false,
+  "identical_except_pe_timestamps": true,
+  "allowed_timestamp_offsets": [
+    128,
+    1374212
+  ],
+  "public_sha256": "72c3a5177c9a17714dcf10f2c0298517f0ec0fafa9f4b86c19a1599a9848e6b2",
+  "rebuilt_sha256": "2a129ab3b74f73f22df7ea04d57b138ca685152c252c13a0cbda822413917449",
+  "public_zip_verified": true,
+  "public_update_feed_verified": true
+}

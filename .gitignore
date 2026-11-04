@@ -1,0 +1,8 @@
+/build/
+/release/
+/toolchain/
+/third_party/box2d/
+.cache/
+.venv/
+__pycache__/
+*.py[cod]

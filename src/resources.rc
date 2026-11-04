@@ -1,0 +1,64 @@
+#pragma code_page(65001)
+#include <windows.h>
+#include "app_version.h"
+101 RCDATA "../assets/cat.png"
+102 RCDATA "../assets/cat-actions.png"
+103 RCDATA "../assets/cat-silver.png"
+104 RCDATA "../assets/cat-silver-actions.png"
+105 RCDATA "../assets/cat-jump-churu.png"
+106 RCDATA "../assets/cat-gestures.png"
+301 RCDATA "../assets/audio/hungry.wav"
+302 RCDATA "../assets/audio/meal.wav"
+303 RCDATA "../assets/audio/treat.wav"
+304 RCDATA "../assets/audio/refuse.wav"
+305 RCDATA "../assets/audio/pet.wav"
+306 RCDATA "../assets/audio/jump.wav"
+307 RCDATA "../assets/audio/punch.wav"
+308 RCDATA "../assets/audio/wake.wav"
+309 RCDATA "../assets/audio/food-request.wav"
+310 RCDATA "../assets/audio/meal-fish.wav"
+311 RCDATA "../assets/audio/meal-nogari.wav"
+312 RCDATA "../assets/audio/punch-second.wav"
+313 RCDATA "../assets/audio/gesture.wav"
+314 RCDATA "../assets/audio/greeting.wav"
+1 RT_MANIFEST "app.manifest"
+
+1 VERSIONINFO
+FILEVERSION YEOPJARI_VERSION_MAJOR,YEOPJARI_VERSION_MINOR,YEOPJARI_VERSION_PATCH,0
+PRODUCTVERSION YEOPJARI_VERSION_MAJOR,YEOPJARI_VERSION_MINOR,YEOPJARI_VERSION_PATCH,0
+FILEFLAGSMASK 0x3fL
+FILEFLAGS 0
+FILEOS VOS_NT_WINDOWS32
+FILETYPE VFT_APP
+FILESUBTYPE 0
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904B0"
+    BEGIN
+      VALUE "FileDescription", "Yeopjari Cat - a quiet desktop companion"
+      VALUE "FileVersion", YEOPJARI_VERSION_STRING
+      VALUE "InternalName", "YeopjariCat"
+      VALUE "OriginalFilename", "YeopjariCat.exe"
+      VALUE "ProductName", "Yeopjari Cat"
+      VALUE "ProductVersion", YEOPJARI_VERSION_STRING
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x0409, 1200
+  END
+END
+
+201 DIALOGEX 0, 0, 360, 234
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "옆자리 고양이 업데이트"
+FONT 9, "Malgun Gothic"
+BEGIN
+  LTEXT "새 버전이 도착했어요", 2010, 12, 12, 336, 18
+  LTEXT "", 2012, 12, 34, 336, 14
+  EDITTEXT 2011, 12, 54, 336, 123, ES_MULTILINE | ES_AUTOVSCROLL | ES_READONLY | WS_VSCROLL | WS_TABSTOP
+  LTEXT "다운로드를 확인한 뒤 고양이가 잠깐 재시작돼요. 생일과 돌봄 기록은 이어집니다.", 2013, 12, 184, 336, 20
+  DEFPUSHBUTTON "업데이트", IDOK, 186, 211, 78, 17
+  PUSHBUTTON "나중에", IDCANCEL, 270, 211, 78, 17
+END
