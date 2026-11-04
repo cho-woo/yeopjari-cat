@@ -49,14 +49,26 @@ struct Personality {
     double mischief = 0.5;
 };
 
-// Birthday-derived traits stay stable for the life of the pet. The daily/random
-// seed only changes the order of today's actions, never the cat's personality.
+// Persistent memory owns the rate of learning. The brain only consumes its
+// bounded profile; calling this API or changing the daily seed never accumulates
+// learning, ages a cat, or mutates its original birthday-derived traits.
+struct Experience {
+    double bond = 0.0;
+    double petPreference = 0.0, treatPreference = 0.0;
+    double sociabilityShift = 0.0, energyShift = 0.0;
+    double curiosityShift = 0.0, mischiefShift = 0.0;
+};
+
+// Birthday-derived traits remain the permanent baseline. Experience adds a
+// small, persistent offset; neutral profiles exactly preserve legacy identity.
 class Brain {
 public:
     static constexpr std::uint64_t PunchMinGapMs = 12 * 60 * 1000;
     static constexpr std::uint64_t SurpriseMinGapMs = 4 * 60 * 1000;
     static constexpr std::uint64_t StalkMinGapMs = 90 * 1000;
     static constexpr std::uint64_t GestureMinGapMs = 15 * 1000;
+    static constexpr double MaximumExperienceShift = .15;
+    static constexpr double ArchetypeChangeMargin = .04;
 
     explicit Brain(std::int64_t bornUtc, std::uint64_t randomSeed = 0)
         : rng_(randomSeed ? randomSeed : Mix(static_cast<std::uint64_t>(bornUtc))) {
@@ -66,10 +78,39 @@ public:
         traits_.sociability = Trait(birth ^ 0x8C01EF22D453AB39ULL);
         traits_.mischief = Trait(birth ^ 0xE7D25A90136CFB48ULL);
         archetype_ = Classify(traits_);
+        effectiveTraits_ = traits_;
+        effectiveArchetype_ = archetype_;
     }
 
-    Personality GetPersonality() const { return traits_; }
-    Archetype GetArchetype() const { return archetype_; }
+    Personality GetBirthPersonality() const { return traits_; }
+    Personality GetPersonality() const { return effectiveTraits_; }
+    Archetype GetArchetype() const { return effectiveArchetype_; }
+
+    void SetExperience(const Experience& experience) {
+        const auto bounded = [](double value, double low, double high) {
+            return std::isfinite(value) ? std::clamp(value, low, high) : 0.0;
+        };
+        experience_.bond = bounded(experience.bond, 0.0, 100.0);
+        experience_.petPreference = bounded(experience.petPreference, 0.0, 1.0);
+        experience_.treatPreference = bounded(experience.treatPreference, 0.0, 1.0);
+        const auto shift = [&](double value) { return bounded(value, -MaximumExperienceShift, MaximumExperienceShift); };
+        experience_.sociabilityShift = shift(experience.sociabilityShift);
+        experience_.energyShift = shift(experience.energyShift);
+        experience_.curiosityShift = shift(experience.curiosityShift);
+        experience_.mischiefShift = shift(experience.mischiefShift);
+        effectiveTraits_ = traits_;
+        effectiveTraits_.sociability = std::clamp(traits_.sociability + experience_.sociabilityShift, .05, .95);
+        effectiveTraits_.energy = std::clamp(traits_.energy + experience_.energyShift, .05, .95);
+        effectiveTraits_.curiosity = std::clamp(traits_.curiosity + experience_.curiosityShift, .05, .95);
+        effectiveTraits_.mischief = std::clamp(traits_.mischief + experience_.mischiefShift, .05, .95);
+        const auto candidate = Classify(effectiveTraits_);
+        // A near tie must not rename a lifelong personality on the first tiny
+        // learned offset. Comparing with the birth class is deterministic across
+        // reloads; zero shifts always restore the exact legacy class.
+        effectiveArchetype_ = candidate != archetype_ &&
+            Score(candidate, effectiveTraits_) >= Score(archetype_, effectiveTraits_) + ArchetypeChangeMargin
+            ? candidate : archetype_;
+    }
 
     void Fed(std::uint64_t ticks, bool snack) {
         Observe(ticks);
@@ -77,6 +118,7 @@ public:
         pendingPet_ = false;
         queueCount_ = 0;
         contentUntil_ = Add(ticks, snack ? 60000 : 150000);
+        lastFeedWasSnack_ = snack;
     }
 
     // A user action replaces the current story, rather than letting an old
@@ -116,20 +158,31 @@ public:
         const int hour = (context.localHour % 24 + 24) % 24;
         const bool twilight = (hour >= 5 && hour < 8) || (hour >= 18 && hour < 21);
         const bool midday = hour >= 11 && hour < 16;
+        const bool morning = hour >= 7 && hour < 10;
+        const bool afternoon = hour >= 14 && hour < 18;
+        const bool night = hour >= 22 || hour < 5;
         const bool content = now < contentUntil_;
 
         if (pendingGroom_) {
             pendingGroom_ = false;
             pendingPet_ = false;
+            // Enjoyed treats sometimes earn a quiet tail-up follow-up after
+            // grooming, rather than increasing meal acceptance or bypassing
+            // the existing feeding cooldown/fullness rules.
+            if (lastFeedWasSnack_ && experience_.treatPreference > 0 &&
+                now >= nextGesture_ && Unit() < .45 * experience_.treatPreference) {
+                Queue(Action::TailRaise);
+                nextGesture_ = Add(now, Range(GestureMinGapMs, 35000));
+            }
             return Commit(Action::Groom, ageActivity);
         }
         if (pendingPet_) {
             pendingPet_ = false;
-            if (traits_.sociability > .58 && Unit() < .55) {
+            if (effectiveTraits_.sociability > .58 && Unit() < .55) {
                 Queue(Action::Loaf);
                 return Commit(Action::Knead, ageActivity);
             }
-            return Commit(Unit() < 0.45 + traits_.sociability * 0.4 ? Action::Watch : Action::Groom, ageActivity);
+            return Commit(Unit() < 0.45 + effectiveTraits_.sociability * 0.4 ? Action::Watch : Action::Groom, ageActivity);
         }
         while (queueCount_ > 0) {
             const Action queued = PopQueue();
@@ -149,42 +202,44 @@ public:
         if (lastAction_ == Action::Zoomies || lastAction_ == Action::TailChase)
             return Commit(Unit() < 0.7 ? Action::Groom : Action::Idle, ageActivity);
 
-        const double archetypeEnergy = archetype_ == Archetype::Energetic ? 1.3 : archetype_ == Archetype::Sleepy ? .75 : 1.0;
-        const double archetypeRest = archetype_ == Archetype::Sleepy ? 1.5 : archetype_ == Archetype::Energetic ? .72 : 1.0;
-        const double lively = ageActivity * (0.65 + traits_.energy * 0.7) * (twilight ? 1.4 : 1.0) *
-            (content ? 0.65 : 1.0) * archetypeEnergy;
+        const double archetypeEnergy = effectiveArchetype_ == Archetype::Energetic ? 1.3 : effectiveArchetype_ == Archetype::Sleepy ? .75 : 1.0;
+        const double archetypeRest = effectiveArchetype_ == Archetype::Sleepy ? 1.5 : effectiveArchetype_ == Archetype::Energetic ? .72 : 1.0;
+        const double lively = ageActivity * (0.65 + effectiveTraits_.energy * 0.7) * (twilight ? 1.4 : 1.0) *
+            (content ? 0.65 : 1.0) * (night ? .55 : 1.0) * archetypeEnergy;
         const double rest = (midday ? 1.5 : (twilight ? 0.6 : 1.0)) * (1.0 + std::min(age, 20) * 0.025) *
-            (content ? 1.35 : 1.0) * archetypeRest;
+            (content ? 1.35 : 1.0) * (night ? 2.4 : 1.0) * archetypeRest;
         const bool canSurprise = !paused && now >= nextSurprise_ && !content;
         const bool canStalk = !paused && context.cursorNear && now >= nextStalk_ && !content;
         const bool canPunch = !paused && now >= nextPunch_ && now >= nextSurprise_ && !content;
         const bool canGesture = now >= nextGesture_;
-        const double affectionate = archetype_ == Archetype::Affectionate ? 1.65 : 1.0;
-        const double curious = archetype_ == Archetype::Curious ? 1.65 : 1.0;
-        const double mischievous = archetype_ == Archetype::Mischievous ? 1.65 : 1.0;
-        const double sleepy = archetype_ == Archetype::Sleepy ? 1.65 : 1.0;
-        const double cool = archetype_ == Archetype::Cool ? 1.45 : 1.0;
+        const double affectionate = effectiveArchetype_ == Archetype::Affectionate ? 1.65 : 1.0;
+        const double curious = effectiveArchetype_ == Archetype::Curious ? 1.65 : 1.0;
+        const double mischievous = effectiveArchetype_ == Archetype::Mischievous ? 1.65 : 1.0;
+        const double sleepy = effectiveArchetype_ == Archetype::Sleepy ? 1.65 : 1.0;
+        const double cool = effectiveArchetype_ == Archetype::Cool ? 1.45 : 1.0;
 
         const std::array<std::pair<Action, double>, 19> weights{{
             {Action::Idle, 23.0 * cool},
             {Action::Walk, paused ? 0.0 : 23.0 * lively},
             {Action::Sleep, 20.0 * rest},
             {Action::Groom, lastAction_ == Action::Groom ? 3.0 : 9.5},
-            {Action::Stretch, lastAction_ == Action::Stretch ? 0.0 : 2.8},
-            {Action::Watch, (6.0 + (context.cursorNear ? (10.0 + traits_.curiosity * 15.0) : 0.0)
-                + (hunger < 45.0 ? 4.0 : 0.0) + (affection > 80.0 ? traits_.sociability * 2.0 : 0.0)) * curious},
-            {Action::Stalk, canStalk ? (3.0 + traits_.curiosity * 6.0) * lively * curious : 0.0},
-            {Action::Zoomies, canSurprise ? (2.8 + traits_.energy * 4.8) * lively : 0.0},
-            {Action::TailChase, canSurprise ? (1.0 + traits_.mischief * 3.0) * ageActivity * mischievous : 0.0},
-            {Action::Punch, canPunch ? (5.0 + traits_.mischief * 5.0) * mischievous : 0.0},
-            {Action::Jump, canSurprise ? (2.2 + traits_.curiosity * 3.0) * lively : 0.0},
-            {Action::EarFlick, canGesture ? 3.2 + traits_.curiosity * 2.0 : 0.0},
-            {Action::TailRaise, canGesture ? (3.0 + traits_.sociability * 4.0 + (affection > 80.0 ? 1.0 : 0.0)) * affectionate : 0.0},
-            {Action::BellyRoll, canSurprise ? (1.2 + traits_.sociability * 2.2 + traits_.mischief) * ageActivity * affectionate : 0.0},
+            {Action::Stretch, lastAction_ == Action::Stretch ? 0.0 : 2.8 * (morning ? 4.0 : 1.0)},
+            {Action::Watch, (6.0 + (context.cursorNear ? (10.0 + effectiveTraits_.curiosity * 15.0) : 0.0)
+                + (hunger < 45.0 ? 4.0 : 0.0) + (affection > 80.0 ? effectiveTraits_.sociability * 2.0 : 0.0)) * curious},
+            {Action::Stalk, canStalk ? (3.0 + effectiveTraits_.curiosity * 6.0) * lively * curious : 0.0},
+            {Action::Zoomies, canSurprise ? (2.8 + effectiveTraits_.energy * 4.8) * lively * (afternoon ? 2.1 : 1.0) : 0.0},
+            {Action::TailChase, canSurprise ? (1.0 + effectiveTraits_.mischief * 3.0) * ageActivity * mischievous : 0.0},
+            {Action::Punch, canPunch ? (5.0 + effectiveTraits_.mischief * 5.0) * mischievous : 0.0},
+            {Action::Jump, canSurprise ? (2.2 + effectiveTraits_.curiosity * 3.0) * lively : 0.0},
+            {Action::EarFlick, canGesture ? 3.2 + effectiveTraits_.curiosity * 2.0 : 0.0},
+            {Action::TailRaise, canGesture ? (3.0 + effectiveTraits_.sociability * 4.0 + (affection > 80.0 ? 1.0 : 0.0)) * affectionate : 0.0},
+            {Action::BellyRoll, canSurprise ? (1.2 + effectiveTraits_.sociability * 2.2 + effectiveTraits_.mischief) * ageActivity * affectionate *
+                (1.0 + 1.5 * experience_.petPreference + .35 * experience_.bond / 100.0) : 0.0},
             {Action::Loaf, (4.0 + rest * 2.0) * sleepy * cool},
-            {Action::Knead, canGesture ? (1.8 + traits_.sociability * 3.5) * affectionate : 0.0},
-            {Action::Peek, canSurprise ? (1.5 + traits_.curiosity * 2.8 + traits_.mischief * 1.5) * curious * mischievous : 0.0},
-            {Action::Scratch, canGesture ? (1.4 + traits_.curiosity * 1.7 + traits_.mischief) * curious : 0.0},
+            {Action::Knead, canGesture ? (1.8 + effectiveTraits_.sociability * 3.5) * affectionate *
+                (1.0 + .5 * experience_.petPreference + .3 * experience_.bond / 100.0) : 0.0},
+            {Action::Peek, canSurprise ? (1.5 + effectiveTraits_.curiosity * 2.8 + effectiveTraits_.mischief * 1.5) * curious * mischievous : 0.0},
+            {Action::Scratch, canGesture ? (1.4 + effectiveTraits_.curiosity * 1.7 + effectiveTraits_.mischief) * curious : 0.0},
             {Action::Sneeze, canGesture ? 0.8 : 0.0}
         }};
 
@@ -232,8 +287,10 @@ public:
 
 private:
     std::uint64_t rng_;
-    Personality traits_{};
-    Archetype archetype_ = Archetype::Cool;
+    Personality traits_{}, effectiveTraits_{};
+    Experience experience_{};
+    Archetype archetype_ = Archetype::Cool, effectiveArchetype_ = Archetype::Cool;
+    bool lastFeedWasSnack_ = false;
     bool initialized_ = false, pendingGroom_ = false, pendingPet_ = false;
     std::uint64_t seen_ = 0, nextPunch_ = 0, nextSurprise_ = 0, nextStalk_ = 0, nextGesture_ = 0, contentUntil_ = 0;
     Action lastAction_ = Action::Idle;
@@ -252,18 +309,25 @@ private:
     static double Trait(std::uint64_t n) {
         return 0.18 + 0.64 * static_cast<double>(Mix(n) >> 11) * (1.0 / 9007199254740992.0);
     }
+    static double Score(Archetype archetype, const Personality& p) {
+        switch (archetype) {
+        case Archetype::Affectionate: return p.sociability;
+        case Archetype::Cool: return 1.08 - (p.curiosity + p.energy + p.sociability + p.mischief) * .23;
+        case Archetype::Curious: return p.curiosity;
+        case Archetype::Mischievous: return p.mischief;
+        case Archetype::Sleepy: return 1.0 - p.energy;
+        case Archetype::Energetic: return p.energy;
+        }
+        return 0;
+    }
     static Archetype Classify(const Personality& p) {
-        const std::array<std::pair<Archetype, double>, 6> scores{{
-            {Archetype::Affectionate, p.sociability},
-            {Archetype::Cool, 1.08 - (p.curiosity + p.energy + p.sociability + p.mischief) * .23},
-            {Archetype::Curious, p.curiosity},
-            {Archetype::Mischievous, p.mischief},
-            {Archetype::Sleepy, 1.0 - p.energy},
-            {Archetype::Energetic, p.energy}
-        }};
-        auto best = scores.front();
-        for (const auto& score : scores) if (score.second > best.second) best = score;
-        return best.first;
+        const std::array<Archetype, 6> archetypes{{Archetype::Affectionate,
+            Archetype::Cool, Archetype::Curious, Archetype::Mischievous,
+            Archetype::Sleepy, Archetype::Energetic}};
+        Archetype best = archetypes.front();
+        for (const auto candidate : archetypes)
+            if (Score(candidate, p) > Score(best, p)) best = candidate;
+        return best;
     }
     static std::uint64_t Add(std::uint64_t a, std::uint64_t b) {
         const auto maximum = std::numeric_limits<std::uint64_t>::max();

@@ -3,6 +3,7 @@
 #include <array>
 #include <cwchar>
 #include <iostream>
+#include <limits>
 #include <stdexcept>
 #include <string>
 
@@ -141,6 +142,115 @@ void InteractionsCancelStaleStories() {
     CHECK(forcedPunch.Next(now).action == Action::Idle);
 }
 
+void ExperiencePreservesBirthAndBoundsLearning() {
+    using cat::behavior::Experience;
+    for (int offset = 0; offset < 1000; ++offset) {
+        Brain brain(Birthday + offset, 77);
+        const auto birth = brain.GetPersonality();
+        const auto archetype = brain.GetArchetype();
+        Experience migrated{35, 0, .6};
+        brain.SetExperience(migrated);
+        CHECK(brain.GetArchetype() == archetype);
+        CHECK(brain.GetPersonality().energy == birth.energy);
+        CHECK(brain.GetPersonality().sociability == birth.sociability);
+        migrated.sociabilityShift = .001;
+        brain.SetExperience(migrated);
+        CHECK(brain.GetArchetype() == archetype); // no rename after the first tiny credited care
+        CHECK(std::abs(brain.GetPersonality().sociability - birth.sociability - .001) < 1e-12);
+        Experience learned{100, 1, 1, .15, -.15, .15, -.15};
+        brain.SetExperience(learned);
+        const auto experienced = brain.GetPersonality();
+        for (int reload = 0; reload < 10; ++reload) brain.SetExperience(learned);
+        CHECK(brain.GetPersonality().sociability == experienced.sociability);
+        CHECK(brain.GetPersonality().energy == experienced.energy);
+        CHECK(brain.GetBirthPersonality().curiosity == birth.curiosity);
+        CHECK(brain.GetBirthPersonality().energy == birth.energy);
+        for (auto pair : {std::pair<double,double>{experienced.curiosity, birth.curiosity},
+                          {experienced.energy, birth.energy}, {experienced.sociability, birth.sociability},
+                          {experienced.mischief, birth.mischief}}) {
+            CHECK(pair.first >= .05 && pair.first <= .95);
+            CHECK(std::abs(pair.first-pair.second) <= Brain::MaximumExperienceShift + 1e-12);
+        }
+        Brain restored(Birthday + offset, 12);
+        restored.SetExperience(learned);
+        CHECK(restored.GetArchetype() == brain.GetArchetype());
+        brain.SetExperience({});
+        CHECK(brain.GetArchetype() == archetype);
+        CHECK(brain.GetPersonality().energy == birth.energy);
+        CHECK(brain.GetPersonality().sociability == birth.sociability);
+    }
+    Brain invalid(Birthday, 77);
+    const auto birth = invalid.GetPersonality();
+    const auto nan = std::numeric_limits<double>::quiet_NaN();
+    invalid.SetExperience({nan,nan,nan,nan,nan,nan,nan});
+    CHECK(invalid.GetPersonality().sociability == birth.sociability);
+    CHECK(invalid.GetPersonality().energy == birth.energy);
+    invalid.SetExperience({1e20,-1e20,1e20,1e20,-1e20,1e20,-1e20});
+    CHECK(std::abs(invalid.GetPersonality().energy - birth.energy) <= .15 + 1e-12);
+    CHECK(std::abs(invalid.GetPersonality().sociability - birth.sociability) <= .15 + 1e-12);
+}
+
+using ActionCounts = std::array<unsigned, static_cast<unsigned>(Action::Sneeze) + 1>;
+ActionCounts CountActions(int hour, cat::behavior::Experience experience = {}, bool paused = false) {
+    ActionCounts counts{};
+    for (unsigned seed = 1; seed <= 16; ++seed) {
+        Brain brain(Birthday + seed * 86400, seed);
+        brain.SetExperience(experience);
+        Context ctx; ctx.localHour = hour; ctx.ageYears = 3;
+        ctx.roamingPaused = paused; ctx.cursorNear = true;
+        for (int i = 0; i < 6000; ++i) {
+            const auto plan = brain.Next(ctx);
+            ++counts[static_cast<unsigned>(plan.action)];
+            if (paused) CHECK(!Travels(plan.action) && plan.speed == 0);
+            ctx.ticks += 10 * 60 * 1000; // allow rare-action cooldowns; compare distributions, not elapsed-time occupancy
+        }
+    }
+    return counts;
+}
+unsigned Count(const ActionCounts& counts, Action action) { return counts[static_cast<unsigned>(action)]; }
+
+void DailyRoutineChangesActualChoices() {
+    const auto morning = CountActions(8), baseline = CountActions(10);
+    const auto afternoon = CountActions(16), night = CountActions(23);
+    CHECK(Count(morning, Action::Stretch) > Count(baseline, Action::Stretch) * 1.20);
+    CHECK(Count(afternoon, Action::Zoomies) > Count(baseline, Action::Zoomies) * 1.50);
+    CHECK(Count(night, Action::Sleep) > Count(baseline, Action::Sleep) * 1.50);
+    CHECK(Count(night, Action::Zoomies) < Count(baseline, Action::Zoomies));
+    CHECK(CountActions(24) == CountActions(0));
+    CHECK(CountActions(-1) == CountActions(23));
+}
+
+void LearnedCareChangesResponsesWithoutForcingThem() {
+    const auto neutral = CountActions(12);
+    const auto petted = CountActions(12, {0, 1, 0});
+    const auto bonded = CountActions(12, {100, 1, 0, .15, -.10, .05, 0});
+    CHECK(Count(petted, Action::BellyRoll) > Count(neutral, Action::BellyRoll) * 1.60);
+    CHECK(Count(petted, Action::BellyRoll) < Count(neutral, Action::BellyRoll) * 3.20);
+    CHECK(Count(bonded, Action::Knead) > Count(neutral, Action::Knead));
+    CHECK(Count(bonded, Action::Walk) > 0);
+    CHECK(Count(bonded, Action::Groom) > 0);
+    CHECK(Count(bonded, Action::Sleep) > 0);
+    CountActions(16, {100, 1, 1, .15, .15, .15, .15}, true);
+    unsigned neutralReplies = 0, favoriteReplies = 0;
+    for (unsigned seed = 1; seed <= 16; ++seed) {
+        Brain normal(Birthday + seed * 86400, seed), favorite = normal;
+        favorite.SetExperience({0, 0, 1});
+        normal.Interrupt(0); favorite.Interrupt(0);
+        Context ctx; ctx.ageYears = 3;
+        for (int i = 1; i <= 500; ++i) {
+            ctx.ticks = static_cast<std::uint64_t>(i) * 600000;
+            normal.Fed(ctx.ticks, true); favorite.Fed(ctx.ticks, true);
+            const auto a = normal.Next(ctx), b = favorite.Next(ctx);
+            CHECK(a.action == Action::Groom && b.action == Action::Groom);
+            Context after = ctx; after.ticks += std::max(a.durationMs, b.durationMs);
+            if (normal.Next(after).action == Action::TailRaise) ++neutralReplies;
+            if (favorite.Next(after).action == Action::TailRaise) ++favoriteReplies;
+        }
+    }
+    CHECK(favoriteReplies > neutralReplies * 3);
+    CHECK(favoriteReplies < 8000); // a preference is not compulsory obedience
+}
+
 void FeedingAndPettingCreateCalmFollowups() {
     Brain brain(Birthday,13); Context ctx; ctx.ticks=100000;
     brain.Fed(ctx.ticks,false);
@@ -154,7 +264,7 @@ void FeedingAndPettingCreateCalmFollowups() {
 
 int main(){
     try{
-        StablePersonalityAndName(); DeterministicDailyOrder(); PausedCatStaysPut(); PausingAnActiveStoryCancelsItsTravel(); InteractionsCancelStaleStories(); NewActionsAndSequencesAppear(); FeedingAndPettingCreateCalmFollowups();
+        StablePersonalityAndName(); DeterministicDailyOrder(); PausedCatStaysPut(); PausingAnActiveStoryCancelsItsTravel(); InteractionsCancelStaleStories(); NewActionsAndSequencesAppear(); FeedingAndPettingCreateCalmFollowups(); ExperiencePreservesBirthAndBoundsLearning(); DailyRoutineChangesActualChoices(); LearnedCareChangesResponsesWithoutForcingThem();
         std::cout<<"PASS: personality, new actions and sequences; "<<checks<<" checks\n"; return 0;
     } catch(const std::exception& e){ std::cerr<<e.what()<<'\n'; return 1; }
 }

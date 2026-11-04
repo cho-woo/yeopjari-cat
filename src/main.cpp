@@ -31,6 +31,10 @@
 #include "pet_state.hpp"
 #include "cat_nutrition.hpp"
 #include "cat_behavior.hpp"
+#include "cat_memory.hpp"
+#include "cat_memory_motion.hpp"
+#include "cat_memory_storage.hpp"
+#include "cat_routine.hpp"
 #include "cat_animation.hpp"
 #include "cat_physics.hpp"
 #include "cat_toy.hpp"
@@ -175,6 +179,14 @@ struct App {
     cat::ScreenPrank prank;
     WindowPerch perch;
     cat::PetState pet;
+    cat::memory::storage::Store memory;
+    bool memorySaveErrorShown = false;
+    ULONGLONG nextMemoryRoutineAttempt = 0;
+    std::wstring memoryNotice;
+    bool approachingUser = false;
+    double userTargetX = 0;
+    std::array<Motion, 3> memorySequence{};
+    unsigned memorySequenceCount = 0;
     cat::nutrition::State nutrition;
     cat::physics::Controller physics;
     cat::animation::Locomotion gait;
@@ -356,6 +368,95 @@ bool SaveNutrition(bool reportError) {
     g.nutritionSaveErrorShown = false;
     return true;
 }
+// The new memory sidecar has its own verified, atomic checkpoint. Legacy
+// birthday, nutrition, appearance and update formats remain independent.
+struct MemoryIO {
+    std::wstring Path(const std::string& name) const {
+        return g.directory + L"\\" + std::wstring(name.begin(), name.end());
+    }
+    bool Exists(const std::string& name) const {
+        const auto path = Path(name);
+        if (GetFileAttributesW(path.c_str()) != INVALID_FILE_ATTRIBUTES) return true;
+        const auto error = GetLastError();
+        return error != ERROR_FILE_NOT_FOUND && error != ERROR_PATH_NOT_FOUND;
+    }
+    bool Read(const std::string& name, std::string& bytes) const { return ReadBytes(Path(name), bytes); }
+    bool Write(const std::string& name, const std::string& bytes) const {
+        const auto path = Path(name);
+        HANDLE file = CreateFileW(path.c_str(), GENERIC_WRITE, 0, nullptr, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, nullptr);
+        if (file == INVALID_HANDLE_VALUE) return false;
+        DWORD written = 0;
+        bool ok = WriteFile(file, bytes.data(), static_cast<DWORD>(bytes.size()), &written, nullptr) && written == bytes.size();
+        if (ok) ok = FlushFileBuffers(file) != FALSE;
+        if (!CloseHandle(file)) ok = false;
+        if (!ok) DeleteFileW(path.c_str());
+        return ok;
+    }
+    bool Replace(const std::string& from, const std::string& to) const {
+        return MoveFileExW(Path(from).c_str(), Path(to).c_str(), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH) != FALSE;
+    }
+    bool Remove(const std::string& name) const { return DeleteFileW(Path(name).c_str()) != FALSE; }
+    bool Preserve(const std::string& name) const {
+        static unsigned sequence = 0;
+        const auto backup = Path(name) + L".preserved-" + std::to_wstring(UtcNow()) + L"-" +
+            std::to_wstring(GetCurrentProcessId()) + L"-" + std::to_wstring(++sequence);
+        return CopyFileW(Path(name).c_str(), backup.c_str(), TRUE) != FALSE;
+    }
+};
+struct MemoryTransaction {
+    HANDLE mutex = nullptr;
+    bool held = false;
+    MemoryTransaction() {
+        std::wstring identity = g.directory;
+        CharLowerBuffW(identity.data(), static_cast<DWORD>(identity.size()));
+        const std::string bytes(reinterpret_cast<const char*>(identity.data()), identity.size() * sizeof(wchar_t));
+        const auto name = L"Global\\YeopjariCat.Memory.v1." + std::to_wstring(cat::Checksum(bytes));
+        mutex = CreateMutexW(nullptr, FALSE, name.c_str());
+        if (mutex) {
+            const auto result = WaitForSingleObject(mutex, 3000);
+            held = result == WAIT_OBJECT_0 || result == WAIT_ABANDONED;
+        }
+    }
+    ~MemoryTransaction() { if (held) ReleaseMutex(mutex); if (mutex) CloseHandle(mutex); }
+};
+void SyncExperience() {
+    if (!g.brain) return;
+    if (!g.memory.enabled()) { g.brain->SetExperience({}); return; }
+    cat::memory::Advance(g.memory.state, UtcNow());
+    const auto p = cat::memory::Summarize(g.memory.state);
+    g.brain->SetExperience({p.bond, p.petPreference, p.treatPreference,
+        p.sociabilityShift, p.energyShift, p.curiosityShift, p.mischiefShift});
+}
+void LoadMemory() {
+    MemoryIO io;
+    MemoryTransaction transaction;
+    if (transaction.held) g.memory.Load(io, g.pet, UtcNow());
+    else g.memory.error = "Memory record is in use or cannot be locked";
+    using Outcome = cat::memory::storage::Outcome;
+    if (g.memory.outcome == Outcome::Recovered)
+        g.memoryNotice = L"친밀도와 기억을 백업에서 복구했어요. 생일과 기존 성장 기록은 그대로예요.";
+    else if (g.memory.outcome == Outcome::Blocked)
+        g.memoryNotice = L"친밀도 기록을 읽지 못해 원본을 보존했어요. 기존 고양이는 계속 지내지만 기억 학습은 잠시 멈춰요. 기록 폴더의 memory.ini와 memory.bak를 확인해 주세요.";
+}
+bool SaveMemory(bool reportError = true) {
+    if (!g.memory.enabled()) return true; // Never replace unreadable memories with a new pet.
+    cat::memory::Advance(g.memory.state, UtcNow());
+    MemoryIO io;
+    MemoryTransaction transaction;
+    if (transaction.held && g.memory.Save(io)) { g.memorySaveErrorShown = false; return true; }
+    if (reportError && !g.memorySaveErrorShown)
+        Balloon(L"친밀도를 저장하지 못했어요", L"기존 기록을 덮어쓰지 않았어요. 기록 폴더의 권한과 공간을 확인해 주세요.", true);
+    g.memorySaveErrorShown = true;
+    return false;
+}
+void Remember(cat::memory::Event event) {
+    if (!g.memory.enabled()) return;
+    if (cat::memory::Record(g.memory.state, event, UtcNow())) {
+        SyncExperience();
+        SaveMemory();
+    }
+}
+
 bool SavePet(bool reportError = true) {
     SyncNutrition(UtcNow());
     if (g.work.right > g.work.left) g.pet.position = std::clamp((g.centerX - g.work.left) / (g.work.right - g.work.left), 0.0, 1.0);
@@ -389,7 +490,9 @@ bool SavePet(bool reportError = true) {
     if (!Exists(monthly)) CopyFileW(g.savePath.c_str(), monthly.c_str(), TRUE);
     // Nutrition has its own atomic checkpoint; its loss must never invalidate
     // the original schema-1 birthday and lifetime-care record.
-    return SaveNutrition(reportError);
+    const bool nutritionSaved = SaveNutrition(reportError);
+    const bool memorySaved = SaveMemory(reportError);
+    return nutritionSaved && memorySaved;
 }
 std::wstring UpdateText(const std::string& value) {
     if (value.empty()) return {};
@@ -896,6 +999,7 @@ void SetMotion(Motion motion, ULONGLONG duration) {
     g.jumpPending = motion == Motion::Jump || motion == Motion::Pounce;
     g.jumpLaunched = false;
     g.approachingToy = false; g.toyContact = false;
+    g.approachingUser = false; g.memorySequenceCount = 0;
     if (motion == Motion::Sleep) g.audio.Stop();
     RefreshAnimationTimer();
 }
@@ -1066,7 +1170,7 @@ void MaintainPerch(ULONGLONG ticks) {
 }
 
 void MaybeVisitWindow(ULONGLONG ticks) {
-    if (g.perch.active || g.perch.transitioning || g.approachingToy || g.pet.roamingPaused || ticks < g.perch.nextTry ||
+    if (g.perch.active || g.perch.transitioning || g.approachingToy || g.approachingUser || g.memorySequenceCount || g.pet.roamingPaused || ticks < g.perch.nextTry ||
         ticks < g.bubbleUntil || g.menuOpen || g.dragging || !g.physics.CurrentPose().grounded) return;
     if (g.motion != Motion::Idle && g.motion != Motion::Walk && g.motion != Motion::Watch && g.motion != Motion::Groom) return;
     PerchCandidate candidate;
@@ -1413,6 +1517,7 @@ void Care(bool snack) {
     // Keep the established lifetime counts/affection, with nutrition as the
     // sole owner of fullness and elapsed-time body changes.
     cat::Feed(g.pet, g.nutrition.updatedUtc, snack);
+    Remember(snack ? cat::memory::Event::Treat : cat::memory::Event::Meal);
     g.pet.hunger = g.nutrition.fullness;
     g.nextCareReply = ticks + 6500;
     SetMotion(snack ? Motion::Treat : Motion::Eat, snack ? cat::animation::kTreatDurationMs : 3300);
@@ -1511,6 +1616,7 @@ void PlaceToy(ToyKind toy) {
     if (g.hidden) ToggleHidden();
     if (g.brain) g.brain->Interrupt(GetTickCount64());
     g.toy = toy;
+    if (toy != ToyKind::None) Remember(cat::memory::Event::Play);
     if (toy == ToyKind::None) {
         if (!g.perch.transitioning) SetMotion(Motion::Idle, 2600);
         Speak(L"장난감은 치워둘게 냥", 2200);
@@ -1545,9 +1651,11 @@ void PetCat() {
     if (g.perch.transitioning || !g.physics.CurrentPose().grounded || g.motion == Motion::Eat || g.motion == Motion::Treat) return;
     // A sleeping cat occasionally chooses its nap; interaction need not always be obedience.
     if (g.motion == Motion::Sleep && Random(0, 1) < .55) { Speak(L"…쿨쿨", 1600); return; }
+    Remember(cat::memory::Event::Pet);
     if (g.brain) g.brain->Pet(ticks);
     const double sociability = g.brain ? g.brain->GetPersonality().sociability : .5;
-    if (Random(0, 1) < .15 + sociability * .6) {
+    const double familiarity = g.memory.enabled() ? .3 + .7 * cat::memory::Summarize(g.memory.state).bond / 100.0 : 1.0;
+    if (Random(0, 1) < (.15 + sociability * .6) * familiarity) {
         Speak(L"골골… ♡", 1800); SetMotion(Motion::Idle, 1800);
         PlayCatSound(cat::audio::Cue::Pet);
     } else {
@@ -1567,6 +1675,16 @@ void ShowPetStatus() {
          << L"배부름: " << static_cast<int>(std::round(g.pet.hunger)) << L" / 100\n"
          << L"몸 상태: " << cat::nutrition::BodyDescription(g.nutrition) << L"\n움직임: " << activity << L"\n"
          << L"함께 먹은 밥: " << g.pet.feedCount << L"번\n함께 먹은 간식·츄르: " << g.pet.snackCount << L"번\n\n";
+    if (g.memory.enabled()) {
+        SyncExperience();
+        const auto memory = cat::memory::Summarize(g.memory.state);
+        const wchar_t* bondName = memory.bond >= 75 ? L"오랜 단짝" : memory.bond >= 50 ? L"마음을 연 사이" :
+            memory.bond >= 25 ? L"익숙한 친구" : L"천천히 알아가는 중";
+        text << L"친밀도: " << bondName << L" (" << static_cast<int>(std::lround(memory.bond)) << L" / 100)\n"
+             << L"기억하는 취향: " << (memory.petPreference >= .3 ? L"쓰다듬는 손이 좋아요 · " : L"")
+             << (memory.treatPreference >= .3 ? L"츄르 시간이 기다려져요" : L"함께한 시간을 쌓고 있어요") << L"\n"
+             << L"친밀도는 실제 돌봄으로 천천히 쌓이고, 바빠도 잊지 않아요.\n\n";
+    } else text << L"친밀도·기억: 기존 파일 확인이 필요해 학습을 쉬고 있어요.\n\n";
     if (age.reachedTenYears) text << L"열 번째 생일도 함께 보냈어요. 앞으로도 계속 같이 살아요.\n";
     else text << L"열 번째 생일: " << DateText(age.tenthAnniversary) << L"\n";
     text << L"\n시간과 체형은 실제 날짜에 따라 천천히 변해요.\n알맞게 먹으면 몸 상태도 서서히 돌아와요.\n캐릭터를 바꿔도 생일과 기록은 이어지고, 바빠도 사라지지 않아요.\n\n밥: Ctrl+Alt+F    츄르: Ctrl+Alt+T\n숨기기/보이기: Ctrl+Alt+H\n고양이를 끌면 다른 모니터로 옮길 수 있어요.\n\n우클릭 메뉴에서 캐릭터·의상·장난감을 고르고 귀여운 행동을 볼 수 있어요.\n냥냥펀치의 화면 금은 잠깐 보였다 사라지는 장난이에요.";
@@ -1586,6 +1704,8 @@ void ExportBackup() {
     if (selected) {
         if (_wcsicmp(file, g.savePath.c_str()) == 0 || _wcsicmp(file, g.backupPath.c_str()) == 0 ||
             _wcsicmp(file, g.nutritionPath.c_str()) == 0 || _wcsicmp(file, g.nutritionBackupPath.c_str()) == 0 ||
+            _wcsicmp(file, (g.directory + L"\\memory.ini").c_str()) == 0 ||
+            _wcsicmp(file, (g.directory + L"\\memory.bak").c_str()) == 0 ||
             _wcsicmp(file, (g.directory + L"\\preferences.ini").c_str()) == 0 ||
             _wcsicmp(file, (g.directory + L"\\preferences.bak").c_str()) == 0 ||
             _wcsicmp(file, (g.directory + L"\\sound-settings.ini").c_str()) == 0 ||
@@ -1593,7 +1713,7 @@ void ExportBackup() {
             UpdateMessage(L"지금 사용 중인 기록 파일 대신 다른 폴더나 파일 이름을 선택해 주세요.", kTitle, MB_OK | MB_ICONINFORMATION); return;
         }
         const std::wstring temporary = std::wstring(file) + L".tmp";
-        if (WriteBytes(temporary, cat::Serialize(g.pet)) && MoveFileExW(temporary.c_str(), file, MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) Balloon(L"기록을 보관했어요", L"PC를 바꿀 때 이 파일을 기록 폴더의 pet.ini로 옮기면 같은 생일부터 이어 키울 수 있어요.");
+        if (WriteBytes(temporary, cat::Serialize(g.pet)) && MoveFileExW(temporary.c_str(), file, MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) Balloon(L"기록을 보관했어요", L"이 파일은 생일·성장 기록이에요. 친밀도·의상·소리까지 옮기려면 기록 폴더 전체를 함께 보관해 주세요.");
         else UpdateMessage(L"선택한 위치에 백업하지 못했어요. 다른 폴더를 선택해 주세요.", kTitle, MB_OK | MB_ICONERROR);
     }
 }
@@ -1754,6 +1874,7 @@ void DecideMotion() {
     SYSTEMTIME local{}; GetLocalTime(&local);
     POINT cursor{}; const bool nearby = CursorNear(&cursor);
     const auto age = cat::Age(g.pet.bornUtc, UtcNow());
+    SyncExperience();
     const auto plan = g.brain->Next({ticks, age.years, g.pet.hunger, g.pet.affection,
                                     static_cast<int>(local.wHour), nearby, g.pet.roamingPaused});
     Motion selected = Motion::Idle;
@@ -1801,6 +1922,92 @@ void DecideMotion() {
         if (Random(0, 1) < .55) PlayCatSound(cat::audio::Cue::Gesture, true);
     }
 }
+bool ContinueMemorySequence() {
+    if (!g.memorySequenceCount) return false;
+    const Motion next = g.memorySequence[0];
+    auto remainder = g.memorySequence;
+    const auto count = g.memorySequenceCount - 1;
+    for (unsigned i = 0; i < count; ++i) remainder[i] = remainder[i + 1];
+    const ULONGLONG duration = next == Motion::Sleep ? 60000 : next == Motion::Loaf ? 12000 :
+        next == Motion::Knead ? 5200 : next == Motion::BellyRoll ? cat::animation::kBellyRollDurationMs : 5000;
+    SetMotion(next, duration);
+    g.memorySequence = remainder; g.memorySequenceCount = count;
+    return true;
+}
+void MaybeMemoryRoutine(ULONGLONG ticks) {
+    if (!g.memory.enabled() || ticks < g.nextMemoryRoutineAttempt) return;
+    const auto now = UtcNow();
+    cat::routine::Context context;
+    context.nowUtc = now;
+    SYSTEMTIME local{}; GetLocalTime(&local);
+    context.localDay = cat::DaysFromCivil(local.wYear, local.wMonth, local.wDay);
+    context.localHour = local.wHour;
+    context.roamingPaused = g.pet.roamingPaused;
+    context.busy = !g.initialized || g.hidden || g.menuOpen || g.dragging || g.closing || updates.applying ||
+        g.perch.transitioning || g.approachingToy || g.approachingUser || g.memorySequenceCount ||
+        g.pendingCare >= 0 || ticks < g.bubbleUntil || g.prank.Active() || !g.physics.CurrentPose().grounded ||
+        (g.motion != Motion::Idle && g.motion != Motion::Watch && g.motion != Motion::Walk);
+    if (context.busy) return;
+    auto nutrition = g.nutrition;
+    cat::nutrition::Advance(nutrition, now);
+    context.canRequestFood = ticks >= g.foodRequestAfter && cat::routine::CanRequestFood(g.nutrition, now);
+    context.hunger = nutrition.fullness;
+    context.canRequestTreat = ticks >= g.foodRequestAfter && cat::routine::CanRequestTreat(g.nutrition, now);
+    POINT cursor{};
+    const bool nearby = CursorNear(&cursor);
+    const auto [low, high] = MovementBoundsLogical();
+    const double cursorX = (cursor.x - g.work.left) / g.dpiScale;
+    const auto target = cat::memory::ApproachTarget((g.centerX - g.work.left) / g.dpiScale, cursorX, low, high);
+    context.cursorReachable = nearby && target.has_value();
+    const auto decision = cat::routine::Peek(g.memory.state, context, Random(0, 1));
+    using Decision = cat::routine::Decision;
+    if (decision == Decision::None) return;
+    // Persist the accepted schedule before showing it: restart cannot replay a
+    // rare event. Failure leaves both the opportunity and UI state unchanged.
+    const auto prior = g.memory.state;
+    if (!cat::routine::Commit(g.memory.state, context, decision)) return;
+    if (!SaveMemory()) { g.memory.state = prior; g.nextMemoryRoutineAttempt = ticks + 30000; return; }
+    if (decision == Decision::LunchRequest || decision == Decision::TreatRequest) {
+        if (!cat::routine::AcceptRequest(g.nutrition, decision, now)) return;
+        if (decision == Decision::LunchRequest) {
+            Speak(L"점심시간이네…\n나도 밥 먹을래", 4200);
+        } else {
+            Speak(L"그때 그 츄르…\n조금만 줄래?", 4200);
+        }
+        SavePet(false);
+        return;
+    }
+    if (g.brain) g.brain->Interrupt(ticks);
+    switch (decision) {
+    case Decision::MorningStretch: SetMotion(Motion::Stretch, 3200); break;
+    case Decision::DawnZoomies:
+        g.speed = 120 * g.dpiScale * std::max(.45, 1.0 - std::max(0, cat::Age(g.pet.bornUtc, now).years - 6) * .065);
+        g.direction = Random(0, 1) < .5 ? -1 : 1;
+        SetMotion(Motion::Zoomies, 3200);
+        break;
+    case Decision::Approach:
+        SetMotion(Motion::Walk, 30000);
+        g.userTargetX = *target; g.approachingUser = true;
+        break;
+    case Decision::RareKnead:
+        SetMotion(Motion::Knead, 5200);
+        g.memorySequence[0] = Motion::Loaf; g.memorySequenceCount = 1;
+        Speak(L"네 옆이 편해졌어 ♡", 3200);
+        break;
+    case Decision::RareGreeting:
+        SetMotion(Motion::TailRaise, cat::animation::kTailRaiseDurationMs);
+        g.memorySequence[0] = Motion::BellyRoll; g.memorySequence[1] = Motion::Watch; g.memorySequenceCount = 2;
+        Speak(L"오래 함께한 너니까 ♡", 3200);
+        break;
+    case Decision::RareBond:
+        SetMotion(Motion::Stretch, 3200);
+        g.memorySequence = {Motion::Knead, Motion::Loaf, Motion::Sleep}; g.memorySequenceCount = 3;
+        Speak(L"앞으로도 쭉…\n네 옆에 있을게", 4200);
+        break;
+    default: break;
+    }
+}
+
 void Tick() {
     g.audio.Poll();
     PollUpdates();
@@ -1840,8 +2047,8 @@ void Tick() {
         }
         MaybeVisitWindow(ticks);
         if (g.perch.transitioning) { UpdatePerchTransition(ticks); Render(); return; }
-        if (!g.approachingToy && ticks >= g.nextDecision && g.physics.CurrentPose().grounded) {
-            if (!MaybePlayWithToy(ticks)) DecideMotion();
+        if (!g.approachingToy && !g.approachingUser && ticks >= g.nextDecision && g.physics.CurrentPose().grounded) {
+            if (!ContinueMemorySequence() && !MaybePlayWithToy(ticks)) DecideMotion();
         }
         const auto actionElapsed = ticks >= g.motionStart ? ticks - g.motionStart : 0;
         const auto body = cat::nutrition::VisualModifiers(g.nutrition);
@@ -1849,6 +2056,20 @@ void Tick() {
         const bool pounceLanded = g.motion == Motion::Pounce && g.jumpLaunched && g.physics.CurrentPose().grounded;
         double targetSpeed = cat::animation::Travels(g.motion) && !g.pet.roamingPaused && !pounceLanded ?
             g.direction * g.speed / g.dpiScale * body.speed * cat::animation::TravelFactor(g.motion, actionElapsed) : 0;
+        if (g.approachingUser) {
+            POINT cursor{};
+            const auto [low, high] = MovementBoundsLogical();
+            g.userTargetX = std::clamp(g.userTargetX, low, high);
+            const double distance = g.userTargetX - (g.centerX - g.work.left) / g.dpiScale;
+            const bool gone = !CursorNear(&cursor) || std::abs((cursor.x - g.work.left) / g.dpiScale - g.userTargetX) > 150;
+            if (g.pet.roamingPaused || gone || ticks >= g.nextDecision ||
+                (std::abs(distance) <= 2 && std::abs(g.physics.CurrentPose().velocityX) <= 3)) {
+                SetMotion(Motion::Watch, 5000); targetSpeed = 0;
+            } else {
+                targetSpeed = cat::toy::ApproachVelocity(distance, 18 * body.speed);
+                if (targetSpeed != 0) g.direction = targetSpeed < 0 ? -1 : 1;
+            }
+        }
         if (g.approachingToy) {
             const auto [low, high] = MovementBoundsLogical();
             const double target = cat::toy::ApproachTarget(g.toy, g.toyX / g.dpiScale,
@@ -1943,7 +2164,7 @@ void Tick() {
             if (actionElapsed >= 1000 && g.bubbleUntil < g.motionStart) Speak(L"…나 아니야", 1300);
         }
         // Brief, occasional curiosity. The cursor is only observed, never moved or captured.
-        if ((g.motion == Motion::Idle || g.motion == Motion::Walk) && ticks >= g.nextCuriosity && !g.pet.roamingPaused && !g.approachingToy) {
+        if ((g.motion == Motion::Idle || g.motion == Motion::Walk) && ticks >= g.nextCuriosity && !g.pet.roamingPaused && !g.approachingToy && !g.approachingUser && !g.memorySequenceCount) {
             POINT cursor{};
             if (CursorNear(&cursor)) {
                 g.nextCuriosity = ticks + static_cast<ULONGLONG>(Random(45000, 100000));
@@ -1955,6 +2176,7 @@ void Tick() {
         }
         if (g.pendingCare >= 0 && physical.grounded) Care(g.pendingCare != 0);
         MaybeAnnounceUpdate(ticks);
+        MaybeMemoryRoutine(ticks);
         MaybeAskForFood(ticks);
         Render();
     }
@@ -1982,7 +2204,7 @@ LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
         g.audio.Stop();
         GetCursorPos(&g.dragStart); g.dragOffset = g.centerX - g.dragStart.x;
         if (g.brain) g.brain->Interrupt(GetTickCount64());
-        g.approachingToy = false;
+        g.approachingToy = g.approachingUser = false; g.memorySequenceCount = 0;
         g.dragging = true; g.moved = false; SetCapture(window); return 0;
     }
     case WM_MOUSEMOVE: if (g.dragging) {
@@ -2067,11 +2289,13 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
     const HRESULT com = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
     if (!LoadPet()) { ReleaseMutex(g.instanceMutex); CloseHandle(g.instanceMutex); if (SUCCEEDED(com)) CoUninitialize(); return 1; }
     LoadNutrition();
+    LoadMemory();
     LoadPreferences();
     LoadSoundSettings();
     InitializeUpdates();
     g.brain = std::make_unique<cat::behavior::Brain>(g.pet.bornUtc,
         static_cast<std::uint64_t>(g.random()) << 32 | g.random());
+    SyncExperience();
     GdiplusStartupInput startup;
     if (GdiplusStartup(&g.gdiplusToken, &startup, nullptr) != Ok || !LoadAtlas()) {
         MessageBoxW(nullptr, L"고양이 그림을 불러오지 못했어요. 실행 파일을 다시 받아 주세요. 성장 기록은 그대로 남아 있어요.", kTitle, MB_ICONERROR);
@@ -2117,6 +2341,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
     } else if (g.restoredBackup) Balloon(L"이전 기록에서 안전하게 돌아왔어요", L"기본 기록을 읽지 못해 백업으로 복구했어요. 생일은 바꾸지 않았어요. 손상된 파일도 기록 폴더에 보관했어요.");
     else if (g.preferencesRecovered) Balloon(L"캐릭터 선택을 복구했어요", L"이전 선택에서 고양이를 불러왔어요. 생일과 성장 기록은 그대로예요.");
     else if (g.preferencesInvalid) Balloon(L"캐릭터를 다시 골라 주세요", L"캐릭터 선택 파일을 읽지 못해 기본 고양이로 표시했어요. 성장 기록은 그대로예요. 우클릭 메뉴에서 다시 선택할 수 있어요.", true);
+    if (!g.memoryNotice.empty()) Balloon(L"친밀도 기록 안내", g.memoryNotice, !g.memory.enabled());
     MSG message{};
     while (GetMessageW(&message, nullptr, 0, 0) > 0) { TranslateMessage(&message); DispatchMessageW(&message); }
     updates.Stop();
