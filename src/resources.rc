@@ -7,6 +7,7 @@
 104 RCDATA "../assets/cat-silver-actions.png"
 105 RCDATA "../assets/cat-jump-churu.png"
 106 RCDATA "../assets/cat-gestures.png"
+107 RCDATA "../assets/cat-recline.png"
 301 RCDATA "../assets/audio/hungry.wav"
 302 RCDATA "../assets/audio/meal.wav"
 303 RCDATA "../assets/audio/treat.wav"

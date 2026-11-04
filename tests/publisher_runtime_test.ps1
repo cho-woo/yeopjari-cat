@@ -10,6 +10,8 @@ $temporary = Join-Path ([IO.Path]::GetTempPath()) ('Yeopjari-publisher-test-' + 
 $global:PublisherRuntimePackage = if ($PackagePath) { (Resolve-Path -LiteralPath $PackagePath).Path } else { Join-Path $temporary 'package' }
 $global:PublisherRuntimeMock = $null
 $global:PublisherRuntimeChecks = 0
+$global:PublisherRuntimeTag = ''
+$global:PublisherRuntimePreviousTag = ''
 
 function Assert-Test([bool]$Condition, [string]$Message) {
     $global:PublisherRuntimeChecks++
@@ -29,16 +31,25 @@ function gh {
         return '{"private":false,"archived":false,"permissions":{"push":false}}'
     }
     if ($arguments[0] -ne 'release') { throw 'Unexpected mocked GitHub command.' }
+    if ($arguments[1] -ne 'list' -and $arguments[2] -ne $global:PublisherRuntimeTag) {
+        throw 'Publisher used a release tag different from the supplied package.'
+    }
     switch ($arguments[1]) {
         'list' {
+            $current = @{ tagName = $global:PublisherRuntimeTag; isDraft = $true; isPrerelease = $false }
             if ($global:PublisherRuntimeMock.scenario -eq 'published') {
-                return '[{"tagName":"v1.10.0","isDraft":false,"isPrerelease":false}]'
+                $current.isDraft = $false
+                return ConvertTo-Json -InputObject @($current) -Compress
             }
-            return '[{"tagName":"v1.10.0","isDraft":true,"isPrerelease":false},{"tagName":"v1.9.0","isDraft":false,"isPrerelease":false}]'
+            $history = @($current)
+            if ($global:PublisherRuntimePreviousTag) {
+                $history += @{ tagName = $global:PublisherRuntimePreviousTag; isDraft = $false; isPrerelease = $false }
+            }
+            return ConvertTo-Json -InputObject $history -Compress
         }
         'view' {
             if ($arguments -contains 'url') {
-                return 'https://github.com/cho-woo/yeopjari-cat/releases/tag/v1.10.0'
+                return 'https://github.com/cho-woo/yeopjari-cat/releases/tag/' + $global:PublisherRuntimeTag
             }
             return '{"isDraft":true,"isPrerelease":false,"assets":[]}'
         }
@@ -108,6 +119,22 @@ for name in names:
         if ($LASTEXITCODE -ne 0) { throw 'Could not generate publisher fixtures.' }
     }
 
+    # Keep the same refusal checks when testing a future package: the mocked
+    # existing draft/public release must be the version the publisher targets.
+    $version = if ($PackagePath) {
+        (Get-Content -LiteralPath (Join-Path $global:PublisherRuntimePackage 'release-info.json') -Raw | ConvertFrom-Json).version
+    } else { '1.10.0' }
+    if ($version -notmatch '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$') {
+        throw 'Runtime test requires a canonical three-part package version.'
+    }
+    $global:PublisherRuntimeTag = 'v' + $version
+    $parts = @($version.Split('.') | ForEach-Object { [int]$_ })
+    if ($parts[2] -gt 0) { $parts[2]-- }
+    elseif ($parts[1] -gt 0) { $parts[1]-- }
+    elseif ($parts[0] -gt 0) { $parts[0]-- }
+    else { $parts = @() }
+    if ($parts.Count) { $global:PublisherRuntimePreviousTag = 'v' + ($parts -join '.') }
+
     foreach ($scenario in @('push-false', 'missing-role', 'denied', 'published', 'hash-mismatch')) {
         $global:PublisherRuntimeMock = @{
             scenario = $scenario
@@ -151,5 +178,5 @@ for name in names:
     Write-Host "Publisher runtime tests passed: $global:PublisherRuntimeChecks checks; no network calls."
 } finally {
     Remove-Item -LiteralPath $temporary -Recurse -Force -ErrorAction SilentlyContinue
-    Remove-Variable -Scope Global -Name PublisherRuntimePackage, PublisherRuntimeMock, PublisherRuntimeChecks -ErrorAction SilentlyContinue
+    Remove-Variable -Scope Global -Name PublisherRuntimePackage, PublisherRuntimeMock, PublisherRuntimeChecks, PublisherRuntimeTag, PublisherRuntimePreviousTag -ErrorAction SilentlyContinue
 }

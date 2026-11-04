@@ -1,0 +1,63 @@
+{
+  "baseline_public_release": "v1.10.0",
+  "baseline_source": "7d76c7f3ef48d80b8a597705497d96c76094cc7d",
+  "all_files_identical_to_public_baseline": true,
+  "files": [
+    {
+      "path": "assets/audio/food-request.wav",
+      "sha256": "5464745f108680d3392f4dec971dc8fb2cb4b9f43294547500c414f540ad2ef9"
+    },
+    {
+      "path": "assets/audio/gesture.wav",
+      "sha256": "600867a49ac2b3071f3ea75037c4f42986da9c2e0042fef56d0dc73b48f45910"
+    },
+    {
+      "path": "assets/audio/greeting.wav",
+      "sha256": "d026350d74d4f2bea477ae501343bd189f9344111d7257308ca291d5cf4793df"
+    },
+    {
+      "path": "assets/audio/hungry.wav",
+      "sha256": "eff37be4b8bdc01fc6d0649fb0e8101fc0f961b2b0d6b9ca46cf481995afa412"
+    },
+    {
+      "path": "assets/audio/jump.wav",
+      "sha256": "3fdf44c29b9f5a8d5d4497d6c70fd93a1c8e8a93fa6d55b06928197c73f3278f"
+    },
+    {
+      "path": "assets/audio/meal-fish.wav",
+      "sha256": "18e283b388dc09a118e1bfbef2b101eb2f898fe446542d5de690f0c911b4c743"
+    },
+    {
+      "path": "assets/audio/meal-nogari.wav",
+      "sha256": "924d10920412f7c0363ef74ef615bcd382ab4f45149448a5c9f085f244c205b0"
+    },
+    {
+      "path": "assets/audio/meal.wav",
+      "sha256": "64388dcda583a41cf3753c6bcccd95fbfa47beaaa96888007682fa51e7fd0d69"
+    },
+    {
+      "path": "assets/audio/pet.wav",
+      "sha256": "ab5c77ee70df1a6fea9700a7b3d6a9dbe002ac6aec24c745a1a550a1a1657160"
+    },
+    {
+      "path": "assets/audio/punch-second.wav",
+      "sha256": "01e5ae1abec657cb8886d68305043dcb269bc79d75083fd833bb748433978526"
+    },
+    {
+      "path": "assets/audio/punch.wav",
+      "sha256": "86f8665d1f6a86487a0b28a5f3dd0b1b18e9f3de0138d3c35b84fe7293cbfe43"
+    },
+    {
+      "path": "assets/audio/refuse.wav",
+      "sha256": "75b8fbf72189698f6f48f70ea6317e47a10eb92e1540edbb5acb65184d2069e3"
+    },
+    {
+      "path": "assets/audio/treat.wav",
+      "sha256": "2dc3a17c4b25a45a054525c9dab32d5be4ec473078cad2c3dd3290c38513c259"
+    },
+    {
+      "path": "assets/audio/wake.wav",
+      "sha256": "c9d65898143b3bad0088d338523df7d2f18360729ff332b5109eeea34e64c745"
+    }
+  ]
+}

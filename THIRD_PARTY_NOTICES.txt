@@ -25,6 +25,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 
+v1.10.1 asset continuity
+
+The fourteen action-sound WAV files are unchanged from the publicly released
+v1.10.0 set. Their existing recording attribution and license notices below
+continue to apply.
+
+The added reclining-pose atlas, assets/cat-recline.png, was generated using
+the existing public repository artwork assets/cat.png and assets/cat-silver.png
+as its image inputs. The six existing character atlases remain unchanged.
+
 User-supplied cat effect recordings (v1.7.0)
 
 Eleven recordings were supplied for this application update. Selected excerpts

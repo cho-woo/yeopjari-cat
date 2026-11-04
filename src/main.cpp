@@ -36,9 +36,12 @@
 #include "cat_memory_storage.hpp"
 #include "cat_routine.hpp"
 #include "cat_animation.hpp"
+#include "cat_motion_gate.hpp"
 #include "cat_physics.hpp"
 #include "cat_toy.hpp"
 #include "cat_render_geometry.hpp"
+#include "cat_render_placement.hpp"
+#include "cat_belly_rig.hpp"
 #include "cat_preferences.hpp"
 #include "cat_audio.hpp"
 #include "screen_prank.hpp"
@@ -122,7 +125,19 @@ struct SpriteAtlas {
     std::unique_ptr<Bitmap> image;
     std::array<Rect, 8> frames{};
     int standingHeight = 1;
+    struct Skin {
+        int width = 0, height = 0;
+        std::vector<std::uint32_t> source, deformed, body, head;
+        std::unique_ptr<Bitmap> image, bodyImage, headImage;
+        std::array<int, 8> controls{};
+        bool valid = false, partsValid = false;
+    };
+    std::array<Skin, 8> skins;
     void Reset() {
+        for (auto& skin : skins) {
+            skin.image.reset(); skin.bodyImage.reset(); skin.headImage.reset();
+            skin.source.clear(); skin.deformed.clear(); skin.body.clear(); skin.head.clear(); skin.valid = skin.partsValid = false;
+        }
         image.reset();
         if (stream) { stream->Release(); stream = nullptr; }
         standingHeight = 1;
@@ -136,9 +151,9 @@ struct WindowPerch {
     bool active = false;
     bool transitioning = false;
     bool landingOnWindow = false;
-    ULONGLONG started = 0, duration = 0, nextTry = 0, leaveAfter = 0;
-    double fromX = 0.0, toX = 0.0;
-    LONG fromGround = 0, toGround = 0;
+    bool preparing = false;
+    ULONGLONG nextTry = 0, leaveAfter = 0;
+    double targetX = 0.0;
 };
 
 using ToyKind = cat::toy::Kind;
@@ -151,6 +166,7 @@ struct App {
     std::array<CharacterArt, 2> characters;
     SpriteAtlas jumpTreat;
     SpriteAtlas gestures;
+    SpriteAtlas recline;
     std::array<int, 2> extraStandingHeight{1, 1};
     std::array<int, 2> gestureStandingHeight{1, 1};
     cat::Preferences preferences;
@@ -191,6 +207,8 @@ struct App {
     cat::physics::Controller physics;
     cat::animation::Locomotion gait;
     bool physicsReady = false, jumpPending = false, jumpLaunched = false;
+    bool waitingForStop = false, stopSoundPending = false, stopSoundAutomatic = false;
+    cat::audio::Cue stopSoundCue = cat::audio::Cue::Pet;
     bool preciseTimer = false;
     UINT timerInterval = 0;
     double lastPhysicsTime = 0, landingStrength = 0;
@@ -816,6 +834,10 @@ bool SaveSoundSettings(const cat::audio::Settings& settings, bool reportError = 
 }
 void PlayCatSound(cat::audio::Cue cue, bool automatic = false) {
     if (!g.initialized || g.hidden || g.menuOpen || g.dragging || g.closing || updates.applying) return;
+    if (g.waitingForStop) {
+        g.stopSoundPending = true; g.stopSoundCue = cue; g.stopSoundAutomatic = automatic;
+        return;
+    }
     const auto ticks = GetTickCount64();
     if (automatic && ticks < g.ambientSoundAfter) return;
     if (g.audio.Play(cue, ticks, automatic)) {
@@ -834,7 +856,7 @@ void ChangeSoundSettings(bool toggle, unsigned volume = 25) {
     g.audio.SetSettings(settings);
 }
 
-bool LoadAtlasResource(int resourceId, SpriteAtlas& sheet, int columns = 4) {
+bool LoadAtlasResource(int resourceId, SpriteAtlas& sheet, int columns = 4, int frameCount = 8) {
     auto& stream = sheet.stream; auto& atlas = sheet.image;
     auto& frames = sheet.frames; auto& standingHeight = sheet.standingHeight;
     HRSRC resource = FindResourceW(g.instance, MAKEINTRESOURCEW(resourceId), RT_RCDATA);
@@ -857,7 +879,7 @@ bool LoadAtlasResource(int resourceId, SpriteAtlas& sheet, int columns = 4) {
         BYTE* row = static_cast<BYTE*>(data.Scan0) + static_cast<ptrdiff_t>(y) * data.Stride;
         for (int x = 0; x < width; ++x) if (row[x * 4 + 3] <= 16) std::memset(row + x * 4, 0, 4);
     }
-    const int rows = 8 / columns;
+    const int rows = frameCount / columns;
     std::vector<int> rowCuts(rows + 1);
     for (int row = 0; row <= rows; ++row) rowCuts[row] = row * height / rows;
     // Portrait sheets have deliberately generous, sometimes uneven gutters.
@@ -877,7 +899,7 @@ bool LoadAtlasResource(int resourceId, SpriteAtlas& sheet, int columns = 4) {
         }
         rowCuts[split] = best;
     }
-    for (int index = 0; index < 8; ++index) {
+    for (int index = 0; index < frameCount; ++index) {
         const int col = index % columns, rowIndex = index / columns;
         const int x0 = col * width / columns, x1 = (col + 1) * width / columns;
         const int y0 = rowCuts[rowIndex], y1 = rowCuts[rowIndex + 1];
@@ -893,6 +915,38 @@ bool LoadAtlasResource(int resourceId, SpriteAtlas& sheet, int columns = 4) {
         frames[index] = Rect(left, top, right - left + 1, bottom - top + 1);
         if (index < 6) standingHeight = std::max(standingHeight, bottom - top + 1);
     }
+    // Prepare reusable premultiplied crops once. Joint animation deforms a
+    // cropped texture, never allocates a full atlas on every animation frame.
+    for (int index = 0; index < frameCount; ++index) {
+        const bool needsSkin = resourceId == 107 ||
+            (resourceId == 105 && (index == 0 || index == 4)) ||
+            ((resourceId == 101 || resourceId == 103) && index == 4) ||
+            ((resourceId == 102 || resourceId == 104) && (index == 1 || index == 2));
+        if (!needsSkin) continue;
+        const auto& source = frames[index];
+        auto& skin = sheet.skins[index];
+        skin.width = source.Width; skin.height = source.Height;
+        skin.source.resize(static_cast<std::size_t>(skin.width) * skin.height);
+        skin.deformed.resize(skin.source.size());
+        skin.body.resize(skin.source.size()); skin.head.resize(skin.source.size());
+        for (int y = 0; y < skin.height; ++y) {
+            const auto* row = static_cast<const BYTE*>(data.Scan0) +
+                static_cast<ptrdiff_t>(y + source.Y) * data.Stride + source.X * 4;
+            for (int x = 0; x < skin.width; ++x) {
+                const auto* pixel = row + x * 4;
+                const unsigned a = pixel[3];
+                skin.source[static_cast<std::size_t>(y) * skin.width + x] =
+                    (a << 24) | ((pixel[2] * a + 127) / 255 << 16) |
+                    ((pixel[1] * a + 127) / 255 << 8) | ((pixel[0] * a + 127) / 255);
+            }
+        }
+        skin.image = std::make_unique<Bitmap>(skin.width, skin.height, skin.width * 4,
+            PixelFormat32bppPARGB, reinterpret_cast<BYTE*>(skin.deformed.data()));
+        skin.bodyImage = std::make_unique<Bitmap>(skin.width, skin.height, skin.width * 4,
+            PixelFormat32bppPARGB, reinterpret_cast<BYTE*>(skin.body.data()));
+        skin.headImage = std::make_unique<Bitmap>(skin.width, skin.height, skin.width * 4,
+            PixelFormat32bppPARGB, reinterpret_cast<BYTE*>(skin.head.data()));
+    }
     atlas->UnlockBits(&data); return true;
 }
 bool LoadAtlas() {
@@ -902,7 +956,8 @@ bool LoadAtlas() {
         // The relaxed sitting pose is the size reference across a character's sheets.
         art.actions.standingHeight = std::max(1, art.actions.frames[6].Height);
     }
-    if (!LoadAtlasResource(105, g.jumpTreat, 2) || !LoadAtlasResource(106, g.gestures, 2)) return false;
+    if (!LoadAtlasResource(105, g.jumpTreat, 2) || !LoadAtlasResource(106, g.gestures, 2) ||
+        !LoadAtlasResource(107, g.recline, 2, 4)) return false;
     for (int i = 0; i < 2; ++i) {
         g.extraStandingHeight[i] = std::max(g.jumpTreat.frames[i * 4 + 2].Height, g.jumpTreat.frames[i * 4 + 3].Height);
         g.gestureStandingHeight[i] = std::max(g.gestures.frames[i * 4].Height, g.gestures.frames[i * 4 + 1].Height);
@@ -911,7 +966,7 @@ bool LoadAtlas() {
 }
 void ReleaseAtlases() {
     for (auto& art : g.characters) { art.base.Reset(); art.actions.Reset(); }
-    g.jumpTreat.Reset(); g.gestures.Reset();
+    g.jumpTreat.Reset(); g.gestures.Reset(); g.recline.Reset();
 }
 
 UINT MonitorDpi(HMONITOR monitor) {
@@ -936,21 +991,37 @@ std::pair<double, double> MovementBoundsLogical() {
 }
 void ResetMovement() {
     if (g.work.right <= g.work.left || g.dpiScale <= 0) return;
-    auto [low, high] = MovementBoundsLogical();
+    const double width = (g.work.right - g.work.left) / g.dpiScale;
+    const double margin = std::min(96.0, width / 2.0);
+    const double low = margin, high = width - margin;
     const double current = std::clamp((g.centerX - g.work.left) / g.dpiScale, low, high);
     g.centerX = g.work.left + current * g.dpiScale;
     g.physics.Reset(current, low, high);
+    // Reserve space for the tallest pose/head. A rapidly raised window can
+    // impart a real upward velocity; the work-area roof keeps it visible.
+    g.physics.SetCeiling(std::max(1.0, (g.work.bottom - g.work.top) / g.dpiScale - 160.0));
+    // Only an explicit drag/monitor reset rebuilds the world. Transfers and
+    // moving windows retain the same dynamic body and its momentum.
+    g.perch.hwnd = nullptr;
+    g.perch.active = g.perch.transitioning = g.perch.preparing = false;
+    g.perch.landingOnWindow = false;
+    g.perch.rect = {};
     g.physicsReady = true;
     g.gait.Reset();
     g.jumpPending = g.jumpLaunched = false;
+    g.waitingForStop = false; g.stopSoundPending = false;
     g.landedAt = 0;
     g.facing = g.direction;
     g.lastPhysicsTime = MotionClock();
 }
+double WalkingVelocity(const cat::physics::Pose& pose) {
+    return pose.velocityX - pose.supportVelocityX;
+}
+
 void RefreshAnimationTimer() {
     if (!g.window) return;
     const bool resting = (g.motion == Motion::Sleep || g.motion == Motion::Loaf || g.motion == Motion::BoxSit) &&
-        (!g.physicsReady || (g.physics.CurrentPose().grounded && std::abs(g.physics.CurrentPose().velocityX) < .5));
+        (!g.physicsReady || (g.physics.CurrentPose().grounded && std::abs(WalkingVelocity(g.physics.CurrentPose())) < .5));
     const UINT interval = g.hidden ? 250 : (g.menuOpen || g.dragging || resting ? 40 : 16);
     const bool precise = interval == 16;
     if (precise && !g.preciseTimer) g.preciseTimer = timeBeginPeriod(1) == TIMERR_NOERROR;
@@ -992,6 +1063,11 @@ double Random(double low, double high) { return std::uniform_real_distribution<d
 void SetMotion(Motion motion, ULONGLONG duration) {
     if (motion == Motion::Peek) duration = cat::animation::kPeekDurationMs;
     if (motion == Motion::BellyRoll) duration = cat::animation::kBellyRollDurationMs;
+    if (g.motion == Motion::Walk || g.motion == Motion::Stalk || g.motion == Motion::Zoomies)
+        g.walkingMotion = g.motion;
+    g.waitingForStop = g.physicsReady && cat::motion::NeedsStop(motion,
+        g.physics.CurrentPose().grounded, WalkingVelocity(g.physics.CurrentPose()), g.perch.transitioning);
+    g.stopSoundPending = false;
     const auto ticks = GetTickCount64(); g.motion = motion; g.motionStart = ticks; g.nextDecision = ticks + duration;
     g.punchHits = 0;
     g.motionSoundPending = false;
@@ -1000,7 +1076,7 @@ void SetMotion(Motion motion, ULONGLONG duration) {
     g.jumpLaunched = false;
     g.approachingToy = false; g.toyContact = false;
     g.approachingUser = false; g.memorySequenceCount = 0;
-    if (motion == Motion::Sleep) g.audio.Stop();
+    if (motion == Motion::Sleep || g.waitingForStop) g.audio.Stop();
     RefreshAnimationTimer();
 }
 struct PerchCandidate { HWND hwnd = nullptr; RECT rect{}; double score = 0.0; };
@@ -1042,6 +1118,8 @@ BOOL CALLBACK CollectPerchWindows(HWND hwnd, LPARAM parameter) {
     const double right = std::min(rect.right, g.work.right) - 72 * g.dpiScale;
     if (right <= left) return TRUE;
     const double targetX = std::clamp(g.centerX, left, right);
+    if (!g.physics.CanLaunchTo((targetX - g.work.left) / g.dpiScale,
+            (g.work.bottom - rect.top) / g.dpiScale)) return TRUE;
     const double horizontal = std::abs(targetX - g.centerX);
     const double vertical = std::max(0L, g.work.bottom - rect.top);
     // Prefer a nearby window, with a small bias toward lower/easier ledges.
@@ -1059,95 +1137,138 @@ bool FindPerch(PerchCandidate& choice) {
     return true;
 }
 
-LONG CurrentGroundY(ULONGLONG ticks) {
-    if (g.perch.transitioning && g.perch.duration) {
-        const double raw = std::clamp(static_cast<double>(ticks - g.perch.started) / g.perch.duration, 0.0, 1.0);
-        const double t = cat::animation::SmoothStep(raw);
-        const double base = g.perch.fromGround + (g.perch.toGround - g.perch.fromGround) * t;
-        const double arc = std::sin(raw * cat::animation::kPi) * 34.0 * g.dpiScale;
-        return static_cast<LONG>(std::lround(base - arc));
-    }
-    return g.perch.active ? g.perch.rect.top : g.work.bottom;
+LONG CurrentGroundY(ULONGLONG) {
+    // One coordinate system for the taskbar, ledges and airborne motion.
+    // Move the layered window with the body so high jumps cannot clip the art
+    // against the small offscreen drawing surface.
+    return cat::render::BuildPlacement(g.work.bottom, g.surface.height, g.dpiScale,
+        g.physics.RenderPose().lift, 0, g.dpiScale).screenFeetY;
 }
 
 void CancelPerch() {
     g.perch.hwnd = nullptr;
-    g.perch.active = g.perch.transitioning = g.perch.landingOnWindow = false;
+    g.perch.active = g.perch.transitioning = g.perch.preparing = false;
+    g.perch.landingOnWindow = false;
     g.perch.rect = {};
-    g.perch.fromGround = g.perch.toGround = g.work.bottom;
-    if (g.physicsReady) ResetMovement();
+    if (g.physicsReady) g.physics.RemovePlatform();
+}
+
+void SetPerchCollider(const RECT& rect) {
+    g.physics.SetPlatform((std::max(rect.left, g.work.left) - g.work.left) / g.dpiScale,
+        (std::min(rect.right, g.work.right) - g.work.left) / g.dpiScale,
+        (g.work.bottom - rect.top) / g.dpiScale);
 }
 
 void BeginPerchTransition(HWND hwnd, const RECT& rect, bool landingOnWindow) {
     const auto ticks = GetTickCount64();
-    const LONG ground = CurrentGroundY(ticks) - static_cast<LONG>(std::lround(g.physics.RenderPose().lift * g.dpiScale));
-    if (g.brain) g.brain->Interrupt(ticks);
-    g.perch.transitioning = true;
-    g.perch.landingOnWindow = landingOnWindow;
-    g.perch.hwnd = landingOnWindow ? hwnd : nullptr;
-    if (landingOnWindow) g.perch.rect = rect;
-    g.perch.started = ticks;
-    g.perch.duration = static_cast<ULONGLONG>(Random(1050, 1450));
-    g.perch.fromGround = ground;
-    g.perch.toGround = landingOnWindow ? rect.top : g.work.bottom;
-    g.perch.fromX = g.centerX;
     if (landingOnWindow) {
         const double margin = 78 * g.dpiScale;
-        const double low = std::max(rect.left, g.work.left) + margin, high = std::min(rect.right, g.work.right) - margin;
+        const double low = std::max(rect.left, g.work.left) + margin;
+        const double high = std::min(rect.right, g.work.right) - margin;
+        if (high < low) return;
         const double desired = std::clamp(g.centerX + Random(-130, 130) * g.dpiScale, low, high);
-        g.perch.toX = desired;
+        const double target = (desired - g.work.left) / g.dpiScale;
+        if (!g.physics.CanLaunchTo(target, (g.work.bottom - rect.top) / g.dpiScale)) {
+            g.perch.nextTry = ticks + 60000;
+            return;
+        }
+        g.perch.targetX = target;
+        g.perch.hwnd = hwnd;
+        g.perch.rect = rect;
+        SetPerchCollider(rect);
+        g.direction = desired < g.centerX ? -1 : 1;
     } else {
-        g.perch.toX = std::clamp(g.centerX, static_cast<double>(g.work.left) + 96 * g.dpiScale,
-                                  static_cast<double>(g.work.right) - 96 * g.dpiScale);
+        // Closing/removing a support never restarts the trajectory or invents
+        // an upward hop. Gravity acts on the current body and velocity.
+        g.physics.RemovePlatform();
+        g.perch.hwnd = nullptr;
+        g.perch.rect = {};
     }
-    g.direction = g.perch.toX < g.centerX ? -1 : 1;
+    if (g.brain) g.brain->Interrupt(ticks);
+    g.perch.active = false;
+    g.perch.transitioning = true;
+    g.perch.landingOnWindow = landingOnWindow;
+    g.perch.preparing = landingOnWindow;
     g.facing = g.direction;
-    g.gait.Reset();
-    ResetMovement();
-    g.centerX = g.perch.fromX;
-    SetMotion(Motion::Jump, g.perch.duration + 450);
+    SetMotion(Motion::Jump, 6000);
+    g.physics.SetTargetVelocity(0);
     g.jumpPending = g.jumpLaunched = false;
-    PlayCatSound(cat::audio::Cue::Jump, true);
+    g.airborneMotion = Motion::Jump;
 }
 
 void FinishPerchTransition(ULONGLONG ticks) {
-    const bool landedOnWindow = g.perch.landingOnWindow;
-    g.centerX = g.perch.toX;
-    g.perch.transitioning = false;
+    const auto physical = g.physics.CurrentPose();
+    const bool landedOnWindow = physical.onPlatform && g.perch.landingOnWindow;
+    g.perch.transitioning = g.perch.preparing = false;
     g.perch.active = landedOnWindow;
     if (landedOnWindow) {
-        RECT current{};
-        if (!QueryPerchRect(g.perch.hwnd, current)) { BeginPerchTransition(nullptr, {}, false); return; }
-        g.perch.rect = current;
         g.perch.leaveAfter = ticks + static_cast<ULONGLONG>(Random(22000, 52000));
         g.perch.nextTry = ticks + static_cast<ULONGLONG>(Random(150000, 300000));
     } else {
+        g.physics.RemovePlatform();
         g.perch.hwnd = nullptr; g.perch.rect = {};
         g.perch.nextTry = ticks + static_cast<ULONGLONG>(Random(150000, 360000));
     }
-    ResetMovement();
-    g.landedAt = ticks; g.landingStrength = .7;
+    if (physical.landed) {
+        g.landedAt = ticks;
+        g.landingStrength = std::clamp(physical.landingSpeed / 230.0, .35, 1.0);
+    }
+    g.physics.SetTargetVelocity(0);
     SetMotion(Motion::Watch, static_cast<ULONGLONG>(Random(1700, 3000)));
     if (landedOnWindow && Random(0, 1) < .38) PlayCatSound(cat::audio::Cue::Greeting, true);
 }
 
-void UpdatePerchTransition(ULONGLONG ticks) {
-    if (!g.perch.transitioning || !g.perch.duration) return;
+void UpdatePerchTransition(ULONGLONG ticks, double elapsed) {
+    if (!g.perch.transitioning) return;
+    if (g.perch.preparing && (g.pet.roamingPaused || g.motion != Motion::Jump)) {
+        // Rest/manual commands can cancel a planned jump before its impulse.
+        // Airborne transfers keep their real trajectory until a contact.
+        g.physics.RemovePlatform();
+        g.perch.landingOnWindow = g.perch.preparing = false;
+        g.perch.hwnd = nullptr; g.perch.rect = {};
+    }
     if (g.perch.landingOnWindow) {
         RECT current{};
         if (!QueryPerchRect(g.perch.hwnd, current)) {
-            BeginPerchTransition(nullptr, {}, false);
-            return;
+            g.physics.RemovePlatform();
+            g.perch.landingOnWindow = g.perch.preparing = false;
+            g.perch.hwnd = nullptr; g.perch.rect = {};
+        } else {
+            // Before takeoff a moved target can change the planned impulse.
+            // Once airborne only the ledge moves; the cat keeps its momentum.
+            if (g.perch.preparing) {
+                g.perch.targetX = std::clamp(g.perch.targetX + (current.left - g.perch.rect.left) / g.dpiScale,
+                    (std::max(current.left, g.work.left) - g.work.left) / g.dpiScale + 78,
+                    (std::min(current.right, g.work.right) - g.work.left) / g.dpiScale - 78);
+            }
+            SetPerchCollider(current);
+            g.perch.rect = current;
         }
-        g.perch.toX = std::clamp(g.perch.toX + current.left - g.perch.rect.left,
-            std::max(current.left, g.work.left) + 78 * g.dpiScale, std::min(current.right, g.work.right) - 78 * g.dpiScale);
-        g.perch.toGround = current.top;
-        g.perch.rect = current;
     }
-    const double raw = std::clamp(static_cast<double>(ticks - g.perch.started) / g.perch.duration, 0.0, 1.0);
-    const double t = cat::animation::SmoothStep(raw);
-    g.centerX = g.perch.fromX + (g.perch.toX - g.perch.fromX) * t;
-    if (raw >= 1.0) FinishPerchTransition(ticks);
+    if (g.perch.preparing) {
+        g.physics.SetTargetVelocity(0);
+        const auto physical = g.physics.CurrentPose();
+        g.waitingForStop = std::abs(WalkingVelocity(physical)) > 2;
+        if (g.waitingForStop) g.motionStart = ticks;
+        else if (ticks >= g.motionStart + 220) {
+            if (g.physics.LaunchTo(g.perch.targetX, (g.work.bottom - g.perch.rect.top) / g.dpiScale)) {
+                g.jumpLaunched = true;
+                PlayCatSound(cat::audio::Cue::Jump, true);
+            } else {
+                g.physics.RemovePlatform();
+                g.perch.landingOnWindow = false;
+            }
+            g.perch.preparing = false;
+        }
+    }
+    const double previousX = g.physics.CurrentPose().x;
+    g.physics.Update(elapsed);
+    const auto physical = g.physics.CurrentPose();
+    g.centerX = g.work.left + g.physics.RenderPose().x * g.dpiScale;
+    if (std::abs(WalkingVelocity(physical)) > 2) g.facing = WalkingVelocity(physical) < 0 ? -1 : 1;
+    if (g.waitingForStop)
+        g.gait.Advance(g.walkingMotion, (physical.x - previousX - physical.supportTravelX) / cat::GrowthScale(g.pet.bornUtc, UtcNow()), elapsed);
+    if (!g.perch.preparing && physical.grounded) FinishPerchTransition(ticks);
 }
 
 void MaintainPerch(ULONGLONG ticks) {
@@ -1157,14 +1278,9 @@ void MaintainPerch(ULONGLONG ticks) {
         BeginPerchTransition(nullptr, {}, false);
         return;
     }
-    if (!EqualRect(&current, &g.perch.rect)) {
-        const double deltaX = (current.left - g.perch.rect.left) / g.dpiScale;
-        g.perch.rect = current;
-        const auto [low, high] = MovementBoundsLogical();
-        g.physics.MovePlatform(low, high, deltaX);
-        g.centerX = g.work.left + g.physics.RenderPose().x * g.dpiScale;
-    }
-    if (!g.pet.roamingPaused && ticks >= g.perch.leaveAfter && g.physics.CurrentPose().grounded &&
+    SetPerchCollider(current);
+    g.perch.rect = current;
+    if (!g.pet.roamingPaused && !g.waitingForStop && ticks >= g.perch.leaveAfter && g.physics.CurrentPose().grounded &&
         (g.motion == Motion::Idle || g.motion == Motion::Walk || g.motion == Motion::Watch || g.motion == Motion::Groom))
         BeginPerchTransition(nullptr, {}, false);
 }
@@ -1191,11 +1307,14 @@ void RoundedRect(GraphicsPath& path, REAL x, REAL y, REAL w, REAL h, REAL radius
     path.AddArc(x, y, d, d, 180, 90); path.AddArc(x + w - d, y, d, d, 270, 90);
     path.AddArc(x + w - d, y + h - d, d, d, 0, 90); path.AddArc(x, y + h - d, d, d, 90, 90); path.CloseFigure();
 }
-void DrawOutfit(Graphics& graphics, int frame, REAL width, REAL height, bool centerPivot) {
+void DrawOutfit(Graphics& graphics, int frame, REAL width, REAL height, bool centerPivot,
+                const cat::deform::Joints& joints = {}, cat::deform::Shape shape = cat::deform::Shape::Sitting) {
     if (g.preferences.outfit == cat::Outfit::None) return;
     const auto anchors = cat::render::AnchorsForFrame(frame);
-    const auto neckPoint = cat::render::LocalPoint(anchors.neck, width, height, centerPivot);
-    const auto crownPoint = cat::render::LocalPoint(anchors.crown, width, height, centerPivot);
+    const auto warpedNeck = cat::deform::DeformPoint({anchors.neck.x, anchors.neck.y}, joints, shape);
+    const auto warpedCrown = cat::deform::DeformPoint({anchors.crown.x, anchors.crown.y}, joints, shape);
+    const auto neckPoint = cat::render::LocalPoint({warpedNeck.x, warpedNeck.y}, width, height, centerPivot);
+    const auto crownPoint = cat::render::LocalPoint({warpedCrown.x, warpedCrown.y}, width, height, centerPivot);
     const REAL x = static_cast<REAL>(neckPoint.x), neck = static_cast<REAL>(neckPoint.y);
     const REAL unit = static_cast<REAL>(anchors.headWidth * width / 80.0);
     if (g.preferences.outfit == cat::Outfit::BowTie) {
@@ -1222,13 +1341,47 @@ void DrawOutfit(Graphics& graphics, int frame, REAL width, REAL height, bool cen
     }
 }
 
+bool PrepareSkin(SpriteAtlas::Skin& skin, int frame, cat::deform::Joints& joints, cat::deform::Shape shape, bool parts = false) {
+    std::array<double*, 8> values{{&joints.leftEar, &joints.rightEar, &joints.headNod,
+        &joints.frontLeft, &joints.frontRight, &joints.tailRaise, &joints.breath, &joints.crouch}};
+    std::array<int, 8> controls{};
+    for (std::size_t i = 0; i < values.size(); ++i) {
+        controls[i] = static_cast<int>(std::lround(*values[i] * 32));
+        *values[i] = controls[i] / 32.0;
+    }
+    if (!skin.valid || skin.controls != controls) {
+        skin.valid = cat::deform::Warp(skin.source.data(), skin.width, skin.height, skin.width * 4,
+            skin.deformed.data(), skin.width * 4, joints, shape);
+        skin.controls = controls;
+        skin.partsValid = false;
+    }
+    if (skin.valid && parts && !skin.partsValid) {
+        for (int y = 0; y < skin.height; ++y) for (int x = 0; x < skin.width; ++x) {
+            const auto i = static_cast<std::size_t>(y) * skin.width + x;
+            const double coverage = cat::belly::HeadCoverage(frame,
+                {(x + .5) / skin.width, (y + .5) / skin.height});
+            skin.body[i] = cat::belly::MaskPixel(skin.deformed[i], coverage, false);
+            skin.head[i] = cat::belly::MaskPixel(skin.deformed[i], coverage, true);
+        }
+        skin.partsValid = true;
+    }
+    return skin.valid;
+}
+
 void DrawPet(Graphics& graphics, int frame, REAL center, REAL bottom, REAL scale, bool flip,
-             REAL scaleX = 1, REAL scaleY = 1, REAL angle = 0, bool centerPivot = false) {
-    if (frame < 0 || frame >= 24) return;
+             REAL scaleX = 1, REAL scaleY = 1, REAL angle = 0, bool centerPivot = false,
+             cat::deform::Joints joints = {}, bool groundContact = true, bool bodyOnly = false) {
+    if (frame < 0 || frame >= cat::animation::kSpriteCount) return;
     auto& art = CurrentArt();
     SpriteAtlas* atlas = &art.base;
     int cell = frame;
-    if (frame >= 20) {
+    if (frame >= 24) {
+        atlas = &g.recline;
+        cell = static_cast<int>(CharacterIndex()) * 2 + frame - 24;
+        // A common head-size reference for all four reclining poses. Scaling
+        // each pose to standing height would make the lying cat much larger.
+        scale *= static_cast<REAL>(art.base.standingHeight) / 440.0f;
+    } else if (frame >= 20) {
         atlas = &g.gestures;
         cell = static_cast<int>(CharacterIndex()) * 4 + frame - 20;
         scale *= static_cast<REAL>(art.base.standingHeight) / g.gestureStandingHeight[CharacterIndex()];
@@ -1243,15 +1396,58 @@ void DrawPet(Graphics& graphics, int frame, REAL center, REAL bottom, REAL scale
     const Rect& source = atlas->frames[cell];
     const REAL width = source.Width * scale * scaleX, height = source.Height * scale * scaleY;
     const GraphicsState saved = graphics.Save();
-    const REAL clearance = static_cast<REAL>(cat::render::GroundClearance(width, height, angle, centerPivot));
+    const REAL clearance = groundContact ? static_cast<REAL>(cat::render::GroundClearance(width, height, angle, centerPivot)) : 0;
     graphics.TranslateTransform(center, bottom - clearance - (centerPivot ? height / 2 : 0));
     graphics.RotateTransform(angle);
     graphics.ScaleTransform(flip ? -1.0f : 1.0f, 1.0f);
     const RectF destination = centerPivot ? RectF(-width / 2, -height / 2, width, height)
                                          : RectF(-width / 2, -height, width, height);
     ImageAttributes attrs; attrs.SetWrapMode(WrapModeTileFlipXY);
-    graphics.DrawImage(atlas->image.get(), destination, static_cast<REAL>(source.X), static_cast<REAL>(source.Y), static_cast<REAL>(source.Width), static_cast<REAL>(source.Height), UnitPixel, &attrs);
-    DrawOutfit(graphics, frame, width, height, centerPivot);
+    const auto shape = frame == 16 ? cat::deform::Shape::Airborne :
+        frame == 25 ? cat::deform::Shape::ReclineBack :
+        frame == 24 ? cat::deform::Shape::ReclineSide : cat::deform::Shape::Sitting;
+    const bool articulated = frame == 4 || frame == 9 || frame == 10 || frame == 16 || frame >= 24;
+    if (articulated) {
+        auto& skin = atlas->skins[cell];
+        if (PrepareSkin(skin, frame, joints, shape, bodyOnly)) graphics.DrawImage(bodyOnly ? skin.bodyImage.get() : skin.image.get(), destination, 0, 0,
+            static_cast<REAL>(skin.width), static_cast<REAL>(skin.height), UnitPixel, &attrs);
+    } else {
+        graphics.DrawImage(atlas->image.get(), destination, static_cast<REAL>(source.X), static_cast<REAL>(source.Y), static_cast<REAL>(source.Width), static_cast<REAL>(source.Height), UnitPixel, &attrs);
+        joints = {};
+    }
+    if (!bodyOnly) DrawOutfit(graphics, frame, width, height, centerPivot, joints, shape);
+    graphics.Restore(saved);
+}
+
+void DrawBellyHead(Graphics& graphics, const cat::animation::Pose& pose, REAL center, REAL bottom, REAL scale) {
+    auto& art = CurrentArt();
+    const auto body = cat::nutrition::VisualModifiers(g.nutrition);
+    auto dimensions = [&](int frame) {
+        const auto& source = frame == 4 ? art.base.frames[4] :
+            g.recline.frames[static_cast<int>(CharacterIndex()) * 2 + frame - 24];
+        const REAL factor = frame == 4 ? scale : scale * art.base.standingHeight / 440.0f;
+        return std::pair<double, double>{source.Width * factor * body.bodyWidth,
+            source.Height * factor * body.bodyHeight};
+    };
+    const int second = pose.blendFrame < 0 ? pose.frame : pose.blendFrame;
+    const auto a = dimensions(pose.frame), b = dimensions(second), headSize = dimensions(4);
+    const auto bone = cat::belly::BlendBone(pose.frame, a.first, a.second,
+        second, b.first, b.second, pose.blendFrame < 0 ? 0 : pose.blend);
+    auto joints = pose.joints;
+    joints.frontLeft = joints.frontRight = joints.tailRaise = joints.breath = joints.crouch = 0;
+    auto& skin = art.base.skins[4];
+    if (!PrepareSkin(skin, 4, joints, cat::deform::Shape::Sitting, true)) return;
+    const auto saved = graphics.Save();
+    graphics.TranslateTransform(center, bottom);
+    graphics.ScaleTransform(pose.flip ? -1.0f : 1.0f, 1.0f);
+    graphics.TranslateTransform(static_cast<REAL>(bone.x), static_cast<REAL>(bone.y));
+    graphics.RotateTransform(static_cast<REAL>(bone.angle));
+    const REAL width = static_cast<REAL>(headSize.first), height = static_cast<REAL>(headSize.second);
+    ImageAttributes attrs; attrs.SetWrapMode(WrapModeTileFlipXY);
+    graphics.DrawImage(skin.headImage.get(), RectF(-.57f * width, -.40f * height, width, height),
+        0, 0, static_cast<REAL>(skin.width), static_cast<REAL>(skin.height), UnitPixel, &attrs);
+    graphics.TranslateTransform(-.07f * width, .60f * height);
+    DrawOutfit(graphics, 4, width, height, false, joints);
     graphics.Restore(saved);
 }
 void DrawAnimatedPet(Graphics& graphics, const cat::animation::Pose& pose,
@@ -1260,12 +1456,19 @@ void DrawAnimatedPet(Graphics& graphics, const cat::animation::Pose& pose,
     auto draw = [&](Graphics& target, int frame) {
         DrawPet(target, frame, center, bottom, scale, pose.flip,
                 static_cast<REAL>(pose.scaleX * body.bodyWidth),
-                static_cast<REAL>(pose.scaleY * body.bodyHeight), static_cast<REAL>(pose.angle), pose.centerPivot);
+                static_cast<REAL>(pose.scaleY * body.bodyHeight), static_cast<REAL>(pose.angle), pose.centerPivot,
+                pose.joints, pose.groundContact, pose.bellyRig);
     };
     if (pose.blendFrame < 0 || pose.blend <= 0 || !g.blendFrom.image || !g.blendTo.image) {
-        draw(graphics, pose.frame); return;
+        draw(graphics, pose.frame);
+        if (pose.bellyRig) DrawBellyHead(graphics, pose, center, bottom, scale);
+        return;
     }
-    if (pose.blend >= 1) { draw(graphics, pose.blendFrame); return; }
+    if (pose.blend >= 1) {
+        draw(graphics, pose.blendFrame);
+        if (pose.bellyRig) DrawBellyHead(graphics, pose, center, bottom, scale);
+        return;
+    }
     auto layer = [&](Surface& buffer, int frame) {
         Graphics target(buffer.image.get());
         target.SetCompositingMode(CompositingModeSourceCopy); target.Clear(Color(0, 0, 0, 0));
@@ -1285,6 +1488,7 @@ void DrawAnimatedPet(Graphics& graphics, const cat::animation::Pose& pose,
                                                  g.blendTo.pixels[i] * weight + 127) / 255);
     graphics.DrawImage(g.blendFrom.image.get(), Rect(0, 0, g.surface.width, g.surface.height),
                        0, 0, g.surface.width, g.surface.height, UnitPixel);
+    if (pose.bellyRig) DrawBellyHead(graphics, pose, center, bottom, scale);
 }
 
 void DrawToyBackground(Graphics& graphics, REAL localX, REAL ground, ULONGLONG ticks) {
@@ -1361,34 +1565,28 @@ void Render() {
     const auto actionElapsed = ticks >= g.motionStart ? ticks - g.motionStart : 0;
     Motion displayed = g.motion;
     // Keep the last walking gait through the short braking distance.
-    if ((displayed == Motion::Idle || displayed == Motion::Watch) && physical.grounded && std::abs(physical.velocityX) > 2)
+    if (g.waitingForStop || ((displayed == Motion::Idle || displayed == Motion::Watch) && physical.grounded && std::abs(WalkingVelocity(physical)) > 2))
         displayed = g.walkingMotion;
     auto pose = cat::animation::Evaluate(displayed, actionElapsed, ticks, g.facing, g.gait);
     if (displayed == Motion::Jump || displayed == Motion::Pounce) pose.lift = 0;
-    if (g.perch.transitioning) {
-        const double fraction = g.perch.duration ? std::clamp(static_cast<double>(ticks - g.perch.started) / g.perch.duration, 0.0, 1.0) : 1.0;
-        pose = {}; pose.flip = g.facing < 0; pose.frame = fraction < .52 ? 16 : 17;
-        pose.angle = g.facing * (fraction - .5) * 8.0;
-        pose.scaleY = 1.0 + .025 * std::sin(fraction * cat::animation::kPi);
-    } else if (physical.lift > .05 || !physical.grounded) {
+    if (!physical.grounded) {
         // Box2D owns height and landing time. Art follows the actual vertical
         // velocity, so changing weight or interrupting a jump cannot desync it.
         pose = {};
+        pose.groundContact = false;
         pose.flip = g.facing < 0;
         if (g.airborneMotion == Motion::Pounce) {
             pose.frame = 1;
             pose.scaleX = 1.04;
             pose.angle = -g.facing * std::clamp(physical.velocityY / 22.0, -6.0, 6.0);
         } else {
-            pose.frame = 16; pose.blendFrame = 17;
-            pose.blend = cat::animation::SmoothStep((45 - physical.velocityY) / 90.0);
-            pose.scaleY = 1 + .025 * std::clamp(physical.velocityY / 240.0, -1.0, 1.0);
-            pose.angle = g.facing * std::clamp(physical.velocityY / 120.0, -2.0, 2.0);
+            pose = cat::animation::AirbornePose(physical.velocityY, g.facing);
         }
-    } else if ((g.jumpLaunched || !g.jumpPending) && (g.motion == Motion::Jump || g.motion == Motion::Pounce)) {
+    } else if (!g.perch.preparing && !g.waitingForStop && (g.jumpLaunched || !g.jumpPending) &&
+            (g.motion == Motion::Jump || g.motion == Motion::Pounce)) {
         pose = {}; pose.frame = 14; pose.flip = g.facing < 0;
     }
-    if (g.landedAt && ticks >= g.landedAt && ticks - g.landedAt < 280) {
+    if (!pose.bellyRig && g.landedAt && ticks >= g.landedAt && ticks - g.landedAt < 280) {
         const double settle = std::sin((ticks - g.landedAt) / 280.0 * cat::animation::kPi) * g.landingStrength;
         pose.scaleX *= 1 + .035 * settle;
         pose.scaleY *= 1 - .085 * settle;
@@ -1401,7 +1599,9 @@ void Render() {
     const LONG windowLeft = static_cast<LONG>(std::round(g.centerX - g.surface.width / 2.0));
     const REAL center = static_cast<REAL>(g.centerX - windowLeft);
     const double bodyScale = g.dpiScale * cat::GrowthScale(g.pet.bornUtc, now);
-    const REAL bottom = static_cast<REAL>(g.surface.height - 1 - pose.lift * bodyScale - physical.lift * g.dpiScale);
+    const auto placement = cat::render::BuildPlacement(g.work.bottom, g.surface.height,
+        g.dpiScale, physical.lift, pose.lift, bodyScale);
+    const REAL bottom = static_cast<REAL>(placement.localBottom);
     if (g.motion == Motion::Zoomies) {
         Pen trail(Color(100, 204, 171, 137), static_cast<REAL>(1.3 * g.dpiScale));
         for (int i = 0; i < 3; ++i) {
@@ -1433,7 +1633,7 @@ void Render() {
         graphics.DrawString(g.bubble.c_str(), -1, &font, RectF(x, y, width, height), &format, &text);
     }
     graphics.Flush(FlushIntentionSync);
-    POINT destination{windowLeft, CurrentGroundY(ticks) - g.surface.height};
+    POINT destination{windowLeft, placement.windowTop};
     SIZE size{g.surface.width, g.surface.height}; POINT origin{};
     BLENDFUNCTION blend{AC_SRC_OVER, 0, 255, AC_SRC_ALPHA};
     HDC screen = GetDC(nullptr);
@@ -1846,7 +2046,7 @@ bool MaybePlayWithToy(ULONGLONG ticks) {
         g.centerX / g.dpiScale, 36 * growth, g.work.left / g.dpiScale + low, g.work.left / g.dpiScale + high);
     const double distance = target - g.centerX / g.dpiScale;
     if (g.brain) g.brain->Interrupt(ticks);
-    if (std::abs(distance) > 2 || std::abs(g.physics.CurrentPose().velocityX) > 3) {
+    if (std::abs(distance) > 2 || std::abs(WalkingVelocity(g.physics.CurrentPose())) > 3) {
         g.direction = distance < 0 ? -1 : 1;
         g.speed = 38 * g.dpiScale;
         SetMotion(Motion::Walk, 1000);
@@ -2024,12 +2224,13 @@ void Tick() {
         // and long scheduler stalls. No late takeoff or catch-up teleport.
         const auto frozen = std::min(clockDelta, ticks >= g.motionStart ? ticks - g.motionStart : 0);
         g.motionStart += frozen; g.nextDecision += frozen;
-        if (g.perch.transitioning) g.perch.started += frozen;
         if (g.perch.active) g.perch.leaveAfter += frozen;
         if (g.landedAt) g.landedAt += frozen;
         g.physics.Update(0, true);
         elapsed = 0;
-        g.gait.Reset();
+        // A paused body resumes the same stride. Actual drag/teleport paths
+        // already reset gait through ResetMovement().
+
     }
     g.prank.Tick(ticks);
     if (ticks >= g.nextMaintenance) {
@@ -2041,14 +2242,21 @@ void Tick() {
     if (!suspended) {
         MaintainPerch(ticks);
         if (g.perch.transitioning) {
-            UpdatePerchTransition(ticks);
+            UpdatePerchTransition(ticks, elapsed);
             Render();
             return;
         }
-        MaybeVisitWindow(ticks);
-        if (g.perch.transitioning) { UpdatePerchTransition(ticks); Render(); return; }
-        if (!g.approachingToy && !g.approachingUser && ticks >= g.nextDecision && g.physics.CurrentPose().grounded) {
+        if (!g.waitingForStop) MaybeVisitWindow(ticks);
+        if (g.perch.transitioning) { UpdatePerchTransition(ticks, elapsed); Render(); return; }
+        if (!g.waitingForStop && !g.approachingToy && !g.approachingUser && ticks >= g.nextDecision && g.physics.CurrentPose().grounded) {
             if (!ContinueMemorySequence() && !MaybePlayWithToy(ticks)) DecideMotion();
+        }
+        if (cat::motion::AdvanceStopGate(g.waitingForStop, g.physics.CurrentPose().grounded,
+                WalkingVelocity(g.physics.CurrentPose()), ticks, g.motionStart, g.nextDecision) && g.stopSoundPending) {
+            const auto cue = g.stopSoundCue;
+            const bool automatic = g.stopSoundAutomatic;
+            g.stopSoundPending = false;
+            PlayCatSound(cue, automatic);
         }
         const auto actionElapsed = ticks >= g.motionStart ? ticks - g.motionStart : 0;
         const auto body = cat::nutrition::VisualModifiers(g.nutrition);
@@ -2063,7 +2271,7 @@ void Tick() {
             const double distance = g.userTargetX - (g.centerX - g.work.left) / g.dpiScale;
             const bool gone = !CursorNear(&cursor) || std::abs((cursor.x - g.work.left) / g.dpiScale - g.userTargetX) > 150;
             if (g.pet.roamingPaused || gone || ticks >= g.nextDecision ||
-                (std::abs(distance) <= 2 && std::abs(g.physics.CurrentPose().velocityX) <= 3)) {
+                (std::abs(distance) <= 2 && std::abs(WalkingVelocity(g.physics.CurrentPose())) <= 3)) {
                 SetMotion(Motion::Watch, 5000); targetSpeed = 0;
             } else {
                 targetSpeed = cat::toy::ApproachVelocity(distance, 18 * body.speed);
@@ -2076,7 +2284,7 @@ void Tick() {
                 g.centerX / g.dpiScale, 36 * growth, g.work.left / g.dpiScale + low, g.work.left / g.dpiScale + high);
             const double distance = target - g.centerX / g.dpiScale;
             targetSpeed = g.pet.roamingPaused ? 0 : cat::toy::ApproachVelocity(distance, 38 * body.speed);
-            if (std::abs(distance) <= 2 && std::abs(g.physics.CurrentPose().velocityX) <= 3) {
+            if (std::abs(distance) <= 2 && std::abs(WalkingVelocity(g.physics.CurrentPose())) <= 3) {
                 g.approachingToy = false;
                 g.nextToyAction = ticks;
                 MaybePlayWithToy(ticks);
@@ -2084,7 +2292,7 @@ void Tick() {
             } else if (targetSpeed != 0) g.direction = targetSpeed < 0 ? -1 : 1;
         }
         if (g.toy == ToyKind::Ball) {
-            if (g.motion == Motion::ToyPaw && cat::toy::PawContact(ticks >= g.motionStart ? ticks - g.motionStart : 0, g.toyContact)) {
+            if (!g.waitingForStop && g.motion == Motion::ToyPaw && cat::toy::PawContact(ticks >= g.motionStart ? ticks - g.motionStart : 0, g.toyContact)) {
                 if (std::abs(g.toyX - g.centerX) <= 55 * g.dpiScale * growth) {
                     g.toyBall.Kick(g.direction, 90);
                     if (Random(0,1) < .32) PlayCatSound(cat::audio::Cue::Gesture, true);
@@ -2099,8 +2307,18 @@ void Tick() {
                 g.work.left / g.dpiScale + ballHigh);
             g.toyX = g.toyBall.x * g.dpiScale;
         }
+        if (g.perch.active && g.physics.OnPlatform() && targetSpeed != 0) {
+            const auto support = g.physics.CurrentPose();
+            const auto [low, high] = MovementBoundsLogical();
+            if (cat::motion::BrakeBeforeEdge(support.x, WalkingVelocity(support), targetSpeed, low, high)) {
+                g.direction = targetSpeed < 0 ? 1 : -1;
+                targetSpeed = 0;
+                if (g.motion != Motion::Pounce) SetMotion(Motion::Watch, 2400);
+            }
+        }
+        if (g.waitingForStop) targetSpeed = 0;
         g.physics.SetTargetVelocity(targetSpeed);
-        if (g.jumpPending) {
+        if (!g.waitingForStop && g.jumpPending) {
             const ULONGLONG takeoff = g.motion == Motion::Jump ? 220 : 240;
             if (actionElapsed >= takeoff) {
                 g.jumpPending = false;
@@ -2114,7 +2332,7 @@ void Tick() {
                 g.motionSoundPending = false;
             }
         }
-        if (g.gestureSoundPending) {
+        if (!g.waitingForStop && g.gestureSoundPending) {
             const ULONGLONG starts = g.motion == Motion::EarFlick ? 160 : 120;
             if (actionElapsed >= starts) {
                 g.gestureSoundPending = false;
@@ -2126,13 +2344,19 @@ void Tick() {
         g.physics.Update(elapsed);
         const auto physical = g.physics.CurrentPose();
         g.centerX = g.work.left + g.physics.RenderPose().x * g.dpiScale;
-        if (std::abs(physical.velocityX) > 2) g.facing = physical.velocityX < 0 ? -1 : 1;
+        if (g.perch.active && physical.grounded && !physical.onPlatform) {
+            // A moved ledge can be missed during an ordinary jump. A floor
+            // contact must not leave the cat constrained to that old window.
+            g.perch.landingOnWindow = false;
+            FinishPerchTransition(ticks);
+        }
+        if (std::abs(WalkingVelocity(physical)) > 2) g.facing = WalkingVelocity(physical) < 0 ? -1 : 1;
         else g.facing = g.direction;
         Motion gaitMotion = g.motion;
         if (g.motion == Motion::Walk || g.motion == Motion::Stalk || g.motion == Motion::Zoomies) g.walkingMotion = g.motion;
-        else if ((g.motion == Motion::Idle || g.motion == Motion::Watch) && physical.grounded && std::abs(physical.velocityX) > 2)
+        else if (g.waitingForStop || ((g.motion == Motion::Idle || g.motion == Motion::Watch) && physical.grounded && std::abs(WalkingVelocity(physical)) > 2))
             gaitMotion = g.walkingMotion;
-        g.gait.Advance(gaitMotion, (physical.x - previousX) / growth, elapsed);
+        g.gait.Advance(gaitMotion, (physical.x - previousX - physical.supportTravelX) / growth, elapsed);
         if (physical.landed) {
             g.landedAt = ticks;
             g.landingStrength = std::clamp(physical.landingSpeed / 230.0, .35, 1.0);
@@ -2146,7 +2370,7 @@ void Tick() {
                 if (g.motion == Motion::Walk || g.motion == Motion::Stalk) SetMotion(Motion::Watch, 2400);
             }
         }
-        if (g.motion == Motion::Punch) {
+        if (!g.waitingForStop && g.motion == Motion::Punch) {
             const int hits = cat::animation::PunchHits(actionElapsed);
             if (hits > g.punchHits) {
                 // Consume skipped contacts after a menu or scheduler stall; don't crack
@@ -2164,7 +2388,7 @@ void Tick() {
             if (actionElapsed >= 1000 && g.bubbleUntil < g.motionStart) Speak(L"…나 아니야", 1300);
         }
         // Brief, occasional curiosity. The cursor is only observed, never moved or captured.
-        if ((g.motion == Motion::Idle || g.motion == Motion::Walk) && ticks >= g.nextCuriosity && !g.pet.roamingPaused && !g.approachingToy && !g.approachingUser && !g.memorySequenceCount) {
+        if (!g.waitingForStop && (g.motion == Motion::Idle || g.motion == Motion::Walk) && ticks >= g.nextCuriosity && !g.pet.roamingPaused && !g.approachingToy && !g.approachingUser && !g.memorySequenceCount) {
             POINT cursor{};
             if (CursorNear(&cursor)) {
                 g.nextCuriosity = ticks + static_cast<ULONGLONG>(Random(45000, 100000));
@@ -2176,8 +2400,10 @@ void Tick() {
         }
         if (g.pendingCare >= 0 && physical.grounded) Care(g.pendingCare != 0);
         MaybeAnnounceUpdate(ticks);
-        MaybeMemoryRoutine(ticks);
-        MaybeAskForFood(ticks);
+        if (!g.waitingForStop) {
+            MaybeMemoryRoutine(ticks);
+            MaybeAskForFood(ticks);
+        }
         Render();
     }
 }
@@ -2258,6 +2484,167 @@ LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
     return DefWindowProcW(window, message, wParam, lParam);
 }
 
+int RenderSelfTest() {
+    // Native GDI+ regression path: resources and offscreen DIBs only. This
+    // deliberately runs before LoadPet, instance windows, audio or updates.
+    const HRESULT com = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+    if (FAILED(com)) return 30;
+    GdiplusStartupInput startup;
+    ULONG_PTR token = 0;
+    if (GdiplusStartup(&token, &startup, nullptr) != Ok) {
+        CoUninitialize();
+        return 31;
+    }
+    int result = 0;
+    std::string context = "initialization";
+    try {
+        result = [&]() -> int {
+            if (!LoadAtlas()) return 32;
+            if (!g.surface.Create(420, 320) || !g.blendFrom.Create(420, 320) ||
+                    !g.blendTo.Create(420, 320)) return 33;
+            const auto birthday = cat::ToUnix({2025, 1, 1});
+            g.pet = cat::NewPet(birthday);
+            g.nutrition = cat::nutrition::NewState(birthday, birthday);
+            g.dpiScale = 1;
+            constexpr REAL center = 210, floor = 280;
+            constexpr std::uint64_t fixedTicks = 500000;
+            const auto draw = [&](const cat::animation::Pose& pose, REAL scale) {
+                Graphics graphics(g.surface.image.get());
+                graphics.SetCompositingMode(CompositingModeSourceCopy);
+                graphics.Clear(Color(0, 0, 0, 0));
+                graphics.SetCompositingMode(CompositingModeSourceOver);
+                graphics.SetCompositingQuality(CompositingQualityHighQuality);
+                graphics.SetInterpolationMode(InterpolationModeHighQualityBicubic);
+                graphics.SetSmoothingMode(SmoothingModeAntiAlias);
+                graphics.SetPixelOffsetMode(PixelOffsetModeHighQuality);
+                DrawAnimatedPet(graphics, pose, center + static_cast<REAL>(pose.x),
+                    floor - static_cast<REAL>(pose.lift), scale);
+                graphics.Flush(FlushIntentionSync);
+                return graphics.GetLastStatus() == Ok;
+            };
+            const auto snapshot = [&] {
+                return std::vector<BYTE>(g.surface.pixels,
+                    g.surface.pixels + static_cast<std::size_t>(420 * 320 * 4));
+            };
+            constexpr std::array<cat::Outfit, 4> outfits{{cat::Outfit::None,
+                cat::Outfit::BowTie, cat::Outfit::Scarf, cat::Outfit::Crown}};
+            constexpr std::array<std::uint64_t, 4> samples{{0, 360, 1500, 3500}};
+            for (int character = 0; character < 2; ++character) {
+                g.preferences.character = character ? cat::Character::SilverTabby : cat::Character::Cream;
+                const REAL scale = 110.0f / CurrentArt().base.standingHeight;
+                for (int motion = 0; motion <= static_cast<int>(Motion::BoxSit); ++motion) {
+                    for (const auto elapsed : samples) {
+                        const auto pose = cat::animation::Evaluate(static_cast<Motion>(motion),
+                            elapsed, fixedTicks, character ? -1 : 1);
+                        std::vector<BYTE> body;
+                        std::size_t bodyOpaque = 0;
+                        for (const auto outfit : outfits) {
+                            g.preferences.outfit = outfit;
+                            context = "character=" + std::to_string(character) + " motion=" + std::to_string(motion) +
+                                " elapsed=" + std::to_string(elapsed) + " outfit=" + std::to_string(static_cast<int>(outfit));
+                            if (!draw(pose, scale)) return 34;
+                            std::size_t opaque = 0, visible = 0, coveredBody = 0;
+                            for (std::size_t i = 0; i < 420 * 320 * 4; i += 4) {
+                                const auto* pixel = g.surface.pixels + i;
+                                const unsigned alpha = pixel[3];
+                                if (pixel[0] > alpha + 1 || pixel[1] > alpha + 1 || pixel[2] > alpha + 1)
+                                    return 35;
+                                if (alpha >= 245) ++opaque;
+                                if (alpha >= 32) ++visible;
+                                if (!body.empty() && body[i + 3] >= 245 && alpha >= 245) ++coveredBody;
+                            }
+                            // A rendered accessory alone cannot satisfy the body
+                            // coverage check. None is always the first outfit.
+                            if (opaque < 500 || visible < 2000) return 36;
+                            if (outfit == cat::Outfit::None) {
+                                body = snapshot(); bodyOpaque = opaque;
+                            } else if (coveredBody * 100 < bodyOpaque * 95) return 37;
+                        }
+                    }
+                }
+
+                // Real flight uses the velocity-driven joint pose, not the
+                // elapsed-time demonstration sequence above. Exercise its
+                // exact GDI+ skin path across ascent, apex and descent.
+                for (const double velocity : {720.0, 120.0, 1.0, 0.0, -1.0, -120.0, -720.0}) {
+                    for (const int facing : {-1, 1}) {
+                        context = "airborne character=" + std::to_string(character) + " vy=" + std::to_string(velocity) + " facing=" + std::to_string(facing);
+                        const auto flight = cat::animation::AirbornePose(velocity, facing);
+                        if (!draw(flight, scale)) return 45;
+                        std::size_t visible = 0;
+                        for (std::size_t offset = 0; offset < 420 * 320 * 4; offset += 4) {
+                            const auto* pixel = g.surface.pixels + offset;
+                            if (pixel[0] > pixel[3] + 1 || pixel[1] > pixel[3] + 1 || pixel[2] > pixel[3] + 1)
+                                return 46;
+                            if (pixel[3] >= 32) ++visible;
+                        }
+                        if (visible < 2000) return 47;
+                    }
+                }
+
+                // Ear motion must leave the planted lower body bit-identical,
+                // even when the cached native Bitmap is reused and rewarped.
+                g.preferences.outfit = cat::Outfit::None;
+                const auto neutral = cat::animation::Evaluate(Motion::EarFlick, 0, fixedTicks, 1);
+                if (!draw(neutral, scale)) return 38;
+                const auto baseline = snapshot();
+                const double height = CurrentArt().base.frames[4].Height * scale;
+                const int firstRow = std::clamp(static_cast<int>(std::ceil(floor - .55 * height)), 0, 319);
+                for (const auto elapsed : {360ULL, 1110ULL, 0ULL}) {
+                    context = "ear character=" + std::to_string(character) + " elapsed=" + std::to_string(elapsed);
+                    const auto pose = cat::animation::Evaluate(Motion::EarFlick, elapsed, fixedTicks, 1);
+                    if (!draw(pose, scale)) return 38;
+                    std::size_t compared = 0, changed = 0;
+                    for (std::size_t offset = 0; offset < baseline.size(); offset += 4)
+                        if ((baseline[offset + 3] >= 32 || g.surface.pixels[offset + 3] >= 32) &&
+                                std::memcmp(baseline.data() + offset, g.surface.pixels + offset, 4) != 0)
+                            ++changed;
+                    for (int y = firstRow; y < 320; ++y) for (int x = 0; x < 420; ++x) {
+                        const auto offset = static_cast<std::size_t>(y * 420 + x) * 4;
+                        if (baseline[offset + 3] != 255) continue;
+                        ++compared;
+                        if (std::memcmp(baseline.data() + offset, g.surface.pixels + offset, 4) != 0)
+                            return 39;
+                    }
+                    if (compared < 500) return 40;
+                    if (elapsed && changed < 5) return 42;
+                }
+
+                // At the start of a belly roll the separately rendered head
+                // and body still occupy the canonical sitting pose. Their
+                // source-over composition must not cut a transparent neck.
+                context = "belly composition character=" + std::to_string(character);
+                cat::animation::Pose canonical;
+                canonical.frame = 4; canonical.joints = {};
+                if (!draw(canonical, scale)) return 38;
+                const auto wholeCat = snapshot();
+                const auto belly = cat::animation::Evaluate(Motion::BellyRoll, 0, fixedTicks, 1);
+                if (!draw(belly, scale)) return 38;
+                std::size_t visibleCompared = 0, visibleLoss = 0;
+                for (std::size_t offset = 0; offset < wholeCat.size(); offset += 4) {
+                    if (wholeCat[offset + 3] < 32) continue;
+                    ++visibleCompared;
+                    const int loss = static_cast<int>(wholeCat[offset + 3]) - g.surface.pixels[offset + 3];
+                    if (loss > 12) return 43;
+                    if (loss > 8) ++visibleLoss;
+                }
+                if (visibleCompared < 2000 || visibleLoss > 12) return 44;
+            }
+            return 0;
+        }();
+    } catch (...) {
+        result = 41;
+    }
+    WriteBytes(L"render-self-test.txt", "exit=" + std::to_string(result) + " " + context + "\n");
+    ReleaseAtlases();
+    g.surface.Reset(); g.blendFrom.Reset(); g.blendTo.Reset();
+    GdiplusShutdown(token);
+    CoUninitialize();
+    const std::wstring diagnostic = L"YeopjariCat --render-self-test exit=" + std::to_wstring(result) + L"\n";
+    OutputDebugStringW(diagnostic.c_str());
+    return result;
+}
+
 int SelfTest() {
     const auto start = cat::ToUnix({2026, 10, 31, 0, 0, 0});
     cat::PetState original = cat::NewPet(start), parsed; std::string error;
@@ -2277,6 +2664,10 @@ int SelfTest() {
 }
 
 int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
+    if (commandLine && wcsstr(commandLine, L"--render-self-test")) {
+        g.instance = instance;
+        return RenderSelfTest();
+    }
     if (const auto helperResult = cat::update::HandleUpdateHelperCommandLine()) return *helperResult;
     if (commandLine && wcsstr(commandLine, L"--self-test")) return SelfTest();
     g.instance = instance;

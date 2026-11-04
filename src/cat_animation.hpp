@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include "cat_deformation.hpp"
 
 namespace cat::animation {
 
@@ -17,6 +18,7 @@ constexpr std::uint64_t kTailRaiseDurationMs = 3400;
 constexpr std::uint64_t kPeekDurationMs = 3600;
 constexpr std::uint64_t kBellyRollDurationMs = 4300;
 constexpr double kPi = 3.14159265358979323846;
+constexpr int kSpriteCount = 26;
 
 // Offsets are logical pixels; the native renderer applies monitor DPI and real-age growth.
 struct Pose {
@@ -26,11 +28,30 @@ struct Pose {
     bool centerPivot = false;
     int blendFrame = -1;
     double blend = 0;
+    cat::deform::Joints joints;
+    bool groundContact = true;
+    bool bellyRig = false;
 };
 
 inline double SmoothStep(double fraction) {
     const double t = std::clamp(fraction, 0.0, 1.0);
     return t * t * (3 - 2 * t);
+}
+
+// Use one registered airborne drawing throughout flight. The old16/17 blend
+// morphed independently drawn faces and produced two eyes at the apex. Box2D
+// supplies height; vertical velocity only controls a small tilt and local paws.
+inline Pose AirbornePose(double velocityY,int direction) {
+    Pose p;
+    const double speed=std::isfinite(velocityY) ? std::clamp(velocityY,-10000.0,10000.0) : 0.0;
+    p.frame=16;
+    p.flip=direction<0;
+    p.groundContact=false;
+    p.angle=(p.flip ? -1.0 : 1.0)*std::clamp(speed/120.0,-2.0,2.0);
+    const double tuck=1-SmoothStep(std::abs(speed)/140.0);
+    p.joints.frontLeft=tuck;
+    p.joints.frontRight=.85*tuck;
+    return p;
 }
 
 inline int PunchHits(std::uint64_t elapsed) {
@@ -94,7 +115,9 @@ private:
 inline Pose Evaluate(Motion motion, std::uint64_t elapsed, std::uint64_t ticks, int direction) {
     Pose p;
     const double t = static_cast<double>(elapsed);
-    p.lift = (std::sin(ticks / 700.0) + 1) * .38;
+    // The physics controller owns root height. Breathing moves the chest,
+    // never the feet or the whole picture above the supporting surface.
+    p.joints.breath = .35 * std::sin(ticks / 1200.0);
     p.flip = direction < 0;
     const auto crossfade = [&](int first, int second, double fraction) {
         p.frame = first;
@@ -108,7 +131,6 @@ inline Pose Evaluate(Motion motion, std::uint64_t elapsed, std::uint64_t ticks, 
     case Motion::Walk:
         p.frame = static_cast<int>(elapsed / 145 % 4);
         crossfade(p.frame, (p.frame + 1) % 4, static_cast<double>(elapsed % 145) / 145);
-        p.lift += std::abs(std::sin(t / 145.0 * kPi)) * .8;
         break;
     case Motion::Sleep:
         p.frame = 6;
@@ -122,26 +144,25 @@ inline Pose Evaluate(Motion motion, std::uint64_t elapsed, std::uint64_t ticks, 
         p.frame = 18 + static_cast<int>(elapsed / 200 % 2);
         if (elapsed % 200 >= 150)
             crossfade(p.frame, p.frame == 18 ? 19 : 18, static_cast<double>(elapsed % 200 - 150) / 50);
-        p.lift = .28 + .28 * std::sin(t / 200.0 * kPi);
+        p.lift = 0;
         p.scaleY = 1 + .009 * std::sin(t / 200.0 * kPi);
         break;
     case Motion::Groom:
-        p.frame = elapsed / 440 % 3 < 2 ? 9 : 10;
-        p.angle = direction * std::sin(t / 220.0) * 1.7;
+        crossfade(9, 10, .5 - .5 * std::cos(t / 440.0 * kPi));
+        p.joints.headNod = .2 * std::sin(t / 440.0 * kPi);
         break;
     case Motion::Stretch:
         p.frame = 8;
-        p.scaleX = 1 + .035 * std::sin(std::min(t / 1900.0, 1.0) * kPi);
-        p.scaleY = 1 - .025 * std::sin(std::min(t / 1900.0, 1.0) * kPi);
+        p.scaleX = 1 + .015 * std::sin(std::min(t / 1900.0, 1.0) * kPi);
+        p.scaleY = 1 - .008 * std::sin(std::min(t / 1900.0, 1.0) * kPi);
         break;
     case Motion::Watch:
-        p.frame = elapsed / 1700 % 3 == 1 ? 15 : 14;
-        p.angle = direction * std::sin(t / 650.0) * 5;
+        p.frame = 4;
+        p.joints.headNod = .35 * std::sin(t / 950.0);
         break;
     case Motion::Stalk:
         p.frame = 11;
-        p.x = std::sin(t / 95.0) * 1.5;
-        p.angle = std::sin(t / 95.0) * .8;
+        p.x = 0;
         break;
     case Motion::Pounce:
         if (elapsed < 240) {
@@ -150,7 +171,7 @@ inline Pose Evaluate(Motion motion, std::uint64_t elapsed, std::uint64_t ticks, 
         } else if (elapsed < 840) {
             const double jump = (t - 240) / 600;
             p.frame = 1;
-            p.lift = std::sin(jump * kPi) * 30;
+            p.lift = 0;
             p.angle = (jump - .5) * 12 * direction;
             p.scaleX = 1.04;
         } else {
@@ -170,7 +191,7 @@ inline Pose Evaluate(Motion motion, std::uint64_t elapsed, std::uint64_t ticks, 
         } else if (elapsed < 1060) {
             const double flight = (t - 220) / 840;
             p.frame = flight < .5 ? 16 : 17;
-            p.lift = 55 * std::sin(flight * kPi);
+            p.lift = 0;
             p.scaleY = 1 + .025 * std::sin(flight * 2 * kPi);
             p.angle = direction * 2 * std::sin(flight * 2 * kPi);
         } else {
@@ -183,17 +204,15 @@ inline Pose Evaluate(Motion motion, std::uint64_t elapsed, std::uint64_t ticks, 
     case Motion::Zoomies:
         p.frame = static_cast<int>(elapsed / 55 % 4);
         crossfade(p.frame, (p.frame + 1) % 4, static_cast<double>(elapsed % 55) / 55);
-        p.lift += std::abs(std::sin(t / 80.0)) * 4;
-        p.angle = std::sin(t / 130.0) * 3;
+        p.angle = 0;
         p.scaleX = 1.025;
         break;
     case Motion::TailChase:
         p.frame = 15;
         p.flip = (elapsed / 370 % 2 == 0) != (direction < 0);
-        p.x = std::sin(t / 240.0) * 12;
-        p.angle = std::sin(t / 150.0) * 8;
-        p.scaleX = .86 + .14 * std::abs(std::cos(t / 240.0));
-        p.lift += std::abs(std::sin(t / 180.0)) * 4;
+        p.x = 0;
+        p.angle = 0;
+        p.scaleX = .96 + .04 * std::abs(std::cos(t / 240.0));
         break;
     case Motion::Punch:
         if (elapsed < kFirstPunchMs) {
@@ -203,55 +222,38 @@ inline Pose Evaluate(Motion motion, std::uint64_t elapsed, std::uint64_t ticks, 
             p.frame = 13;
             const double strike = elapsed < 460 ? t - kFirstPunchMs : t - kSecondPunchMs;
             p.x = direction * (2 + 3 * std::max(0.0, 1 - strike / 150.0));
-            p.lift += 2.0;
         } else if (elapsed < kSecondPunchMs) {
             p.frame = 12;
         } else {
             p.frame = 14;
             const double recover = std::max(0.0, 1 - (t - 790) / 800.0);
-            p.angle = -direction * std::sin((t - 790) / 120.0) * 6 * recover;
+            p.joints.headNod = -.3 * std::sin((t - 790) / 120.0) * recover;
         }
         break;
     case Motion::EarFlick:
-        // One ear, a quiet pause, then the other. Holds keep the movement from
-        // looking like a constant twitch, while transitions remain continuous.
-        if (elapsed < 160) p.frame = 4;
-        else if (elapsed < 310) crossfade(4, 20, (t - 160) / 150);
-        else if (elapsed < 420) p.frame = 20;
-        else if (elapsed < 620) crossfade(20, 4, (t - 420) / 200);
-        else if (elapsed < 960) p.frame = 4;
-        else if (elapsed < 1110) crossfade(4, 21, (t - 960) / 150);
-        else if (elapsed < 1230) p.frame = 21;
-        else if (elapsed < 1450) crossfade(21, 4, (t - 1230) / 220);
-        else p.frame = 4;
-        p.angle = direction * .45 * std::sin(t / 300) *
-            std::sin(std::min(t / kEarFlickDurationMs, 1.0) * kPi);
+        // The same face, chest and paws are retained throughout. Only ear
+        // vertices bend around their roots; alternate whole-cat art is gone.
+        p.frame = 4; p.joints = {};
+        p.joints.leftEar = SmoothStep((t - 160) / 150) * (1 - SmoothStep((t - 420) / 200));
+        p.joints.rightEar = SmoothStep((t - 960) / 150) * (1 - SmoothStep((t - 1230) / 220));
         break;
     case Motion::TailRaise:
-        // Raise through the half-height pose, hold the tail upright, lower it.
-        if (elapsed < 120) p.frame = 4;
-        else if (elapsed < 560) crossfade(4, 22, (t - 120) / 440);
-        else if (elapsed < 900) crossfade(22, 23, (t - 560) / 340);
-        else if (elapsed < 2100) p.frame = 23;
-        else if (elapsed < 2460) crossfade(23, 22, (t - 2100) / 360);
-        else if (elapsed < 3000) crossfade(22, 4, (t - 2460) / 540);
-        else p.frame = 4;
-        p.angle = direction * .5 * std::sin(t / 600) *
-            std::sin(std::min(t / kTailRaiseDurationMs, 1.0) * kPi);
+        p.frame = 4; p.joints = {};
+        p.joints.tailRaise = SmoothStep((t - 120) / 780) * (1 - SmoothStep((t - 2100) / 900));
         break;
     case Motion::Loaf:
         // Compact loaf: tuck the feet under the body and breathe slowly.
-        p.frame = 14;
-        p.scaleX = 1.06;
-        p.scaleY = .78 + .008 * std::sin(t / 950.0);
+        p.frame = 4;
+        p.joints.crouch = SmoothStep(t / 350.0);
+        p.joints.frontLeft = p.joints.frontRight = .7;
         p.lift = 0; // The compressed loaf still rests on its paws, above the edge.
         break;
     case Motion::Knead:
         // Alternating paws using the clean grooming poses, with a gentle shoulder bob.
-        p.frame = elapsed / 260 % 2 ? 9 : 10;
-        p.scaleY = .97 + .025 * std::abs(std::sin(t / 260.0 * kPi));
-        p.x = direction * std::sin(t / 260.0 * kPi) * 1.4;
-        p.lift += std::abs(std::sin(t / 260.0 * kPi)) * .8;
+        p.frame = 4;
+        p.joints.frontLeft = std::max(0.0, std::sin(t / 420.0 * kPi));
+        p.joints.frontRight = std::max(0.0, -std::sin(t / 420.0 * kPi));
+        p.joints.headNod = .12 * std::sin(t / 840.0 * kPi);
         break;
     case Motion::Peek: {
         // Sink below the platform edge so mostly the head peeks out, then rise again.
@@ -265,50 +267,44 @@ inline Pose Evaluate(Motion motion, std::uint64_t elapsed, std::uint64_t ticks, 
         break;
     }
     case Motion::Scratch:
-        p.frame = elapsed / 150 % 2 ? 10 : 14;
-        p.angle = direction * std::sin(t / 75.0) * 4.0;
-        p.x = direction * std::sin(t / 95.0) * 2.2;
-        p.scaleY = .98 + .018 * std::abs(std::sin(t / 150.0 * kPi));
+        p.frame = 9;
+        p.joints.headNod = .25 * std::sin(t / 180.0 * kPi);
+        p.joints.rightEar = .2 * (.5 + .5 * std::sin(t / 180.0 * kPi));
         break;
     case Motion::Sneeze: {
-        p.frame = 14;
+        p.frame = 4;
         const double phase = std::clamp(t / 1700.0, 0.0, 1.0);
         const double snap = std::exp(-std::pow((phase - .42) / .12, 2.0));
-        p.angle = -direction * 13.0 * snap;
-        p.scaleX = 1.0 + .05 * snap;
-        p.scaleY = 1.0 - .11 * snap;
-        p.lift += 2.5 * snap;
+        p.joints.headNod = -.95 * snap;
+        p.joints.leftEar = p.joints.rightEar = .45 * snap;
+        p.joints.breath = -.6 * snap;
         break;
     }
     case Motion::ToyPaw:
         p.frame = elapsed / 330 % 2 ? 12 : 13;
         p.x = direction * (2.0 + 3.0 * std::max(0.0, std::sin(t / 330.0 * kPi)));
-        p.lift += std::max(0.0, std::sin(t / 330.0 * kPi)) * 1.8;
         break;
     case Motion::BoxSit:
-        p.frame = 14;
-        p.scaleX = .92;
-        p.scaleY = .88 + .008 * std::sin(t / 900.0);
+        p.frame = 4;
+        p.joints.crouch = .65 * SmoothStep(t / 350.0);
         p.lift = -8.0;
         break;
     case Motion::BellyRoll: {
-        // A lazy roll onto the back and back again. Reuse the curled/sleeping
-        // silhouette, but rotate around its center so the whole body stays above
-        // the platform edge instead of pivoting around the paws.
-        p.frame = 6;
-        p.centerPivot = true;
-        const double phase = std::clamp(t / kBellyRollDurationMs, 0.0, 1.0);
-        const double roll = phase < .5 ? SmoothStep(phase * 2.0) : SmoothStep((1.0 - phase) * 2.0);
-        p.angle = direction * 168.0 * roll;
-        p.scaleX = 1.0 + .055 * std::sin(phase * kPi);
-        p.scaleY = 0.94 + .06 * std::cos(phase * 2.0 * kPi);
-        p.lift = 2.5 * std::sin(phase * kPi);
-        // Enter/leave the curled pose rather than popping between sitting and
-        // sleeping silhouettes at a motion boundary.
-        if (elapsed < 240) crossfade(14, 6, t / 240.0);
-        else if (elapsed >= kBellyRollDurationMs) p.frame = 14;
-        else if (elapsed > kBellyRollDurationMs - 240)
-            crossfade(6, 14, (t - (kBellyRollDurationMs - 240)) / 240.0);
+        // Anatomical side/back poses keep the supported spine down and the
+        // face upright. A screen-plane spin cannot represent a belly roll.
+        p.joints = {};
+        p.bellyRig = true;
+        if (elapsed < 520) crossfade(4, 24, t / 520.0);
+        else if (elapsed < 1120) crossfade(24, 25, (t - 520) / 600.0);
+        else if (elapsed < 3140) p.frame = 25;
+        else if (elapsed < 3740) crossfade(25, 24, (t - 3140) / 600.0);
+        else if (elapsed < kBellyRollDurationMs) crossfade(24, 4, (t - 3740) / 560.0);
+        else p.frame = 4;
+        const double settle = SmoothStep((t - 800) / 500) * (1 - SmoothStep((t - 3000) / 600));
+        p.joints.frontLeft = settle * (.5 + .5 * std::sin(t / 360.0));
+        p.joints.frontRight = settle * (.5 + .5 * std::cos(t / 430.0));
+        p.joints.breath = settle * .7 * std::sin(t / 650.0);
+        p.joints.headNod = settle * .15 * std::sin(t / 800.0);
         break;
     }
     }
@@ -328,7 +324,7 @@ inline Pose Evaluate(Motion motion, std::uint64_t elapsed, std::uint64_t ticks,
     const double activity = SmoothStep(locomotion.Speed() / referenceSpeed);
     const double swing = std::sin(phase * 2 * kPi);
     const double bob = swing * swing; // Two smooth weight transfers per stride.
-    p.lift = (std::sin(ticks / 700.0) + 1) * .38;
+    p.lift = 0;
     p.x = 0;
     p.scaleX = p.scaleY = 1;
     p.angle = 0;
@@ -338,7 +334,6 @@ inline Pose Evaluate(Motion motion, std::uint64_t elapsed, std::uint64_t ticks,
         p.frame = 11;
         p.x = swing * .6 * activity;
         p.angle = swing * .5 * activity;
-        p.lift += .25 * bob * activity;
         return p;
     }
 
@@ -352,12 +347,10 @@ inline Pose Evaluate(Motion motion, std::uint64_t elapsed, std::uint64_t ticks,
         p.blend = SmoothStep((fraction - .6) / .4);
     }
     if (motion == Motion::Zoomies) {
-        p.lift += 3.2 * bob * activity;
         p.scaleX += .025 * activity;
         p.scaleY -= .018 * bob * activity;
         p.angle = direction * 2.4 * swing * activity;
     } else {
-        p.lift += .8 * bob * activity;
         p.scaleY -= .009 * bob * activity;
         p.angle = direction * .6 * swing * activity;
     }
