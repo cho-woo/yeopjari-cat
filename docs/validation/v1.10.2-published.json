@@ -1,0 +1,341 @@
+{
+  "version": "1.10.2",
+  "status": "published_verified",
+  "verified_at_utc": "2026-11-04T03:56:00+00:00",
+  "release": {
+    "id": 433493687,
+    "tag_name": "v1.10.2",
+    "html_url": "https://github.com/cho-woo/yeopjari-cat/releases/tag/v1.10.2",
+    "published_at": "2026-11-04T03:54:51Z",
+    "draft": false,
+    "prerelease": false
+  },
+  "source_commit": "fd2bc01315b69ab24665bda491d19bf938b992ef",
+  "tag_resolves_to_tested_source": true,
+  "workflow": {
+    "id": 41769780906,
+    "url": "https://github.com/cho-woo/yeopjari-cat/actions/runs/41769780906",
+    "head_sha": "fd2bc01315b69ab24665bda491d19bf938b992ef",
+    "status": "completed",
+    "conclusion": "success",
+    "jobs": [
+      {
+        "name": "build",
+        "conclusion": "success",
+        "url": "https://github.com/cho-woo/yeopjari-cat/actions/runs/41769780906/job/126376512746",
+        "completed_at": "2026-11-04T03:53:58Z",
+        "steps": [
+          {
+            "name": "Set up job",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Require the requested source version",
+            "conclusion": "success"
+          },
+          {
+            "name": "Install pinned dependencies",
+            "conclusion": "success"
+          },
+          {
+            "name": "Test, build Windows x64 and verify ZIP and update feed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Select exactly one verified package",
+            "conclusion": "success"
+          },
+          {
+            "name": "Test publisher permissions and failure safeguards without network",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/upload-artifact@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success"
+          }
+        ]
+      },
+      {
+        "name": "windows-smoke",
+        "conclusion": "success",
+        "url": "https://github.com/cho-woo/yeopjari-cat/actions/runs/41769780906/job/126376899724",
+        "completed_at": "2026-11-04T03:54:20Z",
+        "steps": [
+          {
+            "name": "Set up job",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/setup-python@v5",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/download-artifact@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify downloaded package on Windows",
+            "conclusion": "success"
+          },
+          {
+            "name": "Execute the Windows x64 binary self-test",
+            "conclusion": "success"
+          },
+          {
+            "name": "Render real Windows GDI+ motion, outfit and contact regressions",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/setup-python@v5",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success"
+          }
+        ]
+      },
+      {
+        "name": "publish",
+        "conclusion": "success",
+        "url": "https://github.com/cho-woo/yeopjari-cat/actions/runs/41769780906/job/126377017975",
+        "completed_at": "2026-11-04T03:54:55Z",
+        "steps": [
+          {
+            "name": "Set up job",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/download-artifact@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Reverify the exact tested package",
+            "conclusion": "success"
+          },
+          {
+            "name": "Bind the draft to this tested source commit",
+            "conclusion": "success"
+          },
+          {
+            "name": "Upload, download and hash-check draft assets, then publish stable",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify public latest feed and public downloads",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success"
+          }
+        ]
+      }
+    ]
+  },
+  "observed_official_latest": {
+    "url": "https://github.com/cho-woo/yeopjari-cat/releases/latest/download/latest.txt",
+    "download_completed_at_utc": "2026-11-04T03:55:47Z",
+    "version": "1.10.2",
+    "sha256": "143b23e0085bcf4d715120cd0662cdab4ce697e85cb2a0c6fc47cd2f2968ab30",
+    "equals_v1_10_2_tagged_feed": true,
+    "note": "Point-in-time observation; a later stable release can replace latest."
+  },
+  "assets": {
+    "latest.txt": {
+      "size_bytes": 1876,
+      "sha256": "143b23e0085bcf4d715120cd0662cdab4ce697e85cb2a0c6fc47cd2f2968ab30",
+      "github_api_digest": "sha256:143b23e0085bcf4d715120cd0662cdab4ce697e85cb2a0c6fc47cd2f2968ab30",
+      "url": "https://github.com/cho-woo/yeopjari-cat/releases/download/v1.10.2/latest.txt"
+    },
+    "RELEASE_NOTES_KO.txt": {
+      "size_bytes": 1208,
+      "sha256": "733e5d4d981354a36029c34f1aab82cbb405f7042096b5f062acd0886e6464a2",
+      "github_api_digest": "sha256:733e5d4d981354a36029c34f1aab82cbb405f7042096b5f062acd0886e6464a2",
+      "url": "https://github.com/cho-woo/yeopjari-cat/releases/download/v1.10.2/RELEASE_NOTES_KO.txt"
+    },
+    "SHA256SUMS.txt": {
+      "size_bytes": 350,
+      "sha256": "ea9dc2f36a0269aa15acf6cc7f6948f3368e426a24e42f82880fbb888c632107",
+      "github_api_digest": "sha256:ea9dc2f36a0269aa15acf6cc7f6948f3368e426a24e42f82880fbb888c632107",
+      "url": "https://github.com/cho-woo/yeopjari-cat/releases/download/v1.10.2/SHA256SUMS.txt"
+    },
+    "YeopjariCat-1.10.2.exe": {
+      "size_bytes": 13718528,
+      "sha256": "fefc40dc69ace44385cac16a1ade87ed7901151baceb07c1194d06a8fa4d60b4",
+      "github_api_digest": "sha256:fefc40dc69ace44385cac16a1ade87ed7901151baceb07c1194d06a8fa4d60b4",
+      "url": "https://github.com/cho-woo/yeopjari-cat/releases/download/v1.10.2/YeopjariCat-1.10.2.exe"
+    },
+    "YeopjariCat-Windows-1.10.2.zip": {
+      "size_bytes": 11587144,
+      "sha256": "036864983a6c6327c17b6b5b26d29fcb7b2c10233c4ab42f508acd3f0820a41a",
+      "github_api_digest": "sha256:036864983a6c6327c17b6b5b26d29fcb7b2c10233c4ab42f508acd3f0820a41a",
+      "url": "https://github.com/cho-woo/yeopjari-cat/releases/download/v1.10.2/YeopjariCat-Windows-1.10.2.zip"
+    }
+  },
+  "checks": {
+    "all_downloaded_sizes_match_github_api": true,
+    "all_downloaded_sha256_match_github_api_asset_digests": true,
+    "sha256sums_matches_all_four_declared_files": true,
+    "tools_release_verify": true,
+    "actual_pe_x64_version_and_korean_dialog": true,
+    "zip_crc_and_expected_six_entries": true,
+    "zip_exe_equals_standalone_exe": true,
+    "zip_feed_equals_official_url": true,
+    "zip_notes_equal_feed_and_release_notes": true,
+    "native_perch_hit_test_in_windows_render_step": true
+  },
+  "exe_version_info": {
+    "FileDescription": "Yeopjari Cat - a quiet desktop companion",
+    "FileVersion": "1.10.2",
+    "InternalName": "YeopjariCat",
+    "OriginalFilename": "YeopjariCat.exe",
+    "ProductName": "Yeopjari Cat",
+    "ProductVersion": "1.10.2"
+  },
+  "zip_entries": [
+    "YeopjariCat.exe",
+    "update-feed.txt",
+    "README_KO.txt",
+    "CHANGELOG_KO.txt",
+    "THIRD_PARTY_NOTICES.txt",
+    "DISTRIBUTION_KO.txt"
+  ],
+  "audio_continuity": {
+    "baseline_public_version": "1.10.0",
+    "baseline_source": "7d76c7f3ef48d80b8a597705497d96c76094cc7d",
+    "all_fourteen_embedded_resources_equal_public_baseline_and_release_source": true,
+    "resources": [
+      {
+        "resource_id": 301,
+        "source_path": "assets/audio/hungry.wav",
+        "sha256": "eff37be4b8bdc01fc6d0649fb0e8101fc0f961b2b0d6b9ca46cf481995afa412",
+        "size_bytes": 46348
+      },
+      {
+        "resource_id": 302,
+        "source_path": "assets/audio/meal.wav",
+        "sha256": "64388dcda583a41cf3753c6bcccd95fbfa47beaaa96888007682fa51e7fd0d69",
+        "size_bytes": 136754
+      },
+      {
+        "resource_id": 303,
+        "source_path": "assets/audio/treat.wav",
+        "sha256": "2dc3a17c4b25a45a054525c9dab32d5be4ec473078cad2c3dd3290c38513c259",
+        "size_bytes": 145574
+      },
+      {
+        "resource_id": 304,
+        "source_path": "assets/audio/refuse.wav",
+        "sha256": "75b8fbf72189698f6f48f70ea6317e47a10eb92e1540edbb5acb65184d2069e3",
+        "size_bytes": 24740
+      },
+      {
+        "resource_id": 305,
+        "source_path": "assets/audio/pet.wav",
+        "sha256": "ab5c77ee70df1a6fea9700a7b3d6a9dbe002ac6aec24c745a1a550a1a1657160",
+        "size_bytes": 61784
+      },
+      {
+        "resource_id": 306,
+        "source_path": "assets/audio/jump.wav",
+        "sha256": "3fdf44c29b9f5a8d5d4497d6c70fd93a1c8e8a93fa6d55b06928197c73f3278f",
+        "size_bytes": 34002
+      },
+      {
+        "resource_id": 307,
+        "source_path": "assets/audio/punch.wav",
+        "sha256": "86f8665d1f6a86487a0b28a5f3dd0b1b18e9f3de0138d3c35b84fe7293cbfe43",
+        "size_bytes": 42380
+      },
+      {
+        "resource_id": 308,
+        "source_path": "assets/audio/wake.wav",
+        "sha256": "c9d65898143b3bad0088d338523df7d2f18360729ff332b5109eeea34e64c745",
+        "size_bytes": 48554
+      },
+      {
+        "resource_id": 309,
+        "source_path": "assets/audio/food-request.wav",
+        "sha256": "5464745f108680d3392f4dec971dc8fb2cb4b9f43294547500c414f540ad2ef9",
+        "size_bytes": 47672
+      },
+      {
+        "resource_id": 310,
+        "source_path": "assets/audio/meal-fish.wav",
+        "sha256": "18e283b388dc09a118e1bfbef2b101eb2f898fe446542d5de690f0c911b4c743",
+        "size_bytes": 136754
+      },
+      {
+        "resource_id": 311,
+        "source_path": "assets/audio/meal-nogari.wav",
+        "sha256": "924d10920412f7c0363ef74ef615bcd382ab4f45149448a5c9f085f244c205b0",
+        "size_bytes": 136754
+      },
+      {
+        "resource_id": 312,
+        "source_path": "assets/audio/punch-second.wav",
+        "sha256": "01e5ae1abec657cb8886d68305043dcb269bc79d75083fd833bb748433978526",
+        "size_bytes": 134108
+      },
+      {
+        "resource_id": 313,
+        "source_path": "assets/audio/gesture.wav",
+        "sha256": "600867a49ac2b3071f3ea75037c4f42986da9c2e0042fef56d0dc73b48f45910",
+        "size_bytes": 39736
+      },
+      {
+        "resource_id": 314,
+        "source_path": "assets/audio/greeting.wav",
+        "sha256": "d026350d74d4f2bea477ae501343bd189f9344111d7257308ca291d5cf4793df",
+        "size_bytes": 37088
+      }
+    ]
+  },
+  "verification_inputs": "Direct public v1.10.2 asset URLs, official latest URL, GitHub REST release/tag/workflow/job metadata. Local release-info.json reconstructed from public API digests solely for tools/release.py verification.",
+  "limitations": [
+    "Windows CI self-test and GDI+ render test results are verified from successful job/step metadata; this independent check did not execute the EXE locally.",
+    "Manual Windows 10/11 visual, speaker, window-manipulation, multi-monitor and live updater replacement checks are separate and are not claimed here."
+  ],
+  "windows_native_input_regression": {
+    "entrypoint": "--render-self-test -> RenderSelfTest -> NativePerchHitTest",
+    "source_url": "https://github.com/cho-woo/yeopjari-cat/blob/fd2bc01315b69ab24665bda491d19bf938b992ef/src/main.cpp#L2491",
+    "evidence": "NativePerchHitTest return value is the render self-test exit status; the Windows workflow step checks that status and succeeded.",
+    "cases": [
+      "Opaque cat pixel receives HTCLIENT while perched",
+      "Transparent pixel passes through",
+      "Opaque pixel inside supporting application rectangle passes through",
+      "Opaque pixel receives HTCLIENT during a window transfer",
+      "WM_LBUTTONDOWN preserves actual Box2D platform contact and height until drag movement"
+    ],
+    "limitations": "Uses SendMessageW with a hidden real Win32 window; does not claim a manual visible context-menu, mouse-up/petting, live update or drag-between-monitors session."
+  }
+}
