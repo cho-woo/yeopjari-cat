@@ -1,0 +1,19 @@
+{
+  "source_commit": "4e020adbbf0d59a4f7ec245e3266825c362f1fff",
+  "exe_size_bytes": 22797824,
+  "local_sha256": "354db65a453f6546bac7d02bcdd42586728bdac2a5809b38833732f4f503e5b1",
+  "public_sha256": "540f2340692df9619da7f63dd16405b670375795cda13383f53294bfee50825a",
+  "ignored_fields": [
+    "PE COFF link timestamp",
+    "PE optional-header checksum",
+    "PE debug-directory link timestamp"
+  ],
+  "ignored_offsets": [
+    128,
+    208,
+    1681924
+  ],
+  "equal_after_normalization": true,
+  "normalized_sha256": "13b61a90d9c3a333ce16d8f66f78a69f120207fec48d77448d1aceaf805ccdb6",
+  "note": "Only in-memory comparison copies were normalized. Public and local executable files were not modified; raw file hashes differ because link timestamps differ."
+}
