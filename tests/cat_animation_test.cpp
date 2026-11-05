@@ -434,19 +434,23 @@ void DistanceDrivenGaitSurvivesSpeedAndActionChanges() {
     for (int i = 0; i < 120; ++i) CHECK(frequent.Advance(Motion::Walk, 22.0 / 60, 1.0 / 60));
     for (int i = 0; i < 60; ++i) CHECK(sparse.Advance(Motion::Walk, 22.0 / 30, 1.0 / 30));
     CHECK(std::abs(frequent.Phase() - sparse.Phase()) < 1e-12);
+    CHECK(std::abs(frequent.OriginalWalkPhase() - sparse.OriginalWalkPhase()) < 1e-12);
     CHECK(std::abs(frequent.Speed() - sparse.Speed()) < 1e-12);
 
     // A new action's elapsed clock must not reset a partially completed stride.
     const auto before = Evaluate(Motion::Walk, 9000, 700, 1, frequent);
     const auto restarted = Evaluate(Motion::Walk, 0, 700, 1, frequent);
     CHECK(WeightDistance(before, restarted) == 0);
-    CHECK(before.walkingRig && restarted.walkingRig && before.walkPhase==restarted.walkPhase);
+    CHECK(before.originalWalk && restarted.originalWalk && !before.walkingRig && !restarted.walkingRig);
     CHECK(before.lift == restarted.lift && before.angle == restarted.angle);
     const auto heldPhase = frequent.Phase();
+    const auto heldOriginalPhase = frequent.OriginalWalkPhase();
     CHECK(frequent.Advance(Motion::Idle, 0, .1));
     CHECK(frequent.Phase() == heldPhase);
+    CHECK(frequent.OriginalWalkPhase() == heldOriginalPhase);
     CHECK(frequent.Advance(Motion::Walk, StrideLength(Motion::Walk)*.1, .1));
     CHECK(std::abs(frequent.Phase() - std::fmod(heldPhase + .1, 1.0)) < 1e-12);
+    CHECK(std::abs(frequent.OriginalWalkPhase() - std::fmod(heldOriginalPhase + 2.4/14, 1.0)) < 1e-12);
 
     // Actual distance, including slower feeding/weight states, sets cadence.
     Locomotion slow, fast, leftward;
@@ -455,10 +459,13 @@ void DistanceDrivenGaitSurvivesSpeedAndActionChanges() {
     CHECK(leftward.Advance(Motion::Walk, -1.4, .1));
     CHECK(std::abs(fast.Phase() - 2 * slow.Phase()) < 1e-12);
     CHECK(leftward.Phase() == slow.Phase());
+    CHECK(std::abs(slow.OriginalWalkPhase()-.1)<1e-12);
+    CHECK(std::abs(fast.OriginalWalkPhase()-.2)<1e-12);
+    CHECK(leftward.OriginalWalkPhase()==slow.OriginalWalkPhase());
     const auto right = Evaluate(Motion::Walk, 0, 700, 1, slow);
     const auto left = Evaluate(Motion::Walk, 0, 700, -1, leftward);
     CHECK(WeightDistance(right, left) == 0 && right.flip != left.flip);
-    CHECK(right.walkingRig && left.walkingRig && right.walkPhase==left.walkPhase);
+    CHECK(right.originalWalk && left.originalWalk && !right.walkingRig && !left.walkingRig);
     CHECK(std::abs(right.angle + left.angle) < 1e-12);
 }
 
@@ -467,27 +474,69 @@ void BlockedOrStoppedGaitsDoNotKeepStepping() {
     Locomotion gait;
     CHECK(gait.Advance(Motion::Walk, 2, .05));
     const auto phase = gait.Phase();
+    const auto originalPhase = gait.OriginalWalkPhase();
     for (int i = 0; i < 100; ++i) CHECK(gait.Advance(Motion::Walk, 0, .02));
     CHECK(gait.Phase() == phase);
+    CHECK(gait.OriginalWalkPhase() == originalPhase);
     CHECK(gait.Speed() < 1e-8);
     const auto stopped = Evaluate(Motion::Walk, 3000, 0, 1, gait);
     CHECK(stopped.lift == 0);
     CHECK(std::abs(stopped.angle) < 1e-12 && std::abs(stopped.scaleY - 1) < 1e-12);
     const auto late = Evaluate(Motion::Walk, 100000, 0, 1, gait);
     CHECK(WeightDistance(stopped, late) == 0);
-    CHECK(stopped.walkingRig && late.walkingRig && stopped.walkPhase==late.walkPhase);
+    CHECK(stopped.originalWalk && late.originalWalk && !stopped.walkingRig && !late.walkingRig);
 
     // A reversal changes facing, never rewinds the gait or adds a phantom step.
     CHECK(gait.Advance(Motion::Walk, -StrideLength(Motion::Walk)*.1, .1));
     CHECK(std::abs(gait.Phase() - std::fmod(phase + .1, 1.0)) < 1e-12);
+    CHECK(std::abs(gait.OriginalWalkPhase() - std::fmod(originalPhase + 2.4/14, 1.0)) < 1e-12);
     gait.Reset();
-    CHECK(gait.Phase() == 0 && gait.Speed() == 0);
+    CHECK(gait.Phase() == 0 && gait.OriginalWalkPhase() == 0 && gait.Speed() == 0);
+}
+
+void OriginalWalkingKeepsArchivedFramesAndCadence() {
+    using namespace cat::animation;
+    CHECK(kOriginalWalkStride==14);
+    // Recorded v1.9.0 contract: 0 -> 1 -> 2 -> 3, hold each drawing for
+    // 60% of its interval, then blend only the final 40%. A whole cycle
+    // covers 14 logical body pixels, independently of elapsed action time.
+    for(int frame=0;frame<4;++frame)for(double fraction:{.0,.2,.6,.7,.8,.9}) {
+        Locomotion gait;
+        const double phase=(frame+fraction)/4;
+        double remaining=phase*14;
+        while(remaining>1e-12) {
+            const double step=std::min(remaining,2.2);
+            CHECK(gait.Advance(Motion::Walk,step,step/22));remaining-=step;
+        }
+        for(int facing:{-1,1}) {
+            const auto pose=Evaluate(Motion::Walk,900000,700,facing,gait);
+            CHECK(pose.originalWalk && !pose.walkingRig);
+            CHECK(pose.frame==frame && pose.flip==(facing<0));
+            CHECK(pose.x==0 && pose.lift==0 && pose.angle==0 && pose.scaleX==1 && pose.scaleY==1);
+            CHECK(pose.groundContact && !pose.centerPivot && cat::deform::Zero(pose.joints));
+            const auto weights=FrameWeights(pose);
+            const double expected=fraction<=.6?0:fraction==.7?.15625:fraction==.8?.5:.84375;
+            CHECK(std::abs(weights[frame]-(1-expected))<1e-11);
+            CHECK(std::abs(weights[(frame+1)%4]-expected)<1e-11);
+            for(int other=4;other<kSpriteCount;++other)CHECK(weights[other]==0);
+        }
+    }
+    // The authored cycle wraps cleanly and does not consume movement from
+    // other actions, window carrying, pauses or an invalid teleport sample.
+    Locomotion gait;
+    for(int i=0;i<7;++i)CHECK(gait.Advance(Motion::Walk,2,.1));
+    CHECK(std::min(gait.OriginalWalkPhase(),1-gait.OriginalWalkPhase())<1e-12);
+    const auto held=gait.OriginalWalkPhase();
+    CHECK(gait.Advance(Motion::Zoomies,4,.1));
+    CHECK(gait.Advance(Motion::Idle,0,.1));
+    CHECK(gait.Advance(Motion::Walk,0,0));
+    CHECK(gait.OriginalWalkPhase()==held);
 }
 
 void DistanceDrivenFrameTransitionsRemainContinuous() {
     using namespace cat::animation;
     CHECK(StrideLength(Motion::Walk)==24 && StrideLength(Motion::Stalk)==20 && StrideLength(Motion::Zoomies)==52);
-    for (const auto motion : {Motion::Walk, Motion::Zoomies, Motion::Stalk}) {
+    for (const auto motion : {Motion::Zoomies, Motion::Stalk}) {
         Locomotion gait;
         const double stride = StrideLength(motion);
         const double speed=motion==Motion::Zoomies?165:motion==Motion::Stalk?12.5:22;
@@ -513,18 +562,15 @@ void DistanceDrivenFrameTransitionsRemainContinuous() {
         CHECK(continuous);
         CHECK(normalized);
     }
-    // Every phase uses one registered walking drawing. A separate foot rig
-    // carries continuous phase, so body/head pixels never crossfade identities.
-    for (const double phase : {.05, .10, .30, .35, .55, .60, .80, .85}) {
-        Locomotion gait;
-        double remaining=phase*StrideLength(Motion::Walk);
-        while(remaining>1e-12) {
-            const double distance=std::min(remaining,2.2);
-            CHECK(gait.Advance(Motion::Walk,distance,distance/22));remaining-=distance;
-        }
-        const auto pose=Evaluate(Motion::Walk, 0, 0, 1, gait);
-        CHECK(pose.blendFrame == -1 && pose.walkingRig && pose.frame==1);
-        CHECK(std::abs(pose.walkPhase-phase)<1e-12);
+    Locomotion original;
+    auto previous=Evaluate(Motion::Walk,0,0,1,original);
+    for(int sample=0;sample<4200;++sample) {
+        CHECK(original.Advance(Motion::Walk,.01,.01/22));
+        const auto pose=Evaluate(Motion::Walk,0,0,1,original);
+        CHECK(WeightDistance(previous,pose)<.022);
+        double total=0;for(double weight:FrameWeights(pose))total+=weight;
+        CHECK(std::abs(total-1)<1e-12);
+        previous=pose;
     }
 }
 
@@ -537,7 +583,9 @@ void RealSpeedsChooseAReachableCadence() {
         Locomotion gait;const auto [motion,speed]=scenario;
         for(int i=0;i<fps*3;++i)CHECK(gait.Advance(motion,speed/fps,1/fps));
         const auto pose=Evaluate(motion,0,0,1,gait);
-        CHECK(pose.walkFeetValid && pose.walkingRig && pose.frame==1);
+        CHECK(pose.walkFeetValid);
+        if(motion==Motion::Walk)CHECK(pose.originalWalk && !pose.walkingRig && pose.frame>=0 && pose.frame<4);
+        else CHECK(pose.walkingRig && !pose.originalWalk && pose.frame==1);
         CHECK(std::abs(gait.Speed()-speed)<1e-8);
         if(speed>=165) {
             CHECK(std::abs(pose.walkStride-52)<1e-5);
@@ -604,7 +652,7 @@ void GaitDiscontinuityGuardsAndLegacyPoseCompatibility() {
             std::pair{1.0, std::numeric_limits<double>::quiet_NaN()}}) {
         CHECK(gait.Advance(Motion::Walk, 1, .02));
         CHECK(!gait.Advance(Motion::Walk, invalid.first, invalid.second));
-        CHECK(gait.Phase() == 0 && gait.Speed() == 0);
+        CHECK(gait.Phase() == 0 && gait.OriginalWalkPhase() == 0 && gait.Speed() == 0);
     }
     CHECK(gait.Advance(Motion::Walk, 2, .1));
     for (const auto motion : motions) {
@@ -639,11 +687,12 @@ int main() {
         FacingAndMirroring();
         DistanceDrivenGaitSurvivesSpeedAndActionChanges();
         BlockedOrStoppedGaitsDoNotKeepStepping();
+        OriginalWalkingKeepsArchivedFramesAndCadence();
         DistanceDrivenFrameTransitionsRemainContinuous();
         RealSpeedsChooseAReachableCadence();
         ContactsStayPlantedWhileGaitAndSpeedChange();
         GaitDiscontinuityGuardsAndLegacyPoseCompatibility();
-        std::cout << "18 animation groups; " << checks << " checks passed\n";
+        std::cout << "19 animation groups; " << checks << " checks passed\n";
         return EXIT_SUCCESS;
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';

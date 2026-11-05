@@ -1817,7 +1817,8 @@ bool DrawRegisteredReclineLayers(const cat::animation::Pose& pose, REAL center, 
 void DrawStyledAnimation(Graphics& graphics, cat::animation::Pose pose, REAL center, REAL bottom, REAL scale,
                          cat::Character character, cat::Outfit outfit, const cat::nutrition::Visual& body,
                          Surface& blendFrom, Surface& blendTo, int canvasWidth, int canvasHeight) {
-    if (pose.walkingRig && DrawWalkingPet(graphics,pose,center,bottom,scale,character,outfit,body)) return;
+    const bool useWalkingRig=pose.walkingRig || (pose.originalWalk && cat::species::UsesNewArt(character));
+    if (useWalkingRig && DrawWalkingPet(graphics,pose,center,bottom,scale,character,outfit,body)) return;
     auto draw = [&](Graphics& target, int frame) {
         DrawPet(target, frame, center, bottom, scale, pose.flip,
                 static_cast<REAL>(pose.scaleX * body.bodyWidth),

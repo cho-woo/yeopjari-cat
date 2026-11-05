@@ -1,0 +1,29 @@
+{
+  "description": "Ordinary walking at actual size: left v1.9 archived evaluator; middle v2.0.5 released procedural rig; right v2.0.6 working original painted walk restoration. Cream top, Silver bottom.",
+  "renderer": "Production C++ evaluators and v2.0.5 Rig raster, Pillow final affine placement and premultiplied blend. Not Win32/GDI+ or live Box2D/window execution.",
+  "dimensions": [
+    840,
+    380
+  ],
+  "frames": 80,
+  "frame_ms": 40,
+  "speed_logical_px_s": 22,
+  "body_scale": "Adult, normal nutrition, 96 DPI; common source scale 110 / max(first six cropped frame heights).",
+  "archived_v19_source_bundle": "build-inputs/v1.9.0/yeopjari-src-1.9.0.tar.gz",
+  "archived_v19_source_sha256": "9ae05050d4cf9222cfa05832d254e76f940a2d89a7464b4343c97669a1e9d78b",
+  "released_v205_commit": "87ec4ec62d70b621ed51d89e4c6cc4ab93087a66",
+  "candidate_animation_sha256": "f0876dcc17d58ee3b65b15ab526292d9650876493b76c7de9f74448ba7c13e95",
+  "candidate_renderer_sha256": "f6365b914b32a2c7f5ed79cc117f2c330ccf662955e80671eb55b9dbcf421c68",
+  "preview_tool": "tools/render_original_walk_review.py",
+  "preview_tool_sha256": "da7bed244b9701b0de60fbbef861bf3fada566de9d998305defdfb15804b451a",
+  "preview_sha256": "d4f36d5d29979fec25ca4321e864f2f1c1e535b9555345bf4b0b5312e6b5202e",
+  "art_sha256": {
+    "cat.png": "f92c5b30167b8978252c812af65ac99ec5be1e7c79fffa1bf3d94810b25d9803",
+    "cat-silver.png": "dda2643da439a790ee820c6a4b764eb56807a76f8c59292cc613342a80fd7db0"
+  },
+  "original_frame_scale": "Fixed shared scale, alpha >16 crop plus 2px padding, lower-center placement.",
+  "candidate_walk": "Four original whole painted poses, 14 logical body px/cycle, hold 60% then SmoothStep blend final 40%. No procedural paw warp, scale pulse, body angle, or decorative lift.",
+  "review": "160 character samples match archived v1.9 frame, blend frame, blend weight and original 14px phase. Candidate fixed transform and floor alignment checked. Full face/paw stills inspected for both characters.",
+  "visual_findings": "Candidate preserves original painted limb contours. v2.0.5 shows a triangular alpha gap beside the near foreleg in part of its cycle. Four original drawings still differ slightly in face/tail shape; brief crossfades are visible on close inspection.",
+  "limits": "Preview verifies rendering/cadence comparison, not biological gait realism or absence of every visible imperfection. Actual Windows build, integration tests and package/feed validation are separate release checks."
+}
