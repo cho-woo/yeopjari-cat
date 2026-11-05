@@ -58,38 +58,12 @@ int NativeWalkingRenderTest(std::string& context) {
         graphics.Flush(FlushIntentionSync);
         return copy();
     };
-    const auto originalExpected=[&](cat::Character character,const cat::animation::Pose& pose,
-                                    const cat::nutrition::Visual& body,REAL desiredHeight) {
-        auto expected=originalFrame(character,pose.frame,pose.flip,body,desiredHeight);
-        if(pose.blendFrame>=0 && pose.blend>0) {
-            const auto next=originalFrame(character,pose.blendFrame,pose.flip,body,desiredHeight);
-            if(pose.blend>=1)return next;
-            const unsigned weight=static_cast<unsigned>(std::lround(pose.blend*255));
-            for(std::size_t i=0;i<expected.size();++i)
-                expected[i]=static_cast<BYTE>((expected[i]*(255-weight)+next[i]*weight+127)/255);
-            // Present the independent mixed atlas pixels through the same
-            // 1:1 PARGB transfer required by the native drawing API. Do not
-            // assume every Windows GDI+ version preserves edge bytes during
-            // a high-quality source-over transfer onto a transparent DIB.
-            Bitmap composed(420,320,420*4,PixelFormat32bppPARGB,expected.data());
-            Graphics graphics(canvas.image.get());
-            graphics.SetCompositingMode(CompositingModeSourceCopy);graphics.Clear(Color(0,0,0,0));
-            graphics.SetCompositingMode(CompositingModeSourceOver);
-            graphics.SetSmoothingMode(SmoothingModeAntiAlias);
-            graphics.SetInterpolationMode(InterpolationModeHighQualityBicubic);
-            graphics.SetPixelOffsetMode(PixelOffsetModeHighQuality);
-            graphics.DrawImage(&composed,Rect(0,0,420,320),0,0,420,320,UnitPixel);
-            graphics.Flush(FlushIntentionSync);
-            return copy();
-        }
-        return expected;
-    };
     for(const auto character:{cat::Character::Cream,cat::Character::SilverTabby})for(int facing:{-1,1})
     for(const auto dimensions:{std::pair<double,double>{1,1},{.82,1.04},{1.25,.96}})
     for(REAL desiredHeight:{80.0f,110.0f,165.0f})for(int sample=0;sample<8;++sample) {
         auto body=normalBody;body.bodyWidth=dimensions.first;body.bodyHeight=dimensions.second;
         cat::animation::Locomotion gait;
-        // Alternate a held drawing and the midpoint of its short blend.
+        // Check both early and formerly blended parts against one raw source frame.
         const double phase=(sample/2+(sample%2?.8:.2))/4;
         double remaining=phase*14;
         while(remaining>1e-12) {
@@ -99,9 +73,10 @@ int NativeWalkingRenderTest(std::string& context) {
         }
         const auto pose=cat::animation::Evaluate(Motion::Walk,0,500000,facing,gait);
         if(!pose.originalWalk || pose.walkingRig || pose.frame!=sample/2 ||
+                pose.blendFrame!=-1 || pose.blend!=0 ||
                 pose.x!=0 || pose.lift!=0 || pose.angle!=0 || pose.scaleX!=1 || pose.scaleY!=1 ||
                 !cat::deform::Zero(pose.joints))return 152;
-        const auto expected=originalExpected(character,pose,body,desiredHeight);
+        const auto expected=originalFrame(character,sample/2,pose.flip,body,desiredHeight);
         const auto* previousRig=CurrentArt(character).walking.get();
         for(int outfit=0;outfit<cat::kOutfitCount;++outfit) {
             if(outfit!=0 && (dimensions.first!=1 || desiredHeight!=110))continue;
@@ -239,7 +214,8 @@ int NativeWalkingRenderTest(std::string& context) {
             context="persistent walking c="+std::to_string(static_cast<int>(character))+
                 " frame="+std::to_string(frame)+" width="+std::to_string(body.bodyWidth);
             if(motion==Motion::Walk) {
-                const auto authored=originalExpected(character,pose,body,110);
+                if(pose.blendFrame!=-1 || pose.blend!=0)return 158;
+                const auto authored=originalFrame(character,pose.frame,pose.flip,body,110);
                 if(!draw(character,cat::Outfit::None,pose,body,false) || copy()!=authored)return 158;
                 continue;
             }

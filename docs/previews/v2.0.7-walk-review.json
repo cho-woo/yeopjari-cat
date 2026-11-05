@@ -1,0 +1,88 @@
+{
+  "reference": "Actual user uploaded v1.0.0, not inferred v1.3/v1.9 history",
+  "reference_paths_sha256": {
+    "main.cpp": "e4a88141b85886997bc9174fc96aafc1238b1288e9cc752779c71c61e5e808ea",
+    "BUILD_INFO.json": "80d124eadcf02fb9a41d54f959bf33513f7e27fa7a23b0a7c5b6fa172d14fd44",
+    "YeopjariCat.exe": "74197fafddc6c04590e74376faeda766df9d01776a08e280437ea4ea88c0e801",
+    "resources.rc": "b4f3fae491f5de5691afce5a198e4889433c36696147095c43735431cc1ddaa6",
+    "assets/cat.png": "f92c5b30167b8978252c812af65ac99ec5be1e7c79fffa1bf3d94810b25d9803"
+  },
+  "current_commit": "3d40f0d43acda78257322a3354a8716832d985f7",
+  "working_tree": true,
+  "current_version": "2.0.7",
+  "current_header_sha256": "81dbb6f579cb391e440e1e462b5baaad8f1799fdaf2f7061e81c8a8011feb5a0",
+  "tool_sha256": "2ef2a402100cba2dd86a2d508ff526023f16a39a7613469aad4bb110a7dc2a8b",
+  "source_art_identical": true,
+  "resource": "RCDATA type10 id101 extracted from supplied EXE",
+  "speed_px_s": 22.0,
+  "tick_ms": 40,
+  "reference_height_px": 110,
+  "atlas_reference_height_source_px": 367,
+  "crop_rectangles": [
+    [
+      32,
+      54,
+      421,
+      390
+    ],
+    [
+      484,
+      54,
+      865,
+      393
+    ],
+    [
+      925,
+      53,
+      1309,
+      391
+    ],
+    [
+      1357,
+      54,
+      1753,
+      393
+    ],
+    [
+      56,
+      468,
+      385,
+      834
+    ],
+    [
+      497,
+      467,
+      822,
+      834
+    ],
+    [
+      907,
+      552,
+      1318,
+      823
+    ],
+    [
+      1389,
+      520,
+      1746,
+      838
+    ]
+  ],
+  "walking_visible_rectangle_heights_px": [
+    100.708446866485,
+    101.60762942779292,
+    101.30790190735695,
+    101.60762942779292
+  ],
+  "initial_walk": "floor(actionElapsedMs/150)%4, hard switch, no crossfade,600ms/cycle; window center integer rounded",
+  "initial_breath": "(sin(systemTicks/700)+1)*0.38px entire-image vertical translation; systemTicks begins500000 for repeatability",
+  "current_walk": "14 logical body px/cycle; one complete original drawing, no blending; zero decorative lift; subpixel horizontal root",
+  "all_samples_single_frame": true,
+  "current_cycle_seconds": 0.6363636363636364,
+  "current_hold_ms": 159.0909090909091,
+  "current_blend_ms": 0,
+  "placement": "Both use110/max(first6 cropped source heights), bottom-center individual crops and1px contact margin; no per-frame resizing to equal height",
+  "limits": "C++ current evaluator and exact uploaded source formulas with Pillow final raster. Not live Windows/GDI+, Box2D or window interaction; constant actual travel replay only. v1.0 has no Box2D.",
+  "sample_count": 90,
+  "gif_sha256": "1f6e02398505be22c4bf5dc70b68072b9689bc01e67ccd6c9b351fc4b3994fbe"
+}
