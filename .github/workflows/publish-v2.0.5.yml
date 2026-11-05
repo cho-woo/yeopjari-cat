@@ -1,0 +1,216 @@
+name: Build, verify on Windows and publish v2.0.5
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: yeopjari-cat-release-publication
+  cancel-in-progress: false
+
+env:
+  VERSION: 2.0.5
+  PYTHONUTF8: '1'
+
+jobs:
+  build:
+    if: github.repository == 'cho-woo/yeopjari-cat' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Require the requested source version
+        run: |
+          python3 - <<'PY'
+          import os, sys
+          sys.path.insert(0, 'tools')
+          import release
+          assert release.version_from_header(release.ROOT / 'src/app_version.h') == os.environ['VERSION']
+          PY
+      - name: Install pinned dependencies
+        run: bash tools/setup.sh
+      - name: Test, build Windows x64 and verify ZIP and update feed
+        run: bash tools/check.sh
+      - name: Select exactly one verified package
+        id: package
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          packages = list(Path('release/publish').glob('check-' + os.environ['VERSION'] + '-*/package'))
+          assert len(packages) == 1, packages
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              output.write('path=' + str(packages[0]) + '\n')
+          PY
+      - name: Test publisher permissions and failure safeguards without network
+        shell: pwsh
+        env:
+          PACKAGE_PATH: ${{ steps.package.outputs.path }}
+        run: '& ./tests/publisher_runtime_test.ps1 -PackagePath $env:PACKAGE_PATH'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-v2.0.5-${{ github.sha }}
+          path: ${{ steps.package.outputs.path }}/*
+          if-no-files-found: error
+
+  windows-smoke:
+    needs: build
+    runs-on: windows-2022
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-v2.0.5-${{ github.sha }}
+          path: package
+      - name: Verify downloaded package on Windows
+        shell: pwsh
+        run: |
+          $PSNativeCommandUseErrorActionPreference = $false
+          $output = & python -X utf8 tools/release.py --verify package 2>&1
+          $code = $LASTEXITCODE
+          $output | ForEach-Object { Write-Host $_ }
+          if ($code -ne 0) {
+            $detail = ($output -join "`n").Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
+            Write-Host "::error::$detail"
+            exit $code
+          }
+      - name: Verify no audio resources or playback imports in the packaged EXE
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $exe = (Resolve-Path "package/YeopjariCat-$env:VERSION.exe").Path
+          & python -X utf8 tools/verify_silent_exe.py $exe
+          if ($LASTEXITCODE -ne 0) {
+            throw "Silent executable verification failed with exit code $LASTEXITCODE."
+          }
+      - name: Execute the Windows x64 binary self-test
+        timeout-minutes: 2
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $exe = (Resolve-Path "package/YeopjariCat-$env:VERSION.exe").Path
+          $process = Start-Process -FilePath $exe -ArgumentList '--self-test' -PassThru -Wait
+          if ($process.ExitCode -ne 0) {
+            throw "Windows self-test failed with exit code $($process.ExitCode)."
+          }
+          Write-Host 'Windows x64 save-state, life/toy and cursor host self-tests passed.'
+      - name: Render real Windows GDI+ motion, retired-wardrobe and contact regressions
+        timeout-minutes: 8
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $exe = (Resolve-Path "package/YeopjariCat-$env:VERSION.exe").Path
+          $process = Start-Process -FilePath $exe -ArgumentList '--render-self-test' -PassThru -Wait
+          $report = if (Test-Path render-self-test.txt) { Get-Content render-self-test.txt -Raw } else { "No native render report produced." }
+          Write-Host $report
+          if ($process.ExitCode -ne 0) {
+            $detail = $report.Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
+            Write-Host "::error::$detail"
+            throw "Native Windows render test failed with exit code $($process.ExitCode)."
+          }
+          Write-Host 'Native GDI+ motion, walking rig, posture transitions, 10 species, 13 retained outfit keys without overlays, expressions and both pet input tests passed.'
+
+  publish:
+    needs: [build, windows-smoke]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-v2.0.5-${{ github.sha }}
+          path: package
+      - name: Reverify the exact tested package
+        run: python3 tools/release.py --verify package
+      - name: Bind the draft to this tested source commit
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $repo = 'cho-woo/yeopjari-cat'
+          $tag = 'v' + $env:VERSION
+          & gh api "repos/$repo" --jq '.permissions'
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect publishing permissions.' }
+          $json = & gh release list --repo $repo --limit 1000 --json tagName,isDraft,isPrerelease
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect release history.' }
+          $history = @($json | ConvertFrom-Json)
+          if ($history.Count -ge 1000) { throw 'Release history exceeds the bounded check.' }
+          $existing = @($history | Where-Object { $_.tagName -eq $tag })
+          if ($existing.Count -gt 1) { throw 'Ambiguous release.' }
+          if ($existing.Count -eq 0) {
+            & gh release create $tag --repo $repo --draft --target $env:GITHUB_SHA --title "Yeopjari Cat $env:VERSION" --notes-file package/RELEASE_NOTES_KO.txt
+          } else {
+            if (-not $existing[0].isDraft -or $existing[0].isPrerelease) {
+              throw 'The existing release is public or a prerelease. Nothing will be overwritten.'
+            }
+            & gh release edit $tag --repo $repo --target $env:GITHUB_SHA
+          }
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot bind draft to tested commit.' }
+          $json = & gh release view $tag --repo $repo --json isDraft,isPrerelease,targetCommitish
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot verify draft target.' }
+          $draft = $json | ConvertFrom-Json
+          if (-not $draft.isDraft -or $draft.isPrerelease -or $draft.targetCommitish -ne $env:GITHUB_SHA) {
+            throw 'Draft does not match this tested commit.'
+          }
+          $json = & gh api "repos/$repo/git/matching-refs/tags/$tag"
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect existing release tag.' }
+          $refs = @($json | ConvertFrom-Json | Where-Object { $_.ref -eq "refs/tags/$tag" })
+          if ($refs.Count -gt 1) { throw 'Ambiguous release tag.' }
+          if ($refs.Count -eq 1) {
+            $resolved = & gh api "repos/$repo/commits/$tag" --jq '.sha'
+            if ($LASTEXITCODE -ne 0 -or $resolved -ne $env:GITHUB_SHA) {
+              throw 'Existing tag does not point to this tested commit.'
+            }
+          }
+      - name: Upload, download and hash-check draft assets, then publish stable
+        shell: pwsh
+        run: |
+          try {
+            & ./package/publish-github.ps1 -Publish
+          } catch {
+            $detail = ($_ | Out-String).Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
+            Write-Host "::error::$detail"
+            throw
+          }
+      - name: Verify public latest feed and public downloads
+        run: |
+          python3 - <<'PY'
+          import json, shutil, sys, tempfile, time
+          from pathlib import Path
+          from urllib.request import Request, urlopen
+          from urllib.parse import quote
+          sys.path.insert(0, 'tools')
+          import release
+          package = Path('package')
+          info = json.loads((package / 'release-info.json').read_text())
+          expected = (package / 'latest.txt').read_bytes()
+          for attempt in range(12):
+              try:
+                  request = Request(info['feed_url'], headers={'Cache-Control': 'no-cache'})
+                  with urlopen(request, timeout=30) as response:
+                      if response.read() == expected:
+                          break
+              except OSError:
+                  pass
+              time.sleep(5)
+          else:
+              raise SystemExit('Official latest feed has not reached the published version.')
+          with tempfile.TemporaryDirectory() as temporary:
+              target = Path(temporary)
+              base = info['download_url'].rsplit('/', 1)[0] + '/'
+              for name in info['files']:
+                  with urlopen(base + quote(name), timeout=60) as response:
+                      (target / name).write_bytes(response.read())
+              shutil.copyfile(package / 'release-info.json', target / 'release-info.json')
+              release.verify_release(target)
+          print('Official stable feed and all public release files verified.')
+          PY

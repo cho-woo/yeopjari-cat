@@ -34,6 +34,17 @@ inline double BodyCompression(double phase,double stride,double duty) {
 }
 inline double BendWeight(double t) {t=std::clamp(t,0.0,1.0);return 16*t*t*(1-t)*(1-t);}
 inline double BendDerivative(double t) {return t>0&&t<1?32*t*(1-t)*(1-2*t):0;}
+inline double OrdinaryWalk(double duty,Profile profile) {
+    return profile.fourLegs?cat::gait::WalkWeight(duty):0;
+}
+inline double WalkingPawHeight(int leg,double duty,Profile profile) {
+    // In the original art the near paw starts at its ankle crease, about
+    // 9% of the image above the sole. Preserving only the bottom4% still
+    // stretched its rounded upper half. Keep the entire paw rigid in an
+    // ordinary walk, with deformation confined to the leg above it.
+    // Retain the established run and stalking articulation.
+    return .04+OrdinaryWalk(duty,profile)*((leg==0||leg==2)?.05:leg==1?.045:.01);
+}
 inline bool MonotoneLeg(double dy,double kneeY,double reach) {
     // Exact minima of the cubic Jacobian, including extrema between samples.
     const double a=6*dy+32*kneeY,b=-6*dy-96*kneeY,c=64*kneeY;
@@ -107,7 +118,8 @@ public:
         const double compression=BodyCompression(phase,strideBodyPx,duty);
         struct Frame {double dx,dy,reach,kneeX,kneeY;};std::array<Frame,4> frames{};
         for(int i=0;i<LegCount();++i){const auto& l=legs_[i];
-            const auto foot=targets?(*targets)[i]:FootAt(phase+LegPhase(i,duty),strideBodyPx,duty,swingLiftBodyPx);
+            auto foot=targets?(*targets)[i]:FootAt(phase+LegPhase(i,duty),strideBodyPx,duty,swingLiftBodyPx);
+            if(!targets)foot.x+=cat::gait::NeutralX(i,strideBodyPx,duty);
             if(!std::isfinite(foot.x)||!std::isfinite(foot.y)||foot.y>0||foot.y < -12||
                     (foot.stance&&foot.y!=0))return false;
             const double dx=foot.x/widthBodyPx;
@@ -116,7 +128,8 @@ public:
             const double dy=(height_-2-l.sole)/static_cast<double>(height_)+(foot.y-compression)/heightBodyPx;
             // Keep the entire toe rigid: the old warp continued shearing all
             // the way through the sole, making a planted paw squash sideways.
-            const double ankle=std::max(l.root+.09,l.sole/static_cast<double>(height_)-.04);
+            const double ankle=std::max(l.root+.09-.03*OrdinaryWalk(duty,profile_),l.sole/static_cast<double>(height_)-
+                WalkingPawHeight(i,duty,profile_));
             const double reach=ankle-l.root;
             const double restX=(i==0?-.07:i==2?.12:i==3?.04:-.015)*widthBodyPx;
             const double restY=reach*heightBodyPx;
@@ -211,9 +224,11 @@ public:
             :.34-.055*Smooth((y-.73)/.22);
         const double rear=Smooth((rearBoundary-x)/.04),front=Smooth((x-frontBoundary)/.04);
         const double upper=Smooth((y-(TorsoEdge(x,p)-.09))/.04);
-        // Split only the original two far paws, underneath the unchanged
-        // belly. Feather the seam along the space between their toe pads.
-        const double farFront=p.fourLegs?Smooth((x-.495)/.035):0;
+        // Follow the curved crease between the two far paws. A wide vertical
+        // split used to cut through the far hind toe itself, leaving a flat
+        // bright edge when that rounded paw stepped away from its neighbour.
+        const double farBoundary=.50+.025*Smooth((y-.86)/.10);
+        const double farFront=p.fourLegs?Smooth((x-(farBoundary-.005))/.01):0;
         const double middle=(1-rear)*(1-front)*upper;
         std::array<double,4> m{{rear*upper,middle*(1-farFront),front*upper,middle*farFront}};
         const double total=std::max(1.0,m[0]+m[1]+m[2]+m[3]);for(auto& v:m)v/=total;return m;
