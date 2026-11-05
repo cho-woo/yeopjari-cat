@@ -39,6 +39,9 @@ struct Pose {
     cat::expression::Face face;
     bool walkingRig=false;
     bool originalWalk=false;
+    bool jointWalk=false;
+    cat::gait::Feet jointFeet{};
+    double jointPhase=0;
     double walkPhase=0,walkStride=24,walkDuty=.68,walkLift=3.2;
     cat::gait::Feet walkFeet{};
     bool walkFeetValid=false;
@@ -108,7 +111,7 @@ inline double TravelFactor(Motion motion, std::uint64_t elapsed) {
 // rendered fraction and phase, so resuming cannot add a phantom footstep.
 class Locomotion {
 public:
-    void Reset() { cycle_.Reset(); originalWalkPhase_=0; }
+    void Reset() { cycle_.Reset(); jointCycle_.Reset(); originalWalkPhase_=0; }
 
     // Returns false for a discontinuous or invalid sample. The allowance grows
     // with dt so a normal run during a delayed 120 ms tick is not a teleport.
@@ -125,6 +128,7 @@ public:
             return false;
         }
         cycle_.Advance(std::abs(signedDistanceBodyPx),deltaSeconds,Walking(motion),motion==Motion::Stalk);
+        jointCycle_.Advance(std::abs(signedDistanceBodyPx),deltaSeconds,motion==Motion::Walk,false);
         if (motion==Motion::Walk)
             originalWalkPhase_=std::fmod(originalWalkPhase_+std::abs(signedDistanceBodyPx)/kOriginalWalkStride,1.0);
         return true;
@@ -135,9 +139,12 @@ public:
     double Speed() const { return cycle_.Speed(); } // Observed body pixels per second.
     cat::gait::Parameters Settings(Motion motion) const { return cycle_.Settings(motion==Motion::Stalk); }
     cat::gait::Feet Feet(Motion motion) const { return cycle_.Targets(motion==Motion::Stalk); }
+    cat::gait::Feet JointFeet() const { return jointCycle_.Targets(); }
+    double JointPhase() const { return jointCycle_.Phase(); }
 
 private:
     cat::gait::Cycle cycle_;
+    cat::gait::Cycle jointCycle_{{18,.72,2.6},false,0};
     double originalWalkPhase_=0;
 };
 
@@ -423,6 +430,9 @@ inline Pose Evaluate(Motion motion, std::uint64_t elapsed, std::uint64_t ticks,
         p.frame=static_cast<int>(framePhase);
         p.originalWalk=true;
         p.walkingRig=false;
+        p.jointWalk=true;
+        p.jointFeet=locomotion.JointFeet();
+        p.jointPhase=locomotion.JointPhase();
         // The rig metadata remains available for species introduced later,
         // whose atlas does not contain the original four walking drawings.
     }

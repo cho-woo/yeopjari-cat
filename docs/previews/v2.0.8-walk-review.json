@@ -1,0 +1,48 @@
+{
+  "scope": "Cream/Silver ordinary grounded walking only; face/fur source retained",
+  "comparison": "Left v2.0.7 original four whole drawings at14px distance/cycle; right production two-bone Rig and true18px contact Cycle",
+  "renderer": "Production C++ raster and Cycle; Pillow placement, not Windows GDI+ or live Box2D/windows",
+  "max_reach_error_bodypx": 0.0,
+  "painted_ground_error_range_bodypx": [
+    0.0,
+    0.7407407407407407
+  ],
+  "source": "Source frame1 for original near-limb painted texture; far limbs use perspective-scaled same fur",
+  "actual_parameters": [
+    18,
+    0.72,
+    2.6
+  ],
+  "foot_coordinates_scaled": false,
+  "raster_samples": 776,
+  "body_shapes": [
+    [
+      0.78,
+      0.96
+    ],
+    [
+      1,
+      1
+    ],
+    [
+      1.26,
+      0.98
+    ]
+  ],
+  "speed_px_s": 22,
+  "frame_ms": 40,
+  "all_upper68percent_source_pixels_unchanged": true,
+  "premultiplied_alpha_valid": true,
+  "unreachable_feet": 0,
+  "source_hashes": {
+    "assets/cat.png": "f92c5b30167b8978252c812af65ac99ec5be1e7c79fffa1bf3d94810b25d9803",
+    "assets/cat-silver.png": "dda2643da439a790ee820c6a4b764eb56807a76f8c59292cc613342a80fd7db0",
+    "src/cat_articulated_walk.hpp": "125bdeb6a115b73c05f4dc29f58ac840e7fdfea87b377243cde1cc2b65a12cb5",
+    "src/cat_gait.hpp": "82f9266635589faabd0f730b7bbffb58d93d9a4387762b049ab8caa7e83d7fac",
+    "tools/articulated_walk_probe.cpp": "5d96a4c97eb48625ef4fb34ea953d2c3003f6a82fc54153f95d56f0c38b43da9",
+    "tools/render_joint_walk_review.py": "b01b0f8a8fd92655946fb2f89abed56f5bfd47816dc7c3f1e25da83b39a54ea1"
+  },
+  "gif_sha256": "1d473534dbfa4d68f6081d50f8ffb4c8a68d53af648cb40c79927927b6bdfa02",
+  "limits": "The original artwork is stylized and partly occluded. Torso occlusion and rigid skinning still require image review; numerical contacts do not prove biological realism.",
+  "preview_sha256": "1d473534dbfa4d68f6081d50f8ffb4c8a68d53af648cb40c79927927b6bdfa02"
+}

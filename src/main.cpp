@@ -38,6 +38,7 @@
 #include "cat_animation.hpp"
 #include "cat_pose_transition.hpp"
 #include "cat_locomotion_rig.hpp"
+#include "cat_articulated_walk.hpp"
 #include "cat_motion_gate.hpp"
 #include "cat_physics.hpp"
 #include "cat_environment.hpp"
@@ -171,9 +172,17 @@ struct WalkingSkin {
     cat::gait::Feet feet{};
     bool feetValid=false;
 };
+struct JointWalkingSkin {
+    cat::articulated::Rig rig;
+    std::unique_ptr<Bitmap> image;
+    cat::gait::Feet feet{};
+    double width=0,height=0;
+    bool valid=false;
+};
 struct CharacterArt {
     SpriteAtlas base, actions;
     std::unique_ptr<WalkingSkin> walking;
+    std::unique_ptr<JointWalkingSkin> jointWalking;
 };
 
 struct WindowPerch {
@@ -1092,7 +1101,7 @@ bool LoadAtlas() {
 }
 void ReleaseAtlases() {
     g.styleBlendFrom.Reset(); g.styleBlendTo.Reset();
-    for (auto& art : g.characters) { art.walking.reset(); art.base.Reset(); art.actions.Reset(); }
+    for (auto& art : g.characters) { art.jointWalking.reset(); art.walking.reset(); art.base.Reset(); art.actions.Reset(); }
     g.jumpTreat.Reset(); g.gestures.Reset(); g.recline.Reset(); g.hanging.Reset(); g.companionBack.Reset(); g.sleepStyles.Reset();
 }
 
@@ -1721,6 +1730,41 @@ void DrawBellyHead(Graphics& graphics, const cat::animation::Pose& pose, REAL ce
     graphics.TranslateTransform(static_cast<REAL>((.5-headU)*width),static_cast<REAL>((1-headV)*height));
     graphics.Restore(saved);
 }
+bool DrawJointWalkingPet(Graphics& graphics,const cat::animation::Pose& pose,
+                         REAL center,REAL bottom,REAL scale,cat::Character character,
+                         const cat::nutrition::Visual& body) {
+    auto& art=CurrentArt(character);
+    const auto& source=art.base.skins[1];
+    if(source.source.empty())return false;
+    if(!art.jointWalking) {
+        auto skin=std::make_unique<JointWalkingSkin>();
+        if(!skin->rig.Prepare(source.source.data(),source.width,source.height,source.width*4))return false;
+        skin->image=std::make_unique<Bitmap>(skin->rig.Width(),skin->rig.Height(),skin->rig.Width()*4,
+            PixelFormat32bppPARGB,reinterpret_cast<BYTE*>(const_cast<std::uint32_t*>(skin->rig.Pixels())));
+        if(skin->image->GetLastStatus()!=Ok)return false;
+        art.jointWalking=std::move(skin);
+    }
+    auto& skin=*art.jointWalking;
+    const double reference=110.0/std::max(1,art.base.standingHeight);
+    const double widthBody=source.width*reference*body.bodyWidth;
+    const double heightBody=source.height*reference*body.bodyHeight;
+    if(!skin.valid || skin.width!=widthBody || skin.height!=heightBody ||
+            !cat::gait::SameFeet(skin.feet,pose.jointFeet)) {
+        if(!skin.rig.Raster(pose.jointFeet,widthBody,heightBody))return false;
+        skin.feet=pose.jointFeet;skin.width=widthBody;skin.height=heightBody;skin.valid=true;
+    }
+    const REAL width=static_cast<REAL>(skin.rig.Width()*scale*body.bodyWidth);
+    const REAL height=static_cast<REAL>(skin.rig.Height()*scale*body.bodyHeight);
+    const auto saved=graphics.Save();
+    graphics.TranslateTransform(center,bottom+2*scale*static_cast<REAL>(body.bodyHeight));
+    graphics.ScaleTransform(pose.flip?-1.0f:1.0f,1);
+    ImageAttributes attrs;attrs.SetWrapMode(WrapModeTileFlipXY);
+    const auto status=graphics.DrawImage(skin.image.get(),RectF(-width/2,-height,width,height),
+        0,0,static_cast<REAL>(skin.rig.Width()),static_cast<REAL>(skin.rig.Height()),UnitPixel,&attrs);
+    graphics.Restore(saved);
+    return status==Ok;
+}
+
 bool DrawWalkingPet(Graphics& graphics, const cat::animation::Pose& pose,
                     REAL center, REAL bottom, REAL scale, cat::Character character,
                     cat::Outfit /*outfit*/, const cat::nutrition::Visual& body) {
@@ -1817,6 +1861,8 @@ bool DrawRegisteredReclineLayers(const cat::animation::Pose& pose, REAL center, 
 void DrawStyledAnimation(Graphics& graphics, cat::animation::Pose pose, REAL center, REAL bottom, REAL scale,
                          cat::Character character, cat::Outfit outfit, const cat::nutrition::Visual& body,
                          Surface& blendFrom, Surface& blendTo, int canvasWidth, int canvasHeight) {
+    if(pose.jointWalk && !cat::species::UsesNewArt(character) &&
+            DrawJointWalkingPet(graphics,pose,center,bottom,scale,character,body))return;
     const bool useWalkingRig=pose.walkingRig || (pose.originalWalk && cat::species::UsesNewArt(character));
     if (useWalkingRig && DrawWalkingPet(graphics,pose,center,bottom,scale,character,outfit,body)) return;
     auto draw = [&](Graphics& target, int frame) {
