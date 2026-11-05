@@ -40,6 +40,8 @@ int NativeWalkingRenderTest(std::string& context) {
         auto& atlas=CurrentArt(character).base;
         const auto& source=atlas.frames[frame];
         const REAL scale=desiredHeight/std::max(1,atlas.standingHeight);
+        // Match GDI+'s public REAL geometry contract before multiplying;
+        // retaining double precision here can change a bicubic edge by 1px.
         const REAL width=source.Width*scale*static_cast<REAL>(body.bodyWidth);
         const REAL height=source.Height*scale*static_cast<REAL>(body.bodyHeight);
         Graphics graphics(canvas.image.get());
@@ -61,9 +63,24 @@ int NativeWalkingRenderTest(std::string& context) {
         auto expected=originalFrame(character,pose.frame,pose.flip,body,desiredHeight);
         if(pose.blendFrame>=0 && pose.blend>0) {
             const auto next=originalFrame(character,pose.blendFrame,pose.flip,body,desiredHeight);
+            if(pose.blend>=1)return next;
             const unsigned weight=static_cast<unsigned>(std::lround(pose.blend*255));
             for(std::size_t i=0;i<expected.size();++i)
                 expected[i]=static_cast<BYTE>((expected[i]*(255-weight)+next[i]*weight+127)/255);
+            // Present the independent mixed atlas pixels through the same
+            // 1:1 PARGB transfer required by the native drawing API. Do not
+            // assume every Windows GDI+ version preserves edge bytes during
+            // a high-quality source-over transfer onto a transparent DIB.
+            Bitmap composed(420,320,420*4,PixelFormat32bppPARGB,expected.data());
+            Graphics graphics(canvas.image.get());
+            graphics.SetCompositingMode(CompositingModeSourceCopy);graphics.Clear(Color(0,0,0,0));
+            graphics.SetCompositingMode(CompositingModeSourceOver);
+            graphics.SetSmoothingMode(SmoothingModeAntiAlias);
+            graphics.SetInterpolationMode(InterpolationModeHighQualityBicubic);
+            graphics.SetPixelOffsetMode(PixelOffsetModeHighQuality);
+            graphics.DrawImage(&composed,Rect(0,0,420,320),0,0,420,320,UnitPixel);
+            graphics.Flush(FlushIntentionSync);
+            return copy();
         }
         return expected;
     };
