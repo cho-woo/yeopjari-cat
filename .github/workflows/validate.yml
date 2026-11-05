@@ -40,7 +40,12 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $PSNativeCommandUseErrorActionPreference = $false
-          $output = & python -X utf8 tools/release.py --verify package 2>&1
+          # The validation upload uses check-*/package/*, so the artifact can
+          # retain those subdirectories. Require one package at any depth.
+          $metadata = @(Get-ChildItem -Path package -Filter release-info.json -Recurse -File)
+          if ($metadata.Count -ne 1) { throw "Expected one validated package, found $($metadata.Count)." }
+          $package = Split-Path -Parent $metadata[0].FullName
+          $output = & python -X utf8 tools/release.py --verify $package 2>&1
           $code = $LASTEXITCODE
           $output | ForEach-Object { Write-Host $_ }
           if ($code -ne 0) {
@@ -48,8 +53,8 @@ jobs:
             Write-Host "::error::$detail"
             exit $code
           }
-          $info = Get-Content package/release-info.json -Raw | ConvertFrom-Json
-          $exe = (Resolve-Path "package/YeopjariCat-$($info.version).exe").Path
+          $info = Get-Content $metadata[0].FullName -Raw | ConvertFrom-Json
+          $exe = (Resolve-Path (Join-Path $package "YeopjariCat-$($info.version).exe")).Path
           & python -X utf8 tools/verify_silent_exe.py $exe
           if ($LASTEXITCODE -ne 0) { throw 'Silent executable check failed.' }
           "TEST_EXE=$exe" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
