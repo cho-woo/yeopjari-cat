@@ -165,18 +165,29 @@ void RenderedStrideFollowsEveryRenderedSubstep() {
         cat.SetTargetVelocity(120);
         Run(cat,1);
         cat::animation::Locomotion gait;
+        int contactsChecked=0;
         for(int frame=0;frame<60;++frame) {
             const auto before=cat.RenderPose();
             const double oldPhase=gait.Phase();
+            const auto oldFeet=gait.Feet(Motion::Walk);
             cat.Update(dt);
             const auto after=cat.RenderPose();
             const double visibleTravel=after.relativeTravelX-before.relativeTravelX;
             CHECK(Near(visibleTravel,after.x-before.x,.000001));
             CHECK(gait.Advance(Motion::Walk,visibleTravel,dt));
-            const double phaseTravel=std::fmod(gait.Phase()-oldPhase+1,1)*cat::animation::StrideLength(Motion::Walk);
-            CHECK(Near(phaseTravel,std::abs(after.x-before.x),.000001));
-            CHECK(phaseTravel>.1); //120/144Hz must not alternate zero/double strides.
+            const auto feet=gait.Feet(Motion::Walk);
+            for(unsigned leg=0;leg<feet.size();++leg) {
+                if(oldFeet[leg].stance&&feet[leg].stance&&oldFeet[leg].contact==feet[leg].contact) {
+                    CHECK(Near(before.x+oldFeet[leg].x,after.x+feet[leg].x,.000001));
+                    ++contactsChecked;
+                }
+            }
+            // Cadence adapts to real speed. Even a partial Box2D render step
+            // must advance it and preserve planted world coordinates.
+            CHECK(std::fmod(gait.Phase()-oldPhase+1,1)>.001);
+            CHECK(visibleTravel>.1); //120/144Hz cannot alternate zero/double steps.
         }
+        CHECK(contactsChecked>60);
     }
 }
 

@@ -1,0 +1,77 @@
+{
+  "renderer": "Production C++ rigs; Pillow final placement, not Windows/GDI+",
+  "baseline_commit": "8c34de2f22367a40e7ef811f6e86fd918f397322",
+  "artwork_cases": 2250,
+  "persistent_artwork_cases": 6120,
+  "maximum_body_speeds_px_s": {
+    "Cream": 280.48780487804873,
+    "Silver": 280.48780487804873,
+    "Black": 291.7073170731707,
+    "Calico": 286.0975609756097,
+    "Siamese": 302.92682926829264,
+    "Munchkin": 252.43902439024387,
+    "Dog": 302.92682926829264,
+    "Rabbit": 308.5365853658536,
+    "Tuxedo": 288.9024390243902,
+    "British": 246.82926829268288
+  },
+  "lowest_planted_paw_relative_to_support_px": [
+    -0.6416666666666664,
+    0.6784553490756804
+  ],
+  "preview_ms_per_frame_including_Pillow": {
+    "Cream": 10.595,
+    "Silver": 8.456,
+    "Black": 4.273,
+    "Calico": 4.443,
+    "Siamese": 5.082,
+    "Munchkin": 4.809,
+    "Dog": 4.592,
+    "Rabbit": 4.499,
+    "Tuxedo": 4.232,
+    "British": 4.344
+  },
+  "raw_rig_benchmark_frames": 32,
+  "raw_rig_benchmark": {
+    "Cream": {
+      "walk": {
+        "baseline_ms": 2.6938,
+        "refined_ms": 2.5505
+      },
+      "stalk": {
+        "baseline_ms": 2.6605,
+        "refined_ms": 2.6
+      },
+      "run": {
+        "baseline_ms": 2.819,
+        "refined_ms": 3.8065
+      }
+    },
+    "Silver": {
+      "walk": {
+        "baseline_ms": 2.161,
+        "refined_ms": 1.7919
+      },
+      "stalk": {
+        "baseline_ms": 1.9134,
+        "refined_ms": 1.8423
+      },
+      "run": {
+        "baseline_ms": 2.0457,
+        "refined_ms": 2.2323
+      }
+    }
+  },
+  "source_sha256": {
+    "src/cat_animation.hpp": "8ca87be0feb19ba457c95523bd5ba58d3c29814a285adfc3e8d575382921f885",
+    "src/cat_deformation.hpp": "aea647cce5cf0b6f12e52cd9245f99d7b54a23645cc5bad046ed8c83ff19ee17",
+    "src/cat_expression.hpp": "18b34e9a1f305b8ad2d27ca1b7eef7eaf04579bb363e73a14ffdca8f0037a6b9",
+    "src/cat_locomotion_rig.hpp": "33284cf634326ba974d6366f543c6e1bbea603c31f4dd88e360a19ae60704d80",
+    "src/cat_preferences.hpp": "865b31eba7829a313d9c94eb2079ee2c0deac7a69cb66170e4b6d4cd4756755b",
+    "src/pet_state.hpp": "775779b3c74e8597c6b7fad1084932239447eaadba038031b9b2c9ce1c9b0fa2",
+    "src/cat_gait.hpp": "423b2d6a3730f771cd6f25db3f57e6c28d9b6ce393f64c0d328e267b9f86e4bd",
+    "src/cat_species.hpp": "f32e90d27b2b382c6fa0e1a71b3c0c825e2e04c357667484fac77b531ae746fd",
+    "tools/gait_review.cpp": "201752fd76f9e6a5c58c3117c3806888fecbc860952005cd2ed76a09fe0eaae1",
+    "tools/render_gait_review.py": "1222f7120a3a09d31ebc6d2b21c75154e01530d3fe04a94303e7c8fcca29e1b4"
+  }
+}

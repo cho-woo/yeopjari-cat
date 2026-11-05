@@ -1,5 +1,6 @@
 #pragma once
 #include "cat_preferences.hpp"
+#include "cat_gait.hpp"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -11,22 +12,20 @@ namespace cat::walk {
 struct Profile {
     double rearRoot=.74,middleRoot=.82,frontRoot=.72;
     double belly=.82,frontDrop=.12,rearDrop=.10,frontPartition=.47,frontSlope=.08;
+    // The original kittens show two separate far-side paws. Keeping both
+    // in the middle mask made them shuffle backwards and forwards as one.
+    bool fourLegs=false;
 };
 inline Profile ProfileFor(Character c) {
-    if(c==Character::Cream||c==Character::SilverTabby)return {.72,.81,.72,.82,.12,.10,.53,.085};
+    if(c==Character::Cream||c==Character::SilverTabby)return {.72,.81,.72,.82,.12,.10,.53,.085,true};
     if(c==Character::Rabbit)return {.77,.82,.76,.86,.10};
     if(c==Character::Munchkin)return {.74,.82,.72,.84};
     return {};
 }
 inline double Smooth(double t) {t=std::clamp(t,0.0,1.0);return t*t*(3-2*t);}
-struct Foot { double x=0,y=0; bool stance=true; };
-// The source artwork exposes the near hind/front legs and a far hind leg.
-// A walk places those paws successively; a trot pairs opposite diagonals.
-// Reusing one three-beat rhythm for both looked like paddling in place.
-inline double LegPhase(int leg,double duty) {
-    const double trot=std::clamp((.66-duty)/.12,0.0,1.0);
-    return leg==0 ? .25+.25*trot : leg==1 ? .5*(1-trot) : 0;
-}
+using Foot = cat::gait::Foot;
+using cat::gait::FootAt;
+using cat::gait::LegPhase;
 inline double BodyCompression(double phase,double stride,double duty) {
     const double trot=std::clamp((.66-duty)/.12,0.0,1.0);
     const double stealth=std::clamp((duty-.68)/.10,0.0,1.0);
@@ -48,19 +47,6 @@ inline bool MonotoneLeg(double dy,double kneeY,double reach) {
     return valid((-2*b-root)/(6*c)) && valid((-2*b+root)/(6*c));
 }
 
-// Body-space distance is independent of nutrition width. Stance reverses the
-// real root displacement exactly; the return arc has continuous end velocity.
-inline Foot FootAt(double phase,double stride=24,double duty=.68,double lift=3.2) {
-    if(!std::isfinite(phase)||!std::isfinite(stride)||!std::isfinite(duty)||!std::isfinite(lift))return {};
-    phase-=std::floor(phase);duty=std::clamp(duty,.5,.85);
-    const double half=stride*duty/2;
-    if(phase<duty)return {half-phase*stride,0,true};
-    const double t=(phase-duty)/(1-duty);
-    const double x=-half+2*half*Smooth(t)-stride*(1-duty)*(2*t*t*t-3*t*t+t);
-    const double sine=std::sin(3.14159265358979323846*t);
-    return {x,-lift*sine*sine,false};
-}
-
 class Rig {
 public:
     bool Prepare(const std::uint32_t* source,int width,int height,int strideBytes,Profile profile) {
@@ -74,21 +60,24 @@ public:
             profile.rearDrop<0||profile.rearDrop>.14||profile.frontPartition<.40||profile.frontPartition>.60||
             profile.frontSlope<0||profile.frontSlope>.15||profile.frontPartition+profile.frontSlope>.70||
             profile.belly-std::max(profile.frontDrop,profile.rearDrop)<.695)return false;
-        width_=width;height_=height;profile_=profile;pad_=static_cast<int>(std::ceil(width*.20))+2;
+        // Reach is measured in body pixels, not a fraction of the animal's
+        // width. A thin Siamese still needs room for a full planted step.
+        width_=width;height_=height;profile_=profile;
+        pad_=static_cast<int>(std::ceil(std::max(width*.20,height*.28)))+2;
         solidBodyRows_=height;
         const auto size=static_cast<std::size_t>(width)*height;
         body_.resize(size);bodyCover_.resize(size);output_.resize(static_cast<std::size_t>(Width())*height);
-        const std::array<double,3> roots{{profile.rearRoot,profile.middleRoot,profile.frontRoot}};
-        for(int i=0;i<3;++i){auto& l=legs_[i];l.pixels.assign(size,0);l.root=roots[i];
+        const std::array<double,4> roots{{profile.rearRoot,profile.middleRoot,profile.frontRoot,profile.middleRoot}};
+        for(int i=0;i<4;++i){auto& l=legs_[i];l.pixels.assign(size,0);l.root=roots[i];
             l.left=width;l.top=height;l.right=l.bottom=0;l.sole=0;}
         for(int y=0;y<height;++y)for(int x=0;x<width;++x){
             std::uint32_t pixel;std::memcpy(&pixel,reinterpret_cast<const unsigned char*>(source)+y*strideBytes+x*4,4);
             const auto masks=Masks((x+.5)/width,(y+.5)/height,profile);
-            for(int i=0;i<3;++i){
+            for(int order=0;order<4;++order){const int i=kLayerOrder[order];
                 // Mask fractions are desired contributions, not independent
                 // opacities. Compensate for the layers drawn afterwards so an
                 // opaque source does not acquire a translucent split seam.
-                double later=0;for(int k=i+1;k<3;++k)later+=masks[k];
+                double later=0;for(int k=order+1;k<4;++k)later+=masks[kLayerOrder[k]];
                 const double remain=1-(pixel>>24)/255.*later;
                 auto& l=legs_[i];const auto part=Multiply(pixel,remain>1e-12?masks[i]/remain:0);l.pixels[y*width+x]=part;
                 const auto a=part>>24;
@@ -102,23 +91,25 @@ public:
             body_[y*width+x]=Multiply(pixel,cover/255.);
         }
         ready_=true;
-        for(const auto& l:legs_)if(l.sole==0||l.left>=l.right)ready_=false;
+        for(int i=0;i<LegCount();++i)if(legs_[i].sole==0||legs_[i].left>=legs_[i].right)ready_=false;
         return ready_;
     }
 
     // All buffers are prepared once. width/heightBodyPx include nutrition;
     // exclude growth and DPI, which are already divided out of gait distance.
     bool Raster(double phase,double strideBodyPx,double widthBodyPx,double heightBodyPx,
-                double duty=.68,double swingLiftBodyPx=3.2) {
+                double duty=.68,double swingLiftBodyPx=3.2,const cat::gait::Feet* targets=nullptr) {
         if(!ready_||!std::isfinite(phase)||!std::isfinite(strideBodyPx)||!std::isfinite(widthBodyPx)||
             !std::isfinite(heightBodyPx)||!std::isfinite(duty)||!std::isfinite(swingLiftBodyPx)||
             strideBodyPx<=0||strideBodyPx>60||widthBodyPx<10||heightBodyPx<10||duty<.5||duty>.85||
             swingLiftBodyPx<0||swingLiftBodyPx>12)return false;
         phase-=std::floor(phase);
         const double compression=BodyCompression(phase,strideBodyPx,duty);
-        struct Frame {double dx,dy,reach,kneeX,kneeY;};std::array<Frame,3> frames{};
-        for(int i=0;i<3;++i){const auto& l=legs_[i];
-            const auto foot=FootAt(phase+LegPhase(i,duty),strideBodyPx,duty,swingLiftBodyPx);
+        struct Frame {double dx,dy,reach,kneeX,kneeY;};std::array<Frame,4> frames{};
+        for(int i=0;i<LegCount();++i){const auto& l=legs_[i];
+            const auto foot=targets?(*targets)[i]:FootAt(phase+LegPhase(i,duty),strideBodyPx,duty,swingLiftBodyPx);
+            if(!std::isfinite(foot.x)||!std::isfinite(foot.y)||foot.y>0||foot.y < -12||
+                    (foot.stance&&foot.y!=0))return false;
             const double dx=foot.x/widthBodyPx;
             // The renderer translates the unchanged torso down by compression.
             // Subtract it from each paw target so stance remains on the floor.
@@ -127,7 +118,7 @@ public:
             // the way through the sole, making a planted paw squash sideways.
             const double ankle=std::max(l.root+.09,l.sole/static_cast<double>(height_)-.04);
             const double reach=ankle-l.root;
-            const double restX=(i==0?-.07:i==2?.12:-.015)*widthBodyPx;
+            const double restX=(i==0?-.07:i==2?.12:i==3?.04:-.015)*widthBodyPx;
             const double restY=reach*heightBodyPx;
             const double length=std::hypot(restX,restY)*.565;
             const auto knee=[&](double x,double y) {
@@ -149,7 +140,7 @@ public:
         // Validate every leg before changing the persistent output bitmap.
         bodyOffset_=compression;
         std::fill(output_.begin(),output_.end(),0);
-        for(int i=0;i<3;++i){const auto& l=legs_[i];
+        for(int order=0;order<4;++order){const int i=kLayerOrder[order];if(i>=LegCount())continue;const auto& l=legs_[i];
             const auto dx=frames[i].dx,dy=frames[i].dy,reach=frames[i].reach;
             const auto kneeX=frames[i].kneeX,kneeY=frames[i].kneeY;
             const int left=std::max(0,pad_+static_cast<int>(std::floor(l.left+(std::min(0.0,dx)-std::abs(kneeX))*width_))-2);
@@ -198,26 +189,39 @@ public:
     double GroundInsetPixels()const{return 2;}
     double BodyOffset()const{return bodyOffset_;} // logical body px, excludes DPI/growth
     bool Ready()const{return ready_;}
-    int Sole(int leg)const{return leg>=0&&leg<3?legs_[leg].sole:0;}
+    int LegCount()const{return profile_.fourLegs?4:3;}
+    int Sole(int leg)const{return leg>=0&&leg<LegCount()?legs_[leg].sole:0;}
     Profile GetProfile()const{return profile_;}
 
     static double TorsoEdge(double x,Profile p) {
+        // In the original kittens the belly covers the far-side thighs.
+        // The old shoulder curve climbed through that belly and carried its
+        // broad wedge along with the toes, creating a dangling square limb.
+        // Preserve the rounded belly and hide the moving roots beneath it.
+        if(p.fourLegs)return p.belly+.04-(p.frontDrop+.04)*Smooth((x-.48)/.18)
+            -(p.rearDrop+.04)*Smooth((.35-x)/.15);
         return p.belly-p.frontDrop*Smooth((x-.38)/.28)-p.rearDrop*Smooth((.35-x)/.15);
     }
     // Curved shoulder boundaries keep an original foreleg strip from being
     // assigned to the far-leg layer. Upper roots overlap beneath the torso;
     // the original head and silhouette above y=.68 remain untouched.
-    static std::array<double,3> Masks(double x,double y,Profile p) {
+    static std::array<double,4> Masks(double x,double y,Profile p) {
         const double frontBoundary=p.frontPartition+p.frontSlope*Smooth((y-.70)/.24);
-        const double rearBoundary=.34-.055*Smooth((y-.73)/.22);
+        const double rearBoundary=p.fourLegs?.36-.015*Smooth((y-.73)/.22)
+            :.34-.055*Smooth((y-.73)/.22);
         const double rear=Smooth((rearBoundary-x)/.04),front=Smooth((x-frontBoundary)/.04);
         const double upper=Smooth((y-(TorsoEdge(x,p)-.09))/.04);
-        std::array<double,3> m{{rear*upper,(1-rear)*(1-front)*upper,front*upper}};
-        const double total=std::max(1.0,m[0]+m[1]+m[2]);for(auto& v:m)v/=total;return m;
+        // Split only the original two far paws, underneath the unchanged
+        // belly. Feather the seam along the space between their toe pads.
+        const double farFront=p.fourLegs?Smooth((x-.495)/.035):0;
+        const double middle=(1-rear)*(1-front)*upper;
+        std::array<double,4> m{{rear*upper,middle*(1-farFront),front*upper,middle*farFront}};
+        const double total=std::max(1.0,m[0]+m[1]+m[2]+m[3]);for(auto& v:m)v/=total;return m;
     }
 private:
     struct Layer {std::vector<std::uint32_t> pixels;double root=0;int left=0,top=0,right=0,bottom=0,sole=0;};
-    std::array<Layer,3> legs_;
+    static constexpr std::array<int,4> kLayerOrder{{1,3,0,2}};
+    std::array<Layer,4> legs_;
     std::vector<std::uint32_t> body_,output_;
     std::vector<unsigned char> bodyCover_;
     Profile profile_;

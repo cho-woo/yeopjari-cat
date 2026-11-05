@@ -486,17 +486,19 @@ void BlockedOrStoppedGaitsDoNotKeepStepping() {
 
 void DistanceDrivenFrameTransitionsRemainContinuous() {
     using namespace cat::animation;
-    CHECK(StrideLength(Motion::Walk)==24 && StrideLength(Motion::Stalk)==20 && StrideLength(Motion::Zoomies)==32);
+    CHECK(StrideLength(Motion::Walk)==24 && StrideLength(Motion::Stalk)==20 && StrideLength(Motion::Zoomies)==52);
     for (const auto motion : {Motion::Walk, Motion::Zoomies, Motion::Stalk}) {
         Locomotion gait;
         const double stride = StrideLength(motion);
+        const double speed=motion==Motion::Zoomies?165:motion==Motion::Stalk?12.5:22;
+        for(int i=0;i<180;++i)CHECK(gait.Advance(motion,speed/60,1./60));
         auto previous = Evaluate(motion, 0, 700, 1, gait);
         bool continuous = true, normalized = true;
         for (int i = 1; i <= 2800; ++i) {
-            CHECK(gait.Advance(motion, stride / 1400, .002));
+            CHECK(gait.Advance(motion, speed / 6000, 1./6000));
             const auto current = Evaluate(motion, 0, 700, 1, gait);
             CHECK(current.walkingRig && current.frame==1 && current.blendFrame==-1);
-            CHECK(current.walkPhase==gait.Phase() && current.walkStride==stride);
+            CHECK(current.walkPhase==gait.Phase() && std::abs(current.walkStride-stride)<1e-5);
             CHECK(current.groundContact && current.x==0 && current.lift==0);
             CHECK(current.scaleX==1 && current.scaleY==1 && current.angle==0);
             CHECK(cat::deform::Zero(current.joints));
@@ -515,10 +517,77 @@ void DistanceDrivenFrameTransitionsRemainContinuous() {
     // carries continuous phase, so body/head pixels never crossfade identities.
     for (const double phase : {.05, .10, .30, .35, .55, .60, .80, .85}) {
         Locomotion gait;
-        CHECK(gait.Advance(Motion::Walk, phase * StrideLength(Motion::Walk), .1));
+        double remaining=phase*StrideLength(Motion::Walk);
+        while(remaining>1e-12) {
+            const double distance=std::min(remaining,2.2);
+            CHECK(gait.Advance(Motion::Walk,distance,distance/22));remaining-=distance;
+        }
         const auto pose=Evaluate(Motion::Walk, 0, 0, 1, gait);
         CHECK(pose.blendFrame == -1 && pose.walkingRig && pose.frame==1);
         CHECK(std::abs(pose.walkPhase-phase)<1e-12);
+    }
+}
+
+void RealSpeedsChooseAReachableCadence() {
+    using namespace cat::animation;
+    for(double fps:{30.,60.,120.})for(const auto& scenario:{
+            std::pair{Motion::Walk,22.},std::pair{Motion::Stalk,12.5},
+            std::pair{Motion::Zoomies,165.},std::pair{Motion::Zoomies,230.},
+            std::pair{Motion::Walk,170.}}) {
+        Locomotion gait;const auto [motion,speed]=scenario;
+        for(int i=0;i<fps*3;++i)CHECK(gait.Advance(motion,speed/fps,1/fps));
+        const auto pose=Evaluate(motion,0,0,1,gait);
+        CHECK(pose.walkFeetValid && pose.walkingRig && pose.frame==1);
+        CHECK(std::abs(gait.Speed()-speed)<1e-8);
+        if(speed>=165) {
+            CHECK(std::abs(pose.walkStride-52)<1e-5);
+            CHECK(speed/pose.walkStride<4.5); // Includes the fast newborn run.
+        } else CHECK(std::abs(pose.walkStride-(motion==Motion::Stalk?20:24))<1e-8);
+    }
+}
+
+void ContactsStayPlantedWhileGaitAndSpeedChange() {
+    using namespace cat::animation;
+    std::array<Pose,3> endings{};int ending=0;
+    for(double fps:{30.,60.,120.}) {
+        Locomotion gait;double root=0;int plantedChecks=0,contacts=0;
+        for(int frame=0;frame<static_cast<int>(fps*8);++frame) {
+            const int segment=frame/static_cast<int>(fps*2);
+            const Motion motion=segment==0?Motion::Walk:segment==1?Motion::Zoomies:
+                segment==2?Motion::Stalk:Motion::Walk;
+            const double speed=segment==0?22:segment==1?230:segment==2?12.5:170;
+            const auto previous=Evaluate(motion,0,0,1,gait);
+            const double beforeRoot=root;root+=speed/fps;
+            CHECK(gait.Advance(motion,speed/fps,1/fps));
+            const auto pose=Evaluate(motion,0,0,1,gait);
+            for(unsigned leg=0;leg<pose.walkFeet.size();++leg) {
+                const auto before=previous.walkFeet[leg],after=pose.walkFeet[leg];
+                CHECK(std::isfinite(after.x)&&std::isfinite(after.y));
+                CHECK(std::abs(after.x)<17 && after.y>=-4.801 && after.y<=0);
+                if(before.stance&&after.stance&&before.contact==after.contact) {
+                    ++plantedChecks;
+                    CHECK(std::abs((root+after.x)-(beforeRoot+before.x))<1e-8);
+                    CHECK(after.y==0);
+                }
+                if(after.contact!=before.contact)++contacts;
+            }
+            // Changing only the action label cannot move any of the feet.
+            for(Motion other:{Motion::Walk,Motion::Stalk,Motion::Zoomies}) {
+                const auto switched=Evaluate(other,0,0,1,gait);
+                CHECK(cat::gait::SameFeet(pose.walkFeet,switched.walkFeet));
+                CHECK(pose.walkStride==switched.walkStride && pose.walkDuty==switched.walkDuty);
+            }
+        }
+        CHECK(plantedChecks>300 && contacts>30);
+        endings[ending++]=Evaluate(Motion::Walk,0,0,1,gait);
+    }
+    for(unsigned i=1;i<endings.size();++i) {
+        CHECK(std::abs(endings[i].walkPhase-endings[0].walkPhase)<1e-10);
+        for(unsigned leg=0;leg<4;++leg) {
+            CHECK(std::abs(endings[i].walkFeet[leg].x-endings[0].walkFeet[leg].x)<1e-8);
+            CHECK(std::abs(endings[i].walkFeet[leg].y-endings[0].walkFeet[leg].y)<1e-8);
+            CHECK(endings[i].walkFeet[leg].contact==endings[0].walkFeet[leg].contact);
+        }
     }
 }
 
@@ -571,8 +640,10 @@ int main() {
         DistanceDrivenGaitSurvivesSpeedAndActionChanges();
         BlockedOrStoppedGaitsDoNotKeepStepping();
         DistanceDrivenFrameTransitionsRemainContinuous();
+        RealSpeedsChooseAReachableCadence();
+        ContactsStayPlantedWhileGaitAndSpeedChange();
         GaitDiscontinuityGuardsAndLegacyPoseCompatibility();
-        std::cout << "15 animation groups; " << checks << " checks passed\n";
+        std::cout << "18 animation groups; " << checks << " checks passed\n";
         return EXIT_SUCCESS;
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';
