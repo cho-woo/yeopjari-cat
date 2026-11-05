@@ -54,16 +54,19 @@ inline Parameters ForSpeed(bool stalking,double speed) {
 // while stride length, speed or the walk/trot sequence is changing.
 class Cycle {
 public:
-    void Reset() { *this=Cycle{}; }
+    Cycle()=default;
+    Cycle(Parameters slow,bool adaptive,double neutralScale=1)
+        :base_(slow),adaptive_(adaptive),neutralScale_(neutralScale){}
+    void Reset() { *this=Cycle{base_,adaptive_,neutralScale_}; }
     double Phase() const { return phase_; }
     double Speed() const { return speed_; }
-    Parameters Settings(bool stalking=false) const { return initialized_?settings_:ForSpeed(stalking,0); }
+    Parameters Settings(bool stalking=false) const { return initialized_?settings_:Desired(stalking,0); }
     Feet Targets(bool stalking=false) const {
         if(initialized_)return feet_;
-        Feet result{};const auto p=ForSpeed(stalking,0);
+        Feet result{};const auto p=Desired(stalking,0);
         for(unsigned i=0;i<result.size();++i) {
             result[i]=FootAt(LegPhase(i,p.duty),p.stride,p.duty,p.lift);
-            result[i].x+=NeutralX(i,p.stride,p.duty);
+            result[i].x+=neutralScale_*NeutralX(i,p.stride,p.duty);
         }
         return result;
     }
@@ -76,7 +79,7 @@ public:
         for(int sample=0;sample<count;++sample) {
             speed_+=(std::min(500.0,distance/seconds)-speed_)*(-std::expm1(-dt/.075));
             if(!walking)continue;
-            const auto wanted=ForSpeed(stalking,speed_);
+            const auto wanted=Desired(stalking,speed_);
             const double response=-std::expm1(-dt/.14);
             settings_.stride+=(wanted.stride-settings_.stride)*response;
             settings_.duty+=(wanted.duty-settings_.duty)*response;
@@ -103,12 +106,15 @@ private:
         double phase=0,startPhase=.68,startX=0,targetX=0,tangent=0,lift=3.2;
     };
     static double Wrap(double phase) { return phase-std::floor(phase); }
+    Parameters Desired(bool stalking,double speed) const {
+        return adaptive_?ForSpeed(stalking,speed):base_;
+    }
     void Initialize(bool stalking) {
-        initialized_=true;settings_=ForSpeed(stalking,0);
+        initialized_=true;settings_=Desired(stalking,0);
         for(unsigned i=0;i<feet_.size();++i) {
             auto& leg=legs_[i];leg.phase=LegPhase(i,settings_.duty);
             feet_[i]=FootAt(leg.phase,settings_.stride,settings_.duty,settings_.lift);
-            const double neutral=NeutralX(i,settings_.stride,settings_.duty);
+            const double neutral=neutralScale_*NeutralX(i,settings_.stride,settings_.duty);
             feet_[i].x+=neutral;
             leg.startPhase=settings_.duty;leg.startX=neutral-settings_.stride*settings_.duty/2;
             leg.targetX=neutral+settings_.stride*settings_.duty/2;
@@ -118,7 +124,7 @@ private:
     void BeginSwing(unsigned index,double stride) {
         auto& leg=legs_[index];auto& foot=feet_[index];
         leg.startPhase=leg.phase;leg.startX=foot.x;
-        leg.targetX=NeutralX(index,settings_.stride,settings_.duty)+settings_.stride*settings_.duty/2;
+        leg.targetX=neutralScale_*NeutralX(index,settings_.stride,settings_.duty)+settings_.stride*settings_.duty/2;
         leg.tangent=-stride*(1-leg.startPhase);leg.lift=settings_.lift;
         foot.stance=false;
     }
@@ -139,7 +145,7 @@ private:
             // the original drawing's anatomy. Lift from its exact contact,
             // never clamp or relocate the paw while it bears weight.
             const double reach=std::min(14.0,settings_.stride*settings_.duty/2+1.5);
-            const double rearLimit=NeutralX(index,settings_.stride,settings_.duty)-reach;
+            const double rearLimit=neutralScale_*NeutralX(index,settings_.stride,settings_.duty)-reach;
             if(foot.stance&&(leg.phase>=settings_.duty-1e-12||foot.x<=rearLimit+1e-12))BeginSwing(index,stride);
             const double boundary=foot.stance?std::min(settings_.duty,
                 leg.phase+std::max(0.0,foot.x-rearLimit)/stride):1;
@@ -154,6 +160,9 @@ private:
         }
     }
     bool initialized_=false;
+    Parameters base_{};
+    bool adaptive_=true;
+    double neutralScale_=1;
     double phase_=0,speed_=0;
     Parameters settings_;
     Feet feet_{};

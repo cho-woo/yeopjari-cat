@@ -93,6 +93,9 @@ def main():
     current_art=(ROOT/'assets/cat.png').read_bytes() if working else subprocess.check_output(['git','show',f'{commit}:assets/cat.png'],cwd=ROOT)
     if original_art.read_bytes()!=current_art: raise RuntimeError('Original and current art differ; compare separate atlases before proceeding')
     frames,rectangles=source_atlas(original_art); reference_height=max(frame.height for frame in frames[:6]); scale=110/reference_height
+    header=(ROOT/'src/cat_animation.hpp').read_text() if working else subprocess.check_output(['git','show',f'{commit}:src/cat_animation.hpp'],cwd=ROOT,text=True)
+    if 'bool jointWalk' in header:
+        raise RuntimeError('This tool replays the archived whole-sprite walk; use render_joint_walk_review.py for the articulated renderer')
     lib=bridge(output,'WORKTREE' if working else commit); instance=lib.initial_review_create()
     speed=22.; dt=.04; count=90; states=[]; samples=[]; native=[]; close=[]
 

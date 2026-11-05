@@ -579,6 +579,27 @@ void DistanceDrivenFrameTransitionsRemainContinuous() {
     }
 }
 
+void WalkingPoseCarriesIndependentJointContacts() {
+    using namespace cat::animation;
+    Locomotion gait;
+    cat::gait::Cycle expected({18,.72,2.6},false,0);
+    for(int sample=0;sample<240;++sample) {
+        const double distance=sample<180?22./60:0;
+        CHECK(gait.Advance(Motion::Walk,distance,1./60));
+        expected.Advance(distance,1./60,true,false);
+        const auto pose=Evaluate(Motion::Walk,sample*16,sample*16,1,gait);
+        CHECK(pose.jointWalk);
+        CHECK(pose.jointPhase==expected.Phase());
+        CHECK(cat::gait::SameFeet(pose.jointFeet,expected.Targets()));
+        CHECK(pose.blendFrame==-1 && pose.blend==0);
+    }
+    for(Motion motion:{Motion::Idle,Motion::Sleep,Motion::Stalk,Motion::Zoomies,Motion::Jump})
+        CHECK(!Evaluate(motion,0,0,1,gait).jointWalk);
+    gait.Reset();
+    expected.Reset();
+    CHECK(cat::gait::SameFeet(gait.JointFeet(),expected.Targets()));
+}
+
 void RealSpeedsChooseAReachableCadence() {
     using namespace cat::animation;
     for(double fps:{30.,60.,120.})for(const auto& scenario:{
@@ -694,10 +715,11 @@ int main() {
         BlockedOrStoppedGaitsDoNotKeepStepping();
         OriginalWalkingKeepsArchivedFramesAndCadence();
         DistanceDrivenFrameTransitionsRemainContinuous();
+        WalkingPoseCarriesIndependentJointContacts();
         RealSpeedsChooseAReachableCadence();
         ContactsStayPlantedWhileGaitAndSpeedChange();
         GaitDiscontinuityGuardsAndLegacyPoseCompatibility();
-        std::cout << "19 animation groups; " << checks << " checks passed\n";
+        std::cout << "20 animation groups; " << checks << " checks passed\n";
         return EXIT_SUCCESS;
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';
