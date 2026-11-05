@@ -251,7 +251,7 @@ double WeightDistance(const Pose& first, const Pose& second) {
 void BlendedLoopsAndGestureContinuity() {
     // Frame numbers may wrap, but the represented image weights must not jump.
     using namespace cat::animation;
-    for (const auto motion : {Motion::Walk,Motion::Zoomies,Motion::Treat,Motion::EarFlick,Motion::TailRaise}) {
+    for (const auto motion : {Motion::Zoomies,Motion::Treat,Motion::EarFlick,Motion::TailRaise}) {
         bool continuous = true, normalized = true;
         for (std::uint64_t t = 1; t <= 6000; ++t) {
             const auto previous = Evaluate(motion,t-1,t-1,1), current = Evaluate(motion,t,t,1);
@@ -264,15 +264,20 @@ void BlendedLoopsAndGestureContinuity() {
         CHECK(continuous);
         CHECK(normalized);
     }
-    // Both walking cycles wrap smoothly from the last sprite into the first.
-    for (const auto& loop : {std::pair{Motion::Walk,145ULL},std::pair{Motion::Zoomies,55ULL}}) {
+    // These blended loops still wrap smoothly. Ordinary walking instead
+    // preserves the recovered v1.0 single-drawing presentation below.
+    for (const auto& loop : {std::pair{Motion::Zoomies,55ULL}}) {
         for (std::uint64_t boundary = loop.second; boundary <= loop.second*12; boundary += loop.second) {
             CHECK(WeightDistance(Evaluate(loop.first,boundary-1,boundary-1,1),
                                  Evaluate(loop.first,boundary,boundary,1)) < .005);
         }
     }
-    CHECK(Evaluate(Motion::Walk,72,72,1).blend > .45);
-    CHECK(Evaluate(Motion::Walk,72,72,1).blend < .55);
+    for(std::uint64_t elapsed=0;elapsed<=6000;++elapsed) {
+        const auto pose=Evaluate(Motion::Walk,elapsed,elapsed,1);
+        CHECK(pose.frame==static_cast<int>((elapsed/150)%4));
+        CHECK(pose.blendFrame==-1 && pose.blend==0);
+        CHECK(cat::deform::Zero(pose.joints));
+    }
     CHECK(Evaluate(Motion::Treat,149,149,1).blend == 0);
     CHECK(Evaluate(Motion::Treat,175,175,1).blend == 0);
     CHECK(WeightDistance(Evaluate(Motion::Treat,199,199,1),Evaluate(Motion::Treat,200,200,1)) < .005);
@@ -497,10 +502,10 @@ void BlockedOrStoppedGaitsDoNotKeepStepping() {
 void OriginalWalkingKeepsArchivedFramesAndCadence() {
     using namespace cat::animation;
     CHECK(kOriginalWalkStride==14);
-    // Recorded v1.9.0 contract: 0 -> 1 -> 2 -> 3, hold each drawing for
-    // 60% of its interval, then blend only the final 40%. A whole cycle
-    // covers 14 logical body pixels, independently of elapsed action time.
-    for(int frame=0;frame<4;++frame)for(double fraction:{.0,.2,.6,.7,.8,.9}) {
+    // Actual v1.0 source shows one complete drawing at a time. Preserve that
+    // anatomy through the former v1.9 fade intervals while keeping the live
+    // 14px distance cycle and independence from the elapsed action clock.
+    for(int frame=0;frame<4;++frame)for(double fraction:{.0,.2,.6,.7,.8,.9,.999}) {
         Locomotion gait;
         const double phase=(frame+fraction)/4;
         double remaining=phase*14;
@@ -515,10 +520,9 @@ void OriginalWalkingKeepsArchivedFramesAndCadence() {
             CHECK(pose.x==0 && pose.lift==0 && pose.angle==0 && pose.scaleX==1 && pose.scaleY==1);
             CHECK(pose.groundContact && !pose.centerPivot && cat::deform::Zero(pose.joints));
             const auto weights=FrameWeights(pose);
-            const double expected=fraction<=.6?0:fraction==.7?.15625:fraction==.8?.5:.84375;
-            CHECK(std::abs(weights[frame]-(1-expected))<1e-11);
-            CHECK(std::abs(weights[(frame+1)%4]-expected)<1e-11);
-            for(int other=4;other<kSpriteCount;++other)CHECK(weights[other]==0);
+            CHECK(pose.blendFrame==-1 && pose.blend==0);
+            CHECK(weights[frame]==1);
+            for(int other=0;other<kSpriteCount;++other)if(other!=frame)CHECK(weights[other]==0);
         }
     }
     // The authored cycle wraps cleanly and does not consume movement from
@@ -567,9 +571,10 @@ void DistanceDrivenFrameTransitionsRemainContinuous() {
     for(int sample=0;sample<4200;++sample) {
         CHECK(original.Advance(Motion::Walk,.01,.01/22));
         const auto pose=Evaluate(Motion::Walk,0,0,1,original);
-        CHECK(WeightDistance(previous,pose)<.022);
-        double total=0;for(double weight:FrameWeights(pose))total+=weight;
-        CHECK(std::abs(total-1)<1e-12);
+        CHECK(pose.frame==previous.frame || pose.frame==(previous.frame+1)%4);
+        CHECK(pose.blendFrame==-1 && pose.blend==0);
+        const auto weights=FrameWeights(pose);
+        for(int frame=0;frame<kSpriteCount;++frame)CHECK(weights[frame]==(frame==pose.frame?1:0));
         previous=pose;
     }
 }

@@ -1,0 +1,172 @@
+{
+  "uploaded-binary.json": {
+    "input_executable": "YeopjariCat.exe",
+    "bytes": 3106816,
+    "sha256": "74197fafddc6c04590e74376faeda766df9d01776a08e280437ea4ea88c0e801",
+    "build_info_size_match": true,
+    "build_info_sha256_match": true,
+    "pe_version": {
+      "FileDescription": "Yeopjari Cat - a quiet desktop companion",
+      "FileVersion": "1.0.0",
+      "InternalName": "YeopjariCat",
+      "OriginalFilename": "YeopjariCat.exe",
+      "ProductName": "Yeopjari Cat",
+      "ProductVersion": "1.0.0"
+    },
+    "version_label_note": "Uploaded BUILD_INFO, resources.rc and EXE VERSIONINFO say 1.0.0, not 1.1.",
+    "source_sha256": "e4a88141b85886997bc9174fc96aafc1238b1288e9cc752779c71c61e5e808ea",
+    "resources": [
+      {
+        "type": 10,
+        "name": 101,
+        "bytes": 1495395
+      },
+      {
+        "type": 16,
+        "name": 1,
+        "bytes": 624
+      },
+      {
+        "type": 24,
+        "name": 1,
+        "bytes": 1081
+      }
+    ],
+    "extracted_png": {
+      "path": "assets/cat.png",
+      "resource_type": 10,
+      "resource_id": 101,
+      "bytes": 1495395,
+      "sha256": "f92c5b30167b8978252c812af65ac99ec5be1e7c79fffa1bf3d94810b25d9803",
+      "byte_identical_to_current_assets_cat_png": true
+    },
+    "walk_binary_evidence": {
+      "render_va": "0x140004f80",
+      "walk_condition_va": "0x140005067",
+      "division_va": "0x140005076",
+      "unsigned_division_multiplier": "0x6d3a06d3a06d3a07",
+      "division_shift_after_high_product": 6,
+      "inferred_divisor_ms": 150,
+      "frame_modulo": 4,
+      "draw_pet_call_va": "0x1400052aa",
+      "draw_pet_va": "0x140004d40",
+      "frame_blending": false,
+      "draw_image_rect_rect_call_va": "0x140004ef3",
+      "constants": {
+        "0x1400a31b0": 110.0,
+        "0x1400a31b8": 1.0,
+        "0x1400a31c0": 0.18,
+        "0x1400a31c8": 0.82,
+        "0x1400a31d0": 0.5,
+        "0x1400a3200": 700.0,
+        "0x1400a3208": -0.38
+      }
+    },
+    "source_walk": "frame = static_cast<int>((ticks - g.motionStart) / 150) % 4",
+    "source_walk_line": 314,
+    "source_draw_lines": [
+      298,
+      307
+    ],
+    "scope": "Static PE/resource/source/disassembly inspection only. No uploaded executable or build script was executed. Selected Walk/Render behavior agrees; this report alone does not establish whole-source reproducible build equivalence."
+  },
+  "rebuild.json": {
+    "version": "1.0.0",
+    "portable_state_tests": {
+      "groups": 8,
+      "checks": 288,
+      "passed": true
+    },
+    "rebuilt_exe_sha256": "3eb6819436f2f1d63121ddc18cd766d7a8d617b2cc075ce46e3e397b4ac4f984",
+    "uploaded_size_bytes": 3106816,
+    "rebuilt_size_bytes": 3106816,
+    "different_bytes": 6,
+    "different_ranges_inclusive": [
+      [
+        128,
+        130
+      ],
+      [
+        900612,
+        900614
+      ]
+    ],
+    "normalized_fields": {
+      "COFF.TimeDateStamp": {
+        "file_offset": 128,
+        "uploaded": 1793394386,
+        "rebuilt": 1793867157
+      },
+      "IMAGE_DEBUG_DIRECTORY.TimeDateStamp": {
+        "file_offset": 900612,
+        "uploaded": 1793394386,
+        "rebuilt": 1793867157
+      }
+    },
+    "limitations": "Recompiled Windows x64 locally; GUI not executed here. Only COFF and debug-directory build timestamps were zeroed in memory for comparison. Uploaded EXE remains untouched.",
+    "equal_except_two_build_timestamps": true,
+    "normalized_sha256": "21e63849898a6275210b75a5081c34d4987db39d50f9a04c5c46e5ebcadd7045"
+  },
+  "source-files.json": {
+    "verified_version": "1.0.0",
+    "source": "user-uploaded files, read as reference data",
+    "verified_at_utc": "2026-11-05T08:29:30.593183+00:00",
+    "files": [
+      {
+        "name": "ASSET_PROMPT.txt",
+        "bytes": 1480,
+        "sha256": "9bd4d382ae344fc4955c1b2a45f2ebc3cf7c53e01675b91575681fd3da791dca"
+      },
+      {
+        "name": "BUILD_INFO.json",
+        "bytes": 573,
+        "sha256": "80d124eadcf02fb9a41d54f959bf33513f7e27fa7a23b0a7c5b6fa172d14fd44"
+      },
+      {
+        "name": "THIRD_PARTY_NOTICES.txt",
+        "bytes": 15299,
+        "sha256": "5288381180f18a93d92d30f7ed9ef5dcdea3254f064fe07b99435e5d0a842160"
+      },
+      {
+        "name": "YeopjariCat.exe",
+        "bytes": 3106816,
+        "sha256": "74197fafddc6c04590e74376faeda766df9d01776a08e280437ea4ea88c0e801"
+      },
+      {
+        "name": "app.manifest",
+        "bytes": 1081,
+        "sha256": "6bf9cf7622477ee314bd302a9e075de0dc9a500f8467e846c7691a09c8cb2ab0"
+      },
+      {
+        "name": "build.sh",
+        "bytes": 800,
+        "sha256": "2a0e59b818fce01cb28c0e88b5a52362cc8bc467f62616dc4e3937181289941e"
+      },
+      {
+        "name": "main.cpp",
+        "bytes": 38676,
+        "sha256": "e4a88141b85886997bc9174fc96aafc1238b1288e9cc752779c71c61e5e808ea"
+      },
+      {
+        "name": "pet_state.hpp",
+        "bytes": 9089,
+        "sha256": "775779b3c74e8597c6b7fad1084932239447eaadba038031b9b2c9ce1c9b0fa2"
+      },
+      {
+        "name": "pet_state_test.cpp",
+        "bytes": 10275,
+        "sha256": "6692450a739fe31bb73c76ae03854ac89fe704befe305118f252628e060f85c6"
+      },
+      {
+        "name": "resources.rc",
+        "bytes": 694,
+        "sha256": "b4f3fae491f5de5691afce5a198e4889433c36696147095c43735431cc1ddaa6"
+      },
+      {
+        "name": "처음읽어주세요.txt",
+        "bytes": 3718,
+        "sha256": "57b6a6bb7b054371b7bb7d6a34ca8ad1fe9eb06803760d8016b2a11e956fb82f"
+      }
+    ]
+  }
+}

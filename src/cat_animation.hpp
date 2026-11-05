@@ -21,7 +21,8 @@ constexpr std::uint64_t kPeekDurationMs = 3600;
 constexpr std::uint64_t kBellyRollDurationMs = 4300;
 constexpr double kPi = 3.14159265358979323846;
 constexpr int kSpriteCount = 29;
-// Original v1.8/v1.9 painted walk: one four-drawing cycle per 14 body pixels.
+// Physical cadence retained from v1.8/v1.9: four drawings per 14 body pixels.
+// Each drawing is now shown alone, as in the recovered v1.0 source.
 constexpr double kOriginalWalkStride = 14.0;
 
 // Offsets are logical pixels; the native renderer applies monitor DPI and real-age growth.
@@ -158,8 +159,10 @@ inline Pose Evaluate(Motion motion, std::uint64_t elapsed, std::uint64_t ticks, 
         p.face.blink = SmoothStep((170.0 - std::abs(static_cast<double>(ticks % 6100) - 170.0)) / 100.0);
         break;
     case Motion::Walk:
-        p.frame = static_cast<int>(elapsed / 145 % 4);
-        crossfade(p.frame, (p.frame + 1) % 4, static_cast<double>(elapsed % 145) / 145);
+        // The original v1.0 preview clock. Independently painted eyes/paws
+        // must never be mixed into a double image between these drawings.
+        p.frame = static_cast<int>(elapsed / 150 % 4);
+        p.joints = {};
         break;
     case Motion::Sleep:
         p.frame = 6;
@@ -413,15 +416,11 @@ inline Pose Evaluate(Motion motion, std::uint64_t elapsed, std::uint64_t ticks,
     p.walkFeet=locomotion.Feet(motion);p.walkFeetValid=true;
     if (motion==Motion::Walk) {
         // Preserve the painted anatomy instead of warping one frame's legs.
-        // Use the archived four-frame cadence, driven by actual Box2D travel.
+        // Present one whole drawing, as in the uploaded v1.0 source. Keep
+        // cadence driven by actual Box2D travel so stopped paws cannot cycle.
         // Keep today's physical support baseline: no whole-image bob or scale.
         const double framePhase=locomotion.OriginalWalkPhase()*4;
         p.frame=static_cast<int>(framePhase);
-        const double fraction=framePhase-p.frame;
-        if (fraction>.6) {
-            p.blendFrame=(p.frame+1)%4;
-            p.blend=SmoothStep((fraction-.6)/.4);
-        }
         p.originalWalk=true;
         p.walkingRig=false;
         // The rig metadata remains available for species introduced later,
