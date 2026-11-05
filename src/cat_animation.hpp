@@ -5,6 +5,7 @@
 #include <cstdint>
 #include "cat_deformation.hpp"
 #include "cat_expression.hpp"
+#include "cat_gait.hpp"
 
 namespace cat::animation {
 
@@ -35,6 +36,8 @@ struct Pose {
     cat::expression::Face face;
     bool walkingRig=false;
     double walkPhase=0,walkStride=24,walkDuty=.68,walkLift=3.2;
+    cat::gait::Feet walkFeet{};
+    bool walkFeetValid=false;
 };
 
 inline double SmoothStep(double fraction) {
@@ -85,9 +88,8 @@ inline bool Walking(Motion motion) {
     return motion==Motion::Walk || motion==Motion::Stalk || motion==Motion::Zoomies;
 }
 inline double StrideLength(Motion motion) {
-    // Short planted steps fit the source anatomy without stretching the
-    // forelegs into paddles. The physical motor/root speed is unchanged.
-    return motion==Motion::Zoomies ? 32.0 : motion==Motion::Stalk ? 20.0 : 24.0;
+    // Nominal steady gait; the live controller blends from observed speed.
+    return motion==Motion::Zoomies ? 52.0 : motion==Motion::Stalk ? 20.0 : 24.0;
 }
 
 inline double TravelFactor(Motion motion, std::uint64_t elapsed) {
@@ -102,7 +104,7 @@ inline double TravelFactor(Motion motion, std::uint64_t elapsed) {
 // rendered fraction and phase, so resuming cannot add a phantom footstep.
 class Locomotion {
 public:
-    void Reset() { phase_ = speed_ = 0; }
+    void Reset() { cycle_.Reset(); }
 
     // Returns false for a discontinuous or invalid sample. The allowance grows
     // with dt so a normal run during a delayed 120 ms tick is not a teleport.
@@ -118,23 +120,17 @@ public:
             Reset();
             return false;
         }
-        const double distance = std::abs(signedDistanceBodyPx);
-        const double observedSpeed = std::min(500.0, distance / deltaSeconds);
-        const double response = -std::expm1(-deltaSeconds / .075);
-        speed_ += (observedSpeed - speed_) * response;
-        if (Walking(motion)) {
-            const double stride = StrideLength(motion);
-            phase_ = std::fmod(phase_ + distance / stride, 1.0);
-            if(phase_>1-1e-12)phase_=0; // Same cycle boundary at30/60/120Hz.
-        }
+        cycle_.Advance(std::abs(signedDistanceBodyPx),deltaSeconds,Walking(motion),motion==Motion::Stalk);
         return true;
     }
 
-    double Phase() const { return phase_; } // One full four-frame stride, [0, 1).
-    double Speed() const { return speed_; } // Observed body pixels per second.
+    double Phase() const { return cycle_.Phase(); }
+    double Speed() const { return cycle_.Speed(); } // Observed body pixels per second.
+    cat::gait::Parameters Settings(Motion motion) const { return cycle_.Settings(motion==Motion::Stalk); }
+    cat::gait::Feet Feet(Motion motion) const { return cycle_.Targets(motion==Motion::Stalk); }
 
 private:
-    double phase_ = 0, speed_ = 0;
+    cat::gait::Cycle cycle_;
 };
 
 inline Pose Evaluate(Motion motion, std::uint64_t elapsed, std::uint64_t ticks, int direction) {
@@ -404,9 +400,10 @@ inline Pose Evaluate(Motion motion, std::uint64_t elapsed, std::uint64_t ticks,
     p.angle = 0;
     p.blendFrame = -1;
     p.blend = 0;
-    p.frame=1;p.joints={};p.walkingRig=true;p.walkPhase=phase;p.walkStride=StrideLength(motion);
-    p.walkDuty=motion==Motion::Stalk?.78:motion==Motion::Zoomies?.54:.68;
-    p.walkLift=motion==Motion::Stalk?1.8:motion==Motion::Zoomies?4.8:3.2;
+    const auto settings=locomotion.Settings(motion);
+    p.frame=1;p.joints={};p.walkingRig=true;p.walkPhase=phase;p.walkStride=settings.stride;
+    p.walkDuty=settings.duty;p.walkLift=settings.lift;
+    p.walkFeet=locomotion.Feet(motion);p.walkFeetValid=true;
     return p;
 }
 

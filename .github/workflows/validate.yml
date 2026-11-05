@@ -21,3 +21,61 @@ jobs:
           name: windows-x64-validated-package
           path: release/publish/check-*/package/*
           if-no-files-found: error
+
+  windows-smoke:
+    needs: validate
+    runs-on: windows-2022
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-x64-validated-package
+          path: package
+      - name: Verify the exact Windows package and silent executable
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $false
+          $output = & python -X utf8 tools/release.py --verify package 2>&1
+          $code = $LASTEXITCODE
+          $output | ForEach-Object { Write-Host $_ }
+          if ($code -ne 0) {
+            $detail = ($output -join "`n").Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
+            Write-Host "::error::$detail"
+            exit $code
+          }
+          $info = Get-Content package/release-info.json -Raw | ConvertFrom-Json
+          $exe = (Resolve-Path "package/YeopjariCat-$($info.version).exe").Path
+          & python -X utf8 tools/verify_silent_exe.py $exe
+          if ($LASTEXITCODE -ne 0) { throw 'Silent executable check failed.' }
+          "TEST_EXE=$exe" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+      - name: Execute Windows save, cursor and moving-window regression tests
+        timeout-minutes: 2
+        shell: pwsh
+        run: |
+          $process = Start-Process -FilePath $env:TEST_EXE -ArgumentList '--self-test' -PassThru -Wait
+          if ($process.ExitCode -ne 0) { throw "Windows self-test failed: $($process.ExitCode)" }
+      - name: Render real Windows GDI+ gait, contact and posture regressions
+        timeout-minutes: 8
+        shell: pwsh
+        run: |
+          $process = Start-Process -FilePath $env:TEST_EXE -ArgumentList '--render-self-test' -PassThru -Wait
+          $report = if (Test-Path render-self-test.txt) { Get-Content render-self-test.txt -Raw } else { 'No native render report produced.' }
+          Write-Host $report
+          if ($process.ExitCode -ne 0) {
+            $detail = $report.Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
+            Write-Host "::error::$detail"
+            throw "Windows render test failed: $($process.ExitCode)"
+          }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-native-validation
+          path: |
+            render-self-test.txt
+            render-self-test/
+          if-no-files-found: ignore

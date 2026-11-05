@@ -168,6 +168,8 @@ struct WalkingSkin {
     cat::walk::Rig rig;
     std::unique_ptr<Bitmap> image;
     double phase = -1, stride = 0, width = 0, height = 0, duty = 0, lift = 0;
+    cat::gait::Feet feet{};
+    bool feetValid=false;
 };
 struct CharacterArt {
     SpriteAtlas base, actions;
@@ -1742,12 +1744,15 @@ bool DrawWalkingPet(Graphics& graphics, const cat::animation::Pose& pose,
     const double heightBody = source.height*reference*body.bodyHeight;
     if (walking.phase != pose.walkPhase || walking.stride != pose.walkStride ||
             walking.width != widthBody || walking.height != heightBody ||
-            walking.duty != pose.walkDuty || walking.lift != pose.walkLift) {
+            walking.duty != pose.walkDuty || walking.lift != pose.walkLift ||
+            walking.feetValid != pose.walkFeetValid ||
+            (pose.walkFeetValid && !cat::gait::SameFeet(walking.feet,pose.walkFeet))) {
         if (!walking.rig.Raster(pose.walkPhase,pose.walkStride,widthBody,heightBody,
-                pose.walkDuty,pose.walkLift)) return false;
+                pose.walkDuty,pose.walkLift,pose.walkFeetValid?&pose.walkFeet:nullptr)) return false;
         walking.phase=pose.walkPhase; walking.stride=pose.walkStride;
         walking.width=widthBody; walking.height=heightBody;
         walking.duty=pose.walkDuty; walking.lift=pose.walkLift;
+        walking.feet=pose.walkFeet;walking.feetValid=pose.walkFeetValid;
     }
     const REAL height = static_cast<REAL>(source.height*scale*body.bodyHeight);
     const REAL rasterWidth = static_cast<REAL>(walking.rig.Width()*scale*body.bodyWidth);

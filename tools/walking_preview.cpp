@@ -11,19 +11,25 @@
 
 extern "C" {
 int walking_preview_pose(double distance, double* out) {
-    cat::animation::Locomotion gait;
-    while (distance > 40) {
-        if (!gait.Advance(cat::animation::Motion::Walk, 40, .1)) return 0;
-        distance -= 40;
-    }
-    if (!gait.Advance(cat::animation::Motion::Walk, distance, .1)) return 0;
-    const auto pose = cat::animation::Evaluate(cat::animation::Motion::Walk, 0, 0, 1, gait);
+    if(!out||!std::isfinite(distance)||distance<0)return 0;
 #ifdef PREVIEW_BASELINE
+    // Replay the driver's actual 0.875px/40ms walking samples. Inventing
+    // 40px/100ms chunks changes the speed history in adaptive gait versions.
+    cat::animation::Locomotion gait;
+    constexpr double speed=21.875,step=.875;
+    while (distance > step) {
+        if (!gait.Advance(cat::animation::Motion::Walk, step, .04)) return 0;
+        distance -= step;
+    }
+    if (!gait.Advance(cat::animation::Motion::Walk, distance, distance/speed)) return 0;
+    const auto pose = cat::animation::Evaluate(cat::animation::Motion::Walk, 0, 0, 1, gait);
     out[0] = pose.frame; out[1] = pose.blendFrame; out[2] = pose.blend;
 #else
-    if (!pose.walkingRig) return 0;
-    out[0] = pose.walkPhase; out[1] = pose.walkStride;
-    out[2] = pose.walkDuty; out[3] = pose.walkLift;
+    // This original tool compares a steady ordinary walk and scalar phase
+    // sheets. Dynamic speed/start/stop reviews use gait_review_step instead.
+    const auto settings=cat::gait::ForSpeed(false,21.875);
+    out[0]=std::fmod(distance/settings.stride,1.0);out[1]=settings.stride;
+    out[2]=settings.duty;out[3]=settings.lift;
 #endif
     return 1;
 }

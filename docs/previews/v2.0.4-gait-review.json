@@ -1,0 +1,96 @@
+{
+  "renderer": "Production C++ Rig::Raster + Evaluate + Locomotion; Pillow final placement, not Windows GDI+",
+  "baseline_commit": "8c34de2f22367a40e7ef811f6e86fd918f397322",
+  "fps": 50,
+  "duration_seconds": 2.0,
+  "source_sha256": {
+    "src/cat_animation.hpp": "8ca87be0feb19ba457c95523bd5ba58d3c29814a285adfc3e8d575382921f885",
+    "src/cat_deformation.hpp": "aea647cce5cf0b6f12e52cd9245f99d7b54a23645cc5bad046ed8c83ff19ee17",
+    "src/cat_expression.hpp": "18b34e9a1f305b8ad2d27ca1b7eef7eaf04579bb363e73a14ffdca8f0037a6b9",
+    "src/cat_locomotion_rig.hpp": "33284cf634326ba974d6366f543c6e1bbea603c31f4dd88e360a19ae60704d80",
+    "src/cat_preferences.hpp": "865b31eba7829a313d9c94eb2079ee2c0deac7a69cb66170e4b6d4cd4756755b",
+    "src/pet_state.hpp": "775779b3c74e8597c6b7fad1084932239447eaadba038031b9b2c9ce1c9b0fa2",
+    "src/cat_gait.hpp": "423b2d6a3730f771cd6f25db3f57e6c28d9b6ce393f64c0d328e267b9f86e4bd"
+  },
+  "scenarios": {
+    "adult-walk": {
+      "world_speeds_px_s": [
+        22.0,
+        22.0
+      ],
+      "growth": 1.0,
+      "body_strides_px": [
+        24.0,
+        24.0
+      ],
+      "cycles_per_second": [
+        0.9166666666666666,
+        0.9166666666666666
+      ]
+    },
+    "young-walk": {
+      "world_speeds_px_s": [
+        25.3,
+        25.3
+      ],
+      "growth": 0.82,
+      "body_strides_px": [
+        24.0,
+        24.0
+      ],
+      "cycles_per_second": [
+        1.285569105691057,
+        1.285569105691057
+      ]
+    },
+    "adult-run": {
+      "world_speeds_px_s": [
+        165.0,
+        165
+      ],
+      "growth": 1.0,
+      "body_strides_px": [
+        32.0,
+        52.0
+      ],
+      "cycles_per_second": [
+        5.15625,
+        3.173076923076923
+      ]
+    },
+    "young-run": {
+      "world_speeds_px_s": [
+        189.75,
+        189.75
+      ],
+      "growth": 0.82,
+      "body_strides_px": [
+        32.0,
+        52.0
+      ],
+      "cycles_per_second": [
+        7.231326219512195,
+        4.450046904315197
+      ]
+    }
+  },
+  "artwork_sha256": {
+    "cat.png": "f92c5b30167b8978252c812af65ac99ec5be1e7c79fffa1bf3d94810b25d9803",
+    "cat-silver.png": "dda2643da439a790ee820c6a4b764eb56807a76f8c59292cc613342a80fd7db0"
+  },
+  "preview_layout": "Left v2.0.3 / right working v2.0.4; Cream above Silver, at actual display scale. Empty tracking-camera space cropped; shared 128-color GIF palette, all 50fps frames preserved.",
+  "files": {
+    "docs/previews/v2.0.4-walk.gif": {
+      "sha256": "6e68d73bf6f9a312803ff8efc93d28b627e1416a7befcd42d7f071e6c04c9476",
+      "bytes": 2669472,
+      "frames": 100,
+      "duration_ms": 2000
+    },
+    "docs/previews/v2.0.4-run.gif": {
+      "sha256": "fafa23a2f103bcb42206f02c7a6b2eb14a28c450f1719a761d9fcab2bee93641",
+      "bytes": 2714362,
+      "frames": 100,
+      "duration_ms": 2000
+    }
+  }
+}

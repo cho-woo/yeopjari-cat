@@ -23,7 +23,13 @@ int NativeWalkingRenderTest(std::string& context) {
     };
     const auto poseFor=[](Motion motion,int facing) {
         cat::animation::Locomotion gait;gait.Advance(motion,1,1.0/60);
-        return cat::animation::Evaluate(motion,0,500000,facing,gait);
+        auto pose=cat::animation::Evaluate(motion,0,500000,facing,gait);
+        // This helper deliberately sweeps scalar phases independently of the
+        // persistent contacts. Runtime trajectories are exercised below.
+        const auto settings=cat::gait::ForSpeed(motion==Motion::Stalk,motion==Motion::Zoomies?165:22);
+        pose.walkStride=settings.stride;pose.walkDuty=settings.duty;pose.walkLift=settings.lift;
+        pose.walkFeetValid=false;
+        return pose;
     };
     for(int c=0;c<cat::kCharacterCount;++c)for(int facing:{-1,1}) {
         const auto character=static_cast<cat::Character>(c);
@@ -117,9 +123,45 @@ int NativeWalkingRenderTest(std::string& context) {
             cat::walk::Rig expected;
             if(!expected.Prepare(source.source.data(),source.width,source.height,source.width*4,cat::walk::ProfileFor(character)) ||
                     !expected.Raster(pose.walkPhase,pose.walkStride,source.width*reference*body.bodyWidth,
-                        source.height*reference*body.bodyHeight,pose.walkDuty,pose.walkLift) ||
+                        source.height*reference*body.bodyHeight,pose.walkDuty,pose.walkLift,
+                        pose.walkFeetValid?&pose.walkFeet:nullptr) ||
                     expected.Width()!=art.walking->rig.Width() || expected.Height()!=art.walking->rig.Height() ||
                     std::memcmp(expected.Pixels(),art.walking->rig.Pixels(),static_cast<std::size_t>(expected.Width())*expected.Height()*4)!=0)return 159;
+        }
+    }
+    // Drive the same persistent controller used by both pets through real
+    // adult/newborn speeds and abrupt action changes. The native raster must
+    // accept every supported anatomy and keep the original head and floor.
+    for(const auto character:{cat::Character::Cream,cat::Character::SilverTabby})
+    for(const auto dimensions:{std::pair<double,double>{1,1},{.78,.96},{1.26,.98}}) {
+        auto& art=CurrentArt(character);const auto& source=art.base.skins[1];
+        const double reference=110.0/std::max(1,art.base.standingHeight);
+        auto body=normalBody;body.bodyWidth=dimensions.first;body.bodyHeight=dimensions.second;
+        cat::animation::Locomotion gait;cat::walk::Rig expected;
+        if(!expected.Prepare(source.source.data(),source.width,source.height,source.width*4,
+                cat::walk::ProfileFor(character)))return 159;
+        for(int frame=0;frame<180;++frame) {
+            const Motion motion=frame<30?Motion::Walk:frame<120?Motion::Zoomies:
+                frame<150?Motion::Walk:Motion::Stalk;
+            const double speed=frame<30?22:frame<90?165:frame<120?230:frame<150?170:12.5;
+            if(!gait.Advance(motion,speed/60,1./60))return 159;
+            if(frame%6!=0)continue;
+            auto pose=cat::animation::Evaluate(motion,0,500000,1,gait);
+            context="persistent walking c="+std::to_string(static_cast<int>(character))+
+                " frame="+std::to_string(frame)+" width="+std::to_string(body.bodyWidth);
+            if(!draw(character,cat::Outfit::None,pose,body,true)||!art.walking)return 159;
+            if(!expected.Raster(pose.walkPhase,pose.walkStride,source.width*reference*body.bodyWidth,
+                    source.height*reference*body.bodyHeight,pose.walkDuty,pose.walkLift,&pose.walkFeet)||
+                    std::memcmp(expected.Pixels(),art.walking->rig.Pixels(),
+                        static_cast<std::size_t>(expected.Width())*expected.Height()*4)!=0)return 159;
+            for(int y=0;y<static_cast<int>(source.height*.68);++y)
+                if(std::memcmp(source.source.data()+y*source.width,
+                        art.walking->rig.Pixels()+y*art.walking->rig.Width()+art.walking->rig.PaddingX(),
+                        static_cast<std::size_t>(source.width)*4)!=0)return 154;
+            const auto pixels=copy();
+            for(int y=283;y<320;++y)for(int x=0;x<420;++x)
+                if(pixels[static_cast<std::size_t>(y*420+x)*4+3]>=128)return 155;
+            if(!draw(character,cat::Outfit::None,pose,body,false)||copy()!=pixels)return 158;
         }
     }
     if(cat::SerializePreferences(g.preferences)!=savedPreferences || cat::nutrition::Serialize(g.nutrition)!=savedNutrition)return 159;

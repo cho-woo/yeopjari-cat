@@ -26,7 +26,7 @@ int checks=0;
 bool Near(double a,double b,double tolerance=1e-10){return std::abs(a-b)<=tolerance;}
 
 void PlantedFeetCancelActualRootDistance() {
-    for(double stride:{24.,28.,38.})for(double duty:{.54,.62,.72})
+    for(double stride:{24.,28.,38.,52.})for(double duty:{.54,.62,.72})
     for(double growth:{.55,1.,1.1})for(double dpi:{1.,1.25,2.})for(int direction:{-1,1}) {
         double previous=0;
         for(int sample=0;sample<80;++sample) {
@@ -43,7 +43,7 @@ void PlantedFeetCancelActualRootDistance() {
 
 void CompleteCyclesAreFiniteAndC1AtLiftAndPlant() {
     constexpr double epsilon=1e-6;
-    for(double stride:{24.,28.,38.})for(double duty:{.54,.62,.72})for(double lift:{0.,3.5,5.5,7.}) {
+    for(double stride:{24.,28.,38.,52.})for(double duty:{.54,.62,.72})for(double lift:{0.,3.5,5.5,7.}) {
         bool lifted=false;
         for(int sample=0;sample<1000;++sample) {
             const double phase=sample/1000.;
@@ -83,11 +83,12 @@ struct Anatomy {
             const bool head=std::pow((u-.68)/.22,2)+std::pow((v-.32)/.25,2)<=1;
             const bool torso=std::pow((u-.48)/.43,2)+std::pow((v-.66)/.22,2)<=1;
             const bool rear=u>.10&&u<.25&&v>.70;
-            const bool middle=u>.39&&u<.51&&v>.79;
+            const bool middle=u>.39&&u<.49&&v>.79;
+            const bool farFront=u>.54&&u<.61&&v>.81;
             const bool front=u>.84&&u<.98&&v>.70;
             unsigned a=0;
-            if((head||torso||rear||middle||front)&&y<height-2)
-                a=variedAlpha && !(rear||middle||front)?96+((x+3*y)%5)*31:255;
+            if((head||torso||rear||middle||farFront||front)&&y<height-2)
+                a=variedAlpha && !(rear||middle||farFront||front)?96+((x+3*y)%5)*31:255;
             const unsigned r=a*(40+3*x%170)/255,g=a*(30+5*y%190)/255,b=a*(20+(x+y)%150)/255;
             pixels[y*pitch+x]=(a<<24)|(r<<16)|(g<<8)|b;
         }
@@ -103,7 +104,7 @@ void MasksPartitionAndNeutralSourceOverReconstructsAnatomy() {
     CHECK(rig.Ready() && rig.SourceWidth()==source.width && rig.Height()==source.height);
     CHECK(rig.Width()==source.width+2*rig.PaddingX() && rig.PaddingX()>0);
     // Near-zero horizontal displacement and zero swing lift isolate the real
-    // body/leg alpha composition. All three opaque soles are already aligned.
+    // body/leg alpha composition. All four opaque soles are already aligned.
     CHECK(rig.Raster(.2,1e-5,127,137,.62,0));
     int fractionalMaskPixels=0,nonempty=0;
     for(int y=0;y<source.height;++y)for(int x=0;x<source.width;++x) {
@@ -154,11 +155,15 @@ void NaturalCadenceAndWeightTransferKeepSupport() {
     CHECK(Near(cat::walk::LegPhase(1,.54),cat::walk::LegPhase(2,.54)));
     CHECK(std::abs(cat::walk::LegPhase(0,.68)-cat::walk::LegPhase(2,.68))<.4);
     CHECK(std::abs(cat::walk::LegPhase(1,.68)-cat::walk::LegPhase(2,.68))>.4);
+    CHECK(Near(cat::walk::LegPhase(3,.54),cat::walk::LegPhase(0,.54)));
+    CHECK(Near(cat::walk::LegPhase(3,.68),.75));
     Anatomy source;
     cat::walk::Rig rig;
     CHECK(rig.Prepare(source.pixels.data(),source.width,source.height,source.pitch*4,
         cat::walk::ProfileFor(cat::Character::Cream)));
-    for(const auto gait:{std::array<double,3>{24,.68,3.2},{20,.78,1.8},{32,.54,4.8}})
+    CHECK(rig.LegCount()==4);
+    for(int leg=0;leg<4;++leg)CHECK(rig.Sole(leg)==source.height-2);
+    for(const auto gait:{std::array<double,3>{24,.68,3.2},{20,.78,1.8},{32,.54,4.8},{52,.54,4.8}})
     for(const auto body:{std::array<double,2>{110,110},{90,114.4},{137.5,105.6}}) {
         for(int frame=0;frame<=32;++frame) {
             const double phase=frame/32.;
@@ -175,6 +180,67 @@ void NaturalCadenceAndWeightTransferKeepSupport() {
                        cat::walk::BodyCompression(phase+1,gait[0],gait[1])));
         }
     }
+}
+
+void OriginalFarPawsHaveIndependentMasksAndSupportTiming() {
+    for(const auto character:{cat::Character::Cream,cat::Character::SilverTabby}) {
+        const auto profile=cat::walk::ProfileFor(character);
+        const auto hind=cat::walk::Rig::Masks(.44,.95,profile);
+        const auto front=cat::walk::Rig::Masks(.56,.95,profile);
+        CHECK(hind[1]>.95 && hind[3]<.01);
+        CHECK(front[3]>.95 && front[1]<.01);
+        // Both far paws used to occupy mask 1, so they always lifted together.
+        bool separate=false;
+        for(int frame=0;frame<80;++frame) {
+            const auto a=cat::walk::FootAt(frame/80.+cat::walk::LegPhase(1,.54),52,.54,4.8);
+            const auto b=cat::walk::FootAt(frame/80.+cat::walk::LegPhase(3,.54),52,.54,4.8);
+            separate=separate||(a.stance!=b.stance);
+        }
+        CHECK(separate);
+    }
+    // Other artwork retains its own segmentation rather than inventing a
+    // fourth limb by copying a paw from another character.
+    for(const auto character:{cat::Character::Black,cat::Character::Rabbit,cat::Character::Munchkin}) {
+        const auto profile=cat::walk::ProfileFor(character);
+        CHECK(!profile.fourLegs && cat::walk::Rig::Masks(.56,.95,profile)[3]==0);
+    }
+}
+
+void PersistentContactTargetsRasterThroughRealSpeedChanges() {
+    Anatomy source;
+    cat::walk::Rig rig;
+    CHECK(rig.Prepare(source.pixels.data(),source.width,source.height,source.pitch*4,
+        cat::walk::ProfileFor(cat::Character::Cream)));
+    for(int fps:{30,60,120})for(const auto body:{std::array<double,2>{110,110},{90,114.4},{137.5,105.6}}) {
+        cat::gait::Cycle cycle;
+        for(int frame=0;frame<fps*4;++frame) {
+            const double t=frame/static_cast<double>(fps);
+            const double speed=t<1?22:t<2?230:t<3?165:22;
+            cycle.Advance(speed/fps,1.0/fps,true,false);
+            const auto feet=cycle.Targets();const auto settings=cycle.Settings();
+            // Render contact anchors, not an unrelated scalar phase. This
+            // exercises the same transition reach and toe lift as the host.
+            if(frame%4==0) {
+                const bool rendered=rig.Raster(cycle.Phase(),settings.stride,body[0],body[1],settings.duty,settings.lift,&feet);
+                if(!rendered) {
+                    std::cerr<<"Contact render fps="<<fps<<" frame="<<frame<<" body="<<body[0]<<","<<body[1]
+                        <<" stride="<<settings.stride<<" duty="<<settings.duty<<" phase="<<cycle.Phase()<<'\n';
+                    for(const auto& foot:feet)std::cerr<<"foot "<<foot.x<<","<<foot.y<<" stance="<<foot.stance<<'\n';
+                }
+                CHECK(rendered);
+            }
+        }
+    }
+    cat::gait::Cycle cycle;cycle.Advance(1,1.0/60,true,false);
+    auto feet=cycle.Targets();const auto settings=cycle.Settings();
+    CHECK(rig.Raster(cycle.Phase(),settings.stride,110,110,settings.duty,settings.lift,&feet));
+    const auto* pixels=rig.Pixels();
+    const std::vector<std::uint32_t> before(pixels,pixels+rig.Width()*rig.Height());
+    const auto beforeOffset=rig.BodyOffset();
+    // A bad last leg must not overwrite earlier legs in a cached bitmap.
+    feet[3].x=std::numeric_limits<double>::quiet_NaN();
+    CHECK(!rig.Raster(cycle.Phase(),settings.stride,110,110,settings.duty,settings.lift,&feet));
+    CHECK(std::equal(before.begin(),before.end(),rig.Pixels())&&beforeOffset==rig.BodyOffset());
 }
 
 void RasterReusesPreparedMemoryAndRejectsBadInputs() {
@@ -239,6 +305,8 @@ int main() {
         PlantedFeetCancelActualRootDistance();CompleteCyclesAreFiniteAndC1AtLiftAndPlant();
         MasksPartitionAndNeutralSourceOverReconstructsAnatomy();RealLegMotionKeepsHeadPixelsAndUsesHorizontalPadding();
         NaturalCadenceAndWeightTransferKeepSupport();
+        OriginalFarPawsHaveIndependentMasksAndSupportTiming();
+        PersistentContactTargetsRasterThroughRealSpeedChanges();
         RasterReusesPreparedMemoryAndRejectsBadInputs();
         std::cout<<"Articulated locomotion: "<<checks<<" checks passed\n";
     } catch(const std::exception& error) {std::cerr<<error.what()<<'\n';return 1;}

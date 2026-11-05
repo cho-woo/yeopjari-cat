@@ -8,6 +8,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <string>
+#include <utility>
 
 namespace {
 using cat::animation::Motion;
@@ -18,30 +19,42 @@ struct Trace {
     double time = 0;
     unsigned frame = 0;
     explicit Trace(std::string name) : scene(std::move(name)) { body.Reset(500, 0, 5000); }
-    static double Distance(double before, double after) {
-        double phase = after - before;
-        if (phase < -1e-10) phase += 1;
-        return phase * cat::animation::StrideLength(Motion::Walk);
+    static std::pair<double,unsigned> ContactError(const cat::gait::Feet& before,
+            const cat::gait::Feet& after,double distance) {
+        double error=0;unsigned checks=0;
+        for(unsigned leg=0;leg<before.size();++leg) {
+            if(!before[leg].stance||!after[leg].stance||before[leg].contact!=after[leg].contact)continue;
+            ++checks;
+            error=std::max(error,std::abs(after[leg].x-before[leg].x+std::abs(distance)));
+        }
+        return {error,checks};
     }
     void Sample(double seconds, bool paused = false, Motion motion = Motion::Walk) {
         const auto before = body.CurrentPose(), renderBefore = body.RenderPose();
-        const auto oldPhase = legacy.Phase(), newPhase = synchronized.Phase();
+        const auto oldFeet=legacy.Feet(motion),newFeet=synchronized.Feet(motion);
         body.Update(paused ? 0 : seconds, paused);
         const auto current = body.CurrentPose(), render = body.RenderPose();
-        const double oldDistance = current.x - before.x - current.supportTravelX;
+        const double oldDistance = current.x-before.x-(current.supportTravelX-before.supportTravelX);
         const double newDistance = render.relativeTravelX - renderBefore.relativeTravelX;
         if (!legacy.Advance(motion, oldDistance, paused ? 0 : seconds) ||
             !synchronized.Advance(motion, newDistance, paused ? 0 : seconds))
             throw std::runtime_error("Trace passed a discontinuity to locomotion");
         const auto placement = cat::render::BuildPlacement(900, 300, 1.25, render.lift, 0, 1.25);
+        const auto oldContact=ContactError(oldFeet,legacy.Feet(motion),oldDistance);
+        const auto newContact=ContactError(newFeet,synchronized.Feet(motion),newDistance);
+        // Adaptive stride cannot be inverted as phase*24. Report the actual
+        // sampled distances and independently verify planted-foot travel.
+        const double oldTravel=cat::animation::Walking(motion)?std::abs(oldDistance):0;
+        const double newTravel=cat::animation::Walking(motion)?std::abs(newDistance):0;
         time += seconds;
         std::cout << scene << ',' << frame++ << ',' << time << ',' << seconds << ',' << paused << ','
             << current.x << ',' << render.x << ',' << render.lift << ',' << render.velocityX << ','
             << render.supportVelocityX << ',' << (render.x-renderBefore.x) << ',' << newDistance << ','
-            << Distance(oldPhase,legacy.Phase()) << ',' << Distance(newPhase,synchronized.Phase()) << ','
+            << oldTravel << ',' << newTravel << ','
             << legacy.Phase() << ',' << synchronized.Phase() << ',' << render.grounded << ',' << render.onPlatform << ','
             << placement.windowTop + placement.localBottom << ',' << placement.screenFeetY-1 << ','
-            << 899-render.lift*1.25 << '\n';
+            << 899-render.lift*1.25 << ',' << oldContact.first << ',' << newContact.first << ','
+            << newContact.second << '\n';
     }
 };
 void Walking(const std::string& name, double dt) {
@@ -79,7 +92,7 @@ void Jump() {
 int main() {
     try {
         std::cout << std::setprecision(12)
-            << "scenario,frame,time,dt,paused,current_x,render_x,render_lift,render_vx,support_vx,render_dx,relative_render_dx,legacy_gait_distance,synchronized_gait_distance,legacy_phase,synchronized_phase,grounded,on_platform,placed_y,legacy_rounded_y,expected_y\n";
+            << "scenario,frame,time,dt,paused,current_x,render_x,render_lift,render_vx,support_vx,render_dx,relative_render_dx,legacy_gait_distance,synchronized_gait_distance,legacy_phase,synchronized_phase,grounded,on_platform,placed_y,legacy_rounded_y,expected_y,legacy_contact_error,synchronized_contact_error,synchronized_contact_checks\n";
         Walking("walk_120hz",1./120); Walking("walk_16ms",.016);
         Support(false); Support(true); Pause(); Jump();
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
