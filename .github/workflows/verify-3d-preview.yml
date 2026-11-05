@@ -23,7 +23,7 @@ jobs:
       - name: Run portable model and current regression checks
         run: |
           bash tools/test.sh
-          python3 tools/audit_3d_model.py --model-dir assets/3d/cream-kitten --output build/3d-preview-runtime-audit.json
+          python3 tools/audit_3d_model.py --model-dir assets/3d/cream-kitten --output build/3d-preview/runtime-audit.json
       - name: Build isolated x64 executable and verify its ZIP
         run: bash tools/build_3d_preview.sh
       - uses: actions/upload-artifact@v4
@@ -32,7 +32,7 @@ jobs:
           path: |
             build/3d-preview/package/*
             build/3d-preview/YeopjariCat-3D-Preview.zip
-            build/3d-preview-runtime-audit.json
+            build/3d-preview/runtime-audit.json
           if-no-files-found: error
 
   windows-native:
@@ -91,8 +91,13 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $exe = (Resolve-Path YeopjariCat-3D-Preview.exe).Path
           $process = Start-Process -FilePath $exe -ArgumentList '--3d-render-self-test --3d-model cat3d.bin' -PassThru -Wait
-          if (Test-Path 3d-render-self-test.txt) { Get-Content 3d-render-self-test.txt }
-          if ($process.ExitCode -ne 0) { throw "Actual 3D render check failed: $($process.ExitCode)" }
+          $detail = if (Test-Path 3d-render-self-test.txt) { Get-Content 3d-render-self-test.txt -Raw } else { 'No 3D render report.' }
+          Write-Host $detail
+          if ($process.ExitCode -ne 0) {
+            $annotation = $detail.Replace('%','%25').Replace("`r",'%0D').Replace("`n",'%0A')
+            Write-Host "::error::$annotation"
+            throw "Actual 3D render check failed: $($process.ExitCode)"
+          }
           $report = Get-Content 3d-render-self-test.json -Raw | ConvertFrom-Json
           if ($report.exit -ne 0 -or $report.frames -ne 45 -or -not $report.warp -or $report.app_profile_loaded) {
             throw '3D render report did not confirm all required checks.'
