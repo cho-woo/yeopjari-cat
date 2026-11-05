@@ -1,0 +1,150 @@
+name: Verify isolated 3D preview on Windows
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['codex/3d-preview']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: yeopjari-cat-3d-preview-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned dependencies
+        run: bash tools/setup.sh
+      - name: Run portable model and current regression checks
+        run: |
+          bash tools/test.sh
+          python3 tools/audit_3d_model.py --model-dir assets/3d/cream-kitten --output build/3d-preview-runtime-audit.json
+      - name: Build isolated x64 executable and verify its ZIP
+        run: bash tools/build_3d_preview.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: 3d-build-input-${{ github.sha }}
+          path: |
+            build/3d-preview/package/*
+            build/3d-preview/YeopjariCat-3D-Preview.zip
+            build/3d-preview-runtime-audit.json
+          if-no-files-found: error
+
+  windows-native:
+    needs: build
+    runs-on: windows-2022
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: 3d-build-input-${{ github.sha }}
+          path: preview
+      - name: Verify downloaded binary, asset and ZIP
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          @'
+          import hashlib, json, zipfile
+          from pathlib import Path
+          package = Path('preview/package')
+          manifest = json.loads((package / 'preview-manifest.json').read_text())
+          assert manifest['kind'] == 'experimental-3d-preview'
+          assert manifest['official_release'] is False
+          with zipfile.ZipFile('preview/YeopjariCat-3D-Preview.zip') as archive:
+              assert archive.testzip() is None
+              assert set(archive.namelist()) == {*manifest['files'], 'preview-manifest.json'}
+              assert archive.read('preview-manifest.json') == (package / 'preview-manifest.json').read_bytes()
+              for name, expected in manifest['files'].items():
+                  data = (package / name).read_bytes()
+                  assert archive.read(name) == data
+                  assert len(data) == expected['bytes']
+                  assert hashlib.sha256(data).hexdigest() == expected['sha256']
+          '@ | python -X utf8 -
+          if ($LASTEXITCODE -ne 0) { throw 'Preview package validation failed.' }
+          python -X utf8 tools/verify_silent_exe.py preview/package/YeopjariCat-3D-Preview.exe
+          if ($LASTEXITCODE -ne 0) { throw 'Silent binary validation failed.' }
+      - name: Run existing native host and 2D render regressions
+        timeout-minutes: 8
+        working-directory: preview/package
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $exe = (Resolve-Path YeopjariCat-3D-Preview.exe).Path
+          foreach ($mode in @('--self-test', '--render-self-test')) {
+            $process = Start-Process -FilePath $exe -ArgumentList $mode -PassThru -Wait
+            if ($process.ExitCode -ne 0) { throw "Existing native check $mode failed: $($process.ExitCode)" }
+          }
+      - name: Execute actual Direct3D WARP renderer and model checks
+        timeout-minutes: 10
+        working-directory: preview/package
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $exe = (Resolve-Path YeopjariCat-3D-Preview.exe).Path
+          $process = Start-Process -FilePath $exe -ArgumentList '--3d-render-self-test --3d-model cat3d.bin' -PassThru -Wait
+          if (Test-Path 3d-render-self-test.txt) { Get-Content 3d-render-self-test.txt }
+          if ($process.ExitCode -ne 0) { throw "Actual 3D render check failed: $($process.ExitCode)" }
+          $report = Get-Content 3d-render-self-test.json -Raw | ConvertFrom-Json
+          if ($report.exit -ne 0 -or $report.frames -ne 45 -or -not $report.warp -or $report.app_profile_loaded) {
+            throw '3D render report did not confirm all required checks.'
+          }
+          if ((Get-ChildItem 3d-*.png).Count -ne 45) { throw 'Required model screenshots are missing.' }
+          foreach ($entry in @{ walk = 37; belly = 130; landing = 10 }.GetEnumerator()) {
+            if ((Get-ChildItem "3d-motion-review/$($entry.Key)/frame-*.png").Count -ne $entry.Value) {
+              throw "Dense native motion frames are missing for $($entry.Key)."
+            }
+          }
+      - name: Run the actual transparent app with Box2D and isolated records
+        timeout-minutes: 2
+        working-directory: preview/package
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $production = Join-Path $env:LOCALAPPDATA 'YeopjariCat'
+          if (Test-Path $production) { throw 'Unexpected preexisting production profile on test runner.' }
+          New-Item -ItemType Directory -Path $production | Out-Null
+          $sentinel = Join-Path $production 'preview-smoke-sentinel.txt'
+          Set-Content -Path $sentinel -Value 'Production records must remain untouched by the preview.'
+          $before = (Get-FileHash $sentinel -Algorithm SHA256).Hash
+          $exe = (Resolve-Path YeopjariCat-3D-Preview.exe).Path
+          $process = Start-Process -FilePath $exe -ArgumentList '--3d-preview-smoke --3d-warp --3d-model cat3d.bin' -PassThru -Wait
+          if ($process.ExitCode -ne 0) { throw "Integrated transparent app failed: $($process.ExitCode)" }
+          $report = Get-Content 3d-host-smoke.json -Raw | ConvertFrom-Json
+          if ($report.exit -ne 0 -or $report.rendered_3d_frames -lt 3 -or $report.physical_travel_px -le 2 -or
+              -not $report.layer_presented -or -not $report.profile_isolated -or -not $report.updates_disabled) {
+            throw 'Integrated 3D app did not confirm physical movement, visible composition and isolation.'
+          }
+          if ((Get-ChildItem $production -Recurse -File).Count -ne 1 -or
+              (Get-FileHash $sentinel -Algorithm SHA256).Hash -ne $before) {
+            throw 'The experimental app changed the production record directory.'
+          }
+          if (-not (Test-Path (Join-Path $env:LOCALAPPDATA 'YeopjariCat-3D-Preview/pet.ini'))) {
+            throw 'The experimental app did not use its isolated record directory.'
+          }
+      - name: Upload native render evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: 3d-windows-evidence-${{ github.sha }}
+          path: |
+            preview/package/3d-*.png
+            preview/package/3d-render-self-test.*
+            preview/package/3d-host-smoke.*
+            preview/package/3d-motion-review/**
+            preview/package/render-self-test.txt
+          if-no-files-found: warn
+      - name: Upload verified experimental package
+        uses: actions/upload-artifact@v4
+        with:
+          name: 3d-preview-verified-${{ github.sha }}
+          path: preview/YeopjariCat-3D-Preview.zip
+          if-no-files-found: error

@@ -1,0 +1,249 @@
+{
+  "vertices": 57014,
+  "triangles": 81008,
+  "bones": 26,
+  "bytes": 5841702,
+  "bone_names": [
+    "root",
+    "pelvis",
+    "spine",
+    "chest",
+    "neck",
+    "head",
+    "ear.L",
+    "eye.L",
+    "ear.R",
+    "eye.R",
+    "front_upper.L",
+    "front_lower.L",
+    "front_paw.L",
+    "front_upper.R",
+    "front_lower.R",
+    "front_paw.R",
+    "back_upper.L",
+    "back_lower.L",
+    "back_paw.L",
+    "back_upper.R",
+    "back_lower.R",
+    "back_paw.R",
+    "tail.0",
+    "tail.1",
+    "tail.2",
+    "tail.3"
+  ],
+  "objects": [
+    {
+      "name": "CreamKitten",
+      "first_vertex": 0,
+      "vertex_count": 28024,
+      "structural_contact": true
+    },
+    {
+      "name": "PinkEar.L",
+      "first_vertex": 28024,
+      "vertex_count": 300,
+      "structural_contact": true
+    },
+    {
+      "name": "Iris.L",
+      "first_vertex": 28324,
+      "vertex_count": 610,
+      "structural_contact": true
+    },
+    {
+      "name": "Pupil.L",
+      "first_vertex": 28934,
+      "vertex_count": 610,
+      "structural_contact": true
+    },
+    {
+      "name": "Glint.L",
+      "first_vertex": 29544,
+      "vertex_count": 610,
+      "structural_contact": true
+    },
+    {
+      "name": "GlintSmall.L",
+      "first_vertex": 30154,
+      "vertex_count": 610,
+      "structural_contact": true
+    },
+    {
+      "name": "Muzzle.L",
+      "first_vertex": 30764,
+      "vertex_count": 610,
+      "structural_contact": true
+    },
+    {
+      "name": "Smile.L",
+      "first_vertex": 31374,
+      "vertex_count": 250,
+      "structural_contact": true
+    },
+    {
+      "name": "Whisker.L.0",
+      "first_vertex": 31624,
+      "vertex_count": 250,
+      "structural_contact": false
+    },
+    {
+      "name": "Whisker.L.1",
+      "first_vertex": 31874,
+      "vertex_count": 250,
+      "structural_contact": false
+    },
+    {
+      "name": "Whisker.L.2",
+      "first_vertex": 32124,
+      "vertex_count": 250,
+      "structural_contact": false
+    },
+    {
+      "name": "PinkEar.R",
+      "first_vertex": 32374,
+      "vertex_count": 300,
+      "structural_contact": true
+    },
+    {
+      "name": "Iris.R",
+      "first_vertex": 32674,
+      "vertex_count": 610,
+      "structural_contact": true
+    },
+    {
+      "name": "Pupil.R",
+      "first_vertex": 33284,
+      "vertex_count": 610,
+      "structural_contact": true
+    },
+    {
+      "name": "Glint.R",
+      "first_vertex": 33894,
+      "vertex_count": 610,
+      "structural_contact": true
+    },
+    {
+      "name": "GlintSmall.R",
+      "first_vertex": 34504,
+      "vertex_count": 610,
+      "structural_contact": true
+    },
+    {
+      "name": "Muzzle.R",
+      "first_vertex": 35114,
+      "vertex_count": 610,
+      "structural_contact": true
+    },
+    {
+      "name": "Smile.R",
+      "first_vertex": 35724,
+      "vertex_count": 250,
+      "structural_contact": true
+    },
+    {
+      "name": "Whisker.R.0",
+      "first_vertex": 35974,
+      "vertex_count": 250,
+      "structural_contact": false
+    },
+    {
+      "name": "Whisker.R.1",
+      "first_vertex": 36224,
+      "vertex_count": 250,
+      "structural_contact": false
+    },
+    {
+      "name": "Whisker.R.2",
+      "first_vertex": 36474,
+      "vertex_count": 250,
+      "structural_contact": false
+    },
+    {
+      "name": "Nose",
+      "first_vertex": 36724,
+      "vertex_count": 610,
+      "structural_contact": true
+    },
+    {
+      "name": "ShortFur",
+      "first_vertex": 37334,
+      "vertex_count": 19680,
+      "structural_contact": false
+    }
+  ],
+  "clips": {
+    "idle": {
+      "frames": 91,
+      "fps": 30,
+      "loop": true,
+      "ground_min_error": 1.4901161193847656e-08,
+      "stride": null,
+      "max_head_contact_adjustment": 0
+    },
+    "walk": {
+      "frames": 37,
+      "fps": 30,
+      "loop": true,
+      "ground_min_error": 3.725290298461914e-08,
+      "stride": 0.48,
+      "max_head_contact_adjustment": 0
+    },
+    "run": {
+      "frames": 25,
+      "fps": 30,
+      "loop": true,
+      "ground_min_error": 3.026798367500305e-08,
+      "stride": 0.72,
+      "max_head_contact_adjustment": 0
+    },
+    "stalk": {
+      "frames": 55,
+      "fps": 30,
+      "loop": true,
+      "ground_min_error": 3.7136487662792206e-08,
+      "stride": 0.36,
+      "max_head_contact_adjustment": 0
+    },
+    "belly": {
+      "frames": 130,
+      "fps": 30,
+      "loop": false,
+      "ground_min_error": 4.172325134277344e-07,
+      "stride": null,
+      "max_head_contact_adjustment": 0.08
+    },
+    "airborne": {
+      "frames": 31,
+      "fps": 30,
+      "loop": false,
+      "ground_min_error": null,
+      "stride": null,
+      "max_head_contact_adjustment": 0
+    },
+    "landing": {
+      "frames": 10,
+      "fps": 30,
+      "loop": false,
+      "ground_min_error": 2.223532646894455e-08,
+      "stride": null,
+      "max_head_contact_adjustment": 0
+    },
+    "ear": {
+      "frames": 61,
+      "fps": 30,
+      "loop": false,
+      "ground_min_error": 1.4901161193847656e-08,
+      "stride": null,
+      "max_head_contact_adjustment": 0
+    },
+    "paw": {
+      "frames": 73,
+      "fps": 30,
+      "loop": false,
+      "ground_min_error": 1.4901161193847656e-08,
+      "stride": null,
+      "max_head_contact_adjustment": 0
+    }
+  },
+  "status": "experimental; requires motion and Windows renderer visual review"
+}

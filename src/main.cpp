@@ -62,10 +62,21 @@
 #include "cat_life_storage.hpp"
 #include "cat_species.hpp"
 #include "cat_companion.hpp"
+#ifdef YEOPJARI_EXPERIMENTAL_3D
+#include "cat_3d_model.hpp"
+#include "cat_3d_renderer.hpp"
+#include "native_3d_renderer_tests.hpp"
+#include <filesystem>
+#endif
 
 using namespace Gdiplus;
+#ifdef YEOPJARI_EXPERIMENTAL_3D
+constexpr wchar_t kClass[] = L"YeopjariCat.Native.3DPreview.v1";
+constexpr wchar_t kTitle[] = L"옆자리 고양이 · 3D 시험판";
+#else
 constexpr wchar_t kClass[] = L"YeopjariCat.Native.v1";
 constexpr wchar_t kTitle[] = L"옆자리 고양이";
+#endif
 constexpr UINT kTrayMessage = WM_APP + 1;
 constexpr UINT kShowExisting = WM_APP + 2;
 constexpr UINT_PTR kTickTimer = 1;
@@ -292,6 +303,36 @@ struct App {
     std::vector<std::wstring> hotkeyFailures;
     std::mt19937 random{std::random_device{}()};
 } g;
+
+#ifdef YEOPJARI_EXPERIMENTAL_3D
+struct ThreeDPreview {
+    bool enabled = false, initialized = false, failed = false;
+    bool smoke = false, smokeFinished = false, layerPresented = false;
+    unsigned renderedFrames = 0;
+    int smokeExit = 189;
+    ULONGLONG smokeStart = 0;
+    double smokeStartTravel = 0;
+    cat::three_d::Model model;
+    cat::render3d::Renderer renderer;
+    cat::render3d::Frame frame;
+    std::vector<cat::three_d::RenderVertex> vertices;
+    std::wstring modelPath;
+    std::string error;
+    int lastClip = -1, blendFromClip = -1;
+    double lastClipTime = 0, blendFromTime = 0;
+    double distance = 0, lastTravel = 0;
+    float modelHeight = 1, yaw = -.75f;
+    ULONGLONG lastTick = 0, blendStart = 0;
+} preview3d;
+#endif
+
+bool ThreeDPreviewEnabled() {
+#ifdef YEOPJARI_EXPERIMENTAL_3D
+    return preview3d.enabled;
+#else
+    return false;
+#endif
+}
 
 bool WorkInterferenceEnabled() { return g.workInterference; }
 
@@ -634,6 +675,13 @@ int UpdateMessage(const wchar_t* text, const wchar_t* title, UINT flags) {
     return choice;
 }
 void InitializeUpdates() {
+    if (ThreeDPreviewEnabled()) {
+        // An isolated experimental binary must never replace the stable app.
+        updates.automatic = false;
+        updates.feed.clear();
+        updates.feedError = L"3D 시험판은 별도 실행 파일입니다. 정식 고양이의 업데이트는 정식 프로그램에서 확인해 주세요.";
+        return;
+    }
     updates.executable = cat::update::CurrentExePath();
     updates.feed = cat::update::ReadFeed(updates.executable, updates.feedError);
     const std::wstring settings = g.directory + L"\\update-settings.ini";
@@ -647,6 +695,7 @@ void InitializeUpdates() {
     if (ReadBytes(g.directory + L"\\update-notice.ini", notice)) updates.announcement.Restore(notice);
 }
 void ToggleAutomaticUpdates() {
+    if (ThreeDPreviewEnabled()) return;
     const bool enabled = !updates.automatic;
     const std::wstring path = g.directory + L"\\update-settings.ini", temporary = path + L".tmp";
     if (!WriteBytes(temporary, enabled ? "schema=1\nautomatic=1\n" : "schema=1\nautomatic=0\n") ||
@@ -807,7 +856,7 @@ bool LoadPet() {
     if (FAILED(SHGetFolderPathW(nullptr, CSIDL_LOCAL_APPDATA | CSIDL_FLAG_CREATE, nullptr, SHGFP_TYPE_CURRENT, local))) {
         MessageBoxW(nullptr, L"윈도우 개인 저장 폴더를 찾을 수 없어요. 기록을 잃지 않도록 실행을 멈춥니다.", kTitle, 0); return false;
     }
-    g.directory = std::wstring(local) + L"\\YeopjariCat";
+    g.directory = std::wstring(local) + (ThreeDPreviewEnabled() ? L"\\YeopjariCat-3D-Preview" : L"\\YeopjariCat");
     if (!CreateDirectoryW(g.directory.c_str(), nullptr) && GetLastError() != ERROR_ALREADY_EXISTS) {
         MessageBoxW(nullptr, L"고양이 기록 폴더를 만들 수 없어요. 폴더 접근 권한과 디스크 공간을 확인해 주세요.", kTitle, 0); return false;
     }
@@ -1853,7 +1902,14 @@ void DrawStyledAnimation(Graphics& graphics, cat::animation::Pose pose, REAL cen
     if (pose.bellyRig) DrawBellyHead(graphics, pose, center, bottom, scale, character, outfit, body);
 }
 
+#ifdef YEOPJARI_EXPERIMENTAL_3D
+#include "experimental_3d_preview.hpp"
+#endif
+
 void DrawAnimatedPet(Graphics& graphics, const cat::animation::Pose& pose, REAL center, REAL bottom, REAL scale) {
+#ifdef YEOPJARI_EXPERIMENTAL_3D
+    if (DrawThreeDPreview(graphics, pose, center, bottom, scale)) return;
+#endif
     DrawStyledAnimation(graphics, pose, center, bottom, scale, g.preferences.character, g.preferences.outfit,
         cat::nutrition::VisualModifiers(g.nutrition), g.blendFrom, g.blendTo, g.surface.width, g.surface.height);
 }
@@ -2076,8 +2132,13 @@ void Render() {
     SIZE size{g.surface.width, g.surface.height}; POINT origin{};
     BLENDFUNCTION blend{AC_SRC_OVER, 0, static_cast<BYTE>(std::lround(255*g.lifeCrossing.Opacity())), AC_SRC_ALPHA};
     HDC screen = GetDC(nullptr);
-    UpdateLayeredWindow(g.window, screen, &destination, &size, g.surface.dc, &origin, 0, &blend, ULW_ALPHA);
+    const BOOL layerPresented = UpdateLayeredWindow(g.window, screen, &destination, &size, g.surface.dc, &origin, 0, &blend, ULW_ALPHA);
+    (void)layerPresented;
     ReleaseDC(nullptr, screen);
+#ifdef YEOPJARI_EXPERIMENTAL_3D
+    preview3d.layerPresented = layerPresented == TRUE;
+    FinishThreeDHostSmoke(ticks);
+#endif
 }
 HICON CreateCatIcon() {
     Surface icon; if (!icon.Create(32, 32)) return CopyIcon(LoadIconW(nullptr, IDI_APPLICATION));
@@ -3883,14 +3944,36 @@ int SelfTest(HINSTANCE instance) {
 }
 
 int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
+#ifdef YEOPJARI_EXPERIMENTAL_3D
+    const auto threeDCommand = ParseThreeDCommand();
+    if (!threeDCommand.valid) return 179;
+    if (threeDCommand.selfTest) { g.instance = instance; return ThreeDRenderSelfTest(threeDCommand.modelPath); }
+#endif
     if (commandLine && wcsstr(commandLine, L"--render-self-test")) {
         g.instance = instance;
         return RenderSelfTest();
     }
+#ifndef YEOPJARI_EXPERIMENTAL_3D
     if (const auto helperResult = cat::update::HandleUpdateHelperCommandLine()) return *helperResult;
+#endif
     if (commandLine && wcsstr(commandLine, L"--self-test")) return SelfTest(instance);
     g.instance = instance;
+#ifdef YEOPJARI_EXPERIMENTAL_3D
+    if (!threeDCommand.preview) {
+        MessageBoxW(nullptr, L"이 파일은 별도 3D 시험판입니다.\n\n함께 제공된 3D-preview.cmd로 실행하거나 --3d-preview 옵션을 사용해 주세요.\n정식 고양이의 기록과 업데이트는 별도로 유지됩니다.", kTitle, MB_OK);
+        return 0;
+    }
+    preview3d.enabled = true;
+    preview3d.smoke = threeDCommand.smoke;
+    if (!InitializeThreeDPreview(threeDCommand.modelPath, threeDCommand.warp)) {
+        const auto message = L"3D 시험판을 시작하지 못했어요.\n\n" + UpdateText(preview3d.error);
+        MessageBoxW(nullptr, message.c_str(), kTitle, MB_OK);
+        return 178;
+    }
+    g.instanceMutex = CreateMutexW(nullptr, TRUE, L"Local\\YeopjariCat.3DPreview.OneInstance.v1");
+#else
     g.instanceMutex = CreateMutexW(nullptr, TRUE, L"Local\\YeopjariCat.OneInstance.v1");
+#endif
     if (!g.instanceMutex || GetLastError() == ERROR_ALREADY_EXISTS) {
         if (g.instanceMutex) CloseHandle(g.instanceMutex);
         if (HWND existing = FindWindowW(kClass, nullptr)) { PostMessageW(existing, kShowExisting, 0, 0); return 0; }
@@ -3926,16 +4009,23 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
     g.prank.Initialize(instance);
     POINT cursor{}; GetCursorPos(&cursor); g.monitor = MonitorFromPoint(cursor, MONITOR_DEFAULTTOPRIMARY); KeepOnWorkArea(true);
     g.trayIcon = CreateCatIcon(); AddTray();
-    const UINT modifiers = MOD_CONTROL | MOD_ALT | MOD_NOREPEAT;
-    if (!RegisterHotKey(g.window, kFeedHotkey, modifiers, 'F')) g.hotkeyFailures.push_back(L"Ctrl+Alt+F (밥)");
-    if (!RegisterHotKey(g.window, kSnackHotkey, modifiers, 'T')) g.hotkeyFailures.push_back(L"Ctrl+Alt+T (츄르)");
-    if (!RegisterHotKey(g.window, kHideHotkey, modifiers, 'H')) g.hotkeyFailures.push_back(L"Ctrl+Alt+H (숨기기)");
+    if (!ThreeDPreviewEnabled()) {
+        const UINT modifiers = MOD_CONTROL | MOD_ALT | MOD_NOREPEAT;
+        if (!RegisterHotKey(g.window, kFeedHotkey, modifiers, 'F')) g.hotkeyFailures.push_back(L"Ctrl+Alt+F (밥)");
+        if (!RegisterHotKey(g.window, kSnackHotkey, modifiers, 'T')) g.hotkeyFailures.push_back(L"Ctrl+Alt+T (츄르)");
+        if (!RegisterHotKey(g.window, kHideHotkey, modifiers, 'H')) g.hotkeyFailures.push_back(L"Ctrl+Alt+H (숨기기)");
+    }
     g.initialized = true; g.lastTick = GetTickCount64(); g.nextMaintenance = g.lastTick + 1500; g.nextSave = g.lastTick + 60000;
     g.foodRequestAfter = g.lastTick + 180000;
     g.updateAnnounceAfter = g.lastTick + 30000;
     g.nextCuriosity = g.lastTick + 20000;
     g.perch.nextTry = g.lastTick + static_cast<ULONGLONG>(Random(30000, 60000));
-    SetMotion(Motion::Idle, 5000); Speak(L"안녕. 오늘도 네 옆에 ♡", 4500);
+#ifdef YEOPJARI_EXPERIMENTAL_3D
+    preview3d.smokeStart = GetTickCount64();
+    preview3d.smokeStartTravel = g.physics.RenderPose().relativeTravelX;
+#endif
+    SetMotion(ThreeDPreviewEnabled() ? Motion::Walk : Motion::Idle, ThreeDPreviewEnabled() ? 10000 : 5000);
+    Speak(ThreeDPreviewEnabled() ? L"3D 시험판이에요 ♡" : L"안녕. 오늘도 네 옆에 ♡", 4500);
     Render(); ShowWindow(g.window, SW_SHOWNOACTIVATE); RefreshAnimationTimer();
     if (!SavePet()) UpdateMessage(L"고양이 기록을 저장할 수 없어요. 기록 폴더의 권한과 디스크 공간을 확인해 주세요. 지금은 정상 저장을 보장할 수 없어요.", kTitle, MB_OK | MB_ICONWARNING);
     if (!g.nutritionNotice.empty()) {
@@ -3960,5 +4050,8 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
     g.prank.Shutdown(); g.surface.Reset(); g.blendFrom.Reset(); g.blendTo.Reset(); ReleaseAtlases();
     if (g.trayIcon) DestroyIcon(g.trayIcon); GdiplusShutdown(g.gdiplusToken);
     ReleaseMutex(g.instanceMutex); CloseHandle(g.instanceMutex); if (SUCCEEDED(com)) CoUninitialize();
+#ifdef YEOPJARI_EXPERIMENTAL_3D
+    if (preview3d.smoke) return preview3d.smokeExit;
+#endif
     return static_cast<int>(message.wParam);
 }
