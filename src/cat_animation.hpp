@@ -21,6 +21,8 @@ constexpr std::uint64_t kPeekDurationMs = 3600;
 constexpr std::uint64_t kBellyRollDurationMs = 4300;
 constexpr double kPi = 3.14159265358979323846;
 constexpr int kSpriteCount = 29;
+// Original v1.8/v1.9 painted walk: one four-drawing cycle per 14 body pixels.
+constexpr double kOriginalWalkStride = 14.0;
 
 // Offsets are logical pixels; the native renderer applies monitor DPI and real-age growth.
 struct Pose {
@@ -35,6 +37,7 @@ struct Pose {
     bool bellyRig = false;
     cat::expression::Face face;
     bool walkingRig=false;
+    bool originalWalk=false;
     double walkPhase=0,walkStride=24,walkDuty=.68,walkLift=3.2;
     cat::gait::Feet walkFeet{};
     bool walkFeetValid=false;
@@ -104,7 +107,7 @@ inline double TravelFactor(Motion motion, std::uint64_t elapsed) {
 // rendered fraction and phase, so resuming cannot add a phantom footstep.
 class Locomotion {
 public:
-    void Reset() { cycle_.Reset(); }
+    void Reset() { cycle_.Reset(); originalWalkPhase_=0; }
 
     // Returns false for a discontinuous or invalid sample. The allowance grows
     // with dt so a normal run during a delayed 120 ms tick is not a teleport.
@@ -121,16 +124,20 @@ public:
             return false;
         }
         cycle_.Advance(std::abs(signedDistanceBodyPx),deltaSeconds,Walking(motion),motion==Motion::Stalk);
+        if (motion==Motion::Walk)
+            originalWalkPhase_=std::fmod(originalWalkPhase_+std::abs(signedDistanceBodyPx)/kOriginalWalkStride,1.0);
         return true;
     }
 
     double Phase() const { return cycle_.Phase(); }
+    double OriginalWalkPhase() const { return originalWalkPhase_; }
     double Speed() const { return cycle_.Speed(); } // Observed body pixels per second.
     cat::gait::Parameters Settings(Motion motion) const { return cycle_.Settings(motion==Motion::Stalk); }
     cat::gait::Feet Feet(Motion motion) const { return cycle_.Targets(motion==Motion::Stalk); }
 
 private:
     cat::gait::Cycle cycle_;
+    double originalWalkPhase_=0;
 };
 
 inline Pose Evaluate(Motion motion, std::uint64_t elapsed, std::uint64_t ticks, int direction) {
@@ -404,6 +411,22 @@ inline Pose Evaluate(Motion motion, std::uint64_t elapsed, std::uint64_t ticks,
     p.frame=1;p.joints={};p.walkingRig=true;p.walkPhase=phase;p.walkStride=settings.stride;
     p.walkDuty=settings.duty;p.walkLift=settings.lift;
     p.walkFeet=locomotion.Feet(motion);p.walkFeetValid=true;
+    if (motion==Motion::Walk) {
+        // Preserve the painted anatomy instead of warping one frame's legs.
+        // Use the archived four-frame cadence, driven by actual Box2D travel.
+        // Keep today's physical support baseline: no whole-image bob or scale.
+        const double framePhase=locomotion.OriginalWalkPhase()*4;
+        p.frame=static_cast<int>(framePhase);
+        const double fraction=framePhase-p.frame;
+        if (fraction>.6) {
+            p.blendFrame=(p.frame+1)%4;
+            p.blend=SmoothStep((fraction-.6)/.4);
+        }
+        p.originalWalk=true;
+        p.walkingRig=false;
+        // The rig metadata remains available for species introduced later,
+        // whose atlas does not contain the original four walking drawings.
+    }
     return p;
 }
 

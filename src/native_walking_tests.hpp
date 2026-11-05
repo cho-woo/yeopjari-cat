@@ -8,16 +8,16 @@ int NativeWalkingRenderTest(std::string& context) {
     const auto normalBody=cat::nutrition::VisualModifiers(g.nutrition);
     const auto copy=[&] {return std::vector<BYTE>(canvas.pixels,canvas.pixels+420*320*4);};
     const auto draw=[&](cat::Character character,cat::Outfit outfit,const cat::animation::Pose& pose,
-                        const cat::nutrition::Visual& body,bool direct,REAL bottom=280) {
+                        const cat::nutrition::Visual& body,bool direct,REAL bottom=280,REAL desiredHeight=110) {
         Graphics graphics(canvas.image.get());
         graphics.SetCompositingMode(CompositingModeSourceCopy);graphics.Clear(Color(0,0,0,0));
         graphics.SetCompositingMode(CompositingModeSourceOver);
         graphics.SetSmoothingMode(SmoothingModeAntiAlias);
         graphics.SetInterpolationMode(InterpolationModeHighQualityBicubic);
         graphics.SetPixelOffsetMode(PixelOffsetModeHighQuality);
-        const REAL scale=110.0f/std::max(1,CurrentArt(character).base.standingHeight);
+        const REAL scale=desiredHeight/std::max(1,CurrentArt(character).base.standingHeight);
         const bool success=direct?DrawWalkingPet(graphics,pose,210,bottom,scale,character,outfit,body):true;
-        if(!direct)DrawPetStyle(graphics,character,outfit,pose,body,210,bottom,110);
+        if(!direct)DrawPetStyle(graphics,character,outfit,pose,body,210,bottom,desiredHeight);
         graphics.Flush(FlushIntentionSync);
         return success && graphics.GetLastStatus()==Ok;
     };
@@ -31,6 +31,76 @@ int NativeWalkingRenderTest(std::string& context) {
         pose.walkFeetValid=false;
         return pose;
     };
+    // An independent native reference draws the embedded authored crop,
+    // without DrawPet, deformation, face replacement or the walking rig.
+    // Comparing full pixels catches the old one-frame fallback as well as
+    // per-frame resizing, altered head anatomy and an incorrect foot anchor.
+    const auto originalFrame=[&](cat::Character character,int frame,bool flip,
+                                 const cat::nutrition::Visual& body,REAL desiredHeight) {
+        auto& atlas=CurrentArt(character).base;
+        const auto& source=atlas.frames[frame];
+        const REAL scale=desiredHeight/std::max(1,atlas.standingHeight);
+        const REAL width=source.Width*scale*static_cast<REAL>(body.bodyWidth);
+        const REAL height=source.Height*scale*static_cast<REAL>(body.bodyHeight);
+        Graphics graphics(canvas.image.get());
+        graphics.SetCompositingMode(CompositingModeSourceCopy);graphics.Clear(Color(0,0,0,0));
+        graphics.SetCompositingMode(CompositingModeSourceOver);
+        graphics.SetSmoothingMode(SmoothingModeAntiAlias);
+        graphics.SetInterpolationMode(InterpolationModeHighQualityBicubic);
+        graphics.SetPixelOffsetMode(PixelOffsetModeHighQuality);
+        graphics.TranslateTransform(210,280);graphics.ScaleTransform(flip?-1.0f:1.0f,1);
+        ImageAttributes attrs;attrs.SetWrapMode(WrapModeTileFlipXY);
+        graphics.DrawImage(atlas.image.get(),RectF(-width/2,-height,width,height),
+            static_cast<REAL>(source.X),static_cast<REAL>(source.Y),
+            static_cast<REAL>(source.Width),static_cast<REAL>(source.Height),UnitPixel,&attrs);
+        graphics.Flush(FlushIntentionSync);
+        return copy();
+    };
+    const auto originalExpected=[&](cat::Character character,const cat::animation::Pose& pose,
+                                    const cat::nutrition::Visual& body,REAL desiredHeight) {
+        auto expected=originalFrame(character,pose.frame,pose.flip,body,desiredHeight);
+        if(pose.blendFrame>=0 && pose.blend>0) {
+            const auto next=originalFrame(character,pose.blendFrame,pose.flip,body,desiredHeight);
+            const unsigned weight=static_cast<unsigned>(std::lround(pose.blend*255));
+            for(std::size_t i=0;i<expected.size();++i)
+                expected[i]=static_cast<BYTE>((expected[i]*(255-weight)+next[i]*weight+127)/255);
+        }
+        return expected;
+    };
+    for(const auto character:{cat::Character::Cream,cat::Character::SilverTabby})for(int facing:{-1,1})
+    for(const auto dimensions:{std::pair<double,double>{1,1},{.82,1.04},{1.25,.96}})
+    for(REAL desiredHeight:{80.0f,110.0f,165.0f})for(int sample=0;sample<8;++sample) {
+        auto body=normalBody;body.bodyWidth=dimensions.first;body.bodyHeight=dimensions.second;
+        cat::animation::Locomotion gait;
+        // Alternate a held drawing and the midpoint of its short blend.
+        const double phase=(sample/2+(sample%2?.8:.2))/4;
+        double remaining=phase*14;
+        while(remaining>1e-12) {
+            const double step=std::min(remaining,2.2);
+            if(!gait.Advance(Motion::Walk,step,step/22))return 152;
+            remaining-=step;
+        }
+        const auto pose=cat::animation::Evaluate(Motion::Walk,0,500000,facing,gait);
+        if(!pose.originalWalk || pose.walkingRig || pose.frame!=sample/2 ||
+                pose.x!=0 || pose.lift!=0 || pose.angle!=0 || pose.scaleX!=1 || pose.scaleY!=1 ||
+                !cat::deform::Zero(pose.joints))return 152;
+        const auto expected=originalExpected(character,pose,body,desiredHeight);
+        const auto* previousRig=CurrentArt(character).walking.get();
+        for(int outfit=0;outfit<cat::kOutfitCount;++outfit) {
+            if(outfit!=0 && (dimensions.first!=1 || desiredHeight!=110))continue;
+            context="authored walk c="+std::to_string(static_cast<int>(character))+
+                " facing="+std::to_string(facing)+" sample="+std::to_string(sample)+
+                " height="+std::to_string(desiredHeight)+" outfit="+std::to_string(outfit);
+            if(!draw(character,static_cast<cat::Outfit>(outfit),pose,body,false,280,desiredHeight) || copy()!=expected)
+                return 158;
+            if(CurrentArt(character).walking.get()!=previousRig)return 153;
+        }
+        for(int y=0;y<320;++y)for(int x=0;x<420;++x) {
+            const auto* pixel=expected.data()+static_cast<std::size_t>(y*420+x)*4;
+            if(pixel[0]>pixel[3]+1 || pixel[1]>pixel[3]+1 || pixel[2]>pixel[3]+1 ||
+                    ((x==0 || x==419 || y==0 || y>=283) && pixel[3]>=128))return 155;
+        }
+    }
     for(int c=0;c<cat::kCharacterCount;++c)for(int facing:{-1,1}) {
         const auto character=static_cast<cat::Character>(c);
         auto& art=CurrentArt(character);
@@ -41,8 +111,10 @@ int NativeWalkingRenderTest(std::string& context) {
         // includes the entire face and upper body for every canonical source.
         const int headBottom=static_cast<int>(std::floor(280+2*height/source.height-.34*height));
         for(const auto motion:{Motion::Walk,Motion::Stalk,Motion::Zoomies}) {
+            if(motion==Motion::Walk && !cat::species::UsesNewArt(character))continue;
             auto pose=poseFor(motion,facing);
-            if(!pose.walkingRig || pose.frame!=1 || pose.blendFrame!=-1 ||
+            if((motion==Motion::Walk?(!pose.originalWalk || pose.walkingRig):
+                    (!pose.walkingRig || pose.originalWalk || pose.frame!=1 || pose.blendFrame!=-1)) ||
                     pose.x!=0 || pose.lift!=0 || pose.angle!=0 || pose.scaleX!=1 || pose.scaleY!=1)return 152;
             std::array<std::vector<BYTE>,9> bare;
             for(int o=0;o<cat::kOutfitCount;++o) {
@@ -115,7 +187,7 @@ int NativeWalkingRenderTest(std::string& context) {
         auto& art=CurrentArt(character);
         const auto& source=art.base.skins[cat::species::UsesNewArt(character)?2:1];
         const double reference=110.0/std::max(1,art.base.standingHeight);
-        auto pose=poseFor(Motion::Walk,1);pose.walkPhase=.375;
+        auto pose=poseFor(cat::species::UsesNewArt(character)?Motion::Walk:Motion::Stalk,1);pose.walkPhase=.375;
         for(const auto dimensions:{std::pair<double,double>{1,1},{.82,1.04},{1.25,.96},{1,1}}) {
             auto body=normalBody;body.bodyWidth=dimensions.first;body.bodyHeight=dimensions.second;
             context="walking nutrition c="+std::to_string(static_cast<int>(character))+" width="+std::to_string(body.bodyWidth);
@@ -149,6 +221,11 @@ int NativeWalkingRenderTest(std::string& context) {
             auto pose=cat::animation::Evaluate(motion,0,500000,1,gait);
             context="persistent walking c="+std::to_string(static_cast<int>(character))+
                 " frame="+std::to_string(frame)+" width="+std::to_string(body.bodyWidth);
+            if(motion==Motion::Walk) {
+                const auto authored=originalExpected(character,pose,body,110);
+                if(!draw(character,cat::Outfit::None,pose,body,false) || copy()!=authored)return 158;
+                continue;
+            }
             if(!draw(character,cat::Outfit::None,pose,body,true)||!art.walking)return 159;
             if(!expected.Raster(pose.walkPhase,pose.walkStride,source.width*reference*body.bodyWidth,
                     source.height*reference*body.bodyHeight,pose.walkDuty,pose.walkLift,&pose.walkFeet)||
