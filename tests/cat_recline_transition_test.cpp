@@ -120,7 +120,60 @@ void RecliningSleepClosesOnlyNativeEyes() {
     CHECK(TurnBlink(24,25,0)==0&&TurnBlink(24,25,1)==0&&TurnBlink(24,25,.5)==1);
     CHECK(TurnBlink(4,24,.5)==0&&TurnBlink(25,24,.5)==1);
 }
+void RecliningEyelidsPreserveEverySourceAlpha() {
+    constexpr int w=300,h=190;
+    std::vector<std::uint32_t> source(w*h),closed(w*h),output(w*h);
+    const auto premultiply=[](unsigned alpha,unsigned red,unsigned green,unsigned blue){
+        return (alpha<<24)|(((red*alpha+127)/255)<<16)|(((green*alpha+127)/255)<<8)|((blue*alpha+127)/255);
+    };
+    // Include every alpha, especially the 245..254 pixels allowed through the
+    // eye mask. The old source-over paint made those pixels more opaque.
+    for(int y=0;y<h;++y)for(int x=0;x<w;++x)
+        source[y*w+x]=premultiply(static_cast<unsigned>((x+y*3)%256),58,112,193);
+    const auto untouched=source;
+    for(const auto character:{cat::Character::Cream,cat::Character::Dog,cat::Character::Rabbit})
+    for(int frame:{24,25})for(double blink:{.20,.65,1.})for(unsigned lidAlpha:{0u,64u,245u,246u,250u,254u,255u,256u}) {
+        if(lidAlpha<=255)std::fill(closed.begin(),closed.end(),premultiply(lidAlpha,235,34,128));
+        else {
+            // Bilinear sampling also crosses differing lid coverage, as it
+            // does around antialiased pixels in the real closed-eye texture.
+            constexpr std::array<unsigned,7> alpha{{0,128,245,246,250,254,255}};
+            for(int y=0;y<h;++y)for(int x=0;x<w;++x)
+                closed[y*w+x]=premultiply(alpha[(x/8+y/7)%alpha.size()],235,34,128);
+        }
+        CHECK(CloseEyes(source.data(),w,h,output.data(),character,frame,blink,
+            {closed.data(),w,h,cat::species::ClosedFaceFor(character)}));
+        bool exactAlpha=true,premultiplied=true,translucentUnchanged=true;std::size_t changed=0;
+        for(std::size_t i=0;i<source.size();++i){
+            const unsigned alpha=source[i]>>24;
+            exactAlpha=exactAlpha && (output[i]>>24)==alpha;
+            premultiplied=premultiplied && (output[i]&255)<=alpha && ((output[i]>>8)&255)<=alpha && ((output[i]>>16)&255)<=alpha;
+            if(alpha<245)translucentUnchanged=translucentUnchanged && output[i]==source[i];
+            changed+=output[i]!=source[i];
+        }
+        CHECK(exactAlpha);CHECK(premultiplied);CHECK(translucentUnchanged);
+        CHECK(source==untouched);
+        if(lidAlpha<=245)CHECK(output==source);
+        else if(blink==1)CHECK(changed>(lidAlpha==256?0u:20u));
+    }
+    // At full closure a lid is normalized to the original coverage, not laid
+    // over it as extra opaque paint. Assert colour as well as exact alpha.
+    for(unsigned sourceAlpha:{245u,250u,254u,255u})for(unsigned lidAlpha:{246u,250u,254u,255u}) {
+        std::fill(source.begin(),source.end(),premultiply(sourceAlpha,35,80,190));
+        const auto lid=premultiply(lidAlpha,235,34,128);
+        std::fill(closed.begin(),closed.end(),lid);
+        CHECK(CloseEyes(source.data(),w,h,output.data(),cat::Character::Cream,24,1,
+            {closed.data(),w,h,cat::species::ClosedFaceFor(cat::Character::Cream)}));
+        const auto eye=FaceFor(cat::Character::Cream,24).leftEye;
+        const auto pixel=output[static_cast<int>(eye.y*h)*w+static_cast<int>(eye.x*w)];
+        CHECK((pixel>>24)==sourceAlpha);
+        for(int shift:{0,8,16}) {
+            const auto expected=static_cast<unsigned>(std::lround(((lid>>shift)&255)*static_cast<double>(sourceAlpha)/lidAlpha));
+            CHECK(((pixel>>shift)&255)==expected);
+        }
+    }
 }
-int main(){try{AllSpeciesKeepFaceConnectedAndFloorFixed();RasterCoverageAndMirroring();RecliningSleepClosesOnlyNativeEyes();
+}
+int main(){try{AllSpeciesKeepFaceConnectedAndFloorFixed();RasterCoverageAndMirroring();RecliningSleepClosesOnlyNativeEyes();RecliningEyelidsPreserveEverySourceAlpha();
     std::cout<<"Recline registration: "<<checks<<" checks passed\n";return 0;
 }catch(const std::exception& error){std::cerr<<error.what()<<'\n';return 1;}}

@@ -255,8 +255,22 @@ inline bool CloseEyes(const std::uint32_t* source,int width,int height,std::uint
                                (lids[eye].y+ratio*(u*lidAxis.y+v*lidAxis.x))/closed.height};
             const auto lid=Sample(closed.pixels,closed.width,closed.height,sample);
             const unsigned alpha=lid>>24;
-            if(alpha>245)destination[y*width+x]=expression::Over(source[y*width+x],
-                ((lid>>16)&255)*255/alpha,((lid>>8)&255)*255/alpha,(lid&255)*255/alpha,cover);
+            if(alpha>245) {
+                const auto original=source[y*width+x];
+                const unsigned sourceAlpha=original>>24;
+                const double scale=static_cast<double>(sourceAlpha)/alpha;
+                std::uint32_t painted=original&0xff000000u;
+                // Source-atop recolouring: the native source owns coverage.
+                // Source-over would increase 245..254 edge alpha and change
+                // the silhouette. Normalize premultiplied lid RGB directly to
+                // source alpha, then blend once (no unpremultiply rounding).
+                for(int shift:{0,8,16}) {
+                    const double value=((original>>shift)&255)*(1-cover)+
+                        ((lid>>shift)&255)*scale*cover;
+                    painted|=static_cast<std::uint32_t>(std::lround(value))<<shift;
+                }
+                destination[y*width+x]=painted;
+            }
         }
     }
     return true;
