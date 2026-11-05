@@ -20,9 +20,37 @@ inline Profile ProfileFor(Character c) {
 }
 inline double Smooth(double t) {t=std::clamp(t,0.0,1.0);return t*t*(3-2*t);}
 struct Foot { double x=0,y=0; bool stance=true; };
+// The source artwork exposes the near hind/front legs and a far hind leg.
+// A walk places those paws successively; a trot pairs opposite diagonals.
+// Reusing one three-beat rhythm for both looked like paddling in place.
+inline double LegPhase(int leg,double duty) {
+    const double trot=std::clamp((.66-duty)/.12,0.0,1.0);
+    return leg==0 ? .25+.25*trot : leg==1 ? .5*(1-trot) : 0;
+}
+inline double BodyCompression(double phase,double stride,double duty) {
+    const double trot=std::clamp((.66-duty)/.12,0.0,1.0);
+    const double stealth=std::clamp((duty-.68)/.10,0.0,1.0);
+    const double weight=.5-.5*std::cos(phase*12.56637061435917295384);
+    return std::min(stride/24.,1.0)*(1-.5*stealth)*(.25+(.65+.5*trot)*weight);
+}
+inline double BendWeight(double t) {t=std::clamp(t,0.0,1.0);return 16*t*t*(1-t)*(1-t);}
+inline double BendDerivative(double t) {return t>0&&t<1?32*t*(1-t)*(1-2*t):0;}
+inline bool MonotoneLeg(double dy,double kneeY,double reach) {
+    // Exact minima of the cubic Jacobian, including extrema between samples.
+    const double a=6*dy+32*kneeY,b=-6*dy-96*kneeY,c=64*kneeY;
+    const auto valid=[&](double t) {
+        return t<=0 || t>=1 || 1+(a*t+b*t*t+c*t*t*t)/reach>.1;
+    };
+    if(std::abs(c)<1e-12)return std::abs(b)<1e-12 || valid(-a/(2*b));
+    const double discriminant=4*b*b-12*c*a;
+    if(discriminant<=0)return true;
+    const double root=std::sqrt(discriminant);
+    return valid((-2*b-root)/(6*c)) && valid((-2*b+root)/(6*c));
+}
+
 // Body-space distance is independent of nutrition width. Stance reverses the
 // real root displacement exactly; the return arc has continuous end velocity.
-inline Foot FootAt(double phase,double stride=28,double duty=.62,double lift=5.5) {
+inline Foot FootAt(double phase,double stride=24,double duty=.68,double lift=3.2) {
     if(!std::isfinite(phase)||!std::isfinite(stride)||!std::isfinite(duty)||!std::isfinite(lift))return {};
     phase-=std::floor(phase);duty=std::clamp(duty,.5,.85);
     const double half=stride*duty/2;
@@ -47,11 +75,11 @@ public:
             profile.frontSlope<0||profile.frontSlope>.15||profile.frontPartition+profile.frontSlope>.70||
             profile.belly-std::max(profile.frontDrop,profile.rearDrop)<.695)return false;
         width_=width;height_=height;profile_=profile;pad_=static_cast<int>(std::ceil(width*.20))+2;
+        solidBodyRows_=height;
         const auto size=static_cast<std::size_t>(width)*height;
         body_.resize(size);bodyCover_.resize(size);output_.resize(static_cast<std::size_t>(Width())*height);
         const std::array<double,3> roots{{profile.rearRoot,profile.middleRoot,profile.frontRoot}};
-        const std::array<double,3> phases{{.5,.25,0}};
-        for(int i=0;i<3;++i){auto& l=legs_[i];l.pixels.assign(size,0);l.root=roots[i];l.phase=phases[i];
+        for(int i=0;i<3;++i){auto& l=legs_[i];l.pixels.assign(size,0);l.root=roots[i];
             l.left=width;l.top=height;l.right=l.bottom=0;l.sole=0;}
         for(int y=0;y<height;++y)for(int x=0;x<width;++x){
             std::uint32_t pixel;std::memcpy(&pixel,reinterpret_cast<const unsigned char*>(source)+y*strideBytes+x*4,4);
@@ -69,6 +97,7 @@ public:
             }
             const double curve=TorsoEdge((x+.5)/width,profile);
             const auto cover=static_cast<unsigned char>(std::lround(255*(1-Smooth(((y+.5)/height-(curve-.015))/.03))));
+            if(cover!=255)solidBodyRows_=std::min(solidBodyRows_,y);
             bodyCover_[y*width+x]=cover;
             body_[y*width+x]=Multiply(pixel,cover/255.);
         }
@@ -80,39 +109,63 @@ public:
     // All buffers are prepared once. width/heightBodyPx include nutrition;
     // exclude growth and DPI, which are already divided out of gait distance.
     bool Raster(double phase,double strideBodyPx,double widthBodyPx,double heightBodyPx,
-                double duty=.62,double swingLiftBodyPx=5.5) {
+                double duty=.68,double swingLiftBodyPx=3.2) {
         if(!ready_||!std::isfinite(phase)||!std::isfinite(strideBodyPx)||!std::isfinite(widthBodyPx)||
             !std::isfinite(heightBodyPx)||!std::isfinite(duty)||!std::isfinite(swingLiftBodyPx)||
             strideBodyPx<=0||strideBodyPx>60||widthBodyPx<10||heightBodyPx<10||duty<.5||duty>.85||
             swingLiftBodyPx<0||swingLiftBodyPx>12)return false;
         phase-=std::floor(phase);
-        struct Frame {double dx,dy,reach;};std::array<Frame,3> frames{};
+        const double compression=BodyCompression(phase,strideBodyPx,duty);
+        struct Frame {double dx,dy,reach,kneeX,kneeY;};std::array<Frame,3> frames{};
         for(int i=0;i<3;++i){const auto& l=legs_[i];
-            const auto foot=FootAt(phase+l.phase,strideBodyPx,duty,swingLiftBodyPx);
+            const auto foot=FootAt(phase+LegPhase(i,duty),strideBodyPx,duty,swingLiftBodyPx);
             const double dx=foot.x/widthBodyPx;
-            const double dy=(height_-2-l.sole)/static_cast<double>(height_)+foot.y/heightBodyPx;
-            const double reach=.96-l.root;
-            // A monotone vertical map cannot fold or open cracks in a leg.
-            if(1+std::min(0.0,dy)*1.5/reach<=.1)return false;
-            if(std::abs(dx*width_)+2>pad_)return false;
-            frames[i]={dx,dy,reach};
+            // The renderer translates the unchanged torso down by compression.
+            // Subtract it from each paw target so stance remains on the floor.
+            const double dy=(height_-2-l.sole)/static_cast<double>(height_)+(foot.y-compression)/heightBodyPx;
+            // Keep the entire toe rigid: the old warp continued shearing all
+            // the way through the sole, making a planted paw squash sideways.
+            const double ankle=std::max(l.root+.09,l.sole/static_cast<double>(height_)-.04);
+            const double reach=ankle-l.root;
+            const double restX=(i==0?-.07:i==2?.12:-.015)*widthBodyPx;
+            const double restY=reach*heightBodyPx;
+            const double length=std::hypot(restX,restY)*.565;
+            const auto knee=[&](double x,double y) {
+                const double distance=std::hypot(x,y);
+                const double bend=std::sqrt(std::max(0.0,length*length-distance*distance*.25));
+                const double sign=i==0?1.0:-1.0;
+                return std::array<double,2>{{x*.5+sign*y/std::max(.01,distance)*bend,
+                    y*.5-sign*x/std::max(.01,distance)*bend}};
+            };
+            const auto rest=knee(restX,restY),moved=knee(restX+foot.x,restY+dy*heightBodyPx);
+            const double kneeX=std::clamp(moved[0]-rest[0]-foot.x*.5,-2.25,2.25)/widthBodyPx;
+            const double kneeY=std::clamp(moved[1]-rest[1]-dy*heightBodyPx*.5,-.5,.5)/heightBodyPx;
+            // Validate the inverse skin map before touching the cached bitmap.
+            // Fixed toe targets and this monotone map cannot fold a limb.
+            if(!MonotoneLeg(dy,kneeY,reach))return false;
+            if((std::abs(dx)+std::abs(kneeX))*width_+2>pad_)return false;
+            frames[i]={dx,dy,reach,kneeX,kneeY};
         }
         // Validate every leg before changing the persistent output bitmap.
+        bodyOffset_=compression;
         std::fill(output_.begin(),output_.end(),0);
         for(int i=0;i<3;++i){const auto& l=legs_[i];
             const auto dx=frames[i].dx,dy=frames[i].dy,reach=frames[i].reach;
-            const int left=std::max(0,pad_+static_cast<int>(std::floor(l.left+std::min(0.0,dx*width_)))-2);
-            const int right=std::min(Width(),pad_+static_cast<int>(std::ceil(l.right+std::max(0.0,dx*width_)))+2);
-            const int top=std::max(0,static_cast<int>(std::floor(l.top+std::min(0.0,dy*height_)))-2);
-            const int bottom=std::min(height_,static_cast<int>(std::ceil(l.bottom+std::max(0.0,dy*height_)))+2);
+            const auto kneeX=frames[i].kneeX,kneeY=frames[i].kneeY;
+            const int left=std::max(0,pad_+static_cast<int>(std::floor(l.left+(std::min(0.0,dx)-std::abs(kneeX))*width_))-2);
+            const int right=std::min(Width(),pad_+static_cast<int>(std::ceil(l.right+(std::max(0.0,dx)+std::abs(kneeX))*width_))+2);
+            const int top=std::max(0,static_cast<int>(std::floor(l.top+(std::min(0.0,dy)-std::abs(kneeY))*height_))-2);
+            const int bottom=std::min(height_,static_cast<int>(std::ceil(l.bottom+(std::max(0.0,dy)+std::abs(kneeY))*height_))+2);
             for(int y=top;y<bottom;++y){
                 const double destY=(y+.5)/height_;double sourceY=destY;
                 for(int k=0;k<6;++k){
                     const double t=std::clamp((sourceY-l.root)/reach,0.0,1.0);
                     const double derivative=t>0&&t<1?6*t*(1-t)/reach:0;
-                    sourceY-=(sourceY+dy*t*t*(3-2*t)-destY)/(1+dy*derivative);
+                    sourceY-=(sourceY+dy*t*t*(3-2*t)+kneeY*BendWeight(t)-destY)/
+                        (1+dy*derivative+kneeY*BendDerivative(t)/reach);
                 }
-                const double shift=dx*Smooth((sourceY-l.root)/reach);
+                const double t=(sourceY-l.root)/reach;
+                const double shift=dx*Smooth(t)+kneeX*BendWeight(t);
                 for(int x=left;x<right;++x){
                     const auto pixel=Sample(l.pixels,(x-pad_+.5)/width_-shift,sourceY);
                     if(pixel>>24)output_[y*Width()+x]=Over(pixel,output_[y*Width()+x]);
@@ -121,8 +174,14 @@ public:
         }
         // Partition the original torso and warped limb union by coverage.
         // Source-over here would duplicate alpha in semitransparent fur.
-        for(int y=0;y<height_;++y)for(int x=0;x<width_;++x){
+        // The upper torso is a cached, unchanged drawing. Copy whole rows;
+        // repeating four-channel alpha arithmetic here cost more than the
+        // added joint calculation, particularly for the large legacy sheets.
+        for(int y=0;y<solidBodyRows_;++y)
+            std::memcpy(output_.data()+y*Width()+pad_,body_.data()+y*width_,static_cast<std::size_t>(width_)*4);
+        for(int y=solidBodyRows_;y<height_;++y)for(int x=0;x<width_;++x){
             const auto coverage=bodyCover_[y*width_+x];if(coverage){const auto index=y*Width()+x+pad_;
+                if(coverage==255){output_[index]=body_[y*width_+x];continue;}
                 const auto torso=body_[y*width_+x],limbs=Multiply(output_[index],(255-coverage)/255.);
                 std::uint32_t pixel=0;for(int shift=0;shift<32;shift+=8)
                     pixel|=std::min(255u,((torso>>shift)&255)+((limbs>>shift)&255))<<shift;
@@ -137,6 +196,7 @@ public:
     int PaddingX()const{return pad_;}
     int Height()const{return height_;}
     double GroundInsetPixels()const{return 2;}
+    double BodyOffset()const{return bodyOffset_;} // logical body px, excludes DPI/growth
     bool Ready()const{return ready_;}
     int Sole(int leg)const{return leg>=0&&leg<3?legs_[leg].sole:0;}
     Profile GetProfile()const{return profile_;}
@@ -156,12 +216,12 @@ public:
         const double total=std::max(1.0,m[0]+m[1]+m[2]);for(auto& v:m)v/=total;return m;
     }
 private:
-    struct Layer {std::vector<std::uint32_t> pixels;double root=0,phase=0;int left=0,top=0,right=0,bottom=0,sole=0;};
+    struct Layer {std::vector<std::uint32_t> pixels;double root=0;int left=0,top=0,right=0,bottom=0,sole=0;};
     std::array<Layer,3> legs_;
     std::vector<std::uint32_t> body_,output_;
     std::vector<unsigned char> bodyCover_;
     Profile profile_;
-    int width_=0,height_=0,pad_=0;bool ready_=false;
+    int width_=0,height_=0,pad_=0,solidBodyRows_=0;bool ready_=false;double bodyOffset_=0;
     static std::uint32_t Multiply(std::uint32_t p,double amount){
         amount=std::clamp(amount,0.0,1.0);std::uint32_t out=0;
         for(int shift=0;shift<32;shift+=8)out|=static_cast<std::uint32_t>(std::lround(((p>>shift)&255)*amount))<<shift;

@@ -3,7 +3,8 @@
 // The model owns the second animal; this layer only connects windows and menus.
 constexpr UINT kCompanionToggle = 2400, kCompanionFeed = 2401, kCompanionTreat = 2402;
 constexpr UINT kCompanionStatus = 2403, kCompanionPause = 2404;
-constexpr UINT kCompanionCharacterFirst = 2600, kCompanionOutfitFirst = 2620;
+constexpr UINT kCompanionCharacterFirst = 2600;
+// Retired wardrobe commands 2620..2632 stay unused; persisted preferences remain readable.
 
 cat::companion::Platform CompanionPlatform(HWND hwnd, RECT* actual = nullptr) {
     RECT rect{};
@@ -44,14 +45,6 @@ void PaintCompanion(HDC, unsigned char* pixels, int width, int height,
         static_cast<REAL>(110 * dpi * s.growthScale));
     graphics.Flush(FlushIntentionSync);
 }
-bool CompanionOutfitAvailable(cat::Outfit outfit) {
-    if (outfit == g.companionStore.state.preferences.outfit) return true;
-    const auto bits = g.companionStore.state.life.unlockedHats;
-    if (outfit == cat::Outfit::Santa) return (bits & cat::life::SantaHat) != 0;
-    if (outfit == cat::Outfit::Pumpkin) return (bits & cat::life::PumpkinHat) != 0;
-    if (outfit == cat::Outfit::Birthday) return (bits & cat::life::BirthdayHat) != 0;
-    return cat::IsValid(outfit);
-}
 void ShowCompanionStatus() {
     if (!g.companionStore.available()) return;
     const auto& s = g.companionStore.state;
@@ -81,20 +74,13 @@ void ShowCompanionMenu(POINT point) {
     AppendMenuW(menu, MF_STRING | MF_GRAYED, 0, L"두 번째 동물");
     AppendMenuW(menu, MF_STRING, kCompanionFeed, L"이 동물에게 밥 주기");
     AppendMenuW(menu, MF_STRING, kCompanionTreat, L"이 동물에게 간식 주기");
-    HMENU characters = CreatePopupMenu(), wardrobe = CreatePopupMenu();
+    HMENU characters = CreatePopupMenu();
     for (int i=0; i<cat::kCharacterCount; ++i) {
         const auto character = static_cast<cat::Character>(i);
         AppendMenuW(characters, MF_STRING | (character==prefs.character ? MF_CHECKED : 0),
             kCompanionCharacterFirst+i, cat::CharacterName(character));
     }
-    for (int i=0; i<cat::kOutfitCount; ++i) {
-        const auto outfit = static_cast<cat::Outfit>(i);
-        AppendMenuW(wardrobe, MF_STRING | (outfit==prefs.outfit ? MF_CHECKED : 0) |
-            (CompanionOutfitAvailable(outfit) ? MF_ENABLED : MF_GRAYED),
-            kCompanionOutfitFirst+i, cat::OutfitName(outfit));
-    }
     AppendMenuW(menu, MF_POPUP, reinterpret_cast<UINT_PTR>(characters), L"캐릭터 선택");
-    AppendMenuW(menu, MF_POPUP, reinterpret_cast<UINT_PTR>(wardrobe), L"옷장");
     AppendMenuW(menu, MF_STRING | (g.companionStore.state.pet.roamingPaused ? MF_CHECKED : 0), kCompanionPause, L"이 자리에서 쉬기");
     AppendMenuW(menu, MF_STRING, kCompanionStatus, L"이 동물의 성장 기록");
     AppendMenuW(menu, MF_STRING, UpdateCheckCommand, L"프로그램 업데이트 확인…");
@@ -114,15 +100,9 @@ void ShowCompanionMenu(POINT point) {
         auto& paused = g.companionStore.state.pet.roamingPaused;
         const bool old = paused; paused = !paused;
         if (!SaveCompanion()) paused = old;
-    } else if ((command >= kCompanionCharacterFirst && command < kCompanionCharacterFirst+cat::kCharacterCount) ||
-               (command >= kCompanionOutfitFirst && command < kCompanionOutfitFirst+cat::kOutfitCount)) {
+    } else if (command >= kCompanionCharacterFirst && command < kCompanionCharacterFirst+cat::kCharacterCount) {
         auto& p = g.companionStore.state.preferences; const auto old = p;
-        if (command < kCompanionOutfitFirst) p.character = static_cast<cat::Character>(command-kCompanionCharacterFirst);
-        else {
-            const auto outfit = static_cast<cat::Outfit>(command-kCompanionOutfitFirst);
-            if (!CompanionOutfitAvailable(outfit)) return;
-            p.outfit = outfit;
-        }
+        p.character = static_cast<cat::Character>(command-kCompanionCharacterFirst);
         if (!SaveCompanion()) p = old;
     }
 }

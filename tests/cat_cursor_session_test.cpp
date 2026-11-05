@@ -17,7 +17,7 @@ using Action = cat::environment::CursorAction;
 
 Motion MotionFor(Action action) {
     switch (action) {
-    case Action::Hunt: case Action::ApproachSit: return Motion::Stalk;
+    case Action::Hunt: case Action::Sneak: case Action::ApproachSit: return Motion::Stalk;
     case Action::Chase: return Motion::Zoomies;
     case Action::Pounce: return Motion::Pounce;
     case Action::Sniff: return Motion::Sniff;
@@ -61,7 +61,8 @@ struct Host {
         input.canContinue = !busy && (input.grounded || session.InFlight());
         input.canStart = input.canContinue && !waiting && (motion == Motion::Idle || motion == Motion::Watch ||
             motion == Motion::Walk || motion == Motion::Stalk || motion == Motion::Loaf);
-        input.cursorX = cursorX; input.cursorHeight = cursorHeight-physics.CurrentPose().lift; input.catX = physics.CurrentPose().x;
+        input.cursorX = cursorX; input.cursorHeight = cursorHeight-physics.CurrentPose().lift;
+        input.supportHeight = physics.CurrentPose().lift; input.catX = physics.CurrentPose().x;
         input.minX = minX; input.maxX = maxX; input.interest = interest; input.roll = roll;
         const auto output = session.Step(input, now - previous, {motion == ownedMotion, waiting, started, serial});
         if (output.changed) {
@@ -273,6 +274,34 @@ void ContactRequiresActualPawAndOwnedUnpausedAction() {
     CHECK(!smallAndSlow.session.Active());
 }
 
+void RareSlowStalkActuallyReachesAndTapsAtEveryFrameRate() {
+    for(int fps:{30,60,120,144})for(int side:{-1,1})for(double movement:{1.,.55}) {
+        Host host;host.interest=1;host.roll=0;host.movementScale=movement;
+        host.growth=movement==1 ? 1 : .6;
+        host.cursorX=400+side*200;host.cursorHeight=6*host.growth;
+        bool sneaked=false,sniffed=false,pawed=false;
+        std::uint64_t firstSneak=0,firstPaw=0;
+        for(int frame=1;frame<fps*40;++frame) {
+            host.Frame(1000+static_cast<std::uint64_t>(std::round(frame*1000./fps)),1./fps);
+            const auto action=host.session.Action();
+            if(action==Action::Sneak) {
+                sneaked=true;if(!firstSneak)firstSneak=host.now;
+                CHECK(host.motion==Motion::Stalk);
+                CHECK(std::abs(host.session.Velocity())<=14);
+                CHECK(host.session.Velocity()*side>=0);
+            }
+            sniffed=sniffed||action==Action::Sniff;
+            if(action==Action::Paw){pawed=true;if(!firstPaw)firstPaw=host.now;}
+            CHECK(action!=Action::Sit&&action!=Action::ApproachSit);
+            if(pawed&&!host.session.Active())break;
+        }
+        CHECK(sneaked&&sniffed&&pawed&&!host.session.Active());
+        CHECK(firstPaw-firstSneak>11000);
+        CHECK(host.contacts==2);
+        CHECK(host.launches==0);
+    }
+}
+
 void PounceRespectsLedgeRoofBodySizeAndNutrition() {
     cat::physics::Controller body;
     body.Reset(400,96,960);body.SetCeiling(800);
@@ -301,6 +330,7 @@ int main() {
         MovingTeaseBuildsFromTapToRealFrozenTargetPounce();
         PounceOffDepartureAndInterruptionPreserveExistingImpulse();
         ContactRequiresActualPawAndOwnedUnpausedAction(); PounceRespectsLedgeRoofBodySizeAndNutrition();
+        RareSlowStalkActuallyReachesAndTapsAtEveryFrameRate();
         std::cout << "Cursor host and Box2D: " << checks << " checks passed\n";
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
 }

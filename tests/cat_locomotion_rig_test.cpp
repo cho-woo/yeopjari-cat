@@ -147,6 +147,36 @@ void RealLegMotionKeepsHeadPixelsAndUsesHorizontalPadding() {
     CHECK(headOpaque>1000 && changed>1000 && outsideSource>50);
 }
 
+void NaturalCadenceAndWeightTransferKeepSupport() {
+    // Near fore/hind alternate in a trot; a walk staggers their lift-offs.
+    // The far hind moves with the opposite foreleg only in the trot.
+    CHECK(Near(cat::walk::LegPhase(0,.54)-cat::walk::LegPhase(2,.54),.5));
+    CHECK(Near(cat::walk::LegPhase(1,.54),cat::walk::LegPhase(2,.54)));
+    CHECK(std::abs(cat::walk::LegPhase(0,.68)-cat::walk::LegPhase(2,.68))<.4);
+    CHECK(std::abs(cat::walk::LegPhase(1,.68)-cat::walk::LegPhase(2,.68))>.4);
+    Anatomy source;
+    cat::walk::Rig rig;
+    CHECK(rig.Prepare(source.pixels.data(),source.width,source.height,source.pitch*4,
+        cat::walk::ProfileFor(cat::Character::Cream)));
+    for(const auto gait:{std::array<double,3>{24,.68,3.2},{20,.78,1.8},{32,.54,4.8}})
+    for(const auto body:{std::array<double,2>{110,110},{90,114.4},{137.5,105.6}}) {
+        for(int frame=0;frame<=32;++frame) {
+            const double phase=frame/32.;
+            CHECK(rig.Raster(phase,gait[0],body[0],body[1],gait[1],gait[2]));
+            CHECK(rig.BodyOffset()>=0 && rig.BodyOffset()<=1.4+1e-12);
+            int bottom=0;
+            for(int y=0;y<rig.Height();++y)for(int x=0;x<rig.Width();++x)
+                if((rig.Pixels()[y*rig.Width()+x]>>24)>153)bottom=std::max(bottom,y+1);
+            const double pawY=(bottom-(rig.Height()-2))*body[1]/rig.Height()+rig.BodyOffset();
+            CHECK(pawY>=-1.3 && pawY<=1.2);
+            // Compression is a smooth translation, with zero velocity at the
+            // cycle seam. It cannot create a face size/scale pulse.
+            CHECK(Near(cat::walk::BodyCompression(phase,gait[0],gait[1]),
+                       cat::walk::BodyCompression(phase+1,gait[0],gait[1])));
+        }
+    }
+}
+
 void RasterReusesPreparedMemoryAndRejectsBadInputs() {
     Anatomy source;
     cat::walk::Rig rig;
@@ -173,11 +203,13 @@ void RasterReusesPreparedMemoryAndRejectsBadInputs() {
     CHECK(rig.Prepare(source.pixels.data(),127,137,132*4,cat::walk::ProfileFor(cat::Character::Cream)));
     CHECK(rig.Raster(.3,28,110,110));
     const auto* pixels=rig.Pixels();
+    const double beforeOffset=rig.BodyOffset();
     const std::vector<std::uint32_t> before(pixels,pixels+rig.Width()*rig.Height());
     for(int field=0;field<6;++field)for(double invalid:{std::numeric_limits<double>::quiet_NaN(),std::numeric_limits<double>::infinity()}) {
         double args[]={.3,28,110,110,.62,5.5};args[field]=invalid;
         CHECK(!rig.Raster(args[0],args[1],args[2],args[3],args[4],args[5]));
         CHECK(std::equal(before.begin(),before.end(),rig.Pixels()));
+        CHECK(rig.BodyOffset()==beforeOffset);
     }
     CHECK(!rig.Raster(.3,0,110,110));CHECK(!rig.Raster(.3,61,110,110));
     CHECK(!rig.Raster(.3,28,9,110));CHECK(!rig.Raster(.3,28,110,9));
@@ -206,6 +238,7 @@ int main() {
     try {
         PlantedFeetCancelActualRootDistance();CompleteCyclesAreFiniteAndC1AtLiftAndPlant();
         MasksPartitionAndNeutralSourceOverReconstructsAnatomy();RealLegMotionKeepsHeadPixelsAndUsesHorizontalPadding();
+        NaturalCadenceAndWeightTransferKeepSupport();
         RasterReusesPreparedMemoryAndRejectsBadInputs();
         std::cout<<"Articulated locomotion: "<<checks<<" checks passed\n";
     } catch(const std::exception& error) {std::cerr<<error.what()<<'\n';return 1;}

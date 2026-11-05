@@ -274,6 +274,79 @@ void NearbyTeasingEscalatesAndChaseNeverBacksAway() {
     }
 }
 
+void MovingSupportDoesNotImpersonatePointerMotion() {
+    CursorReaction reaction;
+    auto input=Input(); input.cursorX=430; input.cursorHeight=6; input.supportHeight=400;
+    CHECK(reaction.Step(input).action==CursorAction::Watch);
+    for(int frame=1;frame<30;++frame) {
+        input.nowMs=frame*16;
+        input.supportHeight=frame%2 ? 394 : 406;
+        input.cursorHeight=406-input.supportHeight; // Pointer never moved on the desktop.
+        const auto output=reaction.Step(input);
+        CHECK(output.action!=CursorAction::Abandon);
+        CHECK(reaction.Excitement()==0);
+    }
+    // A real rapid vertical pointer movement still ends the interaction.
+    bool abandoned=false;
+    input.supportHeight=400;
+    for(int frame=30;frame<42;++frame) {
+        input.nowMs=frame*16;input.cursorHeight=frame%2 ? 0 : 24;
+        abandoned=abandoned||reaction.Step(input).action==CursorAction::Abandon;
+    }
+    CHECK(abandoned);
+}
+
+void SneakingIsRareAndCancelsWhenDisabledOrPointerLeaves() {
+    for(int cancel=0;cancel<3;++cancel) {
+        CursorReaction reaction;auto input=Input();input.cursorHeight=6;
+        for(int frame=0;frame<80;++frame) {
+            input.nowMs=frame*16;
+            const auto output=reaction.Step(input);
+            if(output.action==CursorAction::Sneak)break;
+        }
+        CHECK(reaction.Action()==CursorAction::Sneak);
+        input.nowMs+=16;
+        if(cancel==0)input.enabled=false;
+        if(cancel==1)input.available=false;
+        if(cancel==2)input.cursorX+=500;
+        const auto cancelled=reaction.Step(input);
+        CHECK(!reaction.Active()&&cancelled.velocity==0);
+    }
+    // A pointer interruption cannot reroll the same episode into repeated
+    // slow starts, even though its original draw was selected for sneaking.
+    {
+        CursorReaction reaction;auto input=Input();input.cursorHeight=6;
+        for(int frame=0;frame<80;++frame) {
+            input.nowMs=frame*16;
+            if(reaction.Step(input).action==CursorAction::Sneak)break;
+        }
+        CHECK(reaction.Action()==CursorAction::Sneak);
+        input.nowMs+=16;input.cursorX+=4;
+        CHECK(reaction.Step(input).action==CursorAction::Watch);
+        bool hunted=false;
+        for(int frame=0;frame<100;++frame) {
+            input.nowMs+=16;
+            const auto output=reaction.Step(input);
+            CHECK(output.action!=CursorAction::Sneak);
+            hunted=hunted||output.action==CursorAction::Hunt;
+        }
+        CHECK(hunted);
+    }
+    CursorReaction reaction;auto input=Input();input.cursorHeight=6;
+    std::vector<std::uint64_t> sneaks;
+    bool active=false;
+    for(int frame=0;frame<14000;++frame) {
+        input.nowMs=frame*16;
+        const auto output=reaction.Step(input);
+        if(output.changed&&output.action==CursorAction::Sneak)sneaks.push_back(input.nowMs);
+        input.catX+=output.velocity*.016;
+        if(active&&!reaction.Active())input.catX=400;
+        active=reaction.Active();
+    }
+    CHECK(sneaks.size()>=2);
+    for(std::size_t i=1;i<sneaks.size();++i)CHECK(sneaks[i]-sneaks[i-1]>=90000);
+}
+
 void FastDepartureBeforeTakeoffCancelsTheAttack() {
     CursorReaction reaction;
     auto input=Input();input.cursorHeight=6;
@@ -299,6 +372,7 @@ int main() {
         RareSitCooldownAndSpeciesInterestAreReal();
         WindowRiseBudgetUsesWorkAreaAndSpecies();
         NearbyTeasingEscalatesAndChaseNeverBacksAway(); FastDepartureBeforeTakeoffCancelsTheAttack();
+        MovingSupportDoesNotImpersonatePointerMotion(); SneakingIsRareAndCancelsWhenDisabledOrPointerLeaves();
         std::cout << "Environment reactions: " << checks << " checks passed\n";
     } catch (const std::exception& e) { std::cerr << e.what() << '\n'; return 1; }
 }

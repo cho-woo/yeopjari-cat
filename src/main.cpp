@@ -49,6 +49,7 @@
 #include "cat_render_placement.hpp"
 #include "cat_belly_rig.hpp"
 #include "cat_species_belly.hpp"
+#include "cat_recline_transition.hpp"
 #include "cat_hanging_rig.hpp"
 #include "cat_preferences.hpp"
 #include "cat_species.hpp"
@@ -70,8 +71,6 @@ constexpr UINT kShowExisting = WM_APP + 2;
 constexpr UINT_PTR kTickTimer = 1;
 constexpr int kFeedHotkey = 1, kSnackHotkey = 2, kHideHotkey = 3;
 constexpr UINT kCharacterCommandBase = 2500, kOutfitCommandBase = 2520;
-bool OutfitAvailable(cat::Outfit outfit);
-bool WinterScarfRecommended();
 constexpr UINT kWorkInterferenceCommand = 2300, kSeasonalEventsCommand = 2301;
 // Keep the original IDs: retired action, toy and sound IDs are never reused.
 enum Command {
@@ -313,7 +312,6 @@ void CancelPerch();
 bool WorkInterferenceEnabled();
 bool EnvironmentBusy();
 bool ApplyCursorAttackPose(cat::animation::Pose& pose, ULONGLONG ticks, const cat::physics::Pose& physical);
-bool OutfitAvailable(cat::Outfit outfit);
 void ObserveLife(ULONGLONG ticks);
 bool MaybeLifeEvent(ULONGLONG ticks, bool decisionBoundary = false);
 bool ContinueLifeSequence();
@@ -1374,6 +1372,7 @@ void FinishPerchTransition(ULONGLONG ticks) {
     g.perch.transitioning = g.perch.preparing = false;
     g.perch.sourceHwnd = nullptr; g.perch.sourceRect = {};
     g.perch.active = landedOnWindow;
+    g.perch.landingOnWindow = landedOnWindow;
     g.perch.walkAfterLanding = landedOnWindow;
     if (landedOnWindow) {
         g.perch.leaveAfter = ticks + static_cast<ULONGLONG>(Random(22000, 52000));
@@ -1550,106 +1549,6 @@ void RoundedRect(GraphicsPath& path, REAL x, REAL y, REAL w, REAL h, REAL radius
     path.AddArc(x, y, d, d, 180, 90); path.AddArc(x + w - d, y, d, d, 270, 90);
     path.AddArc(x + w - d, y + h - d, d, d, 0, 90); path.AddArc(x, y + h - d, d, d, 90, 90); path.CloseFigure();
 }
-void DrawOutfitBody(Graphics& graphics, int frame, REAL width, REAL height, bool centerPivot,
-                   cat::Outfit outfit, const cat::deform::Joints& joints, cat::deform::Shape shape) {
-    if(outfit!=cat::Outfit::Hoodie&&outfit!=cat::Outfit::Dinosaur&&outfit!=cat::Outfit::Shark)return;
-    const bool lying=frame==6||frame>=24;
-    const double bx=lying?.41:frame<4?.38:.57,by=lying?.66:frame<4?.73:.80;
-    const auto warped=cat::deform::DeformPoint({bx,by},joints,shape);
-    const auto body=cat::render::LocalPoint({warped.x,warped.y},width,height,centerPivot);
-    const REAL rx=width*static_cast<REAL>(lying?.22:.17),ry=height*static_cast<REAL>((lying?.18:.115)*(1-.3*joints.crouch));
-    const Color color=outfit==cat::Outfit::Hoodie?Color(238,180,141,199):outfit==cat::Outfit::Dinosaur?Color(238,91,159,104):Color(238,92,155,186);
-    SolidBrush cloth(color); Pen seam(Color(165,245,241,226),std::max(1.0f,width*.008f));
-    graphics.FillEllipse(&cloth,static_cast<REAL>(body.x)-rx,static_cast<REAL>(body.y)-ry,rx*2,ry*2);
-    graphics.DrawArc(&seam,static_cast<REAL>(body.x)-rx*.65f,static_cast<REAL>(body.y)-ry*.3f,rx*1.3f,ry,0,180);
-}
-void DrawOutfit(Graphics& graphics, int frame, REAL width, REAL height, bool centerPivot,
-                const cat::deform::Joints& joints = {}, cat::deform::Shape shape = cat::deform::Shape::Sitting,
-                cat::Outfit outfit = g.preferences.outfit, cat::Character character = g.preferences.character, bool headOnly = false) {
-    if (outfit == cat::Outfit::None) return;
-    if(!headOnly)DrawOutfitBody(graphics,frame,width,height,centerPivot,outfit,joints,shape);
-    auto anchors = cat::render::AnchorsForFrame(frame);
-    if (cat::species::UsesNewArt(character) && frame == 4) anchors = {{.69,cat::belly::Neckline(character)},{.66,.16},.67};
-    if(character==cat::Character::Rabbit && frame==4)anchors.crown={.66,.35};
-    const auto warpedNeck = cat::deform::DeformPoint({anchors.neck.x, anchors.neck.y}, joints, shape);
-    const auto warpedCrown = cat::deform::DeformPoint({anchors.crown.x, anchors.crown.y}, joints, shape);
-    const auto neckPoint = cat::render::LocalPoint({warpedNeck.x, warpedNeck.y}, width, height, centerPivot);
-    const auto crownPoint = cat::render::LocalPoint({warpedCrown.x, warpedCrown.y}, width, height, centerPivot);
-    const REAL x = static_cast<REAL>(neckPoint.x), neck = static_cast<REAL>(neckPoint.y);
-    const REAL unit = static_cast<REAL>(anchors.headWidth * width / 80.0);
-    if (outfit == cat::Outfit::BowTie) {
-        SolidBrush ribbon(Color(235, 218, 70, 66));
-        SolidBrush knot(Color(245, 245, 184, 68));
-        graphics.FillEllipse(&ribbon, x - 18*unit, neck - 7*unit, 17*unit, 14*unit);
-        graphics.FillEllipse(&ribbon, x + 1*unit, neck - 7*unit, 17*unit, 14*unit);
-        graphics.FillEllipse(&knot, x - 5*unit, neck - 5*unit, 10*unit, 10*unit);
-    } else if (outfit == cat::Outfit::Scarf) {
-        Pen scarf(Color(235, 213, 92, 79), 8*unit);
-        scarf.SetStartCap(LineCapRound); scarf.SetEndCap(LineCapRound);
-        graphics.DrawArc(&scarf, x - 25*unit, neck - 12*unit, 50*unit, 25*unit, 12, 156);
-        graphics.DrawLine(&scarf, x + 12*unit, neck + 4*unit, x + 22*unit, neck + 28*unit);
-        Pen trim(Color(210, 245, 210, 170), 1.3f*unit);
-        graphics.DrawLine(&trim, x + 17*unit, neck + 19*unit, x + 25*unit, neck + 20*unit);
-    } else if (outfit == cat::Outfit::Crown) {
-        const REAL x = static_cast<REAL>(crownPoint.x);
-        const REAL y = static_cast<REAL>(crownPoint.y - 14 * unit);
-        PointF points[7] = {{x-18*unit,y+14*unit},{x-15*unit,y},{x-5*unit,y+9*unit},{x,y-3*unit},
-                            {x+6*unit,y+9*unit},{x+16*unit,y},{x+18*unit,y+14*unit}};
-        SolidBrush gold(Color(240, 242, 190, 58)); Pen border(Color(235, 151, 103, 28), 1.2f*unit);
-        graphics.FillPolygon(&gold, points, 7); graphics.DrawPolygon(&border, points, 7);
-        SolidBrush jewel(Color(230, 218, 64, 80)); graphics.FillEllipse(&jewel, x-2.5f*unit, y+7*unit, 5*unit, 5*unit);
-    } else if (outfit == cat::Outfit::Tie) {
-        SolidBrush cloth(Color(248,45,89,146)); Pen edge(Color(240,25,49,88),unit);
-        PointF tie[5]={{x-5*unit,neck},{x+5*unit,neck},{x+8*unit,neck+28*unit},{x,neck+36*unit},{x-8*unit,neck+28*unit}};
-        graphics.FillPolygon(&cloth,tie,5); graphics.DrawPolygon(&edge,tie,5);
-        SolidBrush knot(Color(255,74,116,166));graphics.FillEllipse(&knot,x-6*unit,neck-4*unit,12*unit,10*unit);
-    } else if (outfit == cat::Outfit::Sunglasses) {
-        auto face=cat::species::FaceFor(character);
-        if(frame!=4) { face.leftEye={anchors.crown.x-.12,anchors.neck.y-.25};face.rightEye={anchors.crown.x+.13,anchors.neck.y-.27}; }
-        auto eye=[&](cat::deform::Point uv) {const auto q=cat::deform::DeformPoint(uv,joints,shape);return cat::render::LocalPoint({q.x,q.y},width,height,centerPivot);};
-        const auto l=eye(face.leftEye),r=eye(face.rightEye);
-        SolidBrush lens(Color(240,22,30,38));Pen rim(Color(255,12,17,24),2*unit);
-        graphics.FillEllipse(&lens,static_cast<REAL>(l.x)-11*unit,static_cast<REAL>(l.y)-8*unit,22*unit,16*unit);
-        graphics.FillEllipse(&lens,static_cast<REAL>(r.x)-11*unit,static_cast<REAL>(r.y)-8*unit,22*unit,16*unit);
-        graphics.DrawLine(&rim,static_cast<REAL>(l.x),static_cast<REAL>(l.y)-2*unit,static_cast<REAL>(r.x),static_cast<REAL>(r.y)-2*unit);
-        Pen shine(Color(150,185,219,232),1.5f*unit);
-        graphics.DrawLine(&shine,static_cast<REAL>(l.x)-6*unit,static_cast<REAL>(l.y)-4*unit,static_cast<REAL>(l.x)-unit,static_cast<REAL>(l.y)-6*unit);
-    } else {
-        const REAL hx=static_cast<REAL>(crownPoint.x),hy=static_cast<REAL>(crownPoint.y);
-        if(outfit==cat::Outfit::Santa || outfit==cat::Outfit::Birthday) {
-            const bool santa=outfit==cat::Outfit::Santa;
-            SolidBrush cloth(santa?Color(250,207,47,50):Color(250,126,90,199));
-            PointF cone[3]={{hx-22*unit,hy},{hx+22*unit,hy},{hx+(santa?14:0)*unit,hy-34*unit}};
-            graphics.FillPolygon(&cloth,cone,3);
-            SolidBrush trim(Color(255,250,246,230));graphics.FillEllipse(&trim,hx-24*unit,hy-5*unit,48*unit,10*unit);
-            graphics.FillEllipse(&trim,hx+(santa?10:-4)*unit,hy-39*unit,9*unit,9*unit);
-            if(!santa){SolidBrush spot(Color(255,255,210,92));graphics.FillEllipse(&spot,hx-6*unit,hy-17*unit,6*unit,6*unit);}
-        } else if(outfit==cat::Outfit::FishHat || outfit==cat::Outfit::Shark) {
-            const bool shark=outfit==cat::Outfit::Shark;
-            SolidBrush fish(shark?Color(248,92,155,186):Color(248,204,144,72));
-            graphics.FillEllipse(&fish,hx-25*unit,hy-19*unit,50*unit,23*unit);
-            PointF tail[3]={{hx-20*unit,hy-9*unit},{hx-35*unit,hy-22*unit},{hx-35*unit,hy+2*unit}};graphics.FillPolygon(&fish,tail,3);
-            PointF fin[3]={{hx-5*unit,hy-16*unit},{hx+3*unit,hy-34*unit},{hx+12*unit,hy-15*unit}};graphics.FillPolygon(&fish,fin,3);
-            SolidBrush eye(Color(255,24,39,51));graphics.FillEllipse(&eye,hx+13*unit,hy-12*unit,4*unit,4*unit);
-            if(shark){SolidBrush tooth(Color(255,250,250,246));PointF teeth[3]={{hx+9*unit,hy-2*unit},{hx+16*unit,hy-2*unit},{hx+13*unit,hy+3*unit}};graphics.FillPolygon(&tooth,teeth,3);}
-            else {Pen waffle(Color(190,133,83,34),unit);for(int i=-2;i<=2;++i){const REAL px=hx+i*6*unit;graphics.DrawLine(&waffle,px-5*unit,hy-13*unit,px+5*unit,hy-3*unit);graphics.DrawLine(&waffle,px-5*unit,hy-3*unit,px+5*unit,hy-13*unit);}}
-        } else if(outfit==cat::Outfit::Hoodie || outfit==cat::Outfit::Dinosaur) {
-            const bool dinosaur=outfit==cat::Outfit::Dinosaur;
-            Pen hood(dinosaur?Color(240,91,159,104):Color(240,180,141,199),7*unit);
-            graphics.DrawArc(&hood,hx-33*unit,hy-8*unit,66*unit,54*unit,175,190);
-            graphics.DrawLine(&hood,x-21*unit,neck-3*unit,x+21*unit,neck-3*unit);
-            Pen cord(Color(245,247,239,218),1.4f*unit);graphics.DrawLine(&cord,x-10*unit,neck,x-10*unit,neck+14*unit);graphics.DrawLine(&cord,x+10*unit,neck,x+10*unit,neck+14*unit);
-            if(dinosaur){SolidBrush spike(Color(248,219,193,83));for(int i=-1;i<=1;++i){const REAL dx=hx+i*16*unit;PointF tri[3]={{dx-7*unit,hy-5*unit},{dx,hy-20*unit},{dx+7*unit,hy-5*unit}};graphics.FillPolygon(&spike,tri,3);}}
-        } else if(outfit==cat::Outfit::Pumpkin) {
-            SolidBrush orange(Color(250,231,127,36)),green(Color(255,69,119,55)),dark(Color(255,67,43,28));
-            graphics.FillEllipse(&orange,hx-24*unit,hy-22*unit,48*unit,28*unit);graphics.FillRectangle(&green,hx-3*unit,hy-29*unit,6*unit,10*unit);
-            PointF left[3]={{hx-14*unit,hy-9*unit},{hx-9*unit,hy-16*unit},{hx-4*unit,hy-9*unit}},right[3]={{hx+4*unit,hy-9*unit},{hx+9*unit,hy-16*unit},{hx+14*unit,hy-9*unit}};
-            graphics.FillPolygon(&dark,left,3);graphics.FillPolygon(&dark,right,3);
-        }
-
-    }
-}
-
 bool PrepareSkin(SpriteAtlas::Skin& skin, int frame, cat::deform::Joints& joints, cat::deform::Shape shape, bool parts = false,
                  cat::Character character = g.preferences.character) {
     std::array<double*, 11> values{{&joints.leftEar, &joints.rightEar, &joints.headNod,
@@ -1682,7 +1581,7 @@ bool PrepareSkin(SpriteAtlas::Skin& skin, int frame, cat::deform::Joints& joints
 void DrawPet(Graphics& graphics, int frame, REAL center, REAL bottom, REAL scale, bool flip,
              REAL scaleX = 1, REAL scaleY = 1, REAL angle = 0, bool centerPivot = false,
              cat::deform::Joints joints = {}, bool groundContact = true, bool bodyOnly = false,
-             cat::Character character = g.preferences.character, cat::Outfit outfit = g.preferences.outfit,
+             cat::Character character = g.preferences.character, cat::Outfit /*outfit*/ = g.preferences.outfit,
              cat::expression::Face face = {}) {
     if (frame < 0 || frame >= cat::animation::kSpriteCount) return;
     auto& art = CurrentArt(character);
@@ -1751,6 +1650,11 @@ void DrawPet(Graphics& graphics, int frame, REAL center, REAL bottom, REAL scale
                 const auto& closed=art.base.skins[5];
                 if (cat::expression::Apply(skin.deformed.data(), skin.width, skin.height,
                         skin.expression.data(), face, landmarks, joints,{closed.source.data(),closed.width,closed.height,cat::species::ClosedFaceFor(character)})) image = skin.expressionImage.get();
+            } else if ((frame==24 || frame==25) && !bodyOnly && face.blink>0) {
+                const auto& closed=art.base.skins[5];
+                if(cat::recline::CloseEyes(skin.deformed.data(),skin.width,skin.height,skin.expression.data(),
+                    character,frame,face.blink,{closed.source.data(),closed.width,closed.height,cat::species::ClosedFaceFor(character)}))
+                    image=skin.expressionImage.get();
             }
             graphics.DrawImage(image, destination, 0, 0, static_cast<REAL>(skin.width), static_cast<REAL>(skin.height), UnitPixel, &attrs);
         }
@@ -1758,13 +1662,11 @@ void DrawPet(Graphics& graphics, int frame, REAL center, REAL bottom, REAL scale
         graphics.DrawImage(atlas->image.get(), destination, static_cast<REAL>(source.X), static_cast<REAL>(source.Y), static_cast<REAL>(source.Width), static_cast<REAL>(source.Height), UnitPixel, &attrs);
         joints = {};
     }
-    if (!bodyOnly) DrawOutfit(graphics, frame, width, height, centerPivot, joints, shape, outfit, character);
-    else DrawOutfitBody(graphics,frame,width,height,centerPivot,outfit,joints,shape);
     graphics.Restore(saved);
 }
 
 void DrawBellyHead(Graphics& graphics, const cat::animation::Pose& pose, REAL center, REAL bottom, REAL scale,
-                   cat::Character character, cat::Outfit outfit, const cat::nutrition::Visual& body) {
+                   cat::Character character, cat::Outfit /*outfit*/, const cat::nutrition::Visual& body) {
     const bool newArt=cat::species::UsesNewArt(character);
     auto& art = CurrentArt(character);
     auto dimensions = [&](int frame) {
@@ -1815,12 +1717,11 @@ void DrawBellyHead(Graphics& graphics, const cat::animation::Pose& pose, REAL ce
     graphics.DrawImage(headImage, RectF(static_cast<REAL>(-headU*width),static_cast<REAL>(-headV*height),width,height),
         0, 0, static_cast<REAL>(skin.width), static_cast<REAL>(skin.height), UnitPixel, &attrs);
     graphics.TranslateTransform(static_cast<REAL>((.5-headU)*width),static_cast<REAL>((1-headV)*height));
-    DrawOutfit(graphics, 4, width, height, false, joints, cat::deform::Shape::Sitting, outfit, character, true);
     graphics.Restore(saved);
 }
 bool DrawWalkingPet(Graphics& graphics, const cat::animation::Pose& pose,
                     REAL center, REAL bottom, REAL scale, cat::Character character,
-                    cat::Outfit outfit, const cat::nutrition::Visual& body) {
+                    cat::Outfit /*outfit*/, const cat::nutrition::Visual& body) {
     auto& art = CurrentArt(character);
     const auto& source = art.base.skins[cat::species::UsesNewArt(character) ? 2 : 1];
     if (source.source.empty() || source.width <= 0 || source.height <= 0) return false;
@@ -1848,19 +1749,64 @@ bool DrawWalkingPet(Graphics& graphics, const cat::animation::Pose& pose,
         walking.width=widthBody; walking.height=heightBody;
         walking.duty=pose.walkDuty; walking.lift=pose.walkLift;
     }
-    const REAL width = static_cast<REAL>(source.width*scale*body.bodyWidth);
     const REAL height = static_cast<REAL>(source.height*scale*body.bodyHeight);
     const REAL rasterWidth = static_cast<REAL>(walking.rig.Width()*scale*body.bodyWidth);
     const REAL inset = static_cast<REAL>(walking.rig.GroundInsetPixels()*height/source.height);
     const auto saved=graphics.Save();
-    graphics.TranslateTransform(center,bottom+inset);
+    // Torso compression is a rigid translation, never a scale pulse. The
+    // raster subtracts the same logical offset from every planted paw.
+    const REAL compression=static_cast<REAL>(walking.rig.BodyOffset()*scale/reference);
+    graphics.TranslateTransform(center,bottom+inset+compression);
     graphics.ScaleTransform(pose.flip ? -1.0f : 1.0f,1.0f);
     ImageAttributes attrs; attrs.SetWrapMode(WrapModeTileFlipXY);
     const auto status=graphics.DrawImage(walking.image.get(),RectF(-rasterWidth/2,-height,rasterWidth,height),
         0,0,static_cast<REAL>(walking.rig.Width()),static_cast<REAL>(walking.rig.Height()),UnitPixel,&attrs);
-    DrawOutfit(graphics,1,width,height,false,{},cat::deform::Shape::Sitting,outfit,character);
     graphics.Restore(saved);
     return status==Ok;
+}
+
+bool DrawRegisteredReclineLayers(const cat::animation::Pose& pose, REAL center, REAL bottom, REAL scale,
+                                cat::Character character, const cat::nutrition::Visual& body,
+                                Surface& from, Surface& to, int width, int height) {
+    if(pose.bellyRig || pose.centerPivot || pose.angle!=0 || !pose.groundContact ||
+       !cat::recline::Frame(pose.frame) || !cat::recline::Frame(pose.blendFrame) ||
+       (pose.frame==4 && pose.blendFrame==4))return false;
+    auto& art=CurrentArt(character);
+    const bool added=cat::species::UsesNewArt(character);
+    struct Layer { const std::uint32_t* pixels=nullptr;int width=0,height=0;cat::recline::Geometry size; };
+    const double blink=std::max(pose.face.blink,cat::recline::TurnBlink(pose.frame,pose.blendFrame,pose.blend));
+    const auto prepare=[&](int frame,Layer& layer){
+        SpriteAtlas* atlas=&art.base;int cell=added?0:4;double factor=scale;
+        if(frame>=24){
+            if(added && frame==24)cell=7;
+            else if(added){atlas=&g.companionBack;cell=cat::species::ArtCell(character);factor*=art.base.standingHeight/250.0;}
+            else {atlas=&g.recline;cell=static_cast<int>(CharacterIndex(character))*2+frame-24;factor*=art.base.standingHeight/440.0;}
+        }
+        auto& skin=atlas->skins[cell];auto joints=pose.joints;
+        const auto shape=frame==4?cat::deform::Shape::Sitting:frame==24?cat::deform::Shape::ReclineSide:cat::deform::Shape::ReclineBack;
+        if(!PrepareSkin(skin,frame,joints,shape,false,character))return false;
+        layer={skin.deformed.data(),skin.width,skin.height,
+            {skin.width*factor*pose.scaleX*body.bodyWidth,skin.height*factor*pose.scaleY*body.bodyHeight}};
+        if(frame>=24 && blink>0){
+            const auto& closed=art.base.skins[5];
+            if(!cat::recline::CloseEyes(skin.deformed.data(),skin.width,skin.height,skin.expression.data(),character,frame,blink,
+                {closed.source.data(),closed.width,closed.height,cat::species::ClosedFaceFor(character)}))return false;
+            layer.pixels=skin.expression.data();
+        } else if(frame==4 && !cat::expression::Zero(pose.face)) {
+            const auto& closed=art.base.skins[5];
+            if(!cat::expression::Apply(skin.deformed.data(),skin.width,skin.height,skin.expression.data(),pose.face,
+                cat::species::FaceFor(character),joints,{closed.source.data(),closed.width,closed.height,cat::species::ClosedFaceFor(character)}))return false;
+            layer.pixels=skin.expression.data();
+        }
+        return true;
+    };
+    Layer first,second;cat::recline::Mesh mesh;
+    if(!prepare(pose.frame,first)||!prepare(pose.blendFrame,second)||
+       !cat::recline::Build(character,pose.frame,first.size,pose.blendFrame,second.size,pose.blend,mesh))return false;
+    return cat::recline::Raster(first.pixels,first.width,first.height,reinterpret_cast<std::uint32_t*>(from.pixels),
+               width,height,first.size,mesh,false,{center,bottom},pose.flip) &&
+           cat::recline::Raster(second.pixels,second.width,second.height,reinterpret_cast<std::uint32_t*>(to.pixels),
+               width,height,second.size,mesh,true,{center,bottom},pose.flip);
 }
 
 void DrawStyledAnimation(Graphics& graphics, cat::animation::Pose pose, REAL center, REAL bottom, REAL scale,
@@ -1892,7 +1838,9 @@ void DrawStyledAnimation(Graphics& graphics, cat::animation::Pose pose, REAL cen
         target.SetPixelOffsetMode(PixelOffsetModeHighQuality);
         draw(target, frame); target.Flush(FlushIntentionSync);
     };
-    layer(blendFrom, pose.frame); layer(blendTo, pose.blendFrame);
+    if(!DrawRegisteredReclineLayers(pose,center,bottom,scale,character,body,blendFrom,blendTo,canvasWidth,canvasHeight)) {
+        layer(blendFrom, pose.frame); layer(blendTo, pose.blendFrame);
+    }
     const unsigned weight = static_cast<unsigned>(std::lround(std::clamp(pose.blend, 0.0, 1.0) * 255));
     const std::size_t bytes = static_cast<std::size_t>(canvasWidth) * canvasHeight * 4;
     // Interpolate premultiplied BGRA itself. Drawing two translucent images over
@@ -2266,17 +2214,6 @@ void SelectCharacter(cat::Character character) {
     Render();
 }
 
-void SelectOutfit(cat::Outfit outfit) {
-    if (!cat::IsValid(outfit) || (!OutfitAvailable(outfit) && outfit != g.preferences.outfit)) return;
-    if (outfit == g.preferences.outfit && !g.preferencesInvalid && !g.preferencesRecovered) return;
-    const cat::Preferences selected{g.preferences.character, outfit};
-    if (!SavePreferences(selected)) return;
-    g.preferences = selected;
-    g.preferencesRecovered = g.preferencesInvalid = false;
-    Speak(cat::OutfitName(outfit), 2200);
-    Render();
-}
-
 void PlaceToy(ToyKind toy) {
     if (g.hidden && toy!=ToyKind::None) return;
     const auto ticks=GetTickCount64();
@@ -2375,6 +2312,7 @@ void UpdateCursorReactionSample(ULONGLONG ticks, ULONGLONG elapsedMs, POINT curs
     input.cursorX = (cursor.x - g.work.left) / g.dpiScale;
     interaction.cursorWorldHeight = (g.work.bottom-cursor.y)/g.dpiScale;
     input.cursorHeight = interaction.cursorWorldHeight-physical.lift;
+    input.supportHeight = physical.lift;
     input.catX = physical.x;
     interaction.cursorX = input.cursorX; interaction.cursorHeight = input.cursorHeight;
     interaction.available = available;
@@ -2388,7 +2326,7 @@ void UpdateCursorReactionSample(ULONGLONG ticks, ULONGLONG elapsedMs, POINT curs
     if (output.changed) {
         using Action = cat::environment::CursorAction;
         switch (output.action) {
-        case Action::Hunt: case Action::ApproachSit: interaction.motion = Motion::Stalk; break;
+        case Action::Hunt: case Action::Sneak: case Action::ApproachSit: interaction.motion = Motion::Stalk; break;
         case Action::Chase: interaction.motion = Motion::Zoomies; break;
         case Action::Pounce: interaction.motion = Motion::Pounce; break;
         case Action::Sniff: interaction.motion = Motion::Sniff; break;
@@ -2504,7 +2442,7 @@ void ShowPetStatus() {
     std::wostringstream text;
     text << L"함께한 지 " << age.days + 1 << L"일 · " << stage << L"\n실제 나이: " << age.years << L"년 " << age.months << L"개월\n"
          << L"처음 만난 날: " << DateText(g.pet.bornUtc) << L"\n캐릭터: " << cat::CharacterName(g.preferences.character)
-         << L"\n성격: " << PersonalityLabel() << L"\n의상: " << cat::OutfitName(g.preferences.outfit) << L"\n\n"
+         << L"\n성격: " << PersonalityLabel() << L"\n\n"
          << L"배부름: " << static_cast<int>(std::round(g.pet.hunger)) << L" / 100\n"
          << L"몸 상태: " << cat::nutrition::BodyDescription(g.nutrition) << L"\n움직임: " << activity << L"\n"
          << L"함께 먹은 밥: " << g.pet.feedCount << L"번\n함께 먹은 간식·츄르: " << g.pet.snackCount << L"번\n\n";
@@ -2520,7 +2458,7 @@ void ShowPetStatus() {
     } else text << L"친밀도·기억: 기존 파일 확인이 필요해 학습을 쉬고 있어요.\n\n";
     if (age.reachedTenYears) text << L"열 번째 생일도 함께 보냈어요. 앞으로도 계속 같이 살아요.\n";
     else text << L"열 번째 생일: " << DateText(age.tenthAnniversary) << L"\n";
-    text << L"\n시간과 체형은 실제 날짜에 따라 천천히 변해요.\n알맞게 먹으면 몸 상태도 서서히 돌아와요.\n캐릭터를 바꿔도 생일과 기록은 이어지고, 바빠도 사라지지 않아요.\n\n밥: Ctrl+Alt+F    츄르: Ctrl+Alt+T\n숨기기/보이기: Ctrl+Alt+H\n고양이를 끌면 다른 모니터로 옮길 수 있어요.\n\n우클릭 메뉴에서 캐릭터·의상·장난감을 고르고 귀여운 행동을 볼 수 있어요.\n냥냥펀치의 화면 금은 잠깐 보였다 사라지는 장난이에요.";
+    text << L"\n시간과 체형은 실제 날짜에 따라 천천히 변해요.\n알맞게 먹으면 몸 상태도 서서히 돌아와요.\n캐릭터를 바꿔도 생일과 기록은 이어지고, 바빠도 사라지지 않아요.\n\n밥: Ctrl+Alt+F    츄르: Ctrl+Alt+T\n숨기기/보이기: Ctrl+Alt+H\n고양이를 끌면 다른 모니터로 옮길 수 있어요.\n\n우클릭 메뉴에서 캐릭터를 고르고 밥과 츄르를 줄 수 있어요. 행동과 장난감 놀이는 스스로 시작해요.\n냥냥펀치의 화면 금은 잠깐 보였다 사라지는 장난이에요.";
     UpdateMessage(text.str().c_str(), kTitle, MB_OK | MB_ICONINFORMATION);
 }
 void ExportBackup() {
@@ -2558,7 +2496,6 @@ void ExportBackup() {
 }
 void RunCommand(UINT command) {
     if(command>=kCharacterCommandBase && command<kCharacterCommandBase+cat::kCharacterCount){SelectCharacter(static_cast<cat::Character>(command-kCharacterCommandBase));return;}
-    if(command>=kOutfitCommandBase && command<kOutfitCommandBase+cat::kOutfitCount){SelectOutfit(static_cast<cat::Outfit>(command-kOutfitCommandBase));return;}
     switch (command) {
     case kWorkInterferenceCommand: ChangeInteractionSettings(true); break;
     case kSeasonalEventsCommand: ChangeInteractionSettings(false); break;
@@ -2576,10 +2513,6 @@ void RunCommand(UINT command) {
     case QuitCommand: PostMessageW(g.window, WM_CLOSE, 0, 0); break;
     case CreamCommand: SelectCharacter(cat::Character::Cream); break;
     case SilverCommand: SelectCharacter(cat::Character::SilverTabby); break;
-    case OutfitNoneCommand: SelectOutfit(cat::Outfit::None); break;
-    case OutfitBowCommand: SelectOutfit(cat::Outfit::BowTie); break;
-    case OutfitScarfCommand: SelectOutfit(cat::Outfit::Scarf); break;
-    case OutfitCrownCommand: SelectOutfit(cat::Outfit::Crown); break;
     case UpdateCheckCommand: StartUpdateCheck(true); break;
     case UpdateViewCommand: ShowUpdateDetails(); break;
     case UpdateAutomaticCommand: ToggleAutomaticUpdates(); break;
@@ -2607,17 +2540,7 @@ HMENU BuildPetMenu() {
     for(int i=0;i<cat::kCharacterCount;++i) AppendMenuW(characters,MF_STRING,kCharacterCommandBase+i,cat::CharacterName(static_cast<cat::Character>(i)));
     CheckMenuRadioItem(characters,kCharacterCommandBase,kCharacterCommandBase+cat::kCharacterCount-1,kCharacterCommandBase+static_cast<int>(g.preferences.character),MF_BYCOMMAND);
     AppendMenuW(menu, MF_POPUP | MF_STRING, reinterpret_cast<UINT_PTR>(characters), L"캐릭터 선택");
-    HMENU wardrobe = CreatePopupMenu();
-    for(int i=0;i<cat::kOutfitCount;++i) {
-        const auto outfit=static_cast<cat::Outfit>(i);
-        const bool available=OutfitAvailable(outfit)||outfit==g.preferences.outfit;
-        std::wstring label=cat::OutfitName(outfit);
-        if(outfit==cat::Outfit::Scarf && WinterScarfRecommended())label+=L" (겨울 추천)";
-        if(!available)label+=outfit==cat::Outfit::Santa?L" (크리스마스에 열려요)":outfit==cat::Outfit::Pumpkin?L" (할로윈에 열려요)":L" (생일에 열려요)";
-        AppendMenuW(wardrobe,MF_STRING|(available?0:MF_GRAYED),kOutfitCommandBase+i,label.c_str());
-    }
-    CheckMenuRadioItem(wardrobe,kOutfitCommandBase,kOutfitCommandBase+cat::kOutfitCount-1,kOutfitCommandBase+static_cast<int>(g.preferences.outfit),MF_BYCOMMAND);
-    AppendMenuW(menu, MF_POPUP | MF_STRING, reinterpret_cast<UINT_PTR>(wardrobe), L"옷장");
+
     AppendMenuW(menu, MF_STRING, StatusCommand, L"생일과 성장 기록"); AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
     AppendMenuW(menu, MF_STRING | (g.pet.roamingPaused ? MF_CHECKED : MF_UNCHECKED), PauseCommand, L"이 자리에서 쉬기");
     AppendMenuW(menu, MF_STRING | (g.workInterference ? MF_CHECKED : MF_UNCHECKED), kWorkInterferenceCommand, L"업무 방해 모드 · 커서와 놀기");
@@ -2911,7 +2834,7 @@ cat::life::EventContext LifeEventContext(ULONGLONG ticks, bool decisionBoundary 
     context.bond=g.memory.enabled() ? cat::memory::Summarize(g.memory.state).bond : 0;
     context.inheritedRareUtc=g.memory.enabled() ? g.memory.state.lastRareUtc : 0;
     context.fullness=g.nutrition.fullness;
-    context.crownWorn=g.preferences.outfit==cat::Outfit::Crown;
+    context.crownWorn=false; // Legacy wardrobe values are retained only in storage.
     context.boxAvailable=g.toy==ToyKind::Box && std::abs(g.toyX-g.centerX)<42*g.dpiScale;
     const auto elapsed=ticks>=g.motionStart ? ticks-g.motionStart : 0;
     if(g.motion==Motion::Punch && elapsed>=650 && g.punchHits>=2 && g.prank.Active()) context.trigger=cat::life::Trigger::Punch;
@@ -2937,21 +2860,6 @@ cat::life::EventContext LifeEventContext(ULONGLONG ticks, bool decisionBoundary 
         (g.prank.Active() && context.trigger!=cat::life::Trigger::Punch) ||
         (!decisionBoundary && !calm && context.trigger==cat::life::Trigger::None);
     return context;
-}
-
-bool OutfitAvailable(cat::Outfit outfit) {
-    if(!cat::IsValid(outfit))return false;
-    if(outfit==g.preferences.outfit)return true;
-    unsigned needed=0;
-    if(outfit==cat::Outfit::Santa)needed=cat::life::SantaHat;
-    if(outfit==cat::Outfit::Pumpkin)needed=cat::life::PumpkinHat;
-    if(outfit==cat::Outfit::Birthday)needed=cat::life::BirthdayHat;
-    if(!needed)return true;
-    if(!g.life.enabled())return false;
-    return ((g.life.state.unlockedHats|cat::life::SeasonalUnlocks(g.life.state,LifeEventContext(GetTickCount64())))&needed)!=0;
-}
-bool WinterScarfRecommended() {
-    return g.life.enabled() && cat::life::WinterScarfSuggested(g.life.state,LifeEventContext(GetTickCount64()));
 }
 
 void ObserveLife(ULONGLONG ticks) {
@@ -3487,7 +3395,7 @@ int RenderSelfTest() {
                             if (opaque < 500 || visible < 2000) return 36;
                             if (outfit == cat::Outfit::None) {
                                 body = snapshot(); bodyOpaque = opaque;
-                            } else if (coveredBody * 100 < bodyOpaque * 95) return 37;
+                            } else if (coveredBody * 100 < bodyOpaque * 95 || snapshot()!=body) return 37;
                         }
                     }
                 }
@@ -3832,7 +3740,7 @@ int NativeMenuContractTest() {
         "Retired command IDs must not renumber the remaining commands");
     // Old installed versions used these IDs for manual motions, sound and toys.
     constexpr UINT retired[]{1018, 1019, 1022, 1023, 1027, 1028, 1029, 1030, 1031,
-        1036, 1037, 1038, 1039, 1040, 1041, 1042, 1043, 1044, 1045};
+        1032, 1033, 1034, 1035, 1036, 1037, 1038, 1039, 1040, 1041, 1042, 1043, 1044, 1045};
     struct Item { UINT id, state, type; };
     const auto collect = [](auto&& self, HMENU menu, std::vector<Item>& items) -> bool {
         const int count = GetMenuItemCount(menu);
@@ -3879,7 +3787,6 @@ int NativeMenuContractTest() {
         if (enabled) expected.push_back(1025);
         if (variant != 2) for (UINT id : {2401u, 2402u, 2403u}) expected.push_back(id);
         for (int i = 0; i < cat::kCharacterCount; ++i) expected.push_back(2500 + i);
-        for (int i = 0; i < cat::kOutfitCount; ++i) expected.push_back(2520 + i);
         for (const auto& item : items) actual.push_back(item.id);
         std::sort(actual.begin(), actual.end()); std::sort(expected.begin(), expected.end());
         if (actual != expected) return 222; // Also catches duplicates and removed commands in submenus.
@@ -3893,9 +3800,7 @@ int NativeMenuContractTest() {
         for (int i = 0; i < cat::kCharacterCount; ++i)
             if (((state(2500 + i) & MFS_CHECKED) != 0) !=
                     (i == static_cast<int>(g.preferences.character))) return 225;
-        for (int i = 0; i < cat::kOutfitCount; ++i)
-            if (((state(2520 + i) & MFS_CHECKED) != 0) !=
-                    (i == static_cast<int>(g.preferences.outfit))) return 225;
+
         for (UINT id : {1024u, 1026u})
             if (((state(id) & MFS_DISABLED) != 0) == enabled) return 226;
         if (variant != 2) for (UINT id : {2401u, 2402u})
@@ -3937,6 +3842,7 @@ int NativeMenuContractTest() {
     };
     const auto unchanged = snapshot();
     for (UINT id : retired) { RunCommand(id); if (snapshot() != unchanged) return 227; }
+    for (int i=0;i<cat::kOutfitCount;++i) { RunCommand(kOutfitCommandBase+i); if(snapshot()!=unchanged)return 227; }
     // A stale Ctrl+Alt+B WM_HOTKEY notification must also have no effect.
     WindowProc(nullptr, WM_HOTKEY, 4, 0);
     if (snapshot() != unchanged) return 228;
@@ -3945,6 +3851,7 @@ int NativeMenuContractTest() {
 }
 
 #include "native_cursor_tests.hpp"
+#include "native_perch_tests.hpp"
 
 int SelfTest(HINSTANCE instance) {
     const auto start = cat::ToUnix({2026, 10, 31, 0, 0, 0});
@@ -3964,6 +3871,8 @@ int SelfTest(HINSTANCE instance) {
     // Retired sound resources must never reappear in a silent release.
     for (int id = 301; id <= 314; ++id)
         if (FindResourceW(instance, MAKEINTRESOURCEW(id), RT_RCDATA)) return id;
+    const int perchResult = NativePerchTransitionTest(instance);
+    if (perchResult) return perchResult;
     const int lifeResult = NativeLifeHostTest();
     if (lifeResult) return lifeResult;
     const int toyResult = NativeToyHostTest();

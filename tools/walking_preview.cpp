@@ -45,12 +45,13 @@ const std::uint32_t* walking_preview_pixels(void* p) { return static_cast<cat::w
 int walking_preview_width(void* p) { return static_cast<cat::walk::Rig*>(p)->Width(); }
 int walking_preview_height(void* p) { return static_cast<cat::walk::Rig*>(p)->Height(); }
 double walking_preview_ground_inset(void* p) { return static_cast<cat::walk::Rig*>(p)->GroundInsetPixels(); }
+double walking_preview_body_offset(void* p) { return static_cast<cat::walk::Rig*>(p)->BodyOffset(); }
 double walking_preview_benchmark(void* p, int count, double width, double height) {
     if (count <= 0) return -1;
     auto& rig = *static_cast<cat::walk::Rig*>(p);
     const auto start = std::chrono::steady_clock::now();
     for (int i = 0; i < count; ++i)
-        if (!rig.Raster((i % 256) / 256., 28, width, height, .62, 5.5)) return -1;
+        if (!rig.Raster((i % 256) / 256., 24, width, height, .68, 3.2)) return -1;
     return std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start).count() / count;
 }
 #endif

@@ -191,6 +191,19 @@ class Renderer:
 
     def render(self,character,motion,elapsed,label):
         pose=self.pose(motion,elapsed)
+        if motion==16:
+            # Belly rendering now registers whole-source facial landmarks.
+            # Keep this older general preview routed to the production path.
+            if not hasattr(self,'recline_preview'):
+                from render_recline_preview import Preview
+                self.recline_preview=Preview(OUTPUT/'recline-register')
+            image=self.recline_preview.image(character,int(pose[0]),int(pose[8]),pose[9],ZOOM,elapsed=elapsed)
+            background=Image.new('RGBA',SIZE,(237,240,244,255))
+            background.alpha_composite(image,((SIZE[0]-image.width)//2,GROUND-140*ZOOM))
+            draw=ImageDraw.Draw(background)
+            draw.text((12,12),f'{"Cream" if character==0 else "Silver"} | {label} | {elapsed} ms',fill=(30,40,50))
+            draw.text((12,390),'2x zoom | production registered recline mesh | portable preview',fill=(65,75,85))
+            return background.convert('RGB')
         first=self.layer(character,int(pose[0]),pose)
         if pose[8]>=0 and pose[9]>0:
             second=self.layer(character,int(pose[8]),pose)

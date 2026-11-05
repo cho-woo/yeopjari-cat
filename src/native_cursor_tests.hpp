@@ -210,6 +210,30 @@ int Run() {
             peak < 15 || !g.physics.CurrentPose().grounded || EnvironmentBusy() ||
             std::abs(g.physics.CurrentPose().x-target) > 20) return 258;
 
+    // Deterministically select the occasional slow approach through the real
+    // production RNG and host dispatch. Each species uses its actual paw atlas.
+    for (int index=0;index<10;++index) {
+        host.Reset(static_cast<cat::Character>(index));
+        for (unsigned seed=0;;++seed) {
+            std::mt19937 preview(seed);
+            if (std::uniform_real_distribution<double>(0,1)(preview)<.24) {g.random.seed(seed);break;}
+        }
+        const double x=g.physics.CurrentPose().x+120,height=host.PawHeight();
+        bool sneaked=false,pawed=false;
+        for (int frame=0;frame<1800;++frame) {
+            host.Frame(x,height);
+            const auto action=cursorInteraction.session.Action();
+            if (action==Action::Sneak) {
+                sneaked=true;
+                if (g.motion!=Motion::Stalk || std::abs(CursorReactionVelocity())>14) return 263;
+            }
+            pawed=pawed||action==Action::Paw;
+            if (action==Action::Sit || action==Action::ApproachSit) return 264;
+            if (pawed&&!EnvironmentBusy())break;
+        }
+        if (!sneaked||!pawed||EnvironmentBusy()||host.contacts!=2||host.launches) return 265;
+    }
+
     // OFF and a newer care action revoke contact/reward, not an impulse that
     // already happened. The controller must still finish its physical flight.
     for (bool care : {false,true}) {

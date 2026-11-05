@@ -451,6 +451,74 @@ void ActualMovingSupportAndRemoval() {
     CHECK(cat.CurrentPose().grounded && !cat.OnPlatform());
 }
 
+void MovedOrResizedAirborneTargetsNeverLeaveInvisibleSupport() {
+    // Move the destination just before touchdown, where a trailing kinematic
+    // collider used to arrest gravity and falsely report a landing in midair.
+    // The reference has no ledge at all: each missed trajectory must match it.
+    for (int fps : {30, 60, 120, 144}) for (int change = 0; change < 5; ++change) {
+        Controller cat, reference;
+        for (auto* item : {&cat, &reference}) {
+            item->Reset(500, 40, 1560);
+            item->SetPlatform(250, 900, 180);
+            CHECK(item->LaunchTo(500, 180));
+        }
+        const double dt = 1.0/fps;
+        int frame = 0;
+        while ((cat.CurrentPose().velocityY >= 0 || cat.CurrentPose().lift > 192) && frame++ < fps*2) {
+            cat.Update(dt); reference.Update(dt);
+        }
+        const auto before = cat.CurrentPose(), drawn = cat.RenderPose();
+        CHECK(before.lift > 180 && before.velocityY < -200);
+        if (change == 0) cat.SetPlatform(1050, 1700, 180); // Same-size window moved away.
+        if (change == 1) cat.SetPlatform(1050, 1500, 180); // Move and resize together.
+        if (change == 2) cat.SetPlatform(250, 400, 180); // Right edge shrank past the cat.
+        if (change == 3) cat.SetPlatform(0, 1600, 900); // Maximized top is above the jump apex.
+        if (change == 4) cat.RemovePlatform(); // Closed/invalid top cannot remain a destination.
+        reference.RemovePlatform();
+        CHECK(Near(cat.CurrentPose().x, before.x, 0));
+        CHECK(Near(cat.CurrentPose().lift, before.lift, 0));
+        CHECK(Near(cat.CurrentPose().velocityX, before.velocityX, 0));
+        CHECK(Near(cat.CurrentPose().velocityY, before.velocityY, 0));
+        CHECK(Near(cat.RenderPose().lift, drawn.lift, 0));
+        int landings = 0;
+        for (int i = 0; i < fps*2; ++i) {
+            // A missed landing must not enable the ground motor in midair.
+            cat.SetTargetVelocity(-100); reference.SetTargetVelocity(-100);
+            cat.Update(dt); reference.Update(dt);
+            const auto actual = cat.CurrentPose(), expected = reference.CurrentPose();
+            CHECK(!actual.onPlatform);
+            CHECK(actual.grounded == expected.grounded);
+            CHECK(Near(actual.x, expected.x, .002));
+            CHECK(Near(actual.lift, expected.lift, .002));
+            CHECK(Near(actual.velocityX, expected.velocityX, .002));
+            CHECK(Near(actual.velocityY, expected.velocityY, .002));
+            if (actual.landed) { ++landings; CHECK(actual.lift < 1); }
+        }
+        CHECK(landings == 1 && cat.CurrentPose().grounded);
+    }
+}
+
+void ResizedOrRemovedOccupiedGeometryReleasesSupport() {
+    for (bool resize : {false, true}) {
+        Controller cat;
+        cat.Reset(500, 40, 1560);
+        cat.SetPlatform(250, 900, 180);
+        CHECK(cat.LaunchTo(500, 180));
+        Run(cat, 3);
+        CHECK(cat.OnPlatform());
+        const auto before = cat.CurrentPose();
+        cat.SetPlatform(1050, resize ? 1500 : 1700, 180);
+        CHECK(!cat.OnPlatform() && !cat.CurrentPose().grounded);
+        CHECK(Near(cat.CurrentPose().x, before.x, 0));
+        CHECK(Near(cat.CurrentPose().lift, before.lift, 0));
+        cat.Update(step);
+        CHECK(Near(cat.CurrentPose().velocityY, before.velocityY - 15, .03));
+        CHECK(cat.CurrentPose().lift < before.lift);
+        Run(cat, 2);
+        CHECK(cat.CurrentPose().grounded && !cat.OnPlatform());
+    }
+}
+
 void DescendingSupportDoesNotMagnetizeCat() {
     Controller cat;
     cat.Reset(500, 40, 960);
@@ -884,6 +952,8 @@ int main() {
         BallisticTransferAndOneWayLanding();
         FlightIgnoresMotorAndTargetChanges();
         ActualMovingSupportAndRemoval();
+        MovedOrResizedAirborneTargetsNeverLeaveInvisibleSupport();
+        ResizedOrRemovedOccupiedGeometryReleasesSupport();
         DescendingSupportDoesNotMagnetizeCat();
         PlatformFrameRatesAndCatchUp();
         CeilingAndReachability();

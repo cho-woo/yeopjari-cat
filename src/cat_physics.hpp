@@ -52,8 +52,10 @@ public:
     // must use SetPlatform instead. Clipping stops horizontal velocity only.
     void RelocateBounds(double minX, double maxX, double deltaX);
     // A finite, one-way kinematic ledge in taskbar-relative coordinates.
-    // SetPlatform moves the collider through fixed-step velocities; it never
-    // translates the cat. Removal preserves the cat's airborne momentum.
+    // Continuous movement of occupied supports uses fixed-step velocities.
+    // Airborne targets and replacement geometry follow the observed window
+    // immediately; they never translate the cat or catch it on an old ledge.
+    // Removal preserves the cat's airborne momentum.
     void SetPlatform(double left, double right, double height);
     void RemovePlatform();
     bool OnPlatform() const;

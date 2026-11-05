@@ -34,7 +34,7 @@ struct Pose {
     bool bellyRig = false;
     cat::expression::Face face;
     bool walkingRig=false;
-    double walkPhase=0,walkStride=28,walkDuty=.62,walkLift=5.5;
+    double walkPhase=0,walkStride=24,walkDuty=.68,walkLift=3.2;
 };
 
 inline double SmoothStep(double fraction) {
@@ -85,9 +85,9 @@ inline bool Walking(Motion motion) {
     return motion==Motion::Walk || motion==Motion::Stalk || motion==Motion::Zoomies;
 }
 inline double StrideLength(Motion motion) {
-    // One complete articulated stride; short legs cannot plausibly cover the
-    // old44px stance without excessive shear. Motor/root speed is unchanged.
-    return motion==Motion::Zoomies ? 38.0 : motion==Motion::Stalk ? 24.0 : 28.0;
+    // Short planted steps fit the source anatomy without stretching the
+    // forelegs into paddles. The physical motor/root speed is unchanged.
+    return motion==Motion::Zoomies ? 32.0 : motion==Motion::Stalk ? 20.0 : 24.0;
 }
 
 inline double TravelFactor(Motion motion, std::uint64_t elapsed) {
@@ -349,13 +349,13 @@ inline Pose Evaluate(Motion motion, std::uint64_t elapsed, std::uint64_t ticks, 
         break;
     }
     case Motion::BellyRoll: {
-        // Anatomical side/back poses keep the supported spine down and the
-        // face upright. A screen-plane spin cannot represent a belly roll.
+        // Keep each reclining head attached to its painted neck and grounded
+        // skull. Replacing it with the upright sitting head twists the neck.
         p.joints = {};
-        p.bellyRig = true;
+        p.bellyRig = false;
         // Register each pose change in a brief smooth movement. A half-second
         // hold at partial opacity exposed two separate sets of paws/tails.
-        // The sole head bone uses this exact weight and never detaches.
+        // Head and torso turn together; no independent upright head overlay.
         const auto turn=[&](int first,int second,double local,double duration){
             crossfade(first,second,(local-(duration-180)/2)/180);
         };
@@ -369,7 +369,7 @@ inline Pose Evaluate(Motion motion, std::uint64_t elapsed, std::uint64_t ticks, 
         p.joints.frontLeft = settle * (.5 + .5 * std::sin(t / 360.0));
         p.joints.frontRight = settle * (.5 + .5 * std::cos(t / 430.0));
         p.joints.breath = settle * .7 * std::sin(t / 650.0);
-        p.joints.headNod = settle * .15 * std::sin(t / 800.0);
+        p.joints.headNod = 0; // The resting skull stays on the floor; only paws/belly move.
         break;
     }
     }
@@ -380,9 +380,9 @@ inline Pose Evaluate(Motion motion, std::uint64_t elapsed, std::uint64_t ticks, 
 // Every variant retains a physical ground baseline and one registered face.
 inline Pose EvaluateSleep(unsigned variant, std::uint64_t elapsed, std::uint64_t ticks, int direction, bool perched = false) {
     Pose p=Evaluate(Motion::Sleep,elapsed,ticks,direction);
-    if(variant%6==1) { p.frame=24; p.bellyRig=true; p.face.blink=1; }
+    if(variant%6==1) { p.frame=24; p.bellyRig=false; p.face.blink=1; }
     else if(variant%6==2) {p.frame=4;p.joints.crouch=1;p.face.blink=1;}
-    else if(variant%6==3) {p.frame=25;p.bellyRig=true;p.face.blink=1;}
+    else if(variant%6==3) {p.frame=25;p.bellyRig=false;p.face.blink=1;}
     else if(variant%6==4) p.frame=27;
     else if(variant%6==5) p.frame=28;
     if(perched){p.frame=4;p.bellyRig=false;p.joints.crouch=.35;p.joints.headNod=.45+.25*std::sin(elapsed/2300.0);p.face.blink=.9+.1*std::sin(elapsed/3100.0);}
@@ -405,8 +405,8 @@ inline Pose Evaluate(Motion motion, std::uint64_t elapsed, std::uint64_t ticks,
     p.blendFrame = -1;
     p.blend = 0;
     p.frame=1;p.joints={};p.walkingRig=true;p.walkPhase=phase;p.walkStride=StrideLength(motion);
-    p.walkDuty=motion==Motion::Stalk?.72:motion==Motion::Zoomies?.54:.62;
-    p.walkLift=motion==Motion::Stalk?3.5:motion==Motion::Zoomies?7.0:5.5;
+    p.walkDuty=motion==Motion::Stalk?.78:motion==Motion::Zoomies?.54:.68;
+    p.walkLift=motion==Motion::Stalk?1.8:motion==Motion::Zoomies?4.8:3.2;
     return p;
 }
 

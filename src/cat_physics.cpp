@@ -336,10 +336,20 @@ void Controller::SetPlatform(double left, double right, double height) {
     left = std::max(left, impl_->minX - 96);
     right = std::min(right, impl_->maxX + 96);
     if (right-left < 36) { RemovePlatform(); return; }
-    const bool create = B2_IS_NULL(impl_->platform);
+    bool create = B2_IS_NULL(impl_->platform);
     const bool changed = create || left != impl_->platformLeft || right != impl_->platformRight || height != impl_->platformHeight;
-    const bool resize = create || std::abs((right-left) - (impl_->platformRight-impl_->platformLeft)) > .01;
-    if (resize && impl_->current.hanging) EndHang(false);
+    bool resize = create || std::abs((right-left) - (impl_->platformRight-impl_->platformLeft)) > .01;
+    const bool supported = impl_->current.onPlatform || impl_->current.hanging;
+    const double contactRadius = kRadius*kPixelsPerMeter;
+    const bool supportMovedAway = !impl_->current.hanging &&
+        (impl_->current.x + contactRadius < left || impl_->current.x - contactRadius > right);
+    // A resized window is new geometry, not a wide ledge sweeping from its
+    // previous centre. A window moved entirely out from under the feet also
+    // ceases to carry the animal. Release only the support; preserve velocity.
+    if (!create && changed && supported && (resize || supportMovedAway)) {
+        RemovePlatform();
+        create = resize = true;
+    }
     impl_->platformLeft = left; impl_->platformRight = right; impl_->platformHeight = height;
     impl_->platformTargetX = (left+right)*.5/kPixelsPerMeter;
     impl_->platformTargetY = height/kPixelsPerMeter;
@@ -348,6 +358,15 @@ void Controller::SetPlatform(double left, double right, double height) {
         bodyDef.type = b2_kinematicBody;
         bodyDef.position = {static_cast<float>(impl_->platformTargetX), static_cast<float>(impl_->platformTargetY)};
         impl_->platform = b2CreateBody(impl_->world, &bodyDef);
+    } else if (changed && !supported) {
+        // Airborne targets must match the observed window immediately. Chasing
+        // the new rectangle with a speed-capped kinematic body left an invisible
+        // old ledge behind, allowing a missed jump to land in empty space.
+        // Move only the collider; the cat keeps its Box2D ballistic trajectory.
+        b2Body_SetTransform(impl_->platform,
+            {static_cast<float>(impl_->platformTargetX), static_cast<float>(impl_->platformTargetY)}, b2Rot_identity);
+        b2Body_SetLinearVelocity(impl_->platform, {0, 0});
+        impl_->platformCanCollide = false;
     }
     if (resize) {
         if (B2_IS_NON_NULL(impl_->platformShape)) b2DestroyShape(impl_->platformShape, false);

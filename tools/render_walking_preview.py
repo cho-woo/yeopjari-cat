@@ -4,7 +4,7 @@
 Requires g++, Git and Pillow. Run from any directory; outputs are under build/.
 The current path uses distance-driven Evaluate and Rig, including sole registration.
 Pillow handles final bitmap placement: this is portable QA, not a Windows/GDI run.
-Source art and saves are never modified. The comparison plays once over two strides
+Source art and saves are never modified. The comparison plays once over 56 logical pixels
 so its moving ruler cannot teleport at an artificial loop seam.
 """
 from __future__ import annotations
@@ -40,7 +40,7 @@ def library(path, include, baseline=False):
             'create': ([P, ctypes.c_int, ctypes.c_int, ctypes.c_int], P),
             'destroy': ([P], None), 'raster': ([P, DP, D, D], ctypes.c_int),
             'pixels': ([P], P), 'width': ([P], ctypes.c_int), 'height': ([P], ctypes.c_int),
-            'ground_inset': ([P], D), 'benchmark': ([P, ctypes.c_int, D, D], D),
+            'ground_inset': ([P], D), 'body_offset': ([P], D), 'benchmark': ([P, ctypes.c_int, D, D], D),
         }
         for name, (arguments, result) in signatures.items():
             function = getattr(lib, 'walking_preview_' + name)
@@ -113,7 +113,7 @@ def main():
                 raw = ctypes.string_at(after.walking_preview_pixels(rig), width * height * 4)
                 image = Image.frombytes('RGBa', (width, height), raw, 'raw', 'BGRa')
                 image = image.resize((round(width * scale), round(height * scale)), Image.Resampling.BICUBIC).convert('RGBA')
-                inset = after.walking_preview_ground_inset(rig) * scale
+                inset = after.walking_preview_ground_inset(rig) * scale + after.walking_preview_body_offset(rig) * zoom
                 canvas.alpha_composite(image, (round(center - image.width / 2), round(ground - image.height + inset)))
             else:
                 def layer(frame):
@@ -154,7 +154,7 @@ def main():
             'renderer': 'Production C++ distance-driven Evaluate and Rig; Pillow final raster. Not Windows/GDI+.',
             'baseline_commit': commit, 'baseline_sha256': before_hash,
             'comparison': 'Old sprite cycle and new canonical limb rig, same art and root displacement.',
-            'playback': 'One-shot 65 samples, two 28px strides; tracking camera, moving 7px ruler.',
+            'playback': 'One-shot 65 samples, 56px travel; tracking camera, moving 7px ruler.',
             'products': [gif, 'old-new-contact.png'], 'benchmark_ms_per_frame': benchmarks,
             'benchmark_frames': args.benchmark_frames,
             'source_sha256': {name: hashlib.sha256((ROOT / name).read_bytes()).hexdigest() for name in sources},

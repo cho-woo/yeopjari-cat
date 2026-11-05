@@ -1,6 +1,7 @@
 #pragma once
 #include "native_posture_tests.hpp"
 #include "native_walking_tests.hpp"
+#include "native_recline_tests.hpp"
 // Runs only under --render-self-test, after loading resources. No save paths,
 // audio device, updater or user interaction is involved.
 int NativeExpandedRenderTest(std::string& context) {
@@ -39,6 +40,8 @@ int NativeExpandedRenderTest(std::string& context) {
             for(int o=0;o<cat::kOutfitCount;++o) {
                 context="expanded c="+std::to_string(c)+" outfit="+std::to_string(o)+" motion="+std::to_string(static_cast<int>(motion));
                 if(!draw(character,static_cast<cat::Outfit>(o),pose)) return 124;
+                // Retired wardrobe keys still round-trip, but never add overlays.
+                if(copy()!=baseline)return 124;
                 std::size_t covered=0;
                 for(int y=0;y<320;++y) for(int x=0;x<420;++x) {
                     const auto p=static_cast<std::size_t>(y*420+x)*4;
@@ -114,6 +117,7 @@ int NativeExpandedRenderTest(std::string& context) {
     }
     if(const int walking=NativeWalkingRenderTest(context))return walking;
     if(const int posture=NativePostureRenderTest(context))return posture;
+    if(const int recline=NativeReclineRenderTest(context))return recline;
     context="actual independent companion window rendering and hit testing";
     std::string windowError;
     if(!cat::companion::NativeWindowSmokeTest(g.instance,PaintCompanion,windowError)) {context+=" "+windowError;return 132;}

@@ -40,8 +40,8 @@ int NativeWalkingRenderTest(std::string& context) {
                     pose.x!=0 || pose.lift!=0 || pose.angle!=0 || pose.scaleX!=1 || pose.scaleY!=1)return 152;
             std::array<std::vector<BYTE>,9> bare;
             for(int o=0;o<cat::kOutfitCount;++o) {
-                // Every outfit traverses a complete walk; the other two
-                // physical gait modes also exercise bare and body-clothed art.
+                // Persisted retired outfit IDs must render the same bare
+                // character throughout each complete physical gait.
                 if(motion!=Motion::Walk && o!=0 && o!=static_cast<int>(cat::Outfit::Hoodie))continue;
                 const auto outfit=static_cast<cat::Outfit>(o);
                 context="walking c="+std::to_string(c)+" facing="+std::to_string(facing)+
@@ -49,19 +49,15 @@ int NativeWalkingRenderTest(std::string& context) {
                 const auto caseContext=context;
                 std::vector<BYTE> planted;
                 std::size_t changedLegs=0,plantedVisible=0;
+                double startingCompression=0;
                 for(unsigned phase=0;phase<=8;++phase) {
                     context=caseContext+" phase="+std::to_string(phase)+"/8";
                     pose.walkPhase=phase/8.0;
                     if(!draw(character,outfit,pose,normalBody,true) || !art.walking || !art.walking->rig.Ready())return 153;
                     const auto pixels=copy();
                     if(outfit==cat::Outfit::None)bare[phase]=pixels;
-                    else {
-                        std::size_t changed=0,bodyPixels=0,covered=0;
-                        for(std::size_t p=0;p<pixels.size();p+=4) {
-                            changed+=std::memcmp(bare[phase].data()+p,pixels.data()+p,4)!=0;
-                            if(bare[phase][p+3]>=200) {++bodyPixels;if(pixels[p+3]>=190)++covered;}
-                        }
-                        if(changed<8 || covered*100<bodyPixels*95){context+=" missing outfit or erased body";return 159;}
+                    else if(pixels!=bare[phase]) {
+                        context+=" retired outfit changed the bare character";return 159;
                     }
                     const auto& rig=art.walking->rig;
                     if(rig.SourceWidth()!=source.width || rig.Height()!=source.height ||
@@ -70,7 +66,7 @@ int NativeWalkingRenderTest(std::string& context) {
                     for(int y=0;y<static_cast<int>(source.height*.68);++y)
                         if(std::memcmp(source.source.data()+y*source.width,rig.Pixels()+y*rig.Width()+rig.PaddingX(),
                                 static_cast<std::size_t>(source.width)*4)!=0)return 154;
-                    if(phase==0)planted=pixels;
+                    if(phase==0) {planted=pixels;startingCompression=rig.BodyOffset();}
                     std::size_t visible=0;
                     for(int y=0;y<320;++y)for(int x=0;x<420;++x) {
                         const auto p=static_cast<std::size_t>(y*420+x)*4;
@@ -80,8 +76,18 @@ int NativeWalkingRenderTest(std::string& context) {
                         if((x==0||x==419||y==0||y==319) && pixel[3]>=32){context+=" canvas edge";return 155;}
                         if(outfit==cat::Outfit::None && y>282 && pixel[3]>=128){context+=" below support";return 155;}
                         const bool changed=std::memcmp(planted.data()+p,pixel,4)!=0;
-                        if(y<headBottom && changed)return 156; // Head and headwear never pulse or crossfade.
                         if(y>=headBottom && changed)++changedLegs;
+                    }
+                    // Remove only the renderer's rigid weight shift, then
+                    // compare the real head raster at the same screen origin.
+                    // This permits compression without accepting face scaling,
+                    // rotation, source changes or unrelated head deformation.
+                    if(!draw(character,outfit,pose,normalBody,true,
+                            static_cast<REAL>(280+startingCompression-rig.BodyOffset())))return 156;
+                    const auto aligned=copy();
+                    for(int y=0;y<headBottom;++y)for(int x=0;x<420;++x)for(int channel=0;channel<4;++channel) {
+                        const auto p=static_cast<std::size_t>(y*420+x)*4+channel;
+                        if(std::abs(static_cast<int>(aligned[p])-static_cast<int>(planted[p]))>2)return 156;
                     }
                     if(phase==0)plantedVisible=visible;
                     if(visible<700 || visible*100<plantedVisible*90 || visible*100>plantedVisible*110 ||

@@ -148,6 +148,7 @@ void BellySupportAndHeadKeepTheirWorldGeometry() {
     for(int direction : {-1,1}) for(unsigned t=0;t<=kBellyRollDurationMs;t+=17) {
         const auto pose=Evaluate(Motion::BellyRoll,t,t,direction);
         CHECK(pose.angle==0 && pose.scaleX==1 && pose.scaleY==1 && !pose.centerPivot && pose.lift==0);
+        CHECK(!pose.bellyRig && pose.joints.headNod==0); // Preserve the reclining skull/neck artwork together.
         for (int frame : {pose.frame,pose.blendFrame}) {
             if(frame<0 || frame==4) continue;
             CHECK(frame==24 || frame==25);

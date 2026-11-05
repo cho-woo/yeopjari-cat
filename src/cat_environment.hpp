@@ -6,17 +6,21 @@
 
 namespace cat::environment {
 
-enum class CursorAction { None, Watch, Hunt, Sniff, Paw, Abandon, ApproachSit, Sit, Punch, Chase, Pounce };
+enum class CursorAction { None, Watch, Hunt, Sniff, Paw, Abandon, ApproachSit, Sit, Punch, Chase, Pounce, Sneak };
 
 struct CursorInput {
     std::uint64_t nowMs = 0;
     double cursorX = 0, cursorHeight = 0, catX = 0, minX = 0, maxX = 0;
     bool available = false, enabled = false, canStart = false, canContinue = false;
     bool grounded = true;
+    // Pointer motion is measured in desktop coordinates, independently of a
+    // moving support. cursorHeight remains relative for physical reach checks.
+    double supportHeight = 0;
     double sizeScale = 1;
     double pawStandOff = 24;
     double movementScale = 1;
-    // Interest controls response timing; a random draw only chooses rare sitting.
+    // Interest controls response timing; one episode draw chooses rare sneaking.
+    // Sitting uses a separate draw after an ordinary sniff.
     double interest = .5, roll = .5;
 };
 
@@ -59,6 +63,7 @@ public:
 
     CursorOutput Step(const CursorInput& input) {
         const auto before = action_;
+        const double sampledHeight = input.cursorHeight + input.supportHeight;
         if (input.enabled && !enabled_) nextStart_ = input.nowMs;
         enabled_ = input.enabled;
         if (InFlight()) {
@@ -69,14 +74,14 @@ public:
                 contactAllowed_ = false;
             if (sampled_ && input.nowMs > lastSample_) {
                 const auto elapsed = input.nowMs-lastSample_;
-                const double moved = std::hypot(input.cursorX-lastX_,input.cursorHeight-lastHeight_);
-                // The height sample includes the cat's own physical jump, so
-                // only horizontal cursor speed can safely identify fleeing.
-                if (elapsed > 250 || moved > 180 || std::abs(input.cursorX-lastX_)*1000/elapsed > 650)
+                const double moved = std::hypot(input.cursorX-lastX_,sampledHeight-lastHeight_);
+                // World-height sampling excludes the cat's own physical jump.
+                // A fast departure revokes contact without changing its impulse.
+                if (elapsed > 250 || moved > 180 || moved*1000/elapsed > 650)
                     contactAllowed_ = false;
             }
             sampled_ = true; lastSample_ = input.nowMs;
-            lastX_ = input.cursorX; lastHeight_ = input.cursorHeight;
+            lastX_ = input.cursorX; lastHeight_ = sampledHeight;
             if (input.grounded) Finish(input.nowMs);
             return Result(input, before);
         }
@@ -95,14 +100,14 @@ public:
                 return Result(input, before);
             }
             delta = input.nowMs - lastSample_;
-            distanceMoved = std::hypot(input.cursorX - lastX_, input.cursorHeight - lastHeight_);
+            distanceMoved = std::hypot(input.cursorX - lastX_, sampledHeight - lastHeight_);
             if (delta) speed = distanceMoved * 1000 / delta;
         }
         sampled_ = true; lastSample_ = input.nowMs;
-        lastX_ = input.cursorX; lastHeight_ = input.cursorHeight;
-        if (!stillTracked_ || speed > 12 || std::hypot(input.cursorX - stillX_, input.cursorHeight - stillHeight_) > 4) {
+        lastX_ = input.cursorX; lastHeight_ = sampledHeight;
+        if (!stillTracked_ || speed > 12 || std::hypot(input.cursorX - stillX_, sampledHeight - stillHeight_) > 4) {
             stillTracked_ = true; stillSince_ = input.nowMs;
-            stillX_ = input.cursorX; stillHeight_ = input.cursorHeight;
+            stillX_ = input.cursorX; stillHeight_ = sampledHeight;
         }
         const double distance = std::abs(input.cursorX - input.catX);
         const double scale = std::clamp(input.sizeScale, .5, 2.0);
@@ -131,6 +136,8 @@ public:
             episodeInterest_ = std::clamp(input.interest, 0.0, 1.0);
             began_ = input.nowMs; fastMs_ = 0;
             episodeBudget_ = 7000;
+            cautiousEpisode_ = input.nowMs >= nextSneak_ && input.roll < .24;
+            sneaked_ = false;
             contactAllowed_ = true;
             Change(CursorAction::Watch, input.nowMs);
         } else {
@@ -141,11 +148,18 @@ public:
                     Change(excitement_ >= 1.2 ? CursorAction::Punch : CursorAction::Paw, input.nowMs);
                 else if (elapsed >= static_cast<std::uint64_t>(650 + 400*(1-episodeInterest_)) && reachable && speed < 600) {
                     if (distance <= sniffDistance && speed < 60) Change(CursorAction::Sniff, input.nowMs);
-                    else if (distance > sniffDistance) Change(CursorAction::Hunt, input.nowMs);
+                    else if (distance > sniffDistance) {
+                        const bool sneak = cautiousEpisode_ && !sneaked_ && input.nowMs >= nextSneak_ && speed < 12 && input.nowMs-stillSince_ >= 500 &&
+                            input.cursorHeight >= -4 && input.cursorHeight <= 35*scale;
+                        if (sneak) { nextSneak_ = input.nowMs+90000; sneaked_ = true; }
+                        Change(sneak ? CursorAction::Sneak : CursorAction::Hunt, input.nowMs);
+                    }
                 } else if (elapsed >= 2500) Finish(input.nowMs);
                 break;
+            case CursorAction::Sneak:
             case CursorAction::Hunt:
                 if (!reachable || speed > 600) Change(CursorAction::Watch, input.nowMs);
+                else if (action_ == CursorAction::Sneak && speed > 120) Change(CursorAction::Watch, input.nowMs);
                 else if (distance <= 55*scale && teasing) Change(CursorAction::Paw, input.nowMs);
                 else if (distance <= sniffDistance && speed < 60) Change(CursorAction::Sniff, input.nowMs);
                 else if (elapsed >= huntBudget_) Change(CursorAction::Abandon, input.nowMs);
@@ -154,7 +168,7 @@ public:
                 if (teasing && distance <= 70*scale) Change(CursorAction::Paw, input.nowMs);
                 else if (!reachable || distance > 60*scale || speed > 120) Change(CursorAction::Watch, input.nowMs);
                 else if (elapsed >= 1050) {
-                    if (input.nowMs >= nextSit_ && input.nowMs - stillSince_ >= 1200 &&
+                    if (!sneaked_ && input.nowMs >= nextSit_ && input.nowMs - stillSince_ >= 1200 &&
                             input.cursorHeight >= 0 && input.cursorHeight <= 55 && input.cursorX >= input.minX && input.cursorX <= input.maxX &&
                             input.roll < .12) {
                         seatX_ = input.cursorX; seatHeight_ = input.cursorHeight;
@@ -216,7 +230,7 @@ public:
 private:
     CursorAction action_ = CursorAction::None;
     std::uint64_t began_ = 0, changedAt_ = 0, nextStart_ = 0, lastSample_ = 0, fastMs_ = 0;
-    std::uint64_t stillSince_ = 0, nextSit_ = 0;
+    std::uint64_t stillSince_ = 0, nextSit_ = 0, nextSneak_ = 0;
     double lastX_ = 0, lastHeight_ = 0;
     double stillX_ = 0, stillHeight_ = 0, seatX_ = 0, seatHeight_ = 0;
     double episodeInterest_ = .5;
@@ -225,12 +239,14 @@ private:
     std::uint64_t huntBudget_ = 3300, episodeBudget_ = 7000;
     bool launchAnswered_ = false, launched_ = false, contactAllowed_ = false;
     bool sampled_ = false, stillTracked_ = false, enabled_ = false;
+    bool cautiousEpisode_ = false, sneaked_ = false;
     int direction_ = 1;
 
     static bool Valid(const CursorInput& input) {
         return std::isfinite(input.cursorX) && std::isfinite(input.cursorHeight) &&
             std::isfinite(input.catX) && std::isfinite(input.minX) && std::isfinite(input.maxX) &&
             std::isfinite(input.interest) && std::isfinite(input.roll) &&
+            std::isfinite(input.supportHeight) &&
             std::isfinite(input.sizeScale) && input.sizeScale > 0 && std::isfinite(input.pawStandOff) &&
             std::isfinite(input.movementScale) && input.movementScale > 0 &&
             input.pawStandOff > 0 && input.pawStandOff <= 100 && input.minX <= input.maxX;
@@ -252,14 +268,17 @@ private:
             direction_ = input.cursorX < input.catX ? -1 : 1;
         output.direction = direction_;
         output.targetX = pounceX_;
-        if (action_ == CursorAction::Hunt) {
-            if (before != CursorAction::Hunt) {
+        if (action_ == CursorAction::Hunt || action_ == CursorAction::Sneak) {
+            const bool sneak = action_ == CursorAction::Sneak;
+            const double speed = sneak ? 14.0 : 45.0;
+            if (before != action_) {
                 const double distance = std::max(0.0,std::abs(input.cursorX-input.catX)-input.pawStandOff*input.sizeScale);
-                huntBudget_ = static_cast<std::uint64_t>(std::clamp(distance/(45*input.movementScale)*1000+1200,3300.0,8500.0));
-                episodeBudget_ = std::min<std::uint64_t>(12000,input.nowMs-began_+huntBudget_+2500);
+                huntBudget_ = static_cast<std::uint64_t>(std::clamp(distance/(speed*input.movementScale)*1000+1600,
+                    3300.0,sneak ? 36000.0 : 8500.0));
+                episodeBudget_ = std::min<std::uint64_t>(sneak ? 40000 : 12000,input.nowMs-began_+huntBudget_+2500);
             }
             const double target = std::clamp(input.cursorX - direction_*input.pawStandOff*input.sizeScale, input.minX, input.maxX);
-            output.velocity = std::clamp((target - input.catX)*2.8, -45.0, 45.0);
+            output.velocity = std::clamp((target - input.catX)*2.8, -speed, speed);
         } else if (action_ == CursorAction::Chase) {
             const double approach = std::max(0.0,std::abs(input.cursorX-input.catX)-35*input.sizeScale);
             const double target = std::clamp(input.catX+direction_*approach, input.minX, input.maxX);

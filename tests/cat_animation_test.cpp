@@ -486,7 +486,7 @@ void BlockedOrStoppedGaitsDoNotKeepStepping() {
 
 void DistanceDrivenFrameTransitionsRemainContinuous() {
     using namespace cat::animation;
-    CHECK(StrideLength(Motion::Walk)==28 && StrideLength(Motion::Stalk)==24 && StrideLength(Motion::Zoomies)==38);
+    CHECK(StrideLength(Motion::Walk)==24 && StrideLength(Motion::Stalk)==20 && StrideLength(Motion::Zoomies)==32);
     for (const auto motion : {Motion::Walk, Motion::Zoomies, Motion::Stalk}) {
         Locomotion gait;
         const double stride = StrideLength(motion);
