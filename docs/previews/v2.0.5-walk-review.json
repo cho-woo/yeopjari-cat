@@ -1,0 +1,70 @@
+{
+  "renderer": "Production persistent walk C++; Pillow final placement, not Windows/GDI+",
+  "baseline_commit": "30737e9f83b26c5d22c335f4910d5c263c317b45",
+  "speed_px_s": 22,
+  "fps": 50,
+  "warmup_seconds": 1.5,
+  "seconds": 2.4,
+  "phase_offsets": {
+    "v2.0.4": [
+      0.25,
+      0.5,
+      0.0,
+      0.75
+    ],
+    "working": [
+      0.25,
+      0.75,
+      0.0,
+      0.5
+    ]
+  },
+  "leg_order": [
+    "near hind",
+    "far hind",
+    "near front",
+    "far front"
+  ],
+  "trace_colors": {
+    "near hind": "#c43933",
+    "far hind": "#ac62bc",
+    "near front": "#167bb8",
+    "far front": "#29934b"
+  },
+  "source_sha256": {
+    "src/cat_animation.hpp": "8ca87be0feb19ba457c95523bd5ba58d3c29814a285adfc3e8d575382921f885",
+    "src/cat_deformation.hpp": "aea647cce5cf0b6f12e52cd9245f99d7b54a23645cc5bad046ed8c83ff19ee17",
+    "src/cat_expression.hpp": "18b34e9a1f305b8ad2d27ca1b7eef7eaf04579bb363e73a14ffdca8f0037a6b9",
+    "src/cat_locomotion_rig.hpp": "bc4aed75b6dad8f0c8b09d8466a438f44219b93def5f5eac42349377af76b524",
+    "src/cat_preferences.hpp": "865b31eba7829a313d9c94eb2079ee2c0deac7a69cb66170e4b6d4cd4756755b",
+    "src/pet_state.hpp": "775779b3c74e8597c6b7fad1084932239447eaadba038031b9b2c9ce1c9b0fa2",
+    "src/cat_gait.hpp": "4644c45dd6ad549191c0e31039f5538ebff81c2972549d250ea1eef08ee0f711"
+  },
+  "artwork_sha256": {
+    "cat.png": "f92c5b30167b8978252c812af65ac99ec5be1e7c79fffa1bf3d94810b25d9803",
+    "cat-silver.png": "dda2643da439a790ee820c6a4b764eb56807a76f8c59292cc613342a80fd7db0"
+  },
+  "display": "Left: released v2.0.4. Right: v2.0.5 candidate. Cream above Silver. Original display scale; shared192-colorGIFpalette.",
+  "files": {
+    "docs/previews/v2.0.5-walk.gif": {
+      "sha256": "32e6b0ca30ac8cb336cb6226e680b8eb00d4b66557819b9d6d45350fbac8c8f0",
+      "bytes": 3225906,
+      "width": 480,
+      "height": 360,
+      "frames": 120,
+      "duration_ms": 2400
+    },
+    "docs/previews/v2.0.5-walk-slow.gif": {
+      "sha256": "9abea7ba1e4e8ebfd600fdd00a4e5dbfe63e587ecdf9cf248e146ea7dc0cd0f0",
+      "bytes": 3225906,
+      "width": 480,
+      "height": 360,
+      "frames": 120,
+      "duration_ms": 9600
+    }
+  },
+  "review_tool_sha256": {
+    "tools/render_walk_review.py": "b30bb4550e36be4433d9ed710eee26b307e8a3d377d20f1e4ae1c2c0cce50c60",
+    "tools/gait_review.cpp": "201752fd76f9e6a5c58c3117c3806888fecbc860952005cd2ed76a09fe0eaae1"
+  }
+}

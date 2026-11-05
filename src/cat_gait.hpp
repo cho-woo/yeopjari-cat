@@ -11,9 +11,23 @@ using Feet = std::array<Foot,4>;
 struct Parameters { double stride=24, duty=.68, lift=3.2; };
 
 inline double Smooth(double t) { t=std::clamp(t,0.0,1.0); return t*t*(3-2*t); }
+inline double WalkWeight(double duty) {
+    return Smooth((duty-.62)/.06)*(1-Smooth((duty-.70)/.08));
+}
+inline double NeutralX(int leg,double stride,double duty) {
+    // The source is already an extended pose: the near forepaw starts in
+    // front of its shoulder and the hind paw behind its hip. Centre a slow
+    // walking step under those joints instead of extending it twice.
+    return (leg==0?3.0:leg==2?-4.0:0.0)*WalkWeight(duty)*std::min(stride/24.,1.0);
+}
 inline double LegPhase(int leg,double duty) {
     const double trot=std::clamp((.66-duty)/.12,0.0,1.0);
-    return leg==0 ? .25+.25*trot : leg==1 ? .5*(1-trot) : leg==3 ? .75-.25*trot : 0;
+    // A lateral-sequence walk plants near hind -> near fore -> far hind ->
+    // far fore. Contralateral legs must remain half a cycle apart. The old
+    // far-leg offsets put both front paws and both hind paws only a quarter
+    // cycle apart, producing an uneven shuffle despite correct contacts.
+    const double hind=.25+.25*trot;
+    return leg==0 ? hind : leg==1 ? hind+.5-std::floor(hind+.5) : leg==3 ? .5 : 0;
 }
 inline Foot FootAt(double phase,double stride=24,double duty=.68,double lift=3.2) {
     if(!std::isfinite(phase)||!std::isfinite(stride)||!std::isfinite(duty)||!std::isfinite(lift))return {};
@@ -47,7 +61,10 @@ public:
     Feet Targets(bool stalking=false) const {
         if(initialized_)return feet_;
         Feet result{};const auto p=ForSpeed(stalking,0);
-        for(unsigned i=0;i<result.size();++i)result[i]=FootAt(LegPhase(i,p.duty),p.stride,p.duty,p.lift);
+        for(unsigned i=0;i<result.size();++i) {
+            result[i]=FootAt(LegPhase(i,p.duty),p.stride,p.duty,p.lift);
+            result[i].x+=NeutralX(i,p.stride,p.duty);
+        }
         return result;
     }
     void Advance(double distance,double seconds,bool walking,bool stalking) {
@@ -91,14 +108,17 @@ private:
         for(unsigned i=0;i<feet_.size();++i) {
             auto& leg=legs_[i];leg.phase=LegPhase(i,settings_.duty);
             feet_[i]=FootAt(leg.phase,settings_.stride,settings_.duty,settings_.lift);
-            leg.startPhase=settings_.duty;leg.startX=-settings_.stride*settings_.duty/2;
-            leg.targetX=-leg.startX;leg.tangent=-settings_.stride*(1-settings_.duty);leg.lift=settings_.lift;
+            const double neutral=NeutralX(i,settings_.stride,settings_.duty);
+            feet_[i].x+=neutral;
+            leg.startPhase=settings_.duty;leg.startX=neutral-settings_.stride*settings_.duty/2;
+            leg.targetX=neutral+settings_.stride*settings_.duty/2;
+            leg.tangent=-settings_.stride*(1-settings_.duty);leg.lift=settings_.lift;
         }
     }
     void BeginSwing(unsigned index,double stride) {
         auto& leg=legs_[index];auto& foot=feet_[index];
         leg.startPhase=leg.phase;leg.startX=foot.x;
-        leg.targetX=settings_.stride*settings_.duty/2;
+        leg.targetX=NeutralX(index,settings_.stride,settings_.duty)+settings_.stride*settings_.duty/2;
         leg.tangent=-stride*(1-leg.startPhase);leg.lift=settings_.lift;
         foot.stance=false;
     }
@@ -119,9 +139,10 @@ private:
             // the original drawing's anatomy. Lift from its exact contact,
             // never clamp or relocate the paw while it bears weight.
             const double reach=std::min(14.0,settings_.stride*settings_.duty/2+1.5);
-            if(foot.stance&&(leg.phase>=settings_.duty-1e-12||foot.x<=-reach+1e-12))BeginSwing(index,stride);
+            const double rearLimit=NeutralX(index,settings_.stride,settings_.duty)-reach;
+            if(foot.stance&&(leg.phase>=settings_.duty-1e-12||foot.x<=rearLimit+1e-12))BeginSwing(index,stride);
             const double boundary=foot.stance?std::min(settings_.duty,
-                leg.phase+std::max(0.0,foot.x+reach)/stride):1;
+                leg.phase+std::max(0.0,foot.x-rearLimit)/stride):1;
             const double step=std::min(remaining,std::max(0.0,boundary-leg.phase));
             leg.phase+=step;remaining-=step;
             if(foot.stance) {foot.x-=step*stride;foot.y=0;}

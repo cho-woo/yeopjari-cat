@@ -156,7 +156,7 @@ void NaturalCadenceAndWeightTransferKeepSupport() {
     CHECK(std::abs(cat::walk::LegPhase(0,.68)-cat::walk::LegPhase(2,.68))<.4);
     CHECK(std::abs(cat::walk::LegPhase(1,.68)-cat::walk::LegPhase(2,.68))>.4);
     CHECK(Near(cat::walk::LegPhase(3,.54),cat::walk::LegPhase(0,.54)));
-    CHECK(Near(cat::walk::LegPhase(3,.68),.75));
+    CHECK(Near(cat::walk::LegPhase(3,.68),.5));
     Anatomy source;
     cat::walk::Rig rig;
     CHECK(rig.Prepare(source.pixels.data(),source.width,source.height,source.pitch*4,
@@ -182,6 +182,57 @@ void NaturalCadenceAndWeightTransferKeepSupport() {
     }
 }
 
+void WalkAlternatesLeftAndRightAndPlantsHindBeforeFore() {
+    // Anatomical invariants, not just four different phase values: the left
+    // and right front legs alternate, as do the two hind legs. One side's
+    // hind paw lands before that side's front paw in a four-beat walk.
+    const auto wrap=[](double p){return p-std::floor(p);};
+    for(double duty:{.68,.70,.78,.60,.54}) {
+        CHECK(Near(wrap(cat::walk::LegPhase(1,duty)-cat::walk::LegPhase(0,duty)),.5));
+        CHECK(Near(wrap(cat::walk::LegPhase(3,duty)-cat::walk::LegPhase(2,duty)),.5));
+    }
+    const std::array<int,4> order{{0,2,1,3}}; // Near hind, near fore, far hind, far fore.
+    for(unsigned i=0;i<order.size();++i) {
+        const double current=wrap(-cat::walk::LegPhase(order[i],.68));
+        const double next=wrap(-cat::walk::LegPhase(order[(i+1)%4],.68));
+        CHECK(Near(wrap(next-current),.25));
+    }
+}
+
+void EntireRoundedWalkingPawTranslatesWithoutShearing() {
+    Anatomy source;
+    cat::walk::Rig rig;
+    CHECK(rig.Prepare(source.pixels.data(),source.width,source.height,source.pitch*4,
+        cat::walk::ProfileFor(cat::Character::Cream)));
+    const double compression=cat::walk::BodyCompression(.2,24,.68);
+    cat::gait::Feet feet{};
+    feet[0]={-6,compression-4,false};feet[1]={6,compression-4,false};feet[2]={8,compression-4,false};
+    CHECK(rig.Raster(.2,24,source.width,source.height,.68,3.2,&feet));
+    // These markers sit in the upper half of the rounded paws, above the
+    // old last4% cutoff. A rigid(-6/-4 or8/-4) translation must reproduce
+    // every texel, rather than stretching only this part of the toe.
+    for(int y=124;y<=131;++y) {
+        for(int x=18;x<=23;++x)
+            CHECK(rig.Pixels()[(y-4)*rig.Width()+rig.PaddingX()+x-6]==source.pixels[y*source.pitch+x]);
+        // Above this row, the synthetic belly of the other far leg occludes
+        // the marker. Check the exposed upper toe, still above the old cutoff.
+        for(int x=53;y>=127&&x<=58;++x) {
+            const auto actual=rig.Pixels()[(y-4)*rig.Width()+rig.PaddingX()+x+6];
+            const auto expected=source.pixels[y*source.pitch+x];
+            if(actual!=expected)std::cerr<<"far paw texel "<<x<<","<<y<<" actual="<<std::hex<<actual<<" expected="<<expected<<std::dec<<'\n';
+            CHECK(actual==expected);
+        }
+        for(int x=110;x<=119;++x)
+            CHECK(rig.Pixels()[(y-4)*rig.Width()+rig.PaddingX()+x+8]==source.pixels[y*source.pitch+x]);
+    }
+    // This change targets the walking paw. Running and stalking keep their
+    // existing art articulation and are covered by the other render cases.
+    for(int leg=0;leg<4;++leg) {
+        CHECK(cat::walk::WalkingPawHeight(leg,.54,rig.GetProfile())==.04);
+        CHECK(cat::walk::WalkingPawHeight(leg,.78,rig.GetProfile())==.04);
+    }
+}
+
 void OriginalFarPawsHaveIndependentMasksAndSupportTiming() {
     for(const auto character:{cat::Character::Cream,cat::Character::SilverTabby}) {
         const auto profile=cat::walk::ProfileFor(character);
@@ -189,6 +240,12 @@ void OriginalFarPawsHaveIndependentMasksAndSupportTiming() {
         const auto front=cat::walk::Rig::Masks(.56,.95,profile);
         CHECK(hind[1]>.95 && hind[3]<.01);
         CHECK(front[3]>.95 && front[1]<.01);
+        // The real far-hind toe curves to the right lower down. The old
+        // vertical split cut this rounded corner off into the other paw.
+        const auto roundedToe=cat::walk::Rig::Masks(.515,.93,profile);
+        const auto upperCrease=cat::walk::Rig::Masks(.525,.87,profile);
+        CHECK(roundedToe[1]>.95 && roundedToe[3]<.01);
+        CHECK(upperCrease[3]>.99 && upperCrease[1]<.01);
         // Both far paws used to occupy mask 1, so they always lifted together.
         bool separate=false;
         for(int frame=0;frame<80;++frame) {
@@ -305,6 +362,8 @@ int main() {
         PlantedFeetCancelActualRootDistance();CompleteCyclesAreFiniteAndC1AtLiftAndPlant();
         MasksPartitionAndNeutralSourceOverReconstructsAnatomy();RealLegMotionKeepsHeadPixelsAndUsesHorizontalPadding();
         NaturalCadenceAndWeightTransferKeepSupport();
+        WalkAlternatesLeftAndRightAndPlantsHindBeforeFore();
+        EntireRoundedWalkingPawTranslatesWithoutShearing();
         OriginalFarPawsHaveIndependentMasksAndSupportTiming();
         PersistentContactTargetsRasterThroughRealSpeedChanges();
         RasterReusesPreparedMemoryAndRejectsBadInputs();

@@ -49,7 +49,7 @@ def main():
     parser.add_argument('--output',type=Path,default=ROOT/'build/previews/gait-v204')
     parser.add_argument('--benchmark-frames',type=int,default=0)
     args=parser.parse_args()
-    baseline_label='v2.0.3' if args.baseline_ref=='8c34de2f22367a40e7ef811f6e86fd918f397322' else args.baseline_ref[:12]
+    baseline_label='v2.0.3' if args.baseline_ref=='8c34de2f22367a40e7ef811f6e86fd918f397322' else 'v2.0.4' if args.baseline_ref.startswith('30737e9') else args.baseline_ref[:12]
     if args.benchmark_frames<0:parser.error('--benchmark-frames must be nonnegative')
     out=args.output.resolve();out.mkdir(parents=True,exist_ok=True)
     archived=out/'baseline';archived.mkdir(exist_ok=True)
@@ -57,6 +57,8 @@ def main():
     headers=('cat_animation.hpp','cat_deformation.hpp','cat_expression.hpp','cat_locomotion_rig.hpp','cat_preferences.hpp','pet_state.hpp')
     for name in headers:
         (archived/name).write_bytes(subprocess.check_output(['git','show',f'{commit}:src/{name}'],cwd=ROOT))
+    optional=subprocess.run(['git','show',f'{commit}:src/cat_gait.hpp'],cwd=ROOT,capture_output=True)
+    if optional.returncode==0:(archived/'cat_gait.hpp').write_bytes(optional.stdout)
     libs=[library(out/'before.so',archived,True),library(out/'after.so',ROOT/'src',False)]
     legacy=[atlas('cat.png')[0],atlas('cat-silver.png')[0]]
     sources=[items[1] for items in legacy]+companion_crops(2)

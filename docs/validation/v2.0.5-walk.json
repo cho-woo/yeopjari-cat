@@ -1,0 +1,77 @@
+{
+  "renderer": "Production C++ rigs; Pillow final placement, not Windows/GDI+",
+  "baseline_commit": "30737e9f83b26c5d22c335f4910d5c263c317b45",
+  "artwork_cases": 2250,
+  "persistent_artwork_cases": 6120,
+  "maximum_body_speeds_px_s": {
+    "Cream": 280.48780487804873,
+    "Silver": 280.48780487804873,
+    "Black": 291.7073170731707,
+    "Calico": 286.0975609756097,
+    "Siamese": 302.92682926829264,
+    "Munchkin": 252.43902439024387,
+    "Dog": 302.92682926829264,
+    "Rabbit": 308.5365853658536,
+    "Tuxedo": 288.9024390243902,
+    "British": 246.82926829268288
+  },
+  "lowest_planted_paw_relative_to_support_px": [
+    -0.6416666666666664,
+    0.6861565465808419
+  ],
+  "preview_ms_per_frame_including_Pillow": {
+    "Cream": 10.728,
+    "Silver": 10.043,
+    "Black": 4.799,
+    "Calico": 4.924,
+    "Siamese": 5.216,
+    "Munchkin": 5.275,
+    "Dog": 4.651,
+    "Rabbit": 4.793,
+    "Tuxedo": 4.244,
+    "British": 4.355
+  },
+  "raw_rig_benchmark_frames": 32,
+  "raw_rig_benchmark": {
+    "Cream": {
+      "walk": {
+        "baseline_ms": 3.5342,
+        "refined_ms": 3.3421
+      },
+      "stalk": {
+        "baseline_ms": 3.5582,
+        "refined_ms": 3.3024
+      },
+      "run": {
+        "baseline_ms": 4.2437,
+        "refined_ms": 4.2701
+      }
+    },
+    "Silver": {
+      "walk": {
+        "baseline_ms": 2.4845,
+        "refined_ms": 2.6889
+      },
+      "stalk": {
+        "baseline_ms": 2.4768,
+        "refined_ms": 3.105
+      },
+      "run": {
+        "baseline_ms": 2.9256,
+        "refined_ms": 3.4209
+      }
+    }
+  },
+  "source_sha256": {
+    "src/cat_animation.hpp": "8ca87be0feb19ba457c95523bd5ba58d3c29814a285adfc3e8d575382921f885",
+    "src/cat_deformation.hpp": "aea647cce5cf0b6f12e52cd9245f99d7b54a23645cc5bad046ed8c83ff19ee17",
+    "src/cat_expression.hpp": "18b34e9a1f305b8ad2d27ca1b7eef7eaf04579bb363e73a14ffdca8f0037a6b9",
+    "src/cat_locomotion_rig.hpp": "bc4aed75b6dad8f0c8b09d8466a438f44219b93def5f5eac42349377af76b524",
+    "src/cat_preferences.hpp": "865b31eba7829a313d9c94eb2079ee2c0deac7a69cb66170e4b6d4cd4756755b",
+    "src/pet_state.hpp": "775779b3c74e8597c6b7fad1084932239447eaadba038031b9b2c9ce1c9b0fa2",
+    "src/cat_gait.hpp": "4644c45dd6ad549191c0e31039f5538ebff81c2972549d250ea1eef08ee0f711",
+    "src/cat_species.hpp": "f32e90d27b2b382c6fa0e1a71b3c0c825e2e04c357667484fac77b531ae746fd",
+    "tools/gait_review.cpp": "201752fd76f9e6a5c58c3117c3806888fecbc860952005cd2ed76a09fe0eaae1",
+    "tools/render_gait_review.py": "ec8640aee47ec2f8f8d7585f63d6e659afb5dc356ed47318d4447cb4588d4668"
+  }
+}
