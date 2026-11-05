@@ -1,0 +1,355 @@
+{
+  "version": "2.0.5",
+  "status": "published_verified",
+  "verified_at_utc": "2026-11-05T07:21:41+00:00",
+  "release": {
+    "id": 434888189,
+    "tag_name": "v2.0.5",
+    "html_url": "https://github.com/cho-woo/yeopjari-cat/releases/tag/v2.0.5",
+    "published_at": "2026-11-05T07:21:19Z",
+    "draft": false,
+    "prerelease": false
+  },
+  "source_commit": "87ec4ec62d70b621ed51d89e4c6cc4ab93087a66",
+  "tag_resolves_to_tested_source": true,
+  "workflow": {
+    "id": 41986258850,
+    "url": "https://github.com/cho-woo/yeopjari-cat/actions/runs/41986258850",
+    "head_sha": "87ec4ec62d70b621ed51d89e4c6cc4ab93087a66",
+    "status": "completed",
+    "conclusion": "success",
+    "jobs": [
+      {
+        "name": "build",
+        "conclusion": "success",
+        "url": "https://github.com/cho-woo/yeopjari-cat/actions/runs/41986258850/job/127107579052",
+        "completed_at": "2026-11-05T07:19:42Z",
+        "steps": [
+          {
+            "name": "Set up job",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Require the requested source version",
+            "conclusion": "success"
+          },
+          {
+            "name": "Install pinned dependencies",
+            "conclusion": "success"
+          },
+          {
+            "name": "Test, build Windows x64 and verify ZIP and update feed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Select exactly one verified package",
+            "conclusion": "success"
+          },
+          {
+            "name": "Test publisher permissions and failure safeguards without network",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/upload-artifact@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success"
+          }
+        ]
+      },
+      {
+        "name": "windows-smoke",
+        "conclusion": "success",
+        "url": "https://github.com/cho-woo/yeopjari-cat/actions/runs/41986258850/job/127108184225",
+        "completed_at": "2026-11-05T07:20:42Z",
+        "steps": [
+          {
+            "name": "Set up job",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/setup-python@v5",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/download-artifact@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify downloaded package on Windows",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify no audio resources or playback imports in the packaged EXE",
+            "conclusion": "success"
+          },
+          {
+            "name": "Execute the Windows x64 binary self-test",
+            "conclusion": "success"
+          },
+          {
+            "name": "Render real Windows GDI+ motion, retired-wardrobe and contact regressions",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/setup-python@v5",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success"
+          }
+        ]
+      },
+      {
+        "name": "publish",
+        "conclusion": "success",
+        "url": "https://github.com/cho-woo/yeopjari-cat/actions/runs/41986258850/job/127108567018",
+        "completed_at": "2026-11-05T07:21:24Z",
+        "steps": [
+          {
+            "name": "Set up job",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/download-artifact@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Reverify the exact tested package",
+            "conclusion": "success"
+          },
+          {
+            "name": "Bind the draft to this tested source commit",
+            "conclusion": "success"
+          },
+          {
+            "name": "Upload, download and hash-check draft assets, then publish stable",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify public latest feed and public downloads",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success"
+          }
+        ]
+      }
+    ]
+  },
+  "observed_official_latest": {
+    "url": "https://github.com/cho-woo/yeopjari-cat/releases/latest/download/latest.txt",
+    "download_completed_at_utc": "2026-11-05T07:21:40+00:00",
+    "version": "2.0.5",
+    "sha256": "ca243e45b4ed407f229e741ecb981b56c85e76620bb1f5c168244cd582b6d672",
+    "equals_v2_0_5_tagged_feed": true,
+    "note": "Point-in-time observation; a later stable release can replace latest."
+  },
+  "assets": {
+    "latest.txt": {
+      "size_bytes": 2153,
+      "sha256": "ca243e45b4ed407f229e741ecb981b56c85e76620bb1f5c168244cd582b6d672",
+      "github_api_digest": "sha256:ca243e45b4ed407f229e741ecb981b56c85e76620bb1f5c168244cd582b6d672",
+      "url": "https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.5/latest.txt"
+    },
+    "RELEASE_NOTES_KO.txt": {
+      "size_bytes": 1417,
+      "sha256": "bb79dde0b9fd65784c790d3051beb61dc82c2ecc68ee4b61a70bf45689ccbaf9",
+      "github_api_digest": "sha256:bb79dde0b9fd65784c790d3051beb61dc82c2ecc68ee4b61a70bf45689ccbaf9",
+      "url": "https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.5/RELEASE_NOTES_KO.txt"
+    },
+    "SHA256SUMS.txt": {
+      "size_bytes": 348,
+      "sha256": "a04d6843bc96577fab1be69a66a34b38de067ec4ab8661528b58565879f75995",
+      "github_api_digest": "sha256:a04d6843bc96577fab1be69a66a34b38de067ec4ab8661528b58565879f75995",
+      "url": "https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.5/SHA256SUMS.txt"
+    },
+    "YeopjariCat-2.0.5.exe": {
+      "size_bytes": 22639616,
+      "sha256": "38333d6b1cb9c404ab8770c5db4ced366218e114056de6f74f4937d99f085327",
+      "github_api_digest": "sha256:38333d6b1cb9c404ab8770c5db4ced366218e114056de6f74f4937d99f085327",
+      "url": "https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.5/YeopjariCat-2.0.5.exe"
+    },
+    "YeopjariCat-Windows-2.0.5.zip": {
+      "size_bytes": 19709318,
+      "sha256": "29fec4d0bec8200419169a7b773539b237f44d550d1fcb7a1e45bf1a28f2a6ba",
+      "github_api_digest": "sha256:29fec4d0bec8200419169a7b773539b237f44d550d1fcb7a1e45bf1a28f2a6ba",
+      "url": "https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.5/YeopjariCat-Windows-2.0.5.zip"
+    }
+  },
+  "checks": {
+    "all_downloaded_sizes_match_github_api": true,
+    "all_downloaded_sha256_match_github_api_asset_digests": true,
+    "sha256sums_matches_all_four_declared_files": true,
+    "tools_release_verify": true,
+    "actual_pe_x64_version_and_korean_dialog": true,
+    "zip_crc_and_expected_six_entries": true,
+    "zip_exe_equals_standalone_exe": true,
+    "zip_feed_equals_official_url": true,
+    "zip_notes_equal_feed_and_release_notes": true,
+    "windows_self_test_and_render_steps_succeeded": true,
+    "windows_silent_exe_step_succeeded": true,
+    "all_jobs_bound_to_same_source_run_and_attempt": true,
+    "feed_download_url_is_exact_tagged_exe_asset": true,
+    "actual_pe_normal_and_delay_imports_and_all_resource_leaves_checked_for_audio": true
+  },
+  "exe_version_info": {
+    "FileDescription": "Yeopjari Cat - a quiet desktop companion",
+    "FileVersion": "2.0.5",
+    "InternalName": "YeopjariCat",
+    "OriginalFilename": "YeopjariCat.exe",
+    "ProductName": "Yeopjari Cat",
+    "ProductVersion": "2.0.5"
+  },
+  "zip_entries": [
+    "YeopjariCat.exe",
+    "update-feed.txt",
+    "README_KO.txt",
+    "CHANGELOG_KO.txt",
+    "THIRD_PARTY_NOTICES.txt",
+    "DISTRIBUTION_KO.txt"
+  ],
+  "verification_code": {
+    "expected_resources_sha256": "76e8250b20b0b3ff8238d8e09ffb53022db2ec542863d4352ef5a5bdb9ae40ec",
+    "public_verifier_sha256": "b9e8c160f11fd5161118575d0d7e40ff23c06df415b9247ed9068ae380f502b5",
+    "frozen_release_verifiers": {
+      "tools/release.py": "0c89fd6d88af079d26173dc814537690d1ed23c6e387d260caa88770a5e7ed16",
+      "tools/verify_resources.py": "97172f99b86a5319bc732aa523e0913c5ca6225b2016ed414ee0ef1505b90d36",
+      "tools/verify_silent_exe.py": "0ccd0c0c1a8894ceaccd65b9250571e642ac89ec1851fd796e9ada1b7833fbde"
+    }
+  },
+  "silent_executable": {
+    "passed": true,
+    "audio_resource_count": 0,
+    "playback_import_count": 0,
+    "resource_leaves_checked": 14,
+    "import_dlls_checked": 25,
+    "delay_import_dlls_checked": 0
+  },
+  "embedded_artwork": {
+    "all_eleven_png_resources_match_snapshotted_pins_and_tagged_source": true,
+    "resources": [
+      {
+        "resource_id": 101,
+        "source_path": "assets/cat.png",
+        "sha256": "f92c5b30167b8978252c812af65ac99ec5be1e7c79fffa1bf3d94810b25d9803",
+        "size_bytes": 1495395,
+        "width": 1774,
+        "height": 887
+      },
+      {
+        "resource_id": 102,
+        "source_path": "assets/cat-actions.png",
+        "sha256": "01d3cb47c255b2e6394c154419c1a18719815135856eb7585e60153aab437bc5",
+        "size_bytes": 1191305,
+        "width": 1774,
+        "height": 887
+      },
+      {
+        "resource_id": 103,
+        "source_path": "assets/cat-silver.png",
+        "sha256": "dda2643da439a790ee820c6a4b764eb56807a76f8c59292cc613342a80fd7db0",
+        "size_bytes": 1260946,
+        "width": 1774,
+        "height": 887
+      },
+      {
+        "resource_id": 104,
+        "source_path": "assets/cat-silver-actions.png",
+        "sha256": "23b7932ab631a278fb0fc708d19f49256934d34015a2e91f20498dc2d6f8ceaf",
+        "size_bytes": 1262958,
+        "width": 1774,
+        "height": 887
+      },
+      {
+        "resource_id": 105,
+        "source_path": "assets/cat-jump-churu.png",
+        "sha256": "ce44c6f4bc0e39c8c9f48e835d36537a2f097c1642df5f40e4edbf8c2f484507",
+        "size_bytes": 1524464,
+        "width": 887,
+        "height": 1774
+      },
+      {
+        "resource_id": 106,
+        "source_path": "assets/cat-gestures.png",
+        "sha256": "70dd2d5bbeb8d9163dbf5b73563011646a655ab2f22a7df08a0b8f60f92332c6",
+        "size_bytes": 1643520,
+        "width": 887,
+        "height": 1774
+      },
+      {
+        "resource_id": 107,
+        "source_path": "assets/cat-recline.png",
+        "sha256": "dfa0d8b2d3ef2635c08dd48a8e5cb7b2a636f679db9798e8d9ff3399ae48c201",
+        "size_bytes": 1988183,
+        "width": 1536,
+        "height": 1024
+      },
+      {
+        "resource_id": 109,
+        "source_path": "assets/companion-poses.png",
+        "sha256": "218e6986ed1f4e79c36eec45cde5f0f95eedf9a062865596ee765b596e819494",
+        "size_bytes": 2434959,
+        "width": 1254,
+        "height": 1254
+      },
+      {
+        "resource_id": 110,
+        "source_path": "assets/companions-hang.png",
+        "sha256": "493b5dba3b21280101770020ae8181bb11c60ec2e343442773c463ce39a45711",
+        "size_bytes": 2358813,
+        "width": 1536,
+        "height": 1024
+      },
+      {
+        "resource_id": 111,
+        "source_path": "assets/companions-back.png",
+        "sha256": "f2feedc70a3870b4c4c28c348bc0fd436c3c405283471305d3d41b383fe6f2ac",
+        "size_bytes": 1662682,
+        "width": 1536,
+        "height": 1024
+      },
+      {
+        "resource_id": 112,
+        "source_path": "assets/companions-sleep.png",
+        "sha256": "53ef4bb232993ce72b5cc9deba5b2492469308eb38258da8b52766706596e2a1",
+        "size_bytes": 3104062,
+        "width": 1254,
+        "height": 1254
+      }
+    ]
+  },
+  "verification_inputs": "Direct public v2.0.5 asset URLs, official latest URL and GitHub REST release/tag/workflow/job metadata. Local release-info.json reconstructed from public API digests solely for tools/release.py verification. All 11 PNG resources are compared with snapshotted hashes and actual tagged source. Frozen PE verification rejects audio payloads, retired cue IDs, playback functions in normal and delay imports; animation-only timer imports are permitted.",
+  "limitations": [
+    "Windows CI self-test and GDI+ render results are checked through successful job/step metadata; this independent verification does not execute the EXE locally.",
+    "No executable is run locally. Silent verification statically checks PE imports and resources; manual Windows user-session validation is separate."
+  ]
+}
