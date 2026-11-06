@@ -263,7 +263,8 @@ def load_entries(manifest_path):
             require(resident_pixels<=MAX_RESIDENT_PIXELS,f'{label}: decoded frame storage exceeds192MiB resident budget')
             frames.append({'rect':[x,y,fw,fh],'anchor':fixed_anchor})
         filename=f'c{character}-{name}.png'
-        resource=300+character*2+(name=='run') if name in ('walk','run') else 113+character*8+clip_index
+        # 301..314 remain reserved by the retired-audio compatibility checks.
+        resource=400+character*2+(name=='run') if name in ('walk','run') else 113+character*8+clip_index
         entries.append({'clip':name,'enum':enum,'character':character,'resource':resource,'schema':schema,
                         'columns':columns,'rows':rows,'reference_height':reference,'width':width,'height':height,
                         'frames':frames,'filename':filename,'sha256':digest,'data':data,'program':program,'stride_pixels':stride})

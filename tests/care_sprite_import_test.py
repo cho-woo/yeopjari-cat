@@ -275,16 +275,20 @@ int main(){
         with mock.patch.object(importer,'png_alpha',wraps=importer.png_alpha) as decode:
             result=self.apply([run,walk],schema=2)
             self.assertEqual(decode.call_count,1)
-        self.assertEqual(result['resource_ids'],[300,300])
+        self.assertEqual(result['resource_ids'],[400,400])
         self.assertEqual(result['unique_sheets'],1)
         self.assertEqual(result['actual_frames'],16)
         self.assertEqual((self.root/importer.RC).read_text().count(' RCDATA '),1)
         self.assertFalse((self.root/'assets/care-sprites/c0-run.png').exists())
         canonical=json.loads((self.root/importer.CANONICAL).read_text())['clips']
         self.assertEqual([clip['source'] for clip in canonical],['c0-walk.png','c0-walk.png'])
-        self.assertEqual(importer.prepare_import(self.root,check=True)['resource_ids'],[300,300])
+        self.assertEqual(importer.prepare_import(self.root,check=True)['resource_ids'],[400,400])
         run=self.authored(8,columns=4,clip='run')
-        self.assertEqual(self.apply([walk,run],schema=2)['resource_ids'],[300,301])
+        self.assertEqual(self.apply([walk,run],schema=2)['resource_ids'],[400,401])
+        all_characters=[dict(entry,character=character) for character in range(10) for entry in (walk,run)]
+        ids=self.apply(all_characters,schema=2)['resource_ids']
+        self.assertEqual(ids,list(range(400,420)))
+        self.assertTrue(set(ids).isdisjoint(range(301,315)))
 
     def test_authored_metadata_bounds_fail_before_output_mutation(self):
         baseline={name:(self.root/name).read_bytes() for name in (importer.HEADER,importer.RC)}

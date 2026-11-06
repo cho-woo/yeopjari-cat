@@ -74,7 +74,7 @@ per cycle. Their playlist phase follows measured travel. When they refer to the
 same original sheet, list their separate source regions and local frame indices;
 the importer embeds the PNG once and aliases the Run resource to Walk. Original
 resource IDs 113–192 and box prop 193 are preserved; new walking resources start
-at 300.
+at 400, leaving the retired audio identifiers 301–314 reserved.
 
 Limits: non-interlaced RGBA8 PNG, real transparent padding and visible artwork in
 every region; 32MiB compressed per PNG, 16384px maximum side, 32Mi source pixels
