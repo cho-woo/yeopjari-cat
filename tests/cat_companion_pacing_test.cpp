@@ -116,13 +116,19 @@ void SocialSleepWakesBeforeItsNeutralRest() {
     while(c.ticks<30100)Step(model,c);
     CHECK(model.View(c.ticks).motion==M::Stretch);
     const auto wakeAt=c.ticks;
-    while(c.ticks-wakeAt<3490) {
+    const auto* sleep=cat::sprite_assets::Find(cat::sprite_sequence::Clip::Sleep,0,cat::sprite_assets::kCareSprites);
+    CHECK(sleep && sleep->program.stepCount);
+    const auto wakeDuration=std::max<std::uint64_t>(3200,
+        cat::sprite_sequence::Duration(sleep->program,sleep->program.outro)+500);
+    while(c.ticks+17<wakeAt+wakeDuration) {
         const auto pose=model.View(c.ticks);
         CHECK(pose.motion==M::Stretch);
         CHECK(pose.animation.spriteClip==cat::sprite_sequence::Clip::Sleep);
         Step(model,c);
     }
-    Step(model,c);CHECK(model.View(c.ticks).motion==M::Idle);
+    CHECK(model.View(wakeAt+wakeDuration-1).motion==M::Stretch);
+    c.ticks=wakeAt+wakeDuration;c.nowUtc=born+static_cast<std::int64_t>(c.ticks/1000);model.Tick(c);
+    CHECK(model.View(c.ticks).motion==M::Idle);
 }
 void SocialGesturesFinishBeforeFollowingTheNextPosition() {
     for(const auto kind:{Interaction::Paw,Interaction::Sniff,Interaction::FoodCompetition}) {

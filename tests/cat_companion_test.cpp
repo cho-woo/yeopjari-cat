@@ -372,7 +372,8 @@ void NaturalTakeoffAndLandingUsePhysicalMotion() {
     // This actual birthday/brain sequence previously showed a seated frame 14
     // after a jump while Box2D still moved at more than 100 logical px/second.
     const auto birthday=born+7*86400;
-    State s=NewState(birthday);s.pet.position=.5;
+    for(const auto character:{cat::Character::SilverTabby,cat::Character::Cream}) {
+    State s=NewState(birthday);s.pet.position=.5;s.preferences.character=character;
     Model m;m.Bind(s);m.Reset(0,1600,700);
     Context c;c.primaryVisible=false;c.elapsedSeconds=1.0/60;
     bool wasGrounded=true,badSliding=false,badFacing=false;
@@ -394,13 +395,19 @@ void NaturalTakeoffAndLandingUsePhysicalMotion() {
         }
         if(wasGrounded && !physical.grounded) {
             ++takeoffs;
-            CHECK(crouchStarted>0 && c.ticks-crouchStarted>=204);
+            const auto* jump=cat::sprite_assets::Find(cat::sprite_sequence::Clip::Jump,
+                static_cast<unsigned>(character),cat::sprite_assets::kCareSprites);
+            const auto preparation=jump && jump->program.stepCount?
+                cat::sprite_sequence::Duration(jump->program,jump->program.intro):
+                (view.motion==M::Jump?220U:240U);
+            CHECK(crouchStarted>0 && c.ticks-crouchStarted+34>=preparation);
             CHECK(!view.animation.groundContact);
             crouchStarted=0;
         }
         wasGrounded=physical.grounded;
     }
     CHECK(takeoffs>0);CHECK(!badSliding);CHECK(!badFacing);CHECK(Valid(s));
+    }
 }
 void SocialGesturesWaitForPlantedFeet() {
     using M=cat::animation::Motion;

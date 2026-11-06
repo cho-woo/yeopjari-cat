@@ -389,8 +389,12 @@ public:
         }
         if(std::abs(velocity)>.1) facing_=velocity<0?-1:1;
         if(before.grounded) physics_.SetTargetVelocity(velocity*cat::nutrition::VisualModifiers(state_->nutrition).speed*species.movementSpeedMultiplier);
+        const auto* jumpArt=Registered(cat::sprite_sequence::Clip::Jump);
+        const auto takeoff=jumpArt && jumpArt->program.stepCount?
+            cat::sprite_sequence::Duration(jumpArt->program,jumpArt->program.intro):
+            (motion_==cat::animation::Motion::Jump?220U:240U);
         if(!waitingForStop_ && jumpPending_ && before.grounded && c.ticks>=motionStart_ &&
-            c.ticks-motionStart_ >= (motion_==cat::animation::Motion::Jump?220U:240U)) {
+            c.ticks-motionStart_ >= takeoff) {
             jumpPending_=false;
             const auto body=cat::nutrition::VisualModifiers(state_->nutrition);
             const double growth=cat::GrowthScale(state_->pet.bornUtc,state_->pet.updatedUtc);
@@ -672,10 +676,13 @@ private:
             else if(m==cat::animation::Motion::Treat)requestedClip=Clip::Treat;
         }
         if(requestedClip!=Clip::None)duration=RegisteredDuration(requestedClip,duration);
-        if(motion_==cat::animation::Motion::Sleep && m==cat::animation::Motion::Stretch &&
-                cat::sprite_assets::Find(cat::sprite_sequence::Clip::Sleep,
-                    static_cast<unsigned>(state_->preferences.character),cat::sprite_assets::kCareSprites))
-            duration=std::max(duration,cat::sprite_sequence::kSleepWakeMs+500);
+        if(motion_==cat::animation::Motion::Sleep && m==cat::animation::Motion::Stretch) {
+            if(const auto* sleep=Registered(Clip::Sleep)) {
+                const auto wake=sleep->program.stepCount?
+                    cat::sprite_sequence::Duration(sleep->program,sleep->program.outro):cat::sprite_sequence::kSleepWakeMs;
+                duration=std::max(duration,wake+500);
+            }
+        }
         const bool jumping=m==cat::animation::Motion::Jump || m==cat::animation::Motion::Pounce;
         const bool authoredGroom=m==cat::animation::Motion::Groom &&
             cat::sprite_assets::Find(cat::sprite_sequence::Clip::Groom,
