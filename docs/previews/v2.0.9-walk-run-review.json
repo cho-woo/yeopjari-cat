@@ -1,0 +1,324 @@
+{
+  "version": "2.0.9",
+  "date_utc": "2026-11-06",
+  "source_commit_before_worktree_changes": "869476a7642741e8dd56c5d59dfd66077b228f14",
+  "source_mode": "Frozen worktree, core headers identified by SHA-256 below",
+  "source_hashes": {
+    "src/cat_animation.hpp": "e64fa1bc754fe508346bab87332cabaae9637016309c26d0f20972a79107ac96",
+    "src/cat_gait.hpp": "aa6a928ceffce0865ad6e0adae6e86dee0c6e68aed84d23d3ab10945961fff32",
+    "src/cat_walk_dynamics.hpp": "0f3c303f358a07b522ac7b858a54a763f4daf802b63ec0fa6f145fcd5886f0ed",
+    "src/cat_articulated_walk.hpp": "cca48344b9093bc104b8ccd7843472fb845b8c0a522e158091bfc5d204d140c6"
+  },
+  "tool": "tools/render_walk_run_audit.py",
+  "tool_sha256": "7fb4bdd7cf756ac5f500f04f5dc17356d4136185e778be62a35438752be89e63",
+  "comparison_gif": {
+    "file": "v2.0.9-walk-run.gif",
+    "sha256": "947898d2e1746f4dac4f94560fbc1d88a347ee31af90511feab675c7a01c7ba6",
+    "left": "Pinned v2.0.8 dispatcher and raster",
+    "left_source_commit": "869476a7642741e8dd56c5d59dfd66077b228f14",
+    "right": "Candidate matching source_hashes",
+    "layout": "Top Cream, bottom Silver; each half has Walk left, Run right",
+    "frames": 90,
+    "frame_ms": 40
+  },
+  "reproduction": [
+    "python3 tools/render_walk_run_audit.py --source-ref 869476a7642741e8dd56c5d59dfd66077b228f14 --output build/previews/walk-run-baseline",
+    "python3 tools/render_walk_run_audit.py --source-ref WORKTREE --audit-transitions --compare-before build/previews/walk-run-baseline --output build/previews/walk-run-candidate",
+    "For additional shapes repeat with --audit-only --frames 22 --body-width .78 --body-height .96; .82/1.04; 1.26/.98"
+  ],
+  "transition_schedule": "480 frames at60Hz: Walk22px/s for90frames, Run request ramps22\u2192165 over60frames, Run165 for150frames, Walk request ramps165\u219222 over60frames, Walk22 for120frames. Actual profile follows observed-speed hysteresis.",
+  "steady_raster_checks": [
+    {
+      "character": "Cream",
+      "body_width": 1.0,
+      "body_height": 1.0,
+      "sampled_frames": 180,
+      "max_reach_error_bodypx": 0.0,
+      "max_painted_below_floor_bodypx": 0,
+      "opaque_top_or_bottom_edge_frames": 0,
+      "invalid_premultiplied_alpha_frames": 0
+    },
+    {
+      "character": "Silver",
+      "body_width": 1.0,
+      "body_height": 1.0,
+      "sampled_frames": 180,
+      "max_reach_error_bodypx": 0.0,
+      "max_painted_below_floor_bodypx": 0,
+      "opaque_top_or_bottom_edge_frames": 0,
+      "invalid_premultiplied_alpha_frames": 0
+    },
+    {
+      "character": "Cream",
+      "body_width": 0.78,
+      "body_height": 0.96,
+      "sampled_frames": 44,
+      "max_reach_error_bodypx": 0.0,
+      "max_painted_below_floor_bodypx": 0,
+      "opaque_top_or_bottom_edge_frames": 0,
+      "invalid_premultiplied_alpha_frames": 0
+    },
+    {
+      "character": "Silver",
+      "body_width": 0.78,
+      "body_height": 0.96,
+      "sampled_frames": 44,
+      "max_reach_error_bodypx": 0.0,
+      "max_painted_below_floor_bodypx": 0,
+      "opaque_top_or_bottom_edge_frames": 0,
+      "invalid_premultiplied_alpha_frames": 0
+    },
+    {
+      "character": "Cream",
+      "body_width": 0.82,
+      "body_height": 1.04,
+      "sampled_frames": 44,
+      "max_reach_error_bodypx": 0.0,
+      "max_painted_below_floor_bodypx": 0,
+      "opaque_top_or_bottom_edge_frames": 0,
+      "invalid_premultiplied_alpha_frames": 0
+    },
+    {
+      "character": "Silver",
+      "body_width": 0.82,
+      "body_height": 1.04,
+      "sampled_frames": 44,
+      "max_reach_error_bodypx": 0.0,
+      "max_painted_below_floor_bodypx": 0,
+      "opaque_top_or_bottom_edge_frames": 0,
+      "invalid_premultiplied_alpha_frames": 0
+    },
+    {
+      "character": "Cream",
+      "body_width": 1.26,
+      "body_height": 0.98,
+      "sampled_frames": 44,
+      "max_reach_error_bodypx": 0.0,
+      "max_painted_below_floor_bodypx": 0,
+      "opaque_top_or_bottom_edge_frames": 0,
+      "invalid_premultiplied_alpha_frames": 0
+    },
+    {
+      "character": "Silver",
+      "body_width": 1.26,
+      "body_height": 0.98,
+      "sampled_frames": 44,
+      "max_reach_error_bodypx": 0.0,
+      "max_painted_below_floor_bodypx": 0,
+      "opaque_top_or_bottom_edge_frames": 0,
+      "invalid_premultiplied_alpha_frames": 0
+    }
+  ],
+  "transition_checks": [
+    {
+      "character": "Cream",
+      "body_width": 1.0,
+      "body_height": 1.0,
+      "steps": 480,
+      "stance_segments_checked": 818,
+      "contacts": 74,
+      "max_solved_world_stance_drift_bodypx": 1.1368683772161603e-13,
+      "max_reach_error_bodypx": 0.0,
+      "max_stance_target_error_bodypx": 0.0,
+      "max_swing_target_error_bodypx": 0.0,
+      "clamped_stance_samples": 0,
+      "clamped_swing_samples": 0
+    },
+    {
+      "character": "Silver",
+      "body_width": 1.0,
+      "body_height": 1.0,
+      "steps": 480,
+      "stance_segments_checked": 818,
+      "contacts": 74,
+      "max_solved_world_stance_drift_bodypx": 1.1368683772161603e-13,
+      "max_reach_error_bodypx": 0.0,
+      "max_stance_target_error_bodypx": 1.052655904829778e-14,
+      "max_swing_target_error_bodypx": 1.052655904829778e-14,
+      "clamped_stance_samples": 0,
+      "clamped_swing_samples": 0
+    },
+    {
+      "character": "Cream",
+      "body_width": 0.78,
+      "body_height": 0.96,
+      "steps": 480,
+      "stance_segments_checked": 818,
+      "contacts": 74,
+      "max_solved_world_stance_drift_bodypx": 1.1368683772161603e-13,
+      "max_reach_error_bodypx": 0.0,
+      "max_stance_target_error_bodypx": 0.0,
+      "max_swing_target_error_bodypx": 0.0,
+      "clamped_stance_samples": 0,
+      "clamped_swing_samples": 0
+    },
+    {
+      "character": "Silver",
+      "body_width": 0.78,
+      "body_height": 0.96,
+      "steps": 480,
+      "stance_segments_checked": 818,
+      "contacts": 74,
+      "max_solved_world_stance_drift_bodypx": 1.1368683772161603e-13,
+      "max_reach_error_bodypx": 0.0,
+      "max_stance_target_error_bodypx": 8.21071605767227e-15,
+      "max_swing_target_error_bodypx": 8.21071605767227e-15,
+      "clamped_stance_samples": 0,
+      "clamped_swing_samples": 0
+    },
+    {
+      "character": "Cream",
+      "body_width": 0.82,
+      "body_height": 1.04,
+      "steps": 480,
+      "stance_segments_checked": 818,
+      "contacts": 74,
+      "max_solved_world_stance_drift_bodypx": 1.1368683772161603e-13,
+      "max_reach_error_bodypx": 0.0,
+      "max_stance_target_error_bodypx": 0.0,
+      "max_swing_target_error_bodypx": 0.0,
+      "clamped_stance_samples": 0,
+      "clamped_swing_samples": 0
+    },
+    {
+      "character": "Silver",
+      "body_width": 0.82,
+      "body_height": 1.04,
+      "steps": 480,
+      "stance_segments_checked": 818,
+      "contacts": 74,
+      "max_solved_world_stance_drift_bodypx": 1.1368683772161603e-13,
+      "max_reach_error_bodypx": 0.0,
+      "max_stance_target_error_bodypx": 8.63177841960418e-15,
+      "max_swing_target_error_bodypx": 8.63177841960418e-15,
+      "clamped_stance_samples": 0,
+      "clamped_swing_samples": 0
+    },
+    {
+      "character": "Cream",
+      "body_width": 1.26,
+      "body_height": 0.98,
+      "steps": 480,
+      "stance_segments_checked": 818,
+      "contacts": 74,
+      "max_solved_world_stance_drift_bodypx": 1.1368683772161603e-13,
+      "max_reach_error_bodypx": 0.0,
+      "max_stance_target_error_bodypx": 0.0,
+      "max_swing_target_error_bodypx": 0.0,
+      "clamped_stance_samples": 0,
+      "clamped_swing_samples": 0
+    },
+    {
+      "character": "Silver",
+      "body_width": 1.26,
+      "body_height": 0.98,
+      "steps": 480,
+      "stance_segments_checked": 818,
+      "contacts": 74,
+      "max_solved_world_stance_drift_bodypx": 1.1368683772161603e-13,
+      "max_reach_error_bodypx": 0.0,
+      "max_stance_target_error_bodypx": 1.3263464400855204e-14,
+      "max_swing_target_error_bodypx": 1.3263464400855204e-14,
+      "clamped_stance_samples": 0,
+      "clamped_swing_samples": 0
+    }
+  ],
+  "render_timing": {
+    "scope": "Shared Linux CPU, C++ Locomotion/Evaluate/Raster plus ctypes call. No loading/Pillow/GDI+/GIF timing. 180 warmup,200timed60Hzsamples percase.",
+    "cases": [
+      {
+        "character": 0,
+        "gait": "walk",
+        "mean_ms": 6.557554515,
+        "median_ms": 6.446635499999999,
+        "p95_ms": 7.571973,
+        "frames": 200
+      },
+      {
+        "character": 0,
+        "gait": "run",
+        "mean_ms": 7.14154539,
+        "median_ms": 6.850037,
+        "p95_ms": 8.463465,
+        "frames": 200
+      },
+      {
+        "character": 1,
+        "gait": "walk",
+        "mean_ms": 4.78414213,
+        "median_ms": 4.545595,
+        "p95_ms": 5.630312,
+        "frames": 200
+      },
+      {
+        "character": 1,
+        "gait": "run",
+        "mean_ms": 5.792470415,
+        "median_ms": 6.131777,
+        "p95_ms": 6.441634,
+        "frames": 200
+      }
+    ]
+  },
+  "cpu_optimization_pixel_identity": {
+    "frames": 1152,
+    "cases": 12,
+    "samples_per_case": 96,
+    "scope": "2cats \u00d73shapes(.78/.96,1/1,1.26/.98) \u00d7Walk/Gallop. Walk22; Gallop ramps0\u2192125\u21920 then165. Full raw premultiplied pixel buffers compared exactly against pinned pre-optimization headers.",
+    "before_header_sha256": "e5ab862095fc876431d110d717321affcbceab0376e65809e401253d5791b241",
+    "after_header_sha256": "cca48344b9093bc104b8ccd7843472fb845b8c0a522e158091bfc5d204d140c6",
+    "paired_normal_body_mean_ms": [
+      {
+        "character": "Cream",
+        "body": [
+          1,
+          1
+        ],
+        "mode": 0,
+        "samples": 96,
+        "before_mean_ms": 12.874522980382608,
+        "after_mean_ms": 6.697877573060396
+      },
+      {
+        "character": "Cream",
+        "body": [
+          1,
+          1
+        ],
+        "mode": 2,
+        "samples": 96,
+        "before_mean_ms": 18.882272072611766,
+        "after_mean_ms": 8.439576531903489
+      },
+      {
+        "character": "Silver",
+        "body": [
+          1,
+          1
+        ],
+        "mode": 0,
+        "samples": 96,
+        "before_mean_ms": 11.09495450994776,
+        "after_mean_ms": 5.612971937201412
+      },
+      {
+        "character": "Silver",
+        "body": [
+          1,
+          1
+        ],
+        "mode": 2,
+        "samples": 96,
+        "before_mean_ms": 15.875431575295806,
+        "after_mean_ms": 6.4160507193567655
+      }
+    ]
+  },
+  "visual_review": "Inspected both cats in sampled full-body and enlarged paw/calf poses. Earlier toe clipping and triangular calf fragments below the sole are absent in these samples. Walk/run body profiles and tail posture are visibly distinct.",
+  "limits": [
+    "Production C++ Locomotion/Evaluate/Rig render replay with Pillow placement on Linux; not live Windows/GDI+/Box2D execution.",
+    "Constant relative travel and scripted speed transitions; window jumps, collisions and user input are outside this audit.",
+    "Timing uses a shared Linux CPU and includes ctypes overhead; it is not a Windows frame-rate guarantee.",
+    "Sampled poses and numeric contact checks do not establish perfect anatomical naturalness. Pinterest sources were inaccessible and are not downloaded or treated as viewed by this tool."
+  ]
+}

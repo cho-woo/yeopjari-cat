@@ -49,7 +49,8 @@ unsigned AlphaAt(const cat::articulated::Rig& rig,Point point) {
 void SourceIdentityAndBounds() {
     const auto source=Artwork();cat::articulated::Rig rig;
     CHECK(rig.Prepare(source.data(),width,height,width*4));
-    CHECK(rig.Width()==width+2*rig.PaddingX() && rig.Height()==height);
+    CHECK(rig.Width()==width+2*rig.PaddingX() && rig.SourceHeight()==height);
+    CHECK(rig.Height()==height+8 && rig.GroundInsetPixels()==10);
     cat::gait::Cycle gait({18,.72,2.6},false,0);
     for(int sample=0;sample<32;++sample) {
         gait.Advance(22./30,1./30,true,false);

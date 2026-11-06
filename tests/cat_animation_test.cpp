@@ -582,7 +582,8 @@ void DistanceDrivenFrameTransitionsRemainContinuous() {
 void WalkingPoseCarriesIndependentJointContacts() {
     using namespace cat::animation;
     Locomotion gait;
-    cat::gait::Cycle expected({18,.72,2.6},false,0);
+    cat::gait::Cycle expected(cat::walk_dynamics::ParametersFor(cat::walk_dynamics::Mode::Walk),false,0);
+    expected.Configure(cat::walk_dynamics::ParametersFor(cat::walk_dynamics::Mode::Walk));expected.Prime();
     for(int sample=0;sample<240;++sample) {
         const double distance=sample<180?22./60:0;
         CHECK(gait.Advance(Motion::Walk,distance,1./60));
@@ -593,11 +594,30 @@ void WalkingPoseCarriesIndependentJointContacts() {
         CHECK(cat::gait::SameFeet(pose.jointFeet,expected.Targets()));
         CHECK(pose.blendFrame==-1 && pose.blend==0);
     }
-    for(Motion motion:{Motion::Idle,Motion::Sleep,Motion::Stalk,Motion::Zoomies,Motion::Jump})
+    for(Motion motion:{Motion::Idle,Motion::Sleep,Motion::Stalk,Motion::Jump})
         CHECK(!Evaluate(motion,0,0,1,gait).jointWalk);
+    CHECK(Evaluate(Motion::Zoomies,0,0,1,gait).jointWalk);
     gait.Reset();
     expected.Reset();
     CHECK(cat::gait::SameFeet(gait.JointFeet(),expected.Targets()));
+}
+
+void PhysicalBrakingKeepsRunningPosture() {
+    using namespace cat::animation;
+    Locomotion gait;
+    for(int i=0;i<90;++i)CHECK(gait.Advance(Motion::Zoomies,165./60,1./60));
+    const auto running=Evaluate(Motion::Zoomies,0,0,1,gait);
+    const auto requestedWalk=Evaluate(Motion::Walk,0,0,1,gait);
+    // An action change alone cannot snap the torso or supporting paws.
+    CHECK(cat::gait::SameFeet(running.jointFeet,requestedWalk.jointFeet));
+    CHECK(cat::walk_dynamics::Same(running.jointDynamics,requestedWalk.jointDynamics));
+    CHECK(requestedWalk.jointDynamics.tailDegrees < -40);
+    CHECK(gait.Advance(Motion::Walk,165./60,1./60));
+    CHECK(Evaluate(Motion::Walk,0,0,1,gait).jointDynamics.tailDegrees < -40);
+    for(int i=0;i<120;++i)CHECK(gait.Advance(Motion::Walk,22./60,1./60));
+    CHECK(Evaluate(Motion::Walk,0,0,1,gait).jointDynamics.tailDegrees==0);
+    gait.Reset();
+    CHECK(gait.JointMode()==cat::walk_dynamics::Mode::Walk);
 }
 
 void RealSpeedsChooseAReachableCadence() {
@@ -716,10 +736,11 @@ int main() {
         OriginalWalkingKeepsArchivedFramesAndCadence();
         DistanceDrivenFrameTransitionsRemainContinuous();
         WalkingPoseCarriesIndependentJointContacts();
+        PhysicalBrakingKeepsRunningPosture();
         RealSpeedsChooseAReachableCadence();
         ContactsStayPlantedWhileGaitAndSpeedChange();
         GaitDiscontinuityGuardsAndLegacyPoseCompatibility();
-        std::cout << "20 animation groups; " << checks << " checks passed\n";
+        std::cout << "21 animation groups; " << checks << " checks passed\n";
         return EXIT_SUCCESS;
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';

@@ -6,6 +6,7 @@
 #include "cat_deformation.hpp"
 #include "cat_expression.hpp"
 #include "cat_gait.hpp"
+#include "cat_walk_dynamics.hpp"
 
 namespace cat::animation {
 
@@ -42,6 +43,7 @@ struct Pose {
     bool jointWalk=false;
     cat::gait::Feet jointFeet{};
     double jointPhase=0;
+    cat::walk_dynamics::Frame jointDynamics{};
     double walkPhase=0,walkStride=24,walkDuty=.68,walkLift=3.2;
     cat::gait::Feet walkFeet{};
     bool walkFeetValid=false;
@@ -111,7 +113,13 @@ inline double TravelFactor(Motion motion, std::uint64_t elapsed) {
 // rendered fraction and phase, so resuming cannot add a phantom footstep.
 class Locomotion {
 public:
-    void Reset() { cycle_.Reset(); jointCycle_.Reset(); originalWalkPhase_=0; }
+    Locomotion() { jointCycle_.Prime(); }
+    void Reset() {
+        cycle_.Reset();
+        jointCycle_.Configure(cat::walk_dynamics::ParametersFor(cat::walk_dynamics::Mode::Walk));
+        jointCycle_.Reset();jointCycle_.Prime();originalWalkPhase_=0;
+        jointMode_=cat::walk_dynamics::Mode::Walk;
+    }
 
     // Returns false for a discontinuous or invalid sample. The allowance grows
     // with dt so a normal run during a delayed 120 ms tick is not a teleport.
@@ -128,7 +136,19 @@ public:
             return false;
         }
         cycle_.Advance(std::abs(signedDistanceBodyPx),deltaSeconds,Walking(motion),motion==Motion::Stalk);
-        jointCycle_.Advance(std::abs(signedDistanceBodyPx),deltaSeconds,motion==Motion::Walk,false);
+        if(motion==Motion::Walk || motion==Motion::Zoomies) {
+            // Keep the running gait while the physical body is still braking.
+            // Requested action changes must not stand the torso upright over
+            // a paw that is still supporting a fast running stride.
+            if(Speed()>35)jointMode_=cat::walk_dynamics::Mode::Gallop;
+            else if(Speed()<30)jointMode_=cat::walk_dynamics::Mode::Walk;
+            const auto mode=jointMode_;
+            std::array<double,4> bias{};
+            for(unsigned leg=0;leg<4;++leg)bias[leg]=cat::walk_dynamics::PawBias(mode,leg);
+            jointCycle_.Configure(cat::walk_dynamics::ParametersFor(mode),bias);
+        }
+        jointCycle_.Advance(std::abs(signedDistanceBodyPx),deltaSeconds,
+            motion==Motion::Walk || motion==Motion::Zoomies,false);
         if (motion==Motion::Walk)
             originalWalkPhase_=std::fmod(originalWalkPhase_+std::abs(signedDistanceBodyPx)/kOriginalWalkStride,1.0);
         return true;
@@ -141,11 +161,15 @@ public:
     cat::gait::Feet Feet(Motion motion) const { return cycle_.Targets(motion==Motion::Stalk); }
     cat::gait::Feet JointFeet() const { return jointCycle_.Targets(); }
     double JointPhase() const { return jointCycle_.Phase(); }
+    cat::walk_dynamics::Mode JointMode() const { return jointMode_; }
+    cat::gait::Feet GallopFeet() const { return jointCycle_.Targets(); }
+    double GallopPhase() const { return jointCycle_.Phase(); }
 
 private:
     cat::gait::Cycle cycle_;
-    cat::gait::Cycle jointCycle_{{18,.72,2.6},false,0};
+    cat::gait::Cycle jointCycle_{cat::walk_dynamics::ParametersFor(cat::walk_dynamics::Mode::Walk),false,0};
     double originalWalkPhase_=0;
+    cat::walk_dynamics::Mode jointMode_=cat::walk_dynamics::Mode::Walk;
 };
 
 inline Pose Evaluate(Motion motion, std::uint64_t elapsed, std::uint64_t ticks, int direction) {
@@ -433,8 +457,15 @@ inline Pose Evaluate(Motion motion, std::uint64_t elapsed, std::uint64_t ticks,
         p.jointWalk=true;
         p.jointFeet=locomotion.JointFeet();
         p.jointPhase=locomotion.JointPhase();
+        p.jointDynamics=cat::walk_dynamics::Evaluate(p.jointPhase,locomotion.Speed(),locomotion.JointMode(),&p.jointFeet);
         // The rig metadata remains available for species introduced later,
         // whose atlas does not contain the original four walking drawings.
+    }
+    if(motion==Motion::Zoomies) {
+        p.jointWalk=true;
+        p.jointFeet=locomotion.GallopFeet();
+        p.jointPhase=locomotion.GallopPhase();
+        p.jointDynamics=cat::walk_dynamics::Evaluate(p.jointPhase,locomotion.Speed(),locomotion.JointMode(),&p.jointFeet);
     }
     return p;
 }
