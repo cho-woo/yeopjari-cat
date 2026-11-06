@@ -137,7 +137,7 @@ public:
             const auto knee=[&](double x,double y) {
                 const double distance=std::hypot(x,y);
                 const double bend=std::sqrt(std::max(0.0,length*length-distance*distance*.25));
-                const double sign=i==0?1.0:-1.0;
+                const double sign=(i==0 || (profile_.fourLegs && i==1))?1.0:-1.0;
                 return std::array<double,2>{{x*.5+sign*y/std::max(.01,distance)*bend,
                     y*.5-sign*x/std::max(.01,distance)*bend}};
             };

@@ -38,19 +38,20 @@ int NativeWalkingRenderTest(std::string& context) {
     // source preservation, pixels, cache and the real top-level dispatcher.
     for(const auto character:{cat::Character::Cream,cat::Character::SilverTabby})for(int facing:{-1,1})
     for(const auto dimensions:{std::pair<double,double>{1,1},{.82,1.04},{1.25,.96}})
-    for(REAL desiredHeight:{80.0f,110.0f,165.0f})for(int sample=0;sample<16;++sample) {
+    for(REAL desiredHeight:{80.0f,110.0f,165.0f})for(const auto motion:{Motion::Walk,Motion::Zoomies})for(int sample=0;sample<16;++sample) {
         auto body=normalBody;body.bodyWidth=dimensions.first;body.bodyHeight=dimensions.second;
         cat::animation::Locomotion gait;
         // Cover a complete independent four-foot cycle.
         const double phase=sample/16.;
-        double remaining=phase*18;
+        const double speed=motion==Motion::Zoomies?165:22;
+        double remaining=phase*(motion==Motion::Zoomies?42:18);
         while(remaining>1e-12) {
             const double step=std::min(remaining,2.2);
-            if(!gait.Advance(Motion::Walk,step,step/22))return 152;
+            if(!gait.Advance(motion,step,step/speed))return 152;
             remaining-=step;
         }
-        const auto pose=cat::animation::Evaluate(Motion::Walk,0,500000,facing,gait);
-        if(!pose.jointWalk || !pose.originalWalk || pose.walkingRig ||
+        const auto pose=cat::animation::Evaluate(motion,0,500000,facing,gait);
+        if(!pose.jointWalk ||
                 pose.blendFrame!=-1 || pose.blend!=0 ||
                 pose.x!=0 || pose.lift!=0 || pose.angle!=0 || pose.scaleX!=1 || pose.scaleY!=1 ||
                 !cat::deform::Zero(pose.joints))return 152;
@@ -59,7 +60,7 @@ int NativeWalkingRenderTest(std::string& context) {
         const auto& joint=CurrentArt(character).jointWalking;
         if(!joint || joint->rig.ReachError()>.01)return 153;
         const auto& source=CurrentArt(character).base.skins[1];
-        for(int row=0;row<static_cast<int>(source.height*.68);++row)
+        if(cat::walk_dynamics::Neutral(pose.jointDynamics))for(int row=0;row<static_cast<int>(source.height*.68);++row)
             if(std::memcmp(source.source.data()+row*source.width,
                     joint->rig.Pixels()+row*joint->rig.Width()+joint->rig.PaddingX(),source.width*4)!=0)return 154;
         for(int outfit=0;outfit<cat::kOutfitCount;++outfit) {
@@ -93,6 +94,20 @@ int NativeWalkingRenderTest(std::string& context) {
             if(std::memcmp(first.data()+i,second.data()+i,4)!=0)++changed;
         if(changed<40){context="joint walk bitmap did not refresh";return 157;}
     }
+    for(const auto character:{cat::Character::Cream,cat::Character::SilverTabby}) {
+        cat::animation::Locomotion gait;
+        for(int i=0;i<20;++i)gait.Advance(Motion::Walk,22./60,1./60);
+        auto pose=cat::animation::Evaluate(Motion::Walk,0,0,1,gait);
+        if(!draw(character,cat::Outfit::None,pose,normalBody,false))return 153;
+        const auto before=copy();
+        const auto goals=CurrentArt(character).jointWalking->rig.Legs();
+        pose.jointDynamics.torsoY+=.35;pose.jointDynamics.pitchDegrees+=.2;
+        if(!draw(character,cat::Outfit::None,pose,normalBody,false))return 153;
+        if(copy()==before){context="body pose missing from bitmap cache key";return 157;}
+        const auto moved=CurrentArt(character).jointWalking->rig.Legs();
+        for(int leg=0;leg<4;++leg)
+            if(cat::articulated::Length(moved[leg].paw-goals[leg].paw)>1e-7)return 159;
+    }
     for(int c=0;c<cat::kCharacterCount;++c)for(int facing:{-1,1}) {
         const auto character=static_cast<cat::Character>(c);
         auto& art=CurrentArt(character);
@@ -103,7 +118,7 @@ int NativeWalkingRenderTest(std::string& context) {
         // includes the entire face and upper body for every canonical source.
         const int headBottom=static_cast<int>(std::floor(280+2*height/source.height-.34*height));
         for(const auto motion:{Motion::Walk,Motion::Stalk,Motion::Zoomies}) {
-            if(motion==Motion::Walk && !cat::species::UsesNewArt(character))continue;
+            if((motion==Motion::Walk || motion==Motion::Zoomies) && !cat::species::UsesNewArt(character))continue;
             auto pose=poseFor(motion,facing);
             if((motion==Motion::Walk?(!pose.originalWalk || pose.walkingRig):
                     (!pose.walkingRig || pose.originalWalk || pose.frame!=1 || pose.blendFrame!=-1)) ||
@@ -197,7 +212,7 @@ int NativeWalkingRenderTest(std::string& context) {
     // adult/newborn speeds and abrupt action changes. The native raster must
     // accept every supported anatomy and keep the original head and floor.
     for(const auto character:{cat::Character::Cream,cat::Character::SilverTabby})
-    for(const auto dimensions:{std::pair<double,double>{1,1},{.78,.96},{1.26,.98}}) {
+    for(const auto dimensions:{std::pair<double,double>{1,1},{.78,.96},{.82,1.04},{1.26,.98}}) {
         auto& art=CurrentArt(character);const auto& source=art.base.skins[1];
         const double reference=110.0/std::max(1,art.base.standingHeight);
         auto body=normalBody;body.bodyWidth=dimensions.first;body.bodyHeight=dimensions.second;
@@ -213,7 +228,7 @@ int NativeWalkingRenderTest(std::string& context) {
             auto pose=cat::animation::Evaluate(motion,0,500000,1,gait);
             context="persistent walking c="+std::to_string(static_cast<int>(character))+
                 " frame="+std::to_string(frame)+" width="+std::to_string(body.bodyWidth);
-            if(motion==Motion::Walk) {
+            if(pose.jointWalk) {
                 if(pose.blendFrame!=-1 || pose.blend!=0)return 158;
                 if(!draw(character,cat::Outfit::None,pose,body,true))return 158;
                 const auto jointPixels=copy();
@@ -234,6 +249,65 @@ int NativeWalkingRenderTest(std::string& context) {
                 if(pixels[static_cast<std::size_t>(y*420+x)*4+3]>=128)return 155;
             if(!draw(character,cat::Outfit::None,pose,body,false)||copy()!=pixels)return 158;
         }
+    }
+    // Check the actual embedded artwork on EVERY frame of an eased speed
+    // ramp. Sampled dispatcher comparisons above cannot detect a planted
+    // paw that is projected off its goal between sampled frames. Keep the
+    // controller contacts and the solved, rendered paw in world coordinates.
+    for(const auto character:{cat::Character::Cream,cat::Character::SilverTabby})
+    for(const auto dimensions:{std::pair<double,double>{1,1},{.78,.96},{.82,1.04},{1.26,.98}}) {
+        const auto& art=CurrentArt(character);const auto& source=art.base.skins[1];
+        const double reference=110.0/std::max(1,art.base.standingHeight);
+        const double widthBody=source.width*reference*dimensions.first;
+        const double heightBody=source.height*reference*dimensions.second;
+        cat::articulated::Rig actual;
+        if(!actual.Prepare(source.source.data(),source.width,source.height,source.width*4))return 159;
+        cat::animation::Locomotion gait;
+        cat::gait::Feet previousFeet{};
+        std::array<cat::articulated::Point,4> previousWorld{};
+        double root=0;int stanceSegments=0;
+        for(int frame=0;frame<480;++frame) {
+            const Motion motion=frame>=90&&frame<300?Motion::Zoomies:Motion::Walk;
+            const double speed=frame<90?22:frame<150?22+(165-22)*(frame-90)/60.:
+                frame<300?165:frame<360?165-(165-22)*(frame-300)/60.:22;
+            const double travel=speed/60.;root+=travel;
+            context="joint transition c="+std::to_string(static_cast<int>(character))+
+                " frame="+std::to_string(frame)+" width="+std::to_string(dimensions.first)+
+                " height="+std::to_string(dimensions.second);
+            if(!gait.Advance(motion,travel,1./60))return 159;
+            const auto pose=cat::animation::Evaluate(motion,0,500000,1,gait);
+            if(!pose.jointWalk || !actual.Raster(pose.jointFeet,widthBody,heightBody,pose.jointDynamics))return 159;
+            // Recovery alone may meet a joint limit; it must stay subpixel.
+            if(actual.ReachError()>=1.0){context+=" recovery beyond anatomical reach";return 159;}
+            const auto& bones=actual.Legs();
+            int supports=0;
+            for(unsigned leg=0;leg<4;++leg) {
+                const auto& foot=pose.jointFeet[leg];const auto& bone=bones[leg];
+                const cat::articulated::Point world{root+bone.paw.x*widthBody/source.width,
+                    bone.paw.y*heightBody/source.height};
+                if(foot.stance) {
+                    ++supports;
+                    const double error=std::hypot((bone.paw.x-bone.targetPaw.x)*widthBody/source.width,
+                        (bone.paw.y-bone.targetPaw.y)*heightBody/source.height);
+                    if(bone.clamped || error>1e-7) {
+                        context+=" planted leg="+std::to_string(leg)+" missed goal="+std::to_string(error);return 159;
+                    }
+                    if(frame>0 && previousFeet[leg].stance && previousFeet[leg].contact==foot.contact) {
+                        const double drift=cat::articulated::Length(world-previousWorld[leg]);
+                        if(drift>1e-7) {
+                            context+=" planted leg="+std::to_string(leg)+" world drift="+std::to_string(drift);return 159;
+                        }
+                        ++stanceSegments;
+                    }
+                }
+                previousWorld[leg]=world;
+            }
+            if(supports && pose.jointDynamics.airborneWeight!=0) {
+                context+=" airborne visual while a paw supports the body";return 159;
+            }
+            previousFeet=pose.jointFeet;
+        }
+        if(stanceSegments<100){context+=" insufficient persistent ground contacts";return 159;}
     }
     if(cat::SerializePreferences(g.preferences)!=savedPreferences || cat::nutrition::Serialize(g.nutrition)!=savedNutrition)return 159;
     return 0;

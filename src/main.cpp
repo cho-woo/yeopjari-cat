@@ -178,6 +178,7 @@ struct JointWalkingSkin {
     cat::gait::Feet feet{};
     double width=0,height=0;
     bool valid=false;
+    cat::walk_dynamics::Frame dynamics{};
 };
 struct CharacterArt {
     SpriteAtlas base, actions;
@@ -1749,14 +1750,16 @@ bool DrawJointWalkingPet(Graphics& graphics,const cat::animation::Pose& pose,
     const double widthBody=source.width*reference*body.bodyWidth;
     const double heightBody=source.height*reference*body.bodyHeight;
     if(!skin.valid || skin.width!=widthBody || skin.height!=heightBody ||
-            !cat::gait::SameFeet(skin.feet,pose.jointFeet)) {
-        if(!skin.rig.Raster(pose.jointFeet,widthBody,heightBody))return false;
+            !cat::gait::SameFeet(skin.feet,pose.jointFeet) ||
+            !cat::walk_dynamics::Same(skin.dynamics,pose.jointDynamics)) {
+        if(!skin.rig.Raster(pose.jointFeet,widthBody,heightBody,pose.jointDynamics))return false;
         skin.feet=pose.jointFeet;skin.width=widthBody;skin.height=heightBody;skin.valid=true;
+        skin.dynamics=pose.jointDynamics;
     }
     const REAL width=static_cast<REAL>(skin.rig.Width()*scale*body.bodyWidth);
     const REAL height=static_cast<REAL>(skin.rig.Height()*scale*body.bodyHeight);
     const auto saved=graphics.Save();
-    graphics.TranslateTransform(center,bottom+2*scale*static_cast<REAL>(body.bodyHeight));
+    graphics.TranslateTransform(center,bottom+skin.rig.GroundInsetPixels()*scale*static_cast<REAL>(body.bodyHeight));
     graphics.ScaleTransform(pose.flip?-1.0f:1.0f,1);
     ImageAttributes attrs;attrs.SetWrapMode(WrapModeTileFlipXY);
     const auto status=graphics.DrawImage(skin.image.get(),RectF(-width/2,-height,width,height),
