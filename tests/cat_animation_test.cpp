@@ -251,7 +251,7 @@ double WeightDistance(const Pose& first, const Pose& second) {
 void BlendedLoopsAndGestureContinuity() {
     // Frame numbers may wrap, but the represented image weights must not jump.
     using namespace cat::animation;
-    for (const auto motion : {Motion::Zoomies,Motion::Treat,Motion::EarFlick,Motion::TailRaise}) {
+    for (const auto motion : {Motion::Treat,Motion::EarFlick,Motion::TailRaise}) {
         bool continuous = true, normalized = true;
         for (std::uint64_t t = 1; t <= 6000; ++t) {
             const auto previous = Evaluate(motion,t-1,t-1,1), current = Evaluate(motion,t,t,1);
@@ -264,17 +264,12 @@ void BlendedLoopsAndGestureContinuity() {
         CHECK(continuous);
         CHECK(normalized);
     }
-    // These blended loops still wrap smoothly. Ordinary walking instead
-    // preserves the recovered v1.0 single-drawing presentation below.
-    for (const auto& loop : {std::pair{Motion::Zoomies,55ULL}}) {
-        for (std::uint64_t boundary = loop.second; boundary <= loop.second*12; boundary += loop.second) {
-            CHECK(WeightDistance(Evaluate(loop.first,boundary-1,boundary-1,1),
-                                 Evaluate(loop.first,boundary,boundary,1)) < .005);
-        }
-    }
+    // Every locomotion preview also shows one complete source image. Runtime
+    // selects these same drawings from actual distance, not this preview clock.
+    for(const auto& loop:{std::pair{Motion::Walk,150ULL},std::pair{Motion::Stalk,240ULL},std::pair{Motion::Zoomies,84ULL}})
     for(std::uint64_t elapsed=0;elapsed<=6000;++elapsed) {
-        const auto pose=Evaluate(Motion::Walk,elapsed,elapsed,1);
-        CHECK(pose.frame==static_cast<int>((elapsed/150)%4));
+        const auto pose=Evaluate(loop.first,elapsed,elapsed,1);
+        CHECK(pose.frame==static_cast<int>((elapsed/loop.second)%4));
         CHECK(pose.blendFrame==-1 && pose.blend==0);
         CHECK(cat::deform::Zero(pose.joints));
     }
@@ -515,7 +510,7 @@ void OriginalWalkingKeepsArchivedFramesAndCadence() {
         }
         for(int facing:{-1,1}) {
             const auto pose=Evaluate(Motion::Walk,900000,700,facing,gait);
-            CHECK(pose.originalWalk && !pose.walkingRig);
+            CHECK(pose.originalWalk && !pose.walkingRig && !pose.jointWalk);
             CHECK(pose.frame==frame && pose.flip==(facing<0));
             CHECK(pose.x==0 && pose.lift==0 && pose.angle==0 && pose.scaleX==1 && pose.scaleY==1);
             CHECK(pose.groundContact && !pose.centerPivot && cat::deform::Zero(pose.joints));
@@ -525,8 +520,8 @@ void OriginalWalkingKeepsArchivedFramesAndCadence() {
             for(int other=0;other<kSpriteCount;++other)if(other!=frame)CHECK(weights[other]==0);
         }
     }
-    // The authored cycle wraps cleanly and does not consume movement from
-    // other actions, window carrying, pauses or an invalid teleport sample.
+    // Every walking action shares the phase; pauses and blocked travel do not
+    // consume a step, and a different gait name does not reset the cycle.
     Locomotion gait;
     for(int i=0;i<7;++i)CHECK(gait.Advance(Motion::Walk,2,.1));
     CHECK(std::min(gait.OriginalWalkPhase(),1-gait.OriginalWalkPhase())<1e-12);
@@ -534,127 +529,103 @@ void OriginalWalkingKeepsArchivedFramesAndCadence() {
     CHECK(gait.Advance(Motion::Zoomies,4,.1));
     CHECK(gait.Advance(Motion::Idle,0,.1));
     CHECK(gait.Advance(Motion::Walk,0,0));
-    CHECK(gait.OriginalWalkPhase()==held);
+    CHECK(std::abs(gait.OriginalWalkPhase()-std::fmod(held+4.0/kOriginalWalkStride,1.0))<1e-12);
 }
 
-void DistanceDrivenFrameTransitionsRemainContinuous() {
+void DistanceDrivenFramesStaySingleAndSequential() {
     using namespace cat::animation;
     CHECK(StrideLength(Motion::Walk)==24 && StrideLength(Motion::Stalk)==20 && StrideLength(Motion::Zoomies)==52);
-    for (const auto motion : {Motion::Zoomies, Motion::Stalk}) {
-        Locomotion gait;
-        const double stride = StrideLength(motion);
+    for(const auto motion:{Motion::Walk,Motion::Stalk,Motion::Zoomies}) {
         const double speed=motion==Motion::Zoomies?165:motion==Motion::Stalk?12.5:22;
-        for(int i=0;i<180;++i)CHECK(gait.Advance(motion,speed/60,1./60));
-        auto previous = Evaluate(motion, 0, 700, 1, gait);
-        bool continuous = true, normalized = true;
-        for (int i = 1; i <= 2800; ++i) {
-            CHECK(gait.Advance(motion, speed / 6000, 1./6000));
-            const auto current = Evaluate(motion, 0, 700, 1, gait);
-            CHECK(current.walkingRig && current.frame==1 && current.blendFrame==-1);
-            CHECK(current.walkPhase==gait.Phase() && std::abs(current.walkStride-stride)<1e-5);
-            CHECK(current.groundContact && current.x==0 && current.lift==0);
-            CHECK(current.scaleX==1 && current.scaleY==1 && current.angle==0);
-            CHECK(cat::deform::Zero(current.joints));
-            continuous = continuous && WeightDistance(previous, current) < .022
-                && std::abs(previous.lift - current.lift) < .05
-                && std::abs(previous.angle - current.angle) < .05;
-            double total = 0;
-            for (double weight : FrameWeights(current)) total += weight;
-            normalized = normalized && std::abs(total - 1) < 1e-12;
-            previous = current;
+        Locomotion gait;auto previous=Evaluate(motion,0,0,1,gait);int changes=0;
+        for(int sample=0;sample<1200;++sample) {
+            CHECK(gait.Advance(motion,speed/600,1./600));
+            const auto pose=Evaluate(motion,sample*1000,700,1,gait);
+            CHECK(pose.originalWalk && !pose.walkingRig && !pose.jointWalk);
+            CHECK(pose.frame==previous.frame || pose.frame==(previous.frame+1)%4);
+            changes+=pose.frame!=previous.frame;
+            CHECK(pose.walkPhase==gait.Phase()); // Newer animals retain their existing fallback metadata.
+            CHECK(pose.walkFeetValid && cat::gait::SameFeet(pose.walkFeet,gait.Feet(motion)));
+            CHECK(pose.groundContact && pose.x==0 && pose.lift==0 && pose.angle==0);
+            CHECK(pose.scaleX==1 && pose.scaleY==1 && cat::deform::Zero(pose.joints));
+            const auto weights=FrameWeights(pose);
+            for(int frame=0;frame<kSpriteCount;++frame)CHECK(weights[frame]==(frame==pose.frame?1:0));
+            CHECK(pose.blendFrame==-1 && pose.blend==0);
+            previous=pose;
         }
-        CHECK(continuous);
-        CHECK(normalized);
-    }
-    Locomotion original;
-    auto previous=Evaluate(Motion::Walk,0,0,1,original);
-    for(int sample=0;sample<4200;++sample) {
-        CHECK(original.Advance(Motion::Walk,.01,.01/22));
-        const auto pose=Evaluate(Motion::Walk,0,0,1,original);
-        CHECK(pose.frame==previous.frame || pose.frame==(previous.frame+1)%4);
-        CHECK(pose.blendFrame==-1 && pose.blend==0);
-        const auto weights=FrameWeights(pose);
-        for(int frame=0;frame<kSpriteCount;++frame)CHECK(weights[frame]==(frame==pose.frame?1:0));
-        previous=pose;
+        CHECK(changes>0 && changes<=static_cast<int>(2*kOriginalWalkMaxFramesPerSecond));
     }
 }
 
-void WalkingPoseCarriesIndependentJointContacts() {
+void AllWalkingActionsUseIntactSourceDrawings() {
     using namespace cat::animation;
     Locomotion gait;
-    cat::gait::Cycle expected(cat::walk_dynamics::ParametersFor(cat::walk_dynamics::Mode::Walk),false,0);
-    expected.Configure(cat::walk_dynamics::ParametersFor(cat::walk_dynamics::Mode::Walk));expected.Prime();
     for(int sample=0;sample<240;++sample) {
+        const auto motion=sample<80?Motion::Walk:sample<160?Motion::Stalk:Motion::Zoomies;
         const double distance=sample<180?22./60:0;
-        CHECK(gait.Advance(Motion::Walk,distance,1./60));
-        expected.Advance(distance,1./60,true,false);
-        const auto pose=Evaluate(Motion::Walk,sample*16,sample*16,1,gait);
-        CHECK(pose.jointWalk);
-        CHECK(pose.jointPhase==expected.Phase());
-        CHECK(cat::gait::SameFeet(pose.jointFeet,expected.Targets()));
+        CHECK(gait.Advance(motion,distance,1./60));
+        const auto pose=Evaluate(motion,sample*16,sample*16,1,gait);
+        CHECK(pose.originalWalk && !pose.jointWalk && !pose.walkingRig);
+        CHECK(pose.frame>=0 && pose.frame<4);
         CHECK(pose.blendFrame==-1 && pose.blend==0);
+        CHECK(cat::walk_dynamics::Neutral(pose.jointDynamics));
     }
     for(Motion motion:{Motion::Idle,Motion::Sleep,Motion::Jump})
-        CHECK(!Evaluate(motion,0,0,1,gait).jointWalk);
-    CHECK(Evaluate(Motion::Stalk,0,0,1,gait).jointWalk);
-    CHECK(Evaluate(Motion::Zoomies,0,0,1,gait).jointWalk);
-    gait.Reset();
-    expected.Reset();
-    CHECK(cat::gait::SameFeet(gait.JointFeet(),expected.Targets()));
+        CHECK(!Evaluate(motion,0,0,1,gait).originalWalk);
+    gait.Reset();CHECK(gait.OriginalWalkPhase()==0);
 }
 
-void PhysicalBrakingKeepsRunningPosture() {
+void WalkingActionChangesKeepTheSameDrawing() {
     using namespace cat::animation;
     Locomotion gait;
-    for(int i=0;i<90;++i)CHECK(gait.Advance(Motion::Zoomies,165./60,1./60));
+    for(int sample=0;sample<90;++sample)CHECK(gait.Advance(Motion::Zoomies,165./60,1./60));
     const auto running=Evaluate(Motion::Zoomies,0,0,1,gait);
-    const auto requestedWalk=Evaluate(Motion::Walk,0,0,1,gait);
-    const auto requestedStalk=Evaluate(Motion::Stalk,0,0,1,gait);
-    // An action change alone cannot snap the torso or supporting paws.
-    CHECK(cat::gait::SameFeet(running.jointFeet,requestedWalk.jointFeet));
-    CHECK(cat::walk_dynamics::Same(running.jointDynamics,requestedWalk.jointDynamics));
-    CHECK(cat::gait::SameFeet(running.jointFeet,requestedStalk.jointFeet));
-    CHECK(cat::walk_dynamics::Same(running.jointDynamics,requestedStalk.jointDynamics));
-    CHECK(requestedWalk.jointDynamics.tailDegrees < -40);
-    CHECK(gait.Advance(Motion::Walk,165./60,1./60));
-    CHECK(Evaluate(Motion::Walk,0,0,1,gait).jointDynamics.tailDegrees < -40);
-    for(int i=0;i<120;++i)CHECK(gait.Advance(Motion::Walk,22./60,1./60));
-    CHECK(Evaluate(Motion::Walk,0,0,1,gait).jointDynamics.tailDegrees==0);
-    gait.Reset();
-    CHECK(gait.JointMode()==cat::walk_dynamics::Mode::Walk);
+    // Changing the requested gait keeps the exact complete drawing. There is
+    // no cropped running torso or independent standing-up transform to snap.
+    for(const auto motion:{Motion::Walk,Motion::Stalk,Motion::Zoomies}) {
+        const auto pose=Evaluate(motion,900000,0,1,gait);
+        CHECK(pose.frame==running.frame && pose.originalWalk && !pose.jointWalk && !pose.walkingRig);
+        CHECK(pose.x==0 && pose.lift==0 && pose.angle==0 && pose.scaleX==1 && pose.scaleY==1);
+        CHECK(cat::deform::Zero(pose.joints));
+    }
+    const double before=gait.OriginalWalkPhase();
+    CHECK(gait.Advance(Motion::Stalk,165./60,1./60));
+    const double delta=gait.OriginalWalkPhase()>=before?gait.OriginalWalkPhase()-before:gait.OriginalWalkPhase()+1-before;
+    CHECK(delta>0 && delta<=kOriginalWalkMaxFramesPerSecond/240+1e-12);
+    gait.Reset();CHECK(gait.OriginalWalkPhase()==0);
 }
-void FastWalkingUsesTrotAndStalkingKeepsTheSameContacts() {
+
+void IntactWalkingCadenceIsBoundedAndShared() {
     using namespace cat::animation;
-    using cat::walk_dynamics::Mode;
-    for(const auto& example:{std::pair{18.,Mode::Walk},std::pair{29.,Mode::Walk},
-            std::pair{38.,Mode::Trot},std::pair{45.,Mode::Trot},std::pair{80.,Mode::Trot},std::pair{140.,Mode::Gallop}}) {
-        Locomotion gait;
-        for(int step=0;step<180;++step)CHECK(gait.Advance(Motion::Walk,example.first/120,1./120));
-        CHECK(gait.JointMode()==example.second);
-        const auto pose=Evaluate(Motion::Walk,0,0,1,gait);
-        CHECK(pose.jointWalk && pose.x==0 && pose.lift==0);
-        if(example.second!=Mode::Gallop)CHECK(pose.jointDynamics.tailDegrees==0 && pose.jointDynamics.airborneWeight==0);
-    }
-    Locomotion gait;cat::gait::Feet previous=gait.JointFeet();
-    std::array<double,4> previousWorld{};double root=0;int anchors=0;
-    for(unsigned leg=0;leg<4;++leg)previousWorld[leg]=previous[leg].x;
-    for(int step=0;step<900;++step) {
-        const auto motion=step<300||step>=600?Motion::Walk:Motion::Stalk;
-        const double travel=(motion==Motion::Stalk?12.:22.)/120;root+=travel;
-        CHECK(gait.Advance(motion,travel,1./120));
-        const auto pose=Evaluate(motion,0,0,1,gait);
-        CHECK(pose.jointWalk && pose.groundContact);
-        if(motion==Motion::Stalk)CHECK(pose.walkingRig && !pose.originalWalk);
-        for(unsigned leg=0;leg<4;++leg) {
-            const auto foot=pose.jointFeet[leg];const double world=root+foot.x;
-            if(foot.stance && previous[leg].stance && foot.contact==previous[leg].contact) {
-                CHECK(std::abs(world-previousWorld[leg])<1e-8);++anchors;
+    CHECK(kOriginalWalkMaxFramesPerSecond==12);
+    for(int fps:{30,60,120})for(double speed:{18.,29.,38.,45.,80.,140.,230.})for(int direction:{-1,1}) {
+        std::array<double,3> finalPhases{};unsigned gaitIndex=0;
+        for(const auto motion:{Motion::Walk,Motion::Stalk,Motion::Zoomies}) {
+            Locomotion gait;int previous=0,changes=0;double phases=0;
+            for(int sample=0;sample<fps*2;++sample) {
+                const double before=gait.OriginalWalkPhase();
+                CHECK(gait.Advance(motion,direction*speed/fps,1.0/fps));
+                const double phase=gait.OriginalWalkPhase();
+                const double delta=phase>=before?phase-before:phase+1-before;
+                CHECK(delta>=0 && delta<=kOriginalWalkMaxFramesPerSecond/(4*fps)+1e-12);
+                phases+=delta;
+                const auto pose=Evaluate(motion,900000,sample,direction,gait);
+                CHECK(pose.originalWalk && !pose.jointWalk && !pose.walkingRig && pose.frame>=0 && pose.frame<4);
+                CHECK(pose.flip==(direction<0) && pose.blendFrame==-1 && pose.blend==0);
+                changes+=pose.frame!=previous;previous=pose.frame;
             }
-            previousWorld[leg]=world;
+            CHECK(changes<=2*kOriginalWalkMaxFramesPerSecond);
+            if(speed<=29)CHECK(std::abs(phases-speed*2/kOriginalWalkStride)<1e-9);
+            else if(speed>=45)CHECK(std::abs(phases*4-2*kOriginalWalkMaxFramesPerSecond)<1e-9);
+            finalPhases[gaitIndex++]=gait.OriginalWalkPhase();
+            const auto held=Evaluate(motion,0,0,direction,gait);const double heldPhase=gait.OriginalWalkPhase();
+            for(int sample=0;sample<fps;++sample)CHECK(gait.Advance(motion,0,1.0/fps));
+            const auto stopped=Evaluate(motion,100000,100000,direction,gait);
+            CHECK(gait.OriginalWalkPhase()==heldPhase && held.frame==stopped.frame);
+            CHECK(stopped.x==0 && stopped.lift==0 && stopped.angle==0 && cat::deform::Zero(stopped.joints));
         }
-        previous=pose.jointFeet;
+        CHECK(std::abs(finalPhases[0]-finalPhases[1])<1e-12 && std::abs(finalPhases[1]-finalPhases[2])<1e-12);
     }
-    CHECK(anchors>1000);
 }
 
 void AuthoredClipsFollowHostPhysicsAndPreserveFallbacks() {
@@ -685,7 +656,7 @@ void AuthoredClipsFollowHostPhysicsAndPreserveFallbacks() {
     CHECK(Evaluate(Motion::Walk,3000,3000,1).spriteClip==Clip::None);
 }
 
-void RealSpeedsChooseAReachableCadence() {
+void NewAnimalFallbackKeepsItsContactMetadata() {
     using namespace cat::animation;
     for(double fps:{30.,60.,120.})for(const auto& scenario:{
             std::pair{Motion::Walk,22.},std::pair{Motion::Stalk,12.5},
@@ -695,8 +666,7 @@ void RealSpeedsChooseAReachableCadence() {
         for(int i=0;i<fps*3;++i)CHECK(gait.Advance(motion,speed/fps,1/fps));
         const auto pose=Evaluate(motion,0,0,1,gait);
         CHECK(pose.walkFeetValid);
-        if(motion==Motion::Walk)CHECK(pose.originalWalk && !pose.walkingRig && pose.frame>=0 && pose.frame<4);
-        else CHECK(pose.walkingRig && !pose.originalWalk && pose.frame==1);
+        CHECK(pose.originalWalk && !pose.walkingRig && !pose.jointWalk && pose.frame>=0 && pose.frame<4);
         CHECK(std::abs(gait.Speed()-speed)<1e-8);
         if(speed>=165) {
             CHECK(std::abs(pose.walkStride-52)<1e-5);
@@ -705,7 +675,7 @@ void RealSpeedsChooseAReachableCadence() {
     }
 }
 
-void ContactsStayPlantedWhileGaitAndSpeedChange() {
+void FallbackContactsStayPlantedAcrossGaitChanges() {
     using namespace cat::animation;
     std::array<Pose,3> endings{};int ending=0;
     for(double fps:{30.,60.,120.}) {
@@ -799,13 +769,13 @@ int main() {
         DistanceDrivenGaitSurvivesSpeedAndActionChanges();
         BlockedOrStoppedGaitsDoNotKeepStepping();
         OriginalWalkingKeepsArchivedFramesAndCadence();
-        DistanceDrivenFrameTransitionsRemainContinuous();
-        WalkingPoseCarriesIndependentJointContacts();
-        PhysicalBrakingKeepsRunningPosture();
-        FastWalkingUsesTrotAndStalkingKeepsTheSameContacts();
+        DistanceDrivenFramesStaySingleAndSequential();
+        AllWalkingActionsUseIntactSourceDrawings();
+        WalkingActionChangesKeepTheSameDrawing();
+        IntactWalkingCadenceIsBoundedAndShared();
         AuthoredClipsFollowHostPhysicsAndPreserveFallbacks();
-        RealSpeedsChooseAReachableCadence();
-        ContactsStayPlantedWhileGaitAndSpeedChange();
+        NewAnimalFallbackKeepsItsContactMetadata();
+        FallbackContactsStayPlantedAcrossGaitChanges();
         GaitDiscontinuityGuardsAndLegacyPoseCompatibility();
         std::cout << "22 animation groups; " << checks << " checks passed\n";
         return EXIT_SUCCESS;

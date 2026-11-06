@@ -23,9 +23,12 @@ constexpr std::uint64_t kPeekDurationMs = 3600;
 constexpr std::uint64_t kBellyRollDurationMs = 4300;
 constexpr double kPi = 3.14159265358979323846;
 constexpr int kSpriteCount = 29;
-// Physical cadence retained from v1.8/v1.9: four drawings per 14 body pixels.
-// Each drawing is now shown alone, as in the recovered v1.0 source.
+// Original complete drawings have about 12–15 logical pixels of forepaw
+// excursion at the 110 px reference size. Keep the established 14 px cycle.
+// Four poses cannot describe a complete fast gallop; cap their presentation
+// cadence instead of buzzing through them at 47 fps when moving 165 px/s.
 constexpr double kOriginalWalkStride = 14.0;
+constexpr double kOriginalWalkMaxFramesPerSecond = 12.0;
 
 // Offsets are logical pixels; the native renderer applies monitor DPI and real-age growth.
 struct Pose {
@@ -181,8 +184,12 @@ public:
         }
         jointCycle_.Advance(std::abs(signedDistanceBodyPx),deltaSeconds,
             Walking(motion),false);
-        if (motion==Motion::Walk)
-            originalWalkPhase_=std::fmod(originalWalkPhase_+std::abs(signedDistanceBodyPx)/kOriginalWalkStride,1.0);
+        if (Walking(motion)) {
+            const double distancePhase=std::abs(signedDistanceBodyPx)/kOriginalWalkStride;
+            const double cadenceLimit=deltaSeconds*kOriginalWalkMaxFramesPerSecond/4;
+            originalWalkPhase_=std::fmod(originalWalkPhase_+std::min(distancePhase,cadenceLimit),1.0);
+            if(originalWalkPhase_>1-1e-12)originalWalkPhase_=0;
+        }
         return true;
     }
 
@@ -261,7 +268,7 @@ inline Pose Evaluate(Motion motion, std::uint64_t elapsed, std::uint64_t ticks, 
         // Sneaking is locomotion. A static crouch (and, for added species,
         // its sitting-art fallback) must never translate along the floor.
         p.frame = static_cast<int>(elapsed / 240 % 4);
-        crossfade(p.frame,(p.frame+1)%4,static_cast<double>(elapsed%240)/240);
+        p.joints={};
         break;
     case Motion::Pounce:
         if (elapsed < 240) {
@@ -286,8 +293,8 @@ inline Pose Evaluate(Motion motion, std::uint64_t elapsed, std::uint64_t ticks, 
         }
         break;
     case Motion::Zoomies:
-        p.frame = static_cast<int>(elapsed / 55 % 4);
-        crossfade(p.frame, (p.frame + 1) % 4, static_cast<double>(elapsed % 55) / 55);
+        p.frame = static_cast<int>(elapsed / 84 % 4);
+        p.joints={};
         p.angle = 0;
         break;
     case Motion::TailChase:
@@ -485,36 +492,15 @@ inline Pose Evaluate(Motion motion, std::uint64_t elapsed, std::uint64_t ticks,
     p.blendFrame = -1;
     p.blend = 0;
     const auto settings=locomotion.Settings(motion);
-    p.frame=1;p.joints={};p.walkingRig=true;p.walkPhase=phase;p.walkStride=settings.stride;
+    p.joints={};p.face={};p.walkPhase=phase;p.walkStride=settings.stride;
     p.walkDuty=settings.duty;p.walkLift=settings.lift;
     p.walkFeet=locomotion.Feet(motion);p.walkFeetValid=true;
-    if (motion==Motion::Walk) {
-        // Preserve the painted anatomy instead of warping one frame's legs.
-        // Present one whole drawing, as in the uploaded v1.0 source. Keep
-        // cadence driven by actual Box2D travel so stopped paws cannot cycle.
-        // Keep today's physical support baseline: no whole-image bob or scale.
-        const double framePhase=locomotion.OriginalWalkPhase()*4;
-        p.frame=static_cast<int>(framePhase);
-        p.originalWalk=true;
-        p.walkingRig=false;
-        p.jointWalk=true;
-        p.jointFeet=locomotion.JointFeet();
-        p.jointPhase=locomotion.JointPhase();
-        p.jointDynamics=cat::walk_dynamics::Evaluate(p.jointPhase,locomotion.Speed(),locomotion.JointMode(),&p.jointFeet);
-        // The rig metadata remains available for species introduced later,
-        // whose atlas does not contain the original four walking drawings.
-    }
-    if(motion==Motion::Zoomies) {
-        p.jointWalk=true;
-        p.jointFeet=locomotion.GallopFeet();
-        p.jointPhase=locomotion.GallopPhase();
-        p.jointDynamics=cat::walk_dynamics::Evaluate(p.jointPhase,locomotion.Speed(),locomotion.JointMode(),&p.jointFeet);
-    }
-    if(motion==Motion::Stalk) {
-        p.jointWalk=true;
-        p.jointFeet=locomotion.JointFeet();p.jointPhase=locomotion.JointPhase();
-        p.jointDynamics=cat::walk_dynamics::Evaluate(p.jointPhase,locomotion.Speed(),locomotion.JointMode(),&p.jointFeet);
-    }
+    // Keep each painted animal intact: no extracted limb strips, body plate,
+    // joint warp or face interpolation. Walk/stalk/run share this same phase,
+    // so an action-name change cannot reset a step. The renderer retains the
+    // inverse-warp fallback only for newer animals without these four poses.
+    p.frame=static_cast<int>(locomotion.OriginalWalkPhase()*4);
+    p.originalWalk=true;p.walkingRig=false;p.jointWalk=false;
     return p;
 }
 
