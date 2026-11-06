@@ -163,6 +163,99 @@ void IndependentCareAndAge() {
     const auto after=second.pet.updatedUtc;c.nowUtc=born-3600;model.Tick(c);CHECK(second.pet.updatedUtc==after);
     CHECK(Valid(second));
 }
+void FishCareKeepsTheExistingMealAndBusyContracts() {
+    using cat::feeding::FoodKind;
+    using cat::nutrition::FeedResult;
+    for(int index=0;index<cat::kCharacterCount;++index) {
+        State state=NewState(born);state.preferences.character=static_cast<cat::Character>(index);
+        state.nutrition.fullness=state.pet.hunger=45;
+        Model model;model.Bind(state);model.Reset(40,1000,700);
+        const auto before=Serialize(state);
+        if(!cat::feeding::CanOfferFish(state.preferences.character)) {
+            CHECK(model.FeedFood(born,100,FoodKind::Fish)==FeedResult::TooSoon);
+            CHECK(Serialize(state)==before && !model.View(100).animation.fishMeal);
+            CHECK(model.Feed(born,100,false)==FeedResult::Accepted);
+            CHECK(!model.View(100).animation.fishMeal && state.pet.feedCount==1);
+            continue;
+        }
+        CHECK(model.FeedFood(born,100,FoodKind::Fish)==FeedResult::Accepted);
+        CHECK(model.Busy() && model.View(100).motion==cat::animation::Motion::Eat);
+        CHECK(model.View(100).animation.fishMeal);
+        CHECK(state.pet.feedCount==1 && state.memory.meals==1);
+        CHECK(state.pet.snackCount==0 && state.memory.treats==0 && state.nutrition.lastTreatUtc==0);
+        CHECK(state.nutrition.lastMealUtc==born && state.nutrition.fullness==80);
+        const auto fed=Serialize(state);
+        CHECK(model.Feed(born+1,1100,true)==FeedResult::TooSoon);
+        CHECK(state.pet.feedCount==1 && state.pet.snackCount==0 && model.View(1100).animation.fishMeal);
+        // Same Eat action kind can be fed again after the shared cooldown:
+        // an ordinary meal must clear the transient fish presentation.
+        CHECK(model.Feed(born+300,200,false)==FeedResult::Accepted);
+        CHECK(!model.View(200).animation.fishMeal && state.pet.feedCount==2 && state.memory.meals==2);
+        CHECK(model.FeedFood(born+600,300,FoodKind::Fish,0)==FeedResult::Full);
+        CHECK(!model.View(300).animation.fishMeal && state.pet.feedCount==2 && state.memory.meals==2);
+        CHECK(Valid(state));
+        State restored;std::string error;
+        CHECK(Parse(fed,restored,error));
+        CHECK(restored.pet.feedCount==1 && restored.memory.meals==1);
+        Model restarted;restarted.Bind(restored);restarted.Reset(40,1000,700);
+        CHECK(!restarted.View(100).animation.fishMeal); // No presentation in schema1.
+    }
+    State state=NewState(born);state.nutrition.fullness=state.pet.hunger=45;
+    Model model;model.Bind(state);model.Reset(40,1000,700);
+    CHECK(model.FeedFood(born,100,FoodKind::Fish)==FeedResult::Accepted);
+    auto c=Frame(100,model.Physical().x+60);
+    CHECK(!model.FoodOffered(c) && !model.Pet(born,200));
+    c.paused=true;Step(model,c,600);CHECK(model.View(c.ticks).animation.fishMeal);
+    c.paused=false;Step(model,c,600);
+    CHECK(model.View(c.ticks).motion!=cat::animation::Motion::Eat);
+    CHECK(!model.View(c.ticks).animation.fishMeal && state.pet.feedCount==1 && state.memory.meals==1);
+}
+void AcceptedFoodRestartsItsClockAfterLongMenuPauses() {
+    using cat::feeding::FoodKind;
+    using cat::nutrition::FeedResult;
+    using cat::sprite_sequence::Clip;
+    for(const auto& kinds:{std::pair{FoodKind::Meal,FoodKind::Fish},std::pair{FoodKind::Treat,FoodKind::Treat}}) {
+        State state=NewState(born);state.preferences.character=cat::Character::Cream;
+        state.nutrition.fullness=state.pet.hunger=45;
+        Model model;model.Bind(state);model.Reset(40,1000,700);
+        CHECK(model.FeedFood(born,100,kinds.first,1)==FeedResult::Accepted);
+        auto c=Frame(100,model.Physical().x+60);c.primaryVisible=false;
+        model.Tick(c);c.ticks=3100;model.Tick(c);
+        CHECK(model.View(c.ticks).animation.spriteElapsedMs==3000);
+        // The real menu freezes the action clock while UTC still advances
+        // nutrition. Five minutes later another serving can be accepted.
+        c.paused=true;c.ticks+=300000;c.nowUtc=born+300;model.Tick(c);
+        CHECK(model.View(c.ticks).animation.spriteElapsedMs==3000);
+        CHECK(model.FeedFood(c.nowUtc,c.ticks,kinds.second,1)==FeedResult::Accepted);
+        const auto fresh=model.View(c.ticks);
+        const bool treat=kinds.second==FoodKind::Treat;
+        CHECK(fresh.motion==(treat?cat::animation::Motion::Treat:cat::animation::Motion::Eat));
+        CHECK(fresh.animation.spriteClip==(treat?Clip::Treat:Clip::Fish));
+        CHECK(fresh.animation.spriteElapsedMs==0 && fresh.animation.spriteFrame==0);
+        CHECK(fresh.animation.fishMeal==!treat);
+        CHECK(state.pet.feedCount==(treat?0u:2u) && state.pet.snackCount==(treat?2u:0u));
+        CHECK(state.memory.meals==state.pet.feedCount && state.memory.treats==state.pet.snackCount);
+        // A rejected repeat is not a new serving or action. Check its clock
+        // and transient variant after77ms, where a reset would be observable.
+        const auto visible=model.View(c.ticks+77);const auto saved=Serialize(state);
+        CHECK(model.FeedFood(c.nowUtc,c.ticks+77,kinds.first,1)==FeedResult::TooSoon);
+        const auto rejected=model.View(c.ticks+77);
+        CHECK(rejected.animation.spriteElapsedMs==visible.animation.spriteElapsedMs);
+        CHECK(rejected.animation.spriteFrame==visible.animation.spriteFrame);
+        CHECK(rejected.animation.fishMeal==visible.animation.fishMeal && Serialize(state)==saved);
+        if(!treat) {
+            c.paused=false;c.ticks+=500;model.Tick(c);
+            c.paused=true;c.ticks+=300000;c.nowUtc=born+600;model.Tick(c);
+            const auto fullBefore=model.View(c.ticks);const auto fullSave=Serialize(state);
+            CHECK(fullBefore.animation.spriteElapsedMs==500 && fullBefore.animation.fishMeal);
+            CHECK(model.FeedFood(c.nowUtc,c.ticks,FoodKind::Meal,0)==FeedResult::Full);
+            const auto refused=model.View(c.ticks);
+            CHECK(refused.animation.spriteElapsedMs==500 && refused.animation.fishMeal);
+            CHECK(refused.animation.spriteFrame==fullBefore.animation.spriteFrame && Serialize(state)==fullSave);
+        }
+        CHECK(Valid(state));
+    }
+}
 void SocialContactAndCompetition() {
     for(const auto kind:{Interaction::Sniff,Interaction::Paw,Interaction::SharedSleep,Interaction::RunTogether,Interaction::FoodCompetition}) {
         State s=NewState(born);s.nutrition.fullness=60;s.pet.hunger=60;
@@ -434,7 +527,7 @@ void HighRefreshGaitFollowsRenderedTravel() {
 }
 }
 int main() {
-    try { SeparateAdoptionAndRestart();IndividualStableTemperaments();StrictBundleParsing();RecoveryAndFaults();IndependentCareAndAge();SocialContactAndCompetition();RealWindowFollowingAndClosure();SpeciesLimitsAndBraking();ManualCareIsNotInterrupted();NaturalTakeoffAndLandingUsePhysicalMotion();SocialGesturesWaitForPlantedFeet();BrakingPreservesTheCompleteMeal();PairedRunningUsesOneSupportAndBodyMultiplier();HighWindowFollowingRespectsTheRealCeiling();
+    try { SeparateAdoptionAndRestart();IndividualStableTemperaments();StrictBundleParsing();RecoveryAndFaults();IndependentCareAndAge();FishCareKeepsTheExistingMealAndBusyContracts();AcceptedFoodRestartsItsClockAfterLongMenuPauses();SocialContactAndCompetition();RealWindowFollowingAndClosure();SpeciesLimitsAndBraking();ManualCareIsNotInterrupted();NaturalTakeoffAndLandingUsePhysicalMotion();SocialGesturesWaitForPlantedFeet();BrakingPreservesTheCompleteMeal();PairedRunningUsesOneSupportAndBodyMultiplier();HighWindowFollowingRespectsTheRealCeiling();
         HighRefreshGaitFollowsRenderedTravel();CanonicalPoseTransitionUsesHostActionAndPause();
         std::cout<<"companion checks passed: "<<checks<<'\n';return 0;
     } catch(const std::exception& e) { std::cerr<<e.what()<<'\n';return 1; }

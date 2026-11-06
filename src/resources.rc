@@ -1,6 +1,7 @@
 #pragma code_page(65001)
 #include <windows.h>
 #include "app_version.h"
+#include "care_sprites.generated.rc"
 101 RCDATA "../assets/cat.png"
 102 RCDATA "../assets/cat-actions.png"
 103 RCDATA "../assets/cat-silver.png"
@@ -12,6 +13,7 @@
 110 RCDATA "../assets/companions-hang.png"
 111 RCDATA "../assets/companions-back.png"
 112 RCDATA "../assets/companions-sleep.png"
+193 RCDATA "../assets/care-sprites/box-prop.png"
 1 RT_MANIFEST "app.manifest"
 
 1 VERSIONINFO

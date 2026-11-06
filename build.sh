@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 DESKCAT_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+python3 "$DESKCAT_ROOT/tools/import_care_sprites.py" --check
 DESKCAT_TOOLCHAIN="${DESKCAT_TOOLCHAIN:-$DESKCAT_ROOT/toolchain/llvm-mingw-20261020-ucrt-ubuntu-22.04-x86_64}"
 DESKCAT_COMPILER="$DESKCAT_TOOLCHAIN/bin/x86_64-w64-mingw32-clang++"
 DESKCAT_C_COMPILER="$DESKCAT_TOOLCHAIN/bin/x86_64-w64-mingw32-clang"

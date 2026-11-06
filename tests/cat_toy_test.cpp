@@ -265,6 +265,20 @@ void AutomaticCompletionAndTeardown() {
     CHECK(automatic.ActiveKind()==Kind::None); // Never delete the other owner's item.
 }
 
+void AuthoredBoxVisitCompletesBeforeSleep() {
+    using namespace cat::toy;
+    Session session;session.Start(Kind::Box);session.boxVisitMs=3350;session.Set(Phase::Interact);
+    for(int step=0;step<13;++step)CHECK(!session.Advance(.25,true,true));
+    CHECK(session.phase==Phase::Interact);
+    CHECK(session.Advance(.10,true,true) && session.phase==Phase::Sleep);
+    session.Start(Kind::Box);session.Set(Phase::Interact);
+    CHECK(session.boxVisitMs==0 && session.PhaseDuration()==Duration(Kind::Box,Phase::Interact));
+    session.boxVisitMs=std::numeric_limits<double>::quiet_NaN();
+    CHECK(session.PhaseDuration()==Duration(Kind::Box,Phase::Interact));
+    session.Start(Kind::Ball);session.boxVisitMs=3350;session.Set(Phase::Interact);
+    CHECK(session.PhaseDuration()==Duration(Kind::Ball,Phase::Interact));
+}
+
 void AutomaticWatchdog() {
     using namespace cat::toy;
     Automatic automatic; AutoInput input; input.eligible=true;
@@ -285,6 +299,7 @@ int main() {
     try {
         ReachableTargets(); ContactAndContinuousRoll(); EdgesRemainReachable(); FrameRateAndPause();
         RealContactGate(); DistinctActivitiesAndInterruptions(); ContainerPathsAndFeather();
+        AuthoredBoxVisitCompletesBeforeSleep();
         AutomaticTimingAndArbitration(); AutomaticCompletionAndTeardown(); AutomaticWatchdog();
         std::cout << "Toy interaction: " << checks << " checks passed\n";
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }

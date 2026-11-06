@@ -124,24 +124,29 @@ struct Session {
     Kind kind = Kind::None;
     Phase phase = Phase::None;
     double elapsedMs = 0, activeMs = 0;
+    double boxVisitMs = 0; // Optional authored visit; zero retains the legacy timing.
     unsigned rounds = 0, revision = 0;
     int entryDirection = 1;
 
     void Start(Kind selected, int direction = 1) {
         kind = selected; entryDirection = direction < 0 ? -1 : 1;
-        rounds = 0; elapsedMs = activeMs = 0;
+        rounds = 0; elapsedMs = activeMs = boxVisitMs = 0;
         phase = selected == Kind::None ? Phase::None : Phase::Discover;
         ++revision;
     }
     void Cancel() { Start(Kind::None); }
     void Set(Phase next) { phase = next; elapsedMs = 0; ++revision; }
+    double PhaseDuration() const {
+        return kind==Kind::Box && phase==Phase::Interact && std::isfinite(boxVisitMs) && boxVisitMs>0 ?
+            std::clamp(boxVisitMs,Duration(kind,phase),10000.0):Duration(kind,phase);
+    }
     bool Advance(double seconds, bool enabled, bool arrived) {
         if (!enabled || kind == Kind::None || phase == Phase::None || !std::isfinite(seconds) ||
                 seconds <= 0 || seconds > .25) return false;
         activeMs += seconds * 1000;
         elapsedMs += seconds * 1000;
         if (Travels(phase) && !arrived) return false;
-        if (!Travels(phase) && elapsedMs + 1e-6 < Duration(kind, phase)) return false;
+        if (!Travels(phase) && elapsedMs + 1e-6 < PhaseDuration()) return false;
         switch (phase) {
         case Phase::Discover: Set(Phase::Approach); break;
         case Phase::Approach: Set(Phase::Inspect); break;

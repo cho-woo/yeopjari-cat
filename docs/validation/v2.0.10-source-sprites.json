@@ -1,0 +1,2511 @@
+{
+  "source_archives": "User-provided ZIP attachments; no executable content was run",
+  "original_rgb_sources": [
+    {
+      "archive": "츄르먹기.zip",
+      "source": "츄르먹기.png",
+      "bytes": 5521932,
+      "sha256": "2622f3c6947285f2b9ecd37c19402ffbf41c2f84c37a4595ce26a002f752b745",
+      "size": [
+        2432,
+        1760
+      ],
+      "mode": "RGB",
+      "alpha_extrema": null,
+      "alpha_histogram_edge": null
+    },
+    {
+      "archive": "츄르먹기.zip",
+      "source": "걷기뛰기.png",
+      "bytes": 4747881,
+      "sha256": "e4f9b1a0eba34dc9e2d8c7e40f74e5f766ff032e804721c7340f4e11f974cb85",
+      "size": [
+        2432,
+        1760
+      ],
+      "mode": "RGB",
+      "alpha_extrema": null,
+      "alpha_histogram_edge": null
+    },
+    {
+      "archive": "사료먹기.zip",
+      "source": "사료먹기.png",
+      "bytes": 4732977,
+      "sha256": "c1e1562e6ced5c95777092ca0d089788d12b671280c4c538d7d6aac738c491d8",
+      "size": [
+        2432,
+        1760
+      ],
+      "mode": "RGB",
+      "alpha_extrema": null,
+      "alpha_histogram_edge": null
+    },
+    {
+      "archive": "사료먹기.zip",
+      "source": "냥냥펀치.png",
+      "bytes": 5356800,
+      "sha256": "bc925ade155b69a86b36844400fc3ba92ded615c53e5ef1a67cbba1f7ef40bc5",
+      "size": [
+        2432,
+        1760
+      ],
+      "mode": "RGB",
+      "alpha_extrema": null,
+      "alpha_histogram_edge": null
+    },
+    {
+      "archive": "사료먹기.zip",
+      "source": "점프.png",
+      "bytes": 4979498,
+      "sha256": "f2f2f40f5654d9e380ac912b89592b34e33a5918e5257cdea815986e83cc4858",
+      "size": [
+        2432,
+        1760
+      ],
+      "mode": "RGB",
+      "alpha_extrema": null,
+      "alpha_histogram_edge": null
+    },
+    {
+      "archive": "생선먹기.zip",
+      "source": "생선먹기.png",
+      "bytes": 6058977,
+      "sha256": "e3c27c7ddb354f7a049cf2ccaeb2c13f09e46d22ae26a49d176d05638dddef30",
+      "size": [
+        2368,
+        1776
+      ],
+      "mode": "RGB",
+      "alpha_extrema": null,
+      "alpha_histogram_edge": null
+    },
+    {
+      "archive": "생선먹기.zip",
+      "source": "박스에숨기.png",
+      "bytes": 6034232,
+      "sha256": "272956b3202d53231ffd6df56924d9555fb7f4d30b294c479262617cc8984c0b",
+      "size": [
+        2816,
+        1584
+      ],
+      "mode": "RGB",
+      "alpha_extrema": null,
+      "alpha_histogram_edge": null
+    },
+    {
+      "archive": "생선먹기.zip",
+      "source": "그루밍.png",
+      "bytes": 5065541,
+      "sha256": "9f64a271109f1b06e792f497b73e625d5aeff93dad72256d27c0e9b2eb5fbc21",
+      "size": [
+        2432,
+        1760
+      ],
+      "mode": "RGB",
+      "alpha_extrema": null,
+      "alpha_histogram_edge": null
+    },
+    {
+      "archive": "생선먹기.zip",
+      "source": "졸려서 잠자기.png",
+      "bytes": 7151354,
+      "sha256": "18af5e196833afa3643db02fa96a0b7cb08f6b8a19b526806f46c4b941b4cc01",
+      "size": [
+        2816,
+        1584
+      ],
+      "mode": "RGB",
+      "alpha_extrema": null,
+      "alpha_histogram_edge": null
+    }
+  ],
+  "processed_method": "imagegen transparent-background edits; resized outputs are not pixel-identical to RGB originals",
+  "processed_assets": [
+    {
+      "clip": "groom",
+      "resource_id": 113,
+      "source_path": "assets/care-sprites/c0-groom.png",
+      "sha256": "e92aaa69f5430afd59a5a580bd7bdfbba044afae1b24472b2df493cb9a6ac494",
+      "size_bytes": 1345187,
+      "dimensions": [
+        1474,
+        1067
+      ],
+      "mode": "RGBA"
+    },
+    {
+      "clip": "sleep",
+      "resource_id": 114,
+      "source_path": "assets/care-sprites/c0-sleep.png",
+      "sha256": "09520f846594936e9aae258efbbf7f661d43b4828bb91fe08a838091c0f52932",
+      "size_bytes": 1192698,
+      "dimensions": [
+        1672,
+        941
+      ],
+      "mode": "RGBA"
+    },
+    {
+      "clip": "box",
+      "resource_id": 115,
+      "source_path": "assets/care-sprites/c0-box.png",
+      "sha256": "42d639d499915432678c7255640c5dfda1e7f4aa53994fc20e17fc7729b6ba93",
+      "size_bytes": 1116860,
+      "dimensions": [
+        1672,
+        941
+      ],
+      "mode": "RGBA"
+    },
+    {
+      "clip": "fish",
+      "resource_id": 116,
+      "source_path": "assets/care-sprites/c0-fish.png",
+      "sha256": "bfd67ac64ecd5a79f64e5787d025554ba735faa782e11120272b0d07d5498370",
+      "size_bytes": 1887978,
+      "dimensions": [
+        1448,
+        1086
+      ],
+      "mode": "RGBA"
+    },
+    {
+      "clip": "punch",
+      "resource_id": 117,
+      "source_path": "assets/care-sprites/c0-punch.png",
+      "sha256": "07cf0bbd762315c387290d9f18942983a3987681e493d4239df820bb14e16b40",
+      "size_bytes": 1692690,
+      "dimensions": [
+        1474,
+        1067
+      ],
+      "mode": "RGBA"
+    },
+    {
+      "clip": "eat",
+      "resource_id": 118,
+      "source_path": "assets/care-sprites/c0-eat.png",
+      "sha256": "5a30308a7903365f0a73622450b2b65618da2f98833791bf9744b3089a6ca333",
+      "size_bytes": 1304996,
+      "dimensions": [
+        1505,
+        1045
+      ],
+      "mode": "RGBA"
+    },
+    {
+      "clip": "jump",
+      "resource_id": 119,
+      "source_path": "assets/care-sprites/c0-jump.png",
+      "sha256": "bfe893c74579f985a2d54bad13655aeeada172278762f05d7bcfcabff32b72c6",
+      "size_bytes": 1111838,
+      "dimensions": [
+        1474,
+        1067
+      ],
+      "mode": "RGBA"
+    },
+    {
+      "clip": "treat",
+      "resource_id": 120,
+      "source_path": "assets/care-sprites/c0-treat.png",
+      "sha256": "c56e276f1b9abffedfe5bec6f878408edcdee33d3e0f55174abad6abf57522d6",
+      "size_bytes": 2019746,
+      "dimensions": [
+        1474,
+        1067
+      ],
+      "mode": "RGBA"
+    },
+    {
+      "clip": "box-prop",
+      "resource_id": 193,
+      "source_path": "assets/care-sprites/box-prop.png",
+      "sha256": "63341a74fd39c414480add605370e7ee3f57063ca74da8ec7d56e02c70931ac1",
+      "size_bytes": 692179,
+      "dimensions": [
+        1659,
+        948
+      ],
+      "mode": "RGBA"
+    }
+  ],
+  "processing_records": {
+    "groom.provenance.json": {
+      "clip": "groom",
+      "original_source": "build/inputs/user-care/그루밍.png",
+      "original_sha256": "9f64a271109f1b06e792f497b73e625d5aeff93dad72256d27c0e9b2eb5fbc21",
+      "original_size": [
+        2432,
+        1760
+      ],
+      "processed_file": "build/processed-care/groom.png",
+      "processed_sha256": "e92aaa69f5430afd59a5a580bd7bdfbba044afae1b24472b2df493cb9a6ac494",
+      "generated_source": "/workspace/generated_images/exec-ed4d8865-9e58-4755-8ed0-bf79a739c10d.png",
+      "processed_size": [
+        1474,
+        1067
+      ],
+      "mode": "RGBA",
+      "alpha_range": [
+        0,
+        255
+      ],
+      "columns": 4,
+      "rows": 4,
+      "major_silhouette_count": 16,
+      "edge_pixels_alpha_gt16": 0,
+      "processing": "image_gen background-removal edit; transparent_background=true",
+      "notes": [
+        "All original frame poses and row-major ordering visually retained.",
+        "Generated cutout is lower resolution; byte/pixel identity with RGB source is not claimed.",
+        "Use explicit frame rectangles and registered support anchors; do not assume full-canvas equal grid.",
+        "Initial two cutouts clipped bottom paws and were rejected; accepted third edit uniformly fits artwork with transparent margin."
+      ],
+      "silhouettes": [
+        {
+          "pixels_gt32": 36191,
+          "rect": [
+            237,
+            34,
+            214,
+            244
+          ]
+        },
+        {
+          "pixels_gt32": 34823,
+          "rect": [
+            237,
+            286,
+            213,
+            246
+          ]
+        },
+        {
+          "pixels_gt32": 36427,
+          "rect": [
+            237,
+            541,
+            217,
+            244
+          ]
+        },
+        {
+          "pixels_gt32": 36735,
+          "rect": [
+            241,
+            787,
+            211,
+            244
+          ]
+        },
+        {
+          "pixels_gt32": 34764,
+          "rect": [
+            503,
+            39,
+            214,
+            239
+          ]
+        },
+        {
+          "pixels_gt32": 33672,
+          "rect": [
+            503,
+            286,
+            207,
+            245
+          ]
+        },
+        {
+          "pixels_gt32": 36318,
+          "rect": [
+            501,
+            537,
+            215,
+            245
+          ]
+        },
+        {
+          "pixels_gt32": 36784,
+          "rect": [
+            504,
+            787,
+            210,
+            245
+          ]
+        },
+        {
+          "pixels_gt32": 34780,
+          "rect": [
+            768,
+            33,
+            207,
+            245
+          ]
+        },
+        {
+          "pixels_gt32": 39336,
+          "rect": [
+            760,
+            533,
+            231,
+            250
+          ]
+        },
+        {
+          "pixels_gt32": 34350,
+          "rect": [
+            768,
+            282,
+            202,
+            250
+          ]
+        },
+        {
+          "pixels_gt32": 38013,
+          "rect": [
+            766,
+            788,
+            218,
+            243
+          ]
+        },
+        {
+          "pixels_gt32": 34671,
+          "rect": [
+            1033,
+            33,
+            209,
+            245
+          ]
+        },
+        {
+          "pixels_gt32": 38431,
+          "rect": [
+            1026,
+            537,
+            234,
+            246
+          ]
+        },
+        {
+          "pixels_gt32": 35858,
+          "rect": [
+            1034,
+            286,
+            214,
+            246
+          ]
+        },
+        {
+          "pixels_gt32": 34350,
+          "rect": [
+            1051,
+            789,
+            199,
+            242
+          ]
+        }
+      ]
+    },
+    "fish.provenance.json": {
+      "clip": "fish",
+      "original_source": "build/inputs/user-care/생선먹기.png",
+      "original_sha256": "e3c27c7ddb354f7a049cf2ccaeb2c13f09e46d22ae26a49d176d05638dddef30",
+      "original_size": [
+        2368,
+        1776
+      ],
+      "processed_file": "build/processed-care/fish.png",
+      "processed_sha256": "bfd67ac64ecd5a79f64e5787d025554ba735faa782e11120272b0d07d5498370",
+      "generated_source": "/workspace/generated_images/exec-f9b0c998-ddc7-4a8f-b3a9-f125fd96c3db.png",
+      "processed_size": [
+        1448,
+        1086
+      ],
+      "mode": "RGBA",
+      "alpha_range": [
+        0,
+        255
+      ],
+      "columns": 4,
+      "rows": 2,
+      "major_silhouette_count": 8,
+      "edge_pixels_alpha_gt16": 0,
+      "processing": "image_gen background-removal edit plus image_gen local fish floor correction; transparent_background=true",
+      "notes": [
+        "All original frame poses and row-major ordering visually retained.",
+        "Generated cutout is lower resolution; byte/pixel identity with RGB source is not claimed.",
+        "Use explicit frame rectangles and registered support anchors; do not assume full-canvas equal grid.",
+        "All eight fish-eating stages retain fish progression; no baked checkerboard remains visible.",
+        "Floor revision removes fish-fin penetration without changing host test tolerance or clipping fins."
+      ],
+      "silhouettes": [
+        {
+          "rect": [
+            25,
+            89,
+            323,
+            409
+          ],
+          "pixels_gt16": 100560
+        },
+        {
+          "rect": [
+            392,
+            142,
+            329,
+            356
+          ],
+          "pixels_gt16": 92616
+        },
+        {
+          "rect": [
+            763,
+            96,
+            314,
+            402
+          ],
+          "pixels_gt16": 99035
+        },
+        {
+          "rect": [
+            1102,
+            95,
+            312,
+            404
+          ],
+          "pixels_gt16": 99875
+        },
+        {
+          "rect": [
+            32,
+            635,
+            315,
+            405
+          ],
+          "pixels_gt16": 100462
+        },
+        {
+          "rect": [
+            389,
+            633,
+            313,
+            407
+          ],
+          "pixels_gt16": 99479
+        },
+        {
+          "rect": [
+            743,
+            633,
+            317,
+            407
+          ],
+          "pixels_gt16": 99842
+        },
+        {
+          "rect": [
+            1091,
+            631,
+            326,
+            410
+          ],
+          "pixels_gt16": 101145
+        }
+      ],
+      "previous_cutout": {
+        "processed_sha256": "856ebf3076425066615ecf0c814ccc3afba8be71ccb976f362219050b38afc65",
+        "generated_source": "/workspace/generated_images/exec-14988324-b4a7-4b05-a195-fc93066f8e1a.png",
+        "processed_size": [
+          1448,
+          1086
+        ],
+        "processing": "image_gen background-removal edit; transparent_background=true",
+        "silhouettes": [
+          {
+            "pixels_gt32": 102178,
+            "rect": [
+              25,
+              88,
+              324,
+              424
+            ]
+          },
+          {
+            "pixels_gt32": 100622,
+            "rect": [
+              32,
+              635,
+              316,
+              405
+            ]
+          },
+          {
+            "pixels_gt32": 93369,
+            "rect": [
+              392,
+              141,
+              329,
+              373
+            ]
+          },
+          {
+            "pixels_gt32": 99551,
+            "rect": [
+              389,
+              633,
+              313,
+              407
+            ]
+          },
+          {
+            "pixels_gt32": 99773,
+            "rect": [
+              743,
+              632,
+              317,
+              407
+            ]
+          },
+          {
+            "pixels_gt32": 98815,
+            "rect": [
+              762,
+              96,
+              314,
+              402
+            ]
+          },
+          {
+            "pixels_gt32": 101262,
+            "rect": [
+              1091,
+              631,
+              327,
+              410
+            ]
+          },
+          {
+            "pixels_gt32": 99800,
+            "rect": [
+              1101,
+              95,
+              313,
+              404
+            ]
+          }
+        ]
+      },
+      "floor_revision": {
+        "previous_png": "build/processed-care/fish.before-floor.png",
+        "previous_sha256": "856ebf3076425066615ecf0c814ccc3afba8be71ccb976f362219050b38afc65",
+        "generated_source": "/workspace/generated_images/exec-f9b0c998-ddc7-4a8f-b3a9-f125fd96c3db.png",
+        "requested_change": "Raise only the ground fish props in frames0/1 by16px; preserve eight cat positions and all other poses.",
+        "observed_result": "Both full fish props now sit above the cat paw baseline; first two entire silhouettes end atsource y498. All8poses preserved; imagegen output is not claimed pixel-identical outside the edit.",
+        "original_canvas_preserved": true,
+        "first_two_support_bottoms": [
+          498,
+          498
+        ]
+      }
+    },
+    "punch.provenance.json": {
+      "asset": "punch",
+      "source_file": "build/inputs/user-care/냥냥펀치.png",
+      "source_sha256": "bc925ade155b69a86b36844400fc3ba92ded615c53e5ef1a67cbba1f7ef40bc5",
+      "source_size": [
+        2432,
+        1760
+      ],
+      "source_mode": "RGB with baked gray checkerboard",
+      "processing": "image_gen.imagegen referenced-image edit with transparent_background=true; copied generated PNG unchanged",
+      "generated_original_path": "/workspace/generated_images/exec-5bb0a1bd-cb6a-433b-b5e2-5e05090f4376.png",
+      "output_file": "build/processed-care/punch.png",
+      "output_sha256": "07cf0bbd762315c387290d9f18942983a3987681e493d4239df820bb14e16b40",
+      "output_size": [
+        1474,
+        1067
+      ],
+      "output_mode": "RGBA",
+      "columns": 4,
+      "rows": 3,
+      "frames": 12,
+      "alpha_extrema": [
+        0,
+        255
+      ],
+      "fully_transparent_pixels": 739117,
+      "near_transparent_1_to_32_pixels": 60509,
+      "frames_audit": [
+        {
+          "frame": 0,
+          "cell_xyxy": [
+            0,
+            0,
+            368,
+            356
+          ],
+          "material_alpha_gt32_bbox_cell_xyxy": [
+            38,
+            17,
+            293,
+            349
+          ],
+          "margins_ltrb": [
+            38,
+            17,
+            75,
+            7
+          ],
+          "material_cut_by_cell": false
+        },
+        {
+          "frame": 1,
+          "cell_xyxy": [
+            368,
+            0,
+            737,
+            356
+          ],
+          "material_alpha_gt32_bbox_cell_xyxy": [
+            41,
+            18,
+            297,
+            350
+          ],
+          "margins_ltrb": [
+            41,
+            18,
+            72,
+            6
+          ],
+          "material_cut_by_cell": false
+        },
+        {
+          "frame": 2,
+          "cell_xyxy": [
+            737,
+            0,
+            1106,
+            356
+          ],
+          "material_alpha_gt32_bbox_cell_xyxy": [
+            41,
+            19,
+            298,
+            350
+          ],
+          "margins_ltrb": [
+            41,
+            19,
+            71,
+            6
+          ],
+          "material_cut_by_cell": false
+        },
+        {
+          "frame": 3,
+          "cell_xyxy": [
+            1106,
+            0,
+            1474,
+            356
+          ],
+          "material_alpha_gt32_bbox_cell_xyxy": [
+            41,
+            17,
+            300,
+            350
+          ],
+          "margins_ltrb": [
+            41,
+            17,
+            68,
+            6
+          ],
+          "material_cut_by_cell": false
+        },
+        {
+          "frame": 4,
+          "cell_xyxy": [
+            0,
+            356,
+            368,
+            711
+          ],
+          "material_alpha_gt32_bbox_cell_xyxy": [
+            38,
+            15,
+            329,
+            347
+          ],
+          "margins_ltrb": [
+            38,
+            15,
+            39,
+            8
+          ],
+          "material_cut_by_cell": false
+        },
+        {
+          "frame": 5,
+          "cell_xyxy": [
+            368,
+            356,
+            737,
+            711
+          ],
+          "material_alpha_gt32_bbox_cell_xyxy": [
+            39,
+            15,
+            322,
+            345
+          ],
+          "margins_ltrb": [
+            39,
+            15,
+            47,
+            10
+          ],
+          "material_cut_by_cell": false
+        },
+        {
+          "frame": 6,
+          "cell_xyxy": [
+            737,
+            356,
+            1106,
+            711
+          ],
+          "material_alpha_gt32_bbox_cell_xyxy": [
+            39,
+            15,
+            309,
+            345
+          ],
+          "margins_ltrb": [
+            39,
+            15,
+            60,
+            10
+          ],
+          "material_cut_by_cell": false
+        },
+        {
+          "frame": 7,
+          "cell_xyxy": [
+            1106,
+            356,
+            1474,
+            711
+          ],
+          "material_alpha_gt32_bbox_cell_xyxy": [
+            38,
+            15,
+            304,
+            346
+          ],
+          "margins_ltrb": [
+            38,
+            15,
+            64,
+            9
+          ],
+          "material_cut_by_cell": false
+        },
+        {
+          "frame": 8,
+          "cell_xyxy": [
+            0,
+            711,
+            368,
+            1067
+          ],
+          "material_alpha_gt32_bbox_cell_xyxy": [
+            37,
+            24,
+            308,
+            351
+          ],
+          "margins_ltrb": [
+            37,
+            24,
+            60,
+            5
+          ],
+          "material_cut_by_cell": false
+        },
+        {
+          "frame": 9,
+          "cell_xyxy": [
+            368,
+            711,
+            737,
+            1067
+          ],
+          "material_alpha_gt32_bbox_cell_xyxy": [
+            38,
+            26,
+            310,
+            351
+          ],
+          "margins_ltrb": [
+            38,
+            26,
+            59,
+            5
+          ],
+          "material_cut_by_cell": false
+        },
+        {
+          "frame": 10,
+          "cell_xyxy": [
+            737,
+            711,
+            1106,
+            1067
+          ],
+          "material_alpha_gt32_bbox_cell_xyxy": [
+            39,
+            26,
+            310,
+            352
+          ],
+          "margins_ltrb": [
+            39,
+            26,
+            59,
+            4
+          ],
+          "material_cut_by_cell": false
+        },
+        {
+          "frame": 11,
+          "cell_xyxy": [
+            1106,
+            711,
+            1474,
+            1067
+          ],
+          "material_alpha_gt32_bbox_cell_xyxy": [
+            39,
+            26,
+            310,
+            351
+          ],
+          "margins_ltrb": [
+            39,
+            26,
+            58,
+            5
+          ],
+          "material_cut_by_cell": false
+        }
+      ],
+      "limitations": [
+        "Generative image editing produces a downscaled atlas and does not preserve original foreground pixels bit for bit.",
+        "Grid and all frames preserved, output must be packed using actual recorded dimensions.",
+        "Near-transparent antialias fringe remains; material border/crop audit uses alpha>32."
+      ],
+      "requested_edit": "Original twelve-frame sheet shows raised-paw waving rather than a forward punch. Corrected frame2/3 windup,frame4 forward swat,frame5 cross-body alternating second swat,frame6/7 recovery,frames8..11 seated finish; preserve character/feet anchors.",
+      "motion_changed_intentionally": true,
+      "additional_edit": "A second imagegen pass corrected only intended frame5 alternating arm origin; generated intermediate exec-05a509dd-bfb2-4172-a2c3-36a224fb2d6d.png retained."
+    },
+    "jump.provenance.json": {
+      "asset": "jump",
+      "source_file": "build/inputs/user-care/점프.png",
+      "source_sha256": "f2f2f40f5654d9e380ac912b89592b34e33a5918e5257cdea815986e83cc4858",
+      "source_size": [
+        2432,
+        1760
+      ],
+      "source_mode": "RGB with baked gray checkerboard",
+      "processing": "image_gen.imagegen referenced-image edit with transparent_background=true; copied generated PNG unchanged",
+      "generated_original_path": "/workspace/generated_images/exec-4440032c-2d00-458d-838e-d56c16cd7a39.png",
+      "output_file": "build/processed-care/jump.png",
+      "output_sha256": "bfe893c74579f985a2d54bad13655aeeada172278762f05d7bcfcabff32b72c6",
+      "output_size": [
+        1474,
+        1067
+      ],
+      "output_mode": "RGBA",
+      "columns": 4,
+      "rows": 4,
+      "frames": 16,
+      "alpha_extrema": [
+        0,
+        255
+      ],
+      "fully_transparent_pixels": 1100364,
+      "near_transparent_1_to_32_pixels": 92963,
+      "frames_audit": [
+        {
+          "frame": 0,
+          "cell_xyxy": [
+            0,
+            0,
+            368,
+            267
+          ],
+          "material_alpha_gt32_bbox_cell_xyxy": [
+            59,
+            82,
+            295,
+            225
+          ],
+          "margins_ltrb": [
+            59,
+            82,
+            73,
+            42
+          ],
+          "material_cut_by_cell": false
+        },
+        {
+          "frame": 1,
+          "cell_xyxy": [
+            368,
+            0,
+            737,
+            267
+          ],
+          "material_alpha_gt32_bbox_cell_xyxy": [
+            51,
+            76,
+            288,
+            225
+          ],
+          "margins_ltrb": [
+            51,
+            76,
+            81,
+            42
+          ],
+          "material_cut_by_cell": false
+        },
+        {
+          "frame": 2,
+          "cell_xyxy": [
+            737,
+            0,
+            1106,
+            267
+          ],
+          "material_alpha_gt32_bbox_cell_xyxy": [
+            48,
+            61,
+            295,
+            224
+          ],
+          "margins_ltrb": [
+            48,
+            61,
+            74,
+            43
+          ],
+          "material_cut_by_cell": false
+        },
+        {
+          "frame": 3,
+          "cell_xyxy": [
+            1106,
+            0,
+            1474,
+            267
+          ],
+          "material_alpha_gt32_bbox_cell_xyxy": [
+            40,
+            60,
+            292,
+            223
+          ],
+          "margins_ltrb": [
+            40,
+            60,
+            76,
+            44
+          ],
+          "material_cut_by_cell": false
+        },
+        {
+          "frame": 4,
+          "cell_xyxy": [
+            0,
+            267,
+            368,
+            534
+          ],
+          "material_alpha_gt32_bbox_cell_xyxy": [
+            73,
+            55,
+            305,
+            238
+          ],
+          "margins_ltrb": [
+            73,
+            55,
+            63,
+            29
+          ],
+          "material_cut_by_cell": false
+        },
+        {
+          "frame": 5,
+          "cell_xyxy": [
+            368,
+            267,
+            737,
+            534
+          ],
+          "material_alpha_gt32_bbox_cell_xyxy": [
+            67,
+            23,
+            297,
+            235
+          ],
+          "margins_ltrb": [
+            67,
+            23,
+            72,
+            32
+          ],
+          "material_cut_by_cell": false
+        },
+        {
+          "frame": 6,
+          "cell_xyxy": [
+            737,
+            267,
+            1106,
+            534
+          ],
+          "material_alpha_gt32_bbox_cell_xyxy": [
+            61,
+            11,
+            291,
+            232
+          ],
+          "margins_ltrb": [
+            61,
+            11,
+            78,
+            35
+          ],
+          "material_cut_by_cell": false
+        },
+        {
+          "frame": 7,
+          "cell_xyxy": [
+            1106,
+            267,
+            1474,
+            534
+          ],
+          "material_alpha_gt32_bbox_cell_xyxy": [
+            48,
+            31,
+            286,
+            234
+          ],
+          "margins_ltrb": [
+            48,
+            31,
+            82,
+            33
+          ],
+          "material_cut_by_cell": false
+        },
+        {
+          "frame": 8,
+          "cell_xyxy": [
+            0,
+            534,
+            368,
+            800
+          ],
+          "material_alpha_gt32_bbox_cell_xyxy": [
+            71,
+            60,
+            298,
+            251
+          ],
+          "margins_ltrb": [
+            71,
+            60,
+            70,
+            15
+          ],
+          "material_cut_by_cell": false
+        },
+        {
+          "frame": 9,
+          "cell_xyxy": [
+            368,
+            534,
+            737,
+            800
+          ],
+          "material_alpha_gt32_bbox_cell_xyxy": [
+            62,
+            4,
+            301,
+            240
+          ],
+          "margins_ltrb": [
+            62,
+            4,
+            68,
+            26
+          ],
+          "material_cut_by_cell": false
+        },
+        {
+          "frame": 10,
+          "cell_xyxy": [
+            737,
+            534,
+            1106,
+            800
+          ],
+          "material_alpha_gt32_bbox_cell_xyxy": [
+            69,
+            18,
+            292,
+            209
+          ],
+          "margins_ltrb": [
+            69,
+            18,
+            77,
+            57
+          ],
+          "material_cut_by_cell": false
+        },
+        {
+          "frame": 11,
+          "cell_xyxy": [
+            1106,
+            534,
+            1474,
+            800
+          ],
+          "material_alpha_gt32_bbox_cell_xyxy": [
+            61,
+            89,
+            282,
+            252
+          ],
+          "margins_ltrb": [
+            61,
+            89,
+            86,
+            14
+          ],
+          "material_cut_by_cell": false
+        },
+        {
+          "frame": 12,
+          "cell_xyxy": [
+            0,
+            800,
+            368,
+            1067
+          ],
+          "material_alpha_gt32_bbox_cell_xyxy": [
+            82,
+            88,
+            282,
+            254
+          ],
+          "margins_ltrb": [
+            82,
+            88,
+            86,
+            13
+          ],
+          "material_cut_by_cell": false
+        },
+        {
+          "frame": 13,
+          "cell_xyxy": [
+            368,
+            800,
+            737,
+            1067
+          ],
+          "material_alpha_gt32_bbox_cell_xyxy": [
+            85,
+            80,
+            280,
+            254
+          ],
+          "margins_ltrb": [
+            85,
+            80,
+            89,
+            13
+          ],
+          "material_cut_by_cell": false
+        },
+        {
+          "frame": 14,
+          "cell_xyxy": [
+            737,
+            800,
+            1106,
+            1067
+          ],
+          "material_alpha_gt32_bbox_cell_xyxy": [
+            77,
+            77,
+            270,
+            254
+          ],
+          "margins_ltrb": [
+            77,
+            77,
+            99,
+            13
+          ],
+          "material_cut_by_cell": false
+        },
+        {
+          "frame": 15,
+          "cell_xyxy": [
+            1106,
+            800,
+            1474,
+            1067
+          ],
+          "material_alpha_gt32_bbox_cell_xyxy": [
+            87,
+            60,
+            261,
+            252
+          ],
+          "margins_ltrb": [
+            87,
+            60,
+            107,
+            15
+          ],
+          "material_cut_by_cell": false
+        }
+      ],
+      "limitations": [
+        "Generative image editing produces a downscaled atlas and does not preserve original foreground pixels bit for bit.",
+        "Grid and all frames preserved, output must be packed using actual recorded dimensions.",
+        "Near-transparent antialias fringe remains; material border/crop audit uses alpha>32."
+      ],
+      "requested_edit": "Remove checkerboard only; preserve all16 supplied crouch/launch/air/landing/recovery poses and positions.",
+      "motion_changed_intentionally": false
+    },
+    "treat.provenance.json": {
+      "tool": "image_gen.imagegen",
+      "source": "build/inputs/user-care/츄르먹기.png",
+      "generated": "/workspace/generated_images/exec-fc87d248-35fe-4e96-96c4-4490b691b93c.png",
+      "output": "build/processed-care/treat.png",
+      "grid": {
+        "columns": 6,
+        "rows": 4,
+        "count": 24
+      },
+      "prompt": "Perform precise background removal ONLY on this existing 6-column by 4-row animation sprite sheet. Preserve ALL 24 complete cat/treat poses in row-major order and exactly the same grid layout, positions, aspect ratio and expressions. Preserve the kitten's cute cream-orange fur, face, ears, tail and paws. Preserve every treat package/tube, every visible human hand and all fingers in the source frames, including any package text already present. Remove only the near-black uniform background and replace it with genuine transparent alpha. Do not remove any foreground hand or tube as background. Do not redraw or redesign, restyle, add new poses, omit or duplicate frames, rescale cats individually, crop ears, paws or hands, or rearrange anything. Keep the source sheet landscape aspect ratio 2432:1760; preferred output 2432x1760. Do not add text, captions, borders, panel lines, shadows, or checkerboard. Keep foreground fine fur outline and proportions unchanged. Transparent PNG.",
+      "notes": [
+        "Output is 1474x1067 RGBA. All 24 source poses retained visually, including hands/tubes where present in source. No black panels or missing paws observed.",
+        "Cells require fractional image division; do not use 1474/6 integer-width rectangles for every column or drop final columns.",
+        "This is background removal via generative editing; original RGB source remains unchanged."
+      ],
+      "source_sha256": "2622f3c6947285f2b9ecd37c19402ffbf41c2f84c37a4595ce26a002f752b745",
+      "output_sha256": "c56e276f1b9abffedfe5bec6f878408edcdee33d3e0f55174abad6abf57522d6",
+      "size": [
+        1474,
+        1067
+      ],
+      "mode": "RGBA",
+      "alpha_range": [
+        0,
+        255
+      ],
+      "frames": [
+        {
+          "rect": [
+            0,
+            0,
+            245,
+            266
+          ],
+          "alpha_range": [
+            0,
+            255
+          ],
+          "alpha_bbox": [
+            0,
+            8,
+            245,
+            246
+          ]
+        },
+        {
+          "rect": [
+            245,
+            0,
+            246,
+            266
+          ],
+          "alpha_range": [
+            0,
+            255
+          ],
+          "alpha_bbox": [
+            0,
+            8,
+            220,
+            245
+          ]
+        },
+        {
+          "rect": [
+            491,
+            0,
+            246,
+            266
+          ],
+          "alpha_range": [
+            0,
+            255
+          ],
+          "alpha_bbox": [
+            7,
+            8,
+            246,
+            246
+          ]
+        },
+        {
+          "rect": [
+            737,
+            0,
+            245,
+            266
+          ],
+          "alpha_range": [
+            0,
+            255
+          ],
+          "alpha_bbox": [
+            1,
+            0,
+            230,
+            247
+          ]
+        },
+        {
+          "rect": [
+            982,
+            0,
+            246,
+            266
+          ],
+          "alpha_range": [
+            0,
+            255
+          ],
+          "alpha_bbox": [
+            2,
+            0,
+            246,
+            256
+          ]
+        },
+        {
+          "rect": [
+            1228,
+            0,
+            246,
+            266
+          ],
+          "alpha_range": [
+            0,
+            255
+          ],
+          "alpha_bbox": [
+            0,
+            0,
+            246,
+            258
+          ]
+        },
+        {
+          "rect": [
+            0,
+            266,
+            245,
+            267
+          ],
+          "alpha_range": [
+            0,
+            255
+          ],
+          "alpha_bbox": [
+            0,
+            9,
+            245,
+            253
+          ]
+        },
+        {
+          "rect": [
+            245,
+            266,
+            246,
+            267
+          ],
+          "alpha_range": [
+            0,
+            255
+          ],
+          "alpha_bbox": [
+            0,
+            8,
+            246,
+            255
+          ]
+        },
+        {
+          "rect": [
+            491,
+            266,
+            246,
+            267
+          ],
+          "alpha_range": [
+            0,
+            255
+          ],
+          "alpha_bbox": [
+            0,
+            7,
+            246,
+            255
+          ]
+        },
+        {
+          "rect": [
+            737,
+            266,
+            245,
+            267
+          ],
+          "alpha_range": [
+            0,
+            255
+          ],
+          "alpha_bbox": [
+            0,
+            7,
+            245,
+            267
+          ]
+        },
+        {
+          "rect": [
+            982,
+            266,
+            246,
+            267
+          ],
+          "alpha_range": [
+            0,
+            255
+          ],
+          "alpha_bbox": [
+            0,
+            4,
+            246,
+            254
+          ]
+        },
+        {
+          "rect": [
+            1228,
+            266,
+            246,
+            267
+          ],
+          "alpha_range": [
+            0,
+            255
+          ],
+          "alpha_bbox": [
+            0,
+            6,
+            246,
+            253
+          ]
+        },
+        {
+          "rect": [
+            0,
+            533,
+            245,
+            267
+          ],
+          "alpha_range": [
+            0,
+            255
+          ],
+          "alpha_bbox": [
+            0,
+            8,
+            245,
+            260
+          ]
+        },
+        {
+          "rect": [
+            245,
+            533,
+            246,
+            267
+          ],
+          "alpha_range": [
+            0,
+            255
+          ],
+          "alpha_bbox": [
+            0,
+            9,
+            246,
+            259
+          ]
+        },
+        {
+          "rect": [
+            491,
+            533,
+            246,
+            267
+          ],
+          "alpha_range": [
+            0,
+            255
+          ],
+          "alpha_bbox": [
+            0,
+            3,
+            246,
+            261
+          ]
+        },
+        {
+          "rect": [
+            737,
+            533,
+            245,
+            267
+          ],
+          "alpha_range": [
+            0,
+            255
+          ],
+          "alpha_bbox": [
+            0,
+            0,
+            244,
+            259
+          ]
+        },
+        {
+          "rect": [
+            982,
+            533,
+            246,
+            267
+          ],
+          "alpha_range": [
+            0,
+            255
+          ],
+          "alpha_bbox": [
+            10,
+            6,
+            246,
+            259
+          ]
+        },
+        {
+          "rect": [
+            1228,
+            533,
+            246,
+            267
+          ],
+          "alpha_range": [
+            0,
+            255
+          ],
+          "alpha_bbox": [
+            1,
+            3,
+            228,
+            259
+          ]
+        },
+        {
+          "rect": [
+            0,
+            800,
+            245,
+            267
+          ],
+          "alpha_range": [
+            0,
+            255
+          ],
+          "alpha_bbox": [
+            0,
+            18,
+            216,
+            267
+          ]
+        },
+        {
+          "rect": [
+            245,
+            800,
+            246,
+            267
+          ],
+          "alpha_range": [
+            0,
+            255
+          ],
+          "alpha_bbox": [
+            4,
+            9,
+            238,
+            267
+          ]
+        },
+        {
+          "rect": [
+            491,
+            800,
+            246,
+            267
+          ],
+          "alpha_range": [
+            0,
+            255
+          ],
+          "alpha_bbox": [
+            3,
+            18,
+            240,
+            267
+          ]
+        },
+        {
+          "rect": [
+            737,
+            800,
+            245,
+            267
+          ],
+          "alpha_range": [
+            0,
+            255
+          ],
+          "alpha_bbox": [
+            5,
+            11,
+            230,
+            267
+          ]
+        },
+        {
+          "rect": [
+            982,
+            800,
+            246,
+            267
+          ],
+          "alpha_range": [
+            0,
+            255
+          ],
+          "alpha_bbox": [
+            12,
+            20,
+            234,
+            267
+          ]
+        },
+        {
+          "rect": [
+            1228,
+            800,
+            246,
+            267
+          ],
+          "alpha_range": [
+            0,
+            255
+          ],
+          "alpha_bbox": [
+            1,
+            20,
+            232,
+            267
+          ]
+        }
+      ]
+    },
+    "eat.provenance.json": {
+      "tool": "image_gen.imagegen",
+      "source": "build/inputs/user-care/사료먹기.png",
+      "generated": "/workspace/generated_images/exec-7388a639-81ab-4a2c-9d25-718e477accca.png",
+      "output": "build/processed-care/eat.png",
+      "grid": {
+        "columns": 3,
+        "rows": 4,
+        "count": 12
+      },
+      "prompt": "Perform precise background removal ONLY on the provided existing sprite sheet. Keep the entire 3-column by 4-row layout and all 12 complete cat eating animation frames in their exact positions, proportions and poses. Preserve every foreground pixel's appearance as closely as possible: the cream orange kitten face, ears, fur, paws, tail, all food bowls, all kibble crumbs. Remove only the uniform dark near-black background and replace it with genuine transparent alpha. Do not add a visible checkerboard. Do not redraw, redesign, restyle, rescale, reposition, normalize individual cats, change expressions, duplicate, or omit any frame. Preserve foreground outlines, fine fur and all props. Preserve the source landscape aspect ratio 2432:1760 and source overall layout; preferred output 2432x1760. No text, labels, captions, borders, panels, or shadows added. Transparent background PNG.",
+      "notes": [
+        "Output is 1475x1067 RGBA. All 12 source poses and bowls preserved visually; no black panels or missing limbs observed. Grid cells require fractional source division because width/height are not divisible by 3/4.",
+        "This is background removal via generative editing; original RGB source remains unchanged."
+      ],
+      "source_sha256": "c1e1562e6ced5c95777092ca0d089788d12b671280c4c538d7d6aac738c491d8",
+      "output_sha256": "3289edb1dc3aa752d76b80b31e8b960866ae8962576d370003aff1b389d5db35",
+      "size": [
+        1475,
+        1067
+      ],
+      "mode": "RGBA",
+      "alpha_range": [
+        0,
+        255
+      ],
+      "frames": [
+        {
+          "rect": [
+            0,
+            0,
+            491,
+            266
+          ],
+          "alpha_range": [
+            0,
+            255
+          ],
+          "alpha_bbox": [
+            41,
+            19,
+            491,
+            266
+          ]
+        },
+        {
+          "rect": [
+            491,
+            0,
+            492,
+            266
+          ],
+          "alpha_range": [
+            0,
+            255
+          ],
+          "alpha_bbox": [
+            0,
+            11,
+            492,
+            266
+          ]
+        },
+        {
+          "rect": [
+            983,
+            0,
+            492,
+            266
+          ],
+          "alpha_range": [
+            0,
+            255
+          ],
+          "alpha_bbox": [
+            0,
+            9,
+            430,
+            266
+          ]
+        },
+        {
+          "rect": [
+            0,
+            266,
+            491,
+            267
+          ],
+          "alpha_range": [
+            0,
+            255
+          ],
+          "alpha_bbox": [
+            45,
+            0,
+            491,
+            267
+          ]
+        },
+        {
+          "rect": [
+            491,
+            266,
+            492,
+            267
+          ],
+          "alpha_range": [
+            0,
+            255
+          ],
+          "alpha_bbox": [
+            0,
+            0,
+            492,
+            267
+          ]
+        },
+        {
+          "rect": [
+            983,
+            266,
+            492,
+            267
+          ],
+          "alpha_range": [
+            0,
+            255
+          ],
+          "alpha_bbox": [
+            0,
+            0,
+            418,
+            267
+          ]
+        },
+        {
+          "rect": [
+            0,
+            533,
+            491,
+            267
+          ],
+          "alpha_range": [
+            0,
+            255
+          ],
+          "alpha_bbox": [
+            31,
+            0,
+            491,
+            267
+          ]
+        },
+        {
+          "rect": [
+            491,
+            533,
+            492,
+            267
+          ],
+          "alpha_range": [
+            0,
+            255
+          ],
+          "alpha_bbox": [
+            0,
+            0,
+            492,
+            267
+          ]
+        },
+        {
+          "rect": [
+            983,
+            533,
+            492,
+            267
+          ],
+          "alpha_range": [
+            0,
+            255
+          ],
+          "alpha_bbox": [
+            0,
+            0,
+            412,
+            267
+          ]
+        },
+        {
+          "rect": [
+            0,
+            800,
+            491,
+            267
+          ],
+          "alpha_range": [
+            0,
+            255
+          ],
+          "alpha_bbox": [
+            57,
+            0,
+            469,
+            267
+          ]
+        },
+        {
+          "rect": [
+            491,
+            800,
+            492,
+            267
+          ],
+          "alpha_range": [
+            0,
+            255
+          ],
+          "alpha_bbox": [
+            1,
+            0,
+            492,
+            239
+          ]
+        },
+        {
+          "rect": [
+            983,
+            800,
+            492,
+            267
+          ],
+          "alpha_range": [
+            0,
+            255
+          ],
+          "alpha_bbox": [
+            0,
+            0,
+            474,
+            237
+          ]
+        }
+      ],
+      "superseded_by": "eat.all-floor-revision.provenance.json",
+      "current_output_sha256": "5a30308a7903365f0a73622450b2b65618da2f98833791bf9744b3089a6ca333",
+      "current_output_size": [
+        1505,
+        1045
+      ],
+      "historical_output_backup": "eat.before-floor-revision.png"
+    },
+    "eat.floor-revision.provenance.json": {
+      "tool": "image_gen.imagegen",
+      "source": "build/processed-care/eat.before-floor-revision.png",
+      "source_sha256": "3289edb1dc3aa752d76b80b31e8b960866ae8962576d370003aff1b389d5db35",
+      "original_rgb_source": "build/inputs/user-care/사료먹기.png",
+      "original_rgb_sha256": "c1e1562e6ced5c95777092ca0d089788d12b671280c4c538d7d6aac738c491d8",
+      "generated": "/workspace/generated_images/exec-ee52ec8f-3b93-4f06-bec9-e02520060e42.png",
+      "output": "build/processed-care/eat.png",
+      "output_sha256": "03e6f1b3a5118161b1e5ac17cfe3919842807beea6c92e2cba3cc38a6381270e",
+      "size": [
+        1474,
+        1067
+      ],
+      "grid": [
+        3,
+        4
+      ],
+      "alpha": [
+        0,
+        255
+      ],
+      "prompt": "Make ONE tiny technical edit to this existing transparent sprite atlas. Keep exact canvas 1475x1067 pixels, unchanged 3 columns by 4 rows, all 12 frames and every cat at the exact original pixel position, size and pose. In ONLY frame1 (zero-based: top row, MIDDLE column), move the entire gray food BOWL with its kibble UPWARD by exactly 7 pixels. Do not move the cat or its paws at all. Preserve the bowl shape/size and all bowl pixels, only translate that single prop upward. The bowl bottom should meet the same horizontal support level as that cat's front paws, rather than dipping below them. Do not clip the bottom of the bowl; preserve its full rounded base. Remove any old residual bowl pixels at the old location to transparent alpha. Keep every other eleven frames and their bowls untouched in their exact locations. No repainted cat, no changed expressions, no whole-frame move, no layout, head-size, fur, pose or resolution changes. Real transparent alpha everywhere the atlas is empty, no checkerboard, background or shadows added. This is a local prop-alignment correction, not a new illustration.",
+      "inspection": [
+        "All12 poses and props visually retained; frame1 gray bowl bottom now262sourcepx vs old268. Cat support anchor remains263.",
+        "Generated output canvas width1474 vs input1475; re-registration required. Fine antialias/source pixels are not claimed bit-identical.",
+        "Frame1 bowl moved about6sourcepx upward; full bowl base preserved, no whole-cat translation or support-anchor compensation."
+      ]
+    },
+    "box-sleep-provenance.json": {
+      "box": {
+        "source": "build/inputs/user-care/박스에숨기.png",
+        "source_sha256": "272956b3202d53231ffd6df56924d9555fb7f4d30b294c479262617cc8984c0b",
+        "edit_tool": "image_gen.imagegen",
+        "generated_original": "/workspace/generated_images/exec-d351151e-42ac-4cd9-820f-39b1760e59ae.png",
+        "output": "build/processed-care/box.png",
+        "sha256": "42d639d499915432678c7255640c5dfda1e7f4aa53994fc20e17fc7729b6ba93",
+        "mode": "RGBA",
+        "size": [
+          1672,
+          941
+        ],
+        "grid": [
+          4,
+          2
+        ],
+        "frame_count": 8,
+        "changes": "Background/captions/borders removed; kitten poses and identity retained; floating sleep effects removed; Box revision unifies prop dimensions.",
+        "limits": "Model output layout requires per-frame source rectangles and baseline anchors. Fully transparent RGB may contain irrelevant colors; alpha controls coverage. Actual motion interpolation/runtime validation belongs to application integration.",
+        "cells": [
+          {
+            "frame": 0,
+            "cell_rect": [
+              0,
+              0,
+              418,
+              470
+            ],
+            "solid_bounds": [
+              37,
+              102,
+              390,
+              414
+            ],
+            "solid_baseline": 414,
+            "touches_cell_edge": false,
+            "alpha16_bounds": [
+              34,
+              100,
+              391,
+              415
+            ]
+          },
+          {
+            "frame": 1,
+            "cell_rect": [
+              418,
+              0,
+              418,
+              470
+            ],
+            "solid_bounds": [
+              74,
+              84,
+              417,
+              414
+            ],
+            "solid_baseline": 414,
+            "touches_cell_edge": false,
+            "alpha16_bounds": [
+              73,
+              82,
+              418,
+              415
+            ]
+          },
+          {
+            "frame": 2,
+            "cell_rect": [
+              836,
+              0,
+              418,
+              470
+            ],
+            "solid_bounds": [
+              83,
+              87,
+              396,
+              414
+            ],
+            "solid_baseline": 414,
+            "touches_cell_edge": false,
+            "alpha16_bounds": [
+              0,
+              84,
+              398,
+              415
+            ]
+          },
+          {
+            "frame": 3,
+            "cell_rect": [
+              1254,
+              0,
+              418,
+              470
+            ],
+            "solid_bounds": [
+              82,
+              165,
+              329,
+              414
+            ],
+            "solid_baseline": 414,
+            "touches_cell_edge": false,
+            "alpha16_bounds": [
+              81,
+              163,
+              330,
+              415
+            ]
+          },
+          {
+            "frame": 4,
+            "cell_rect": [
+              0,
+              470,
+              418,
+              471
+            ],
+            "solid_bounds": [
+              97,
+              98,
+              347,
+              358
+            ],
+            "solid_baseline": 358,
+            "touches_cell_edge": false,
+            "alpha16_bounds": [
+              96,
+              96,
+              348,
+              359
+            ]
+          },
+          {
+            "frame": 5,
+            "cell_rect": [
+              418,
+              470,
+              418,
+              471
+            ],
+            "solid_bounds": [
+              92,
+              48,
+              347,
+              358
+            ],
+            "solid_baseline": 358,
+            "touches_cell_edge": false,
+            "alpha16_bounds": [
+              91,
+              45,
+              352,
+              359
+            ]
+          },
+          {
+            "frame": 6,
+            "cell_rect": [
+              836,
+              470,
+              418,
+              471
+            ],
+            "solid_bounds": [
+              96,
+              60,
+              349,
+              358
+            ],
+            "solid_baseline": 358,
+            "touches_cell_edge": false,
+            "alpha16_bounds": [
+              95,
+              57,
+              351,
+              359
+            ]
+          },
+          {
+            "frame": 7,
+            "cell_rect": [
+              1254,
+              470,
+              418,
+              471
+            ],
+            "solid_bounds": [
+              93,
+              106,
+              396,
+              358
+            ],
+            "solid_baseline": 358,
+            "touches_cell_edge": false,
+            "alpha16_bounds": [
+              92,
+              104,
+              398,
+              359
+            ]
+          }
+        ]
+      },
+      "sleep": {
+        "source": "build/inputs/user-care/졸려서 잠자기.png",
+        "source_sha256": "18af5e196833afa3643db02fa96a0b7cb08f6b8a19b526806f46c4b941b4cc01",
+        "edit_tool": "image_gen.imagegen",
+        "generated_original": "/workspace/generated_images/exec-d856b454-114e-417b-8ee1-9c8590b1b7ee.png",
+        "output": "build/processed-care/sleep.png",
+        "sha256": "09520f846594936e9aae258efbbf7f661d43b4828bb91fe08a838091c0f52932",
+        "mode": "RGBA",
+        "size": [
+          1672,
+          941
+        ],
+        "grid": [
+          4,
+          2
+        ],
+        "frame_count": 8,
+        "changes": "Background/captions/borders removed; kitten poses and identity retained; floating sleep effects removed; Box revision unifies prop dimensions.",
+        "limits": "Model output layout requires per-frame source rectangles and baseline anchors. Fully transparent RGB may contain irrelevant colors; alpha controls coverage. Actual motion interpolation/runtime validation belongs to application integration.",
+        "cells": [
+          {
+            "frame": 0,
+            "cell_rect": [
+              0,
+              0,
+              418,
+              470
+            ],
+            "solid_bounds": [
+              89,
+              90,
+              351,
+              382
+            ],
+            "solid_baseline": 382,
+            "touches_cell_edge": false,
+            "alpha16_bounds": [
+              86,
+              89,
+              354,
+              384
+            ]
+          },
+          {
+            "frame": 1,
+            "cell_rect": [
+              418,
+              0,
+              418,
+              470
+            ],
+            "solid_bounds": [
+              99,
+              83,
+              354,
+              386
+            ],
+            "solid_baseline": 386,
+            "touches_cell_edge": false,
+            "alpha16_bounds": [
+              96,
+              81,
+              356,
+              387
+            ]
+          },
+          {
+            "frame": 2,
+            "cell_rect": [
+              836,
+              0,
+              418,
+              470
+            ],
+            "solid_bounds": [
+              80,
+              93,
+              352,
+              384
+            ],
+            "solid_baseline": 384,
+            "touches_cell_edge": false,
+            "alpha16_bounds": [
+              76,
+              91,
+              355,
+              385
+            ]
+          },
+          {
+            "frame": 3,
+            "cell_rect": [
+              1254,
+              0,
+              418,
+              470
+            ],
+            "solid_bounds": [
+              16,
+              137,
+              356,
+              373
+            ],
+            "solid_baseline": 373,
+            "touches_cell_edge": false,
+            "alpha16_bounds": [
+              15,
+              134,
+              360,
+              376
+            ]
+          },
+          {
+            "frame": 4,
+            "cell_rect": [
+              0,
+              470,
+              418,
+              471
+            ],
+            "solid_bounds": [
+              60,
+              94,
+              401,
+              340
+            ],
+            "solid_baseline": 340,
+            "touches_cell_edge": false,
+            "alpha16_bounds": [
+              59,
+              92,
+              404,
+              341
+            ]
+          },
+          {
+            "frame": 5,
+            "cell_rect": [
+              418,
+              470,
+              418,
+              471
+            ],
+            "solid_bounds": [
+              45,
+              109,
+              385,
+              335
+            ],
+            "solid_baseline": 335,
+            "touches_cell_edge": false,
+            "alpha16_bounds": [
+              43,
+              107,
+              388,
+              337
+            ]
+          },
+          {
+            "frame": 6,
+            "cell_rect": [
+              836,
+              470,
+              418,
+              471
+            ],
+            "solid_bounds": [
+              28,
+              81,
+              368,
+              332
+            ],
+            "solid_baseline": 332,
+            "touches_cell_edge": false,
+            "alpha16_bounds": [
+              26,
+              79,
+              371,
+              333
+            ]
+          },
+          {
+            "frame": 7,
+            "cell_rect": [
+              1254,
+              470,
+              418,
+              471
+            ],
+            "solid_bounds": [
+              66,
+              76,
+              328,
+              331
+            ],
+            "solid_baseline": 331,
+            "touches_cell_edge": false,
+            "alpha16_bounds": [
+              62,
+              75,
+              330,
+              332
+            ]
+          }
+        ]
+      }
+    },
+    "box-prop.provenance.json": {
+      "asset": "box-prop",
+      "reference_source": "build/processed-care/box.png",
+      "reference_sha256": "42d639d499915432678c7255640c5dfda1e7f4aa53994fc20e17fc7729b6ba93",
+      "generated_source": "/workspace/generated_images/exec-e8f6c971-d073-4a3e-9a01-4ee674339bb7.png",
+      "output": "build/processed-care/box-prop.png",
+      "sha256": "63341a74fd39c414480add605370e7ee3f57063ca74da8ec7d56e02c70931ac1",
+      "size": [
+        1659,
+        948
+      ],
+      "mode": "RGBA",
+      "alpha_range": [
+        0,
+        255
+      ],
+      "edge_pixels_alpha_gt16": 0,
+      "major_silhouette_count": 1,
+      "major_silhouette_rect_alpha_gt32": [
+        371,
+        231,
+        911,
+        493
+      ],
+      "visible_rect_alpha_gt16": [
+        371,
+        231,
+        911,
+        493
+      ],
+      "anchor_source_pixels": [
+        826.5,
+        724
+      ],
+      "suggested_logical_silhouette_size_at_cat_height110": [
+        94,
+        51
+      ],
+      "clip_reference_height": 294,
+      "processing": "image_gen reconstruction of reference empty cardboard box; transparent_background=true",
+      "notes": [
+        "One empty cardboard box only: no cat, text, grid or other object.",
+        "Matches occupied frames2..7 warm cardboard color, front-right perspective, broad front panel and projecting right flap.",
+        "Full PNG retains generous transparent padding; renderer should register the box support point, not scale the padded canvas to prop width.",
+        "Logical size is a qualitative source-frame comparison and requires final actual Windows PNG render review.",
+        "Image generation reconstructs hidden interior; original pixel identity is not claimed.",
+        "Existing eight care PNGs were not changed."
+      ]
+    }
+  }
+}

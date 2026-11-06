@@ -3,6 +3,7 @@
 // The model owns the second animal; this layer only connects windows and menus.
 constexpr UINT kCompanionToggle = 2400, kCompanionFeed = 2401, kCompanionTreat = 2402;
 constexpr UINT kCompanionStatus = 2403, kCompanionPause = 2404;
+constexpr UINT kCompanionFish = 2405;
 constexpr UINT kCompanionCharacterFirst = 2600;
 // Retired wardrobe commands 2620..2632 stay unused; persisted preferences remain readable.
 
@@ -59,12 +60,15 @@ void ShowCompanionStatus() {
         << L"번\n\n첫 번째 동물과 생일·성장·성격·친밀도 기록이 따로 이어집니다.";
     UpdateMessage(text.str().c_str(), L"두 번째 동물의 기록", MB_OK | MB_ICONINFORMATION);
 }
-void FeedCompanion(bool treat) {
+void FeedCompanionFood(cat::feeding::FoodKind kind) {
     if (!g.companionStore.enabled() || !g.companionModel.Bound()) return;
-    const auto result = g.companionModel.Feed(UtcNow(), GetTickCount64(), treat, Random(0,1));
+    const auto result = g.companionModel.FeedFood(UtcNow(), GetTickCount64(), kind, Random(0,1));
     if (result == cat::nutrition::FeedResult::Accepted) {
         SaveCompanion();
     } else Balloon(L"두 번째 동물", L"배부르거나 소화 중이면 조금 기다려 주세요. 공중에서는 착지한 뒤 먹어요.");
+}
+void FeedCompanion(bool treat) {
+    FeedCompanionFood(treat ? cat::feeding::FoodKind::Treat : cat::feeding::FoodKind::Meal);
 }
 void ToggleCompanion();
 void ShowCompanionMenu(POINT point) {
@@ -74,6 +78,8 @@ void ShowCompanionMenu(POINT point) {
     AppendMenuW(menu, MF_STRING | MF_GRAYED, 0, L"두 번째 동물");
     AppendMenuW(menu, MF_STRING, kCompanionFeed, L"이 동물에게 밥 주기");
     AppendMenuW(menu, MF_STRING, kCompanionTreat, L"이 동물에게 간식 주기");
+    AppendMenuW(menu, MF_STRING | (cat::feeding::CanOfferFish(prefs.character) ? MF_ENABLED : MF_GRAYED),
+        kCompanionFish, L"이 고양이에게 생선 주기");
     HMENU characters = CreatePopupMenu();
     for (int i=0; i<cat::kCharacterCount; ++i) {
         const auto character = static_cast<cat::Character>(i);
@@ -93,6 +99,7 @@ void ShowCompanionMenu(POINT point) {
     DestroyMenu(menu); g.menuOpen = false;
     if (command == kCompanionFeed) FeedCompanion(false);
     else if (command == kCompanionTreat) FeedCompanion(true);
+    else if (command == kCompanionFish) FeedCompanionFood(cat::feeding::FoodKind::Fish);
     else if (command == kCompanionStatus) ShowCompanionStatus();
     else if (command == kCompanionToggle) ToggleCompanion();
     else if (command == UpdateCheckCommand) StartUpdateCheck(true);

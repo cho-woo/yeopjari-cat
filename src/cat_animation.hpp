@@ -7,6 +7,7 @@
 #include "cat_expression.hpp"
 #include "cat_gait.hpp"
 #include "cat_walk_dynamics.hpp"
+#include "cat_sprite_sequence.hpp"
 
 namespace cat::animation {
 
@@ -28,6 +29,12 @@ constexpr double kOriginalWalkStride = 14.0;
 
 // Offsets are logical pixels; the native renderer applies monitor DPI and real-age growth.
 struct Pose {
+    bool fishMeal=false; // Transient accepted feeding presentation; never serialized.
+    cat::sprite_sequence::Clip spriteClip=cat::sprite_sequence::Clip::None;
+    unsigned spriteFrame=0;
+    bool spriteTimed=false;
+    std::uint64_t spriteElapsedMs=0;
+    cat::sprite_sequence::Options spriteOptions{};
     int frame = 4;
     double x = 0, lift = 0, scaleX = 1, scaleY = 1, angle = 0;
     bool flip = false;
@@ -49,6 +56,23 @@ struct Pose {
     bool walkFeetValid=false;
 };
 
+// Authored artwork is an optional presentation layer. Canonical frame IDs,
+// physical root height and saved state remain independent of sheet layouts.
+inline void AttachSprite(Pose& pose,cat::sprite_sequence::Clip clip,std::uint64_t elapsed,
+                         const cat::sprite_sequence::Options& options={}) {
+    pose.spriteClip=clip;pose.spriteTimed=true;
+    pose.spriteElapsedMs=elapsed;pose.spriteOptions=options;
+    pose.spriteFrame=cat::sprite_sequence::Sample(clip,elapsed,options).frame;
+}
+
+inline void UseAuthoredSprite(Pose& pose) {
+    // The authored frame already contains local acting. Keep the physical
+    // root and registered anchor; do not add legacy punch shifts or warps.
+    pose.x=pose.lift=pose.angle=0;pose.scaleX=pose.scaleY=1;
+    pose.centerPivot=pose.bellyRig=false;pose.blendFrame=-1;pose.blend=0;
+    pose.joints={};pose.face={};
+}
+
 inline double SmoothStep(double fraction) {
     const double t = std::clamp(fraction, 0.0, 1.0);
     return t * t * (3 - 2 * t);
@@ -60,6 +84,9 @@ inline double SmoothStep(double fraction) {
 inline Pose AirbornePose(double velocityY,int direction) {
     Pose p;
     const double speed=std::isfinite(velocityY) ? std::clamp(velocityY,-10000.0,10000.0) : 0.0;
+    cat::sprite_sequence::Options sprite;
+    sprite.jump=cat::sprite_sequence::JumpPhase::Airborne;sprite.grounded=false;sprite.velocityY=speed;
+    AttachSprite(p,cat::sprite_sequence::Clip::Jump,0,sprite);
     p.frame=16;
     p.flip=direction<0;
     p.groundContact=false;
@@ -76,6 +103,11 @@ inline Pose AirbornePose(double velocityY,int direction) {
 inline Pose LandingPose(std::uint64_t elapsedSinceContact,double strength,int direction) {
     Pose p;
     p.flip=direction<0;
+    if(elapsedSinceContact<cat::sprite_sequence::kLandingMs) {
+        cat::sprite_sequence::Options sprite;
+        sprite.jump=cat::sprite_sequence::JumpPhase::Landing;sprite.contactElapsedMs=elapsedSinceContact;
+        AttachSprite(p,cat::sprite_sequence::Clip::Jump,0,sprite);
+    }
     const double impact=std::isfinite(strength) ? std::clamp(strength,0.0,1.0) : 0.0;
     if(elapsedSinceContact<280)
         p.joints.crouch=.7*impact*std::sin(elapsedSinceContact/280.0*kPi);
@@ -410,6 +442,16 @@ inline Pose Evaluate(Motion motion, std::uint64_t elapsed, std::uint64_t ticks, 
         break;
     }
     }
+    using Clip=cat::sprite_sequence::Clip;
+    switch(motion) {
+    case Motion::Groom:AttachSprite(p,Clip::Groom,elapsed);break;
+    case Motion::Sleep:AttachSprite(p,Clip::Sleep,elapsed);break;
+    case Motion::Eat:AttachSprite(p,Clip::Eat,elapsed);break;
+    case Motion::Treat:AttachSprite(p,Clip::Treat,elapsed);break;
+    case Motion::Punch:AttachSprite(p,Clip::Punch,elapsed);break;
+    case Motion::Jump:AttachSprite(p,Clip::Jump,elapsed);break;
+    default:break;
+    }
     return p;
 }
 
@@ -422,6 +464,7 @@ inline Pose EvaluateSleep(unsigned variant, std::uint64_t elapsed, std::uint64_t
     else if(variant%6==3) {p.frame=25;p.bellyRig=false;p.face.blink=1;}
     else if(variant%6==4) p.frame=27;
     else if(variant%6==5) p.frame=28;
+    if(variant%6!=0 || perched)p.spriteClip=cat::sprite_sequence::Clip::None;
     if(perched){p.frame=4;p.bellyRig=false;p.joints.crouch=.35;p.joints.headNod=.45+.25*std::sin(elapsed/2300.0);p.face.blink=.9+.1*std::sin(elapsed/3100.0);}
     return p;
 }
