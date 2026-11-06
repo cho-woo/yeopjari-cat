@@ -1,0 +1,55 @@
+{
+  "version": "2.0.12",
+  "source_commit": "6a1391356ea6254ed977395e35afe5f6883f24a6",
+  "workflow_run": 42181180016,
+  "reviewed_before_publication": true,
+  "publication_time_utc": "2026-11-06T07:35:55Z",
+  "recorded_at_utc": "2026-11-06T07:37:14+00:00",
+  "renderer": "Actual Windows GDI+ output from the tested packaged EXE on Windows Server 2022",
+  "images": {
+    "walk-cream-gdi.png": {
+      "sha256": "9866fcd4efb2f0170d22f8f6a292d3de18027cbe869e694ba164d39b56e3fd74",
+      "url": "https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.12/walk-cream-gdi.png"
+    },
+    "walk-silver-gdi.png": {
+      "sha256": "66cc9762a0c81aad5c74e21d0322171c07400151224df327231d2ff3294a3ecd",
+      "url": "https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.12/walk-silver-gdi.png"
+    }
+  },
+  "inspection": {
+    "characters": [
+      "Cream",
+      "SilverTabby"
+    ],
+    "poses": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "directions": [
+      "left",
+      "right"
+    ],
+    "reference_sizes_px": [
+      80,
+      110,
+      165
+    ],
+    "detail_view": "3x nearest-neighbor magnification of the already rendered 110px-reference lower body",
+    "reviewers": [
+      "primary agent",
+      "independent reference_motion_review agent"
+    ],
+    "observations": [
+      "Shoulder-to-foreleg and hip-to-paw contours remain continuous.",
+      "No extracted-limb stumps, triangular compositing seams or detached fur flaps observed in the reviewed poses.",
+      "Both directions and each reviewed size retain complete silhouettes."
+    ]
+  },
+  "limits": [
+    "Still-image inspection does not prove smooth continuous playback.",
+    "The animation uses the existing four complete source poses and a cadence cap; it does not add authored run poses.",
+    "No manual long-duration Windows 10/11 desktop session was performed."
+  ]
+}
