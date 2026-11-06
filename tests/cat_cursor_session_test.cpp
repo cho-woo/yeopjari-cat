@@ -3,6 +3,7 @@
 #include "../src/cat_physics.hpp"
 #include "../src/cat_cursor_attack.hpp"
 #include "../src/cat_cursor_animation.hpp"
+#include "../src/care_sprites.generated.hpp"
 #include <cmath>
 #include <iostream>
 #include <stdexcept>
@@ -44,8 +45,17 @@ struct Host {
     int launches = 0, contacts = 0;
     cat::cursor::PawContact pawContacts;
     std::vector<Action> changes;
+    const cat::sprite_assets::Descriptor* authoredPunch = nullptr;
+    std::uint64_t takeoffMs = 240;
 
     Host() { physics.Reset(400, 96, 960); physics.SetCeiling(800); }
+    void UseAuthoredCream() {
+        using Clip=cat::sprite_sequence::Clip;
+        authoredPunch=cat::sprite_assets::Find(Clip::Punch,0,cat::sprite_assets::kCareSprites);
+        const auto* jump=cat::sprite_assets::Find(Clip::Jump,0,cat::sprite_assets::kCareSprites);
+        CHECK(authoredPunch && authoredPunch->program.stepCount && jump && jump->program.stepCount);
+        takeoffMs=cat::sprite_sequence::Duration(jump->program,jump->program.intro);
+    }
     void SetMotion(Motion next, std::uint64_t duration) {
         if (cat::animation::Travels(motion)) walking = motion;
         motion = next; started = now; decision = now + duration; ++serial;
@@ -58,6 +68,11 @@ struct Host {
         input.nowMs = now; input.enabled = enabled; input.available = available;
         input.grounded = physics.CurrentPose().grounded; input.sizeScale = growth;
         input.movementScale = movementScale;
+        input.pouncePreparationMs=takeoffMs;
+        if(authoredPunch) {
+            input.pawDurationMs=input.punchDurationMs=cat::sprite_sequence::ProgramDuration(authoredPunch->program);
+            input.pawStandOff=38.15;
+        }
         input.canContinue = !busy && (input.grounded || session.InFlight());
         input.canStart = input.canContinue && !waiting && (motion == Motion::Idle || motion == Motion::Watch ||
             motion == Motion::Walk || motion == Motion::Stalk || motion == Motion::Loaf);
@@ -74,7 +89,7 @@ struct Host {
             physics.CurrentPose().velocityX, now, started, decision);
         const double speed = session.Active() ? session.Velocity()*movementScale : 0;
         physics.SetTargetVelocity(waiting ? 0 : speed);
-        if (!waiting && !launchAttempted && session.Action()==Action::Pounce && now-started>=240) {
+        if (!waiting && !launchAttempted && session.Action()==Action::Pounce && now-started>=takeoffMs) {
             launchAttempted = true;
             const bool launched = cat::cursor::LaunchPounce(physics,session.TargetX(),minX,maxX,growth,jump);
             session.ConfirmLaunch(launched);
@@ -91,8 +106,13 @@ struct Host {
             const auto kind = session.Action()==Action::Punch ? cat::cursor::AttackKind::Strong : cat::cursor::AttackKind::Gentle;
             const auto pose = cat::cursor::AttackPose(kind,now-started,output.direction,
                 (cursorX-physical.x)/growth,(cursorHeight-physical.lift)/growth);
-            const auto paw = cat::cursor::PawPosition(pose);
-            if (pawContacts.Observe(cat::cursor::ContactIndex(kind,now-started),true,
+            const auto paw = authoredPunch?cat::deform::Point{output.direction*38.15,38.89}:cat::cursor::PawPosition(pose);
+            cat::sprite_sequence::Options options;
+            if(authoredPunch)options.sheetFrames=authoredPunch->frameCount;
+            const auto contact=authoredPunch?cat::sprite_sequence::ProgramContactIndex(
+                cat::sprite_sequence::Clip::Punch,authoredPunch->program,now-started,options):
+                static_cast<unsigned>(cat::cursor::ContactIndex(kind,now-started));
+            if (pawContacts.Observe(contact,true,
                     physical.x+paw.x*growth,paw.y*growth,cursorX,cursorHeight-physical.lift,7*growth)) ++contacts;
         }
         const Motion displayed = cat::motion::DisplayedMotion(motion,walking,physical.grounded,waiting,physical.velocityX);
@@ -321,6 +341,87 @@ void PounceRespectsLedgeRoofBodySizeAndNutrition() {
     CHECK(peak>411 && peak<415);
     CHECK(body.OnPlatform() && std::abs(body.CurrentPose().lift-400)<.6);
 }
+
+std::uint64_t FirstAuthoredContact(const cat::sprite_assets::Descriptor& asset) {
+    for(unsigned i=0;i<asset.program.cueCount;++i) {
+        const auto& cue=asset.program.cues[i];
+        if(!(cue.events&cat::sprite_sequence::Contact))continue;
+        std::uint64_t time=cue.offsetMs;
+        for(unsigned step=0;step<cue.step;++step)time+=asset.program.steps[step].durationMs;
+        return time;
+    }
+    throw std::runtime_error("The registered punch must contain an authored contact cue");
+}
+
+void AuthoredPawUsesItsPaintedEndpointFullClockAndPause() {
+    for(const int fps:{30,60,120,144})for(const double growth:{.6,1.})
+        for(const double height:{6.,38.89,70.}) {
+            Host host;host.UseAuthoredCream();host.growth=growth;
+            host.cursorX=400+38.15*growth;host.cursorHeight=height*growth;
+            const auto cue=FirstAuthoredContact(*host.authoredPunch);
+            const auto duration=cat::sprite_sequence::ProgramDuration(host.authoredPunch->program);
+            CHECK(cue>650 && duration>850);
+            bool pawed=false,paused=false,visibleCue=false;
+            std::uint64_t pauseOffset=0;
+            for(int frame=1;frame<fps*9;++frame) {
+                const auto before=host.contacts;
+                host.Frame(1000+static_cast<std::uint64_t>(std::round(frame*1000./fps))+pauseOffset,1./fps);
+                if(host.session.Action()==Action::Paw) {
+                    pawed=true;
+                    cat::sprite_sequence::Options options;options.sheetFrames=host.authoredPunch->frameCount;
+                    visibleCue=visibleCue || cat::sprite_sequence::ProgramContactActive(cat::sprite_sequence::Clip::Punch,
+                        host.authoredPunch->program,host.now-host.started,options);
+                    if(!paused && host.now-host.started>=cue-100) {
+                        CHECK(host.contacts==0);
+                        const auto phase=host.now-host.started;
+                        host.Pause(5000);pauseOffset+=5000;paused=true;
+                        CHECK(host.now-host.started==phase);
+                        CHECK(host.contacts==0 && host.session.Action()==Action::Paw);
+                    }
+                }
+                if(host.contacts>before) {
+                    CHECK(height==38.89 && host.session.Action()==Action::Paw);
+                    CHECK(host.now-host.started>=cue && host.now-host.started<duration);
+                    const auto count=host.contacts;
+                    host.Frame(host.now,0); // A repeated contact callback is not a second strike.
+                    CHECK(host.contacts==count);
+                }
+            }
+            CHECK(pawed && paused && visibleCue);
+            CHECK(host.contacts==(height==38.89?1:0));
+            CHECK(host.launches==0 && !host.session.Active());
+        }
+}
+
+void AuthoredPounceWaitsForEveryPreparationDrawing() {
+    for(const int fps:{30,60,120,144}) {
+        Host host;host.UseAuthoredCream();host.interest=1;host.cursorHeight=6;
+        bool tapped=false,punched=false,chased=false,prepared=false,airborne=false;
+        double chaseTarget=0,frozen=0;
+        CHECK(host.takeoffMs>240);
+        for(int frame=1;frame<fps*10;++frame) {
+            const double t=static_cast<double>(frame)/fps;
+            host.cursorX=chased?chaseTarget:428+15*std::sin(t*2*3.141592653589793*1.2);
+            if(host.session.InFlight())host.cursorX=frozen;
+            host.Frame(1000+static_cast<std::uint64_t>(std::round(t*1000)),1./fps);
+            const auto action=host.session.Action();
+            tapped=tapped||action==Action::Paw;punched=punched||action==Action::Punch;
+            if(action==Action::Chase && !chased){chased=true;chaseTarget=host.physics.CurrentPose().x+105;}
+            if(action==Action::Pounce && host.now-host.started<host.takeoffMs) {
+                prepared=true;CHECK(host.launches==0 && host.physics.CurrentPose().grounded);
+            }
+            if(host.session.InFlight()) {
+                airborne=true;frozen=host.session.TargetX();
+                CHECK(host.launches==1 && host.now-host.started>=host.takeoffMs);
+            }
+            if(host.launches && host.physics.CurrentPose().grounded && !host.session.Active())break;
+        }
+        CHECK(tapped && punched && chased && prepared && airborne);
+        CHECK(host.launches==1 && host.physics.CurrentPose().grounded && !host.session.Active());
+        CHECK(host.contacts==1); // The floor pointer misses the high paw; only real pounce landing touches it.
+        CHECK(std::abs(host.physics.CurrentPose().x-frozen)<20);
+    }
+}
 }
 
 int main() {
@@ -331,6 +432,7 @@ int main() {
         PounceOffDepartureAndInterruptionPreserveExistingImpulse();
         ContactRequiresActualPawAndOwnedUnpausedAction(); PounceRespectsLedgeRoofBodySizeAndNutrition();
         RareSlowStalkActuallyReachesAndTapsAtEveryFrameRate();
+        AuthoredPawUsesItsPaintedEndpointFullClockAndPause();AuthoredPounceWaitsForEveryPreparationDrawing();
         std::cout << "Cursor host and Box2D: " << checks << " checks passed\n";
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
 }

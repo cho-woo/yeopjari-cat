@@ -68,7 +68,7 @@ struct Host {
         const auto body = cat::nutrition::VisualModifiers(g.nutrition);
         g.physics.SetTargetVelocity(g.waitingForStop ? 0 : CursorReactionVelocity()*body.speed*
             cat::species::ProfileFor(g.preferences.character).movementSpeedMultiplier);
-        if (!g.waitingForStop && g.jumpPending && now-g.motionStart >= 240) {
+        if (!g.waitingForStop && g.jumpPending && now-g.motionStart >= PrimaryTakeoffMs(true)) {
             g.jumpPending = false;
             const auto before = g.physics.CurrentPose();
             if (TryCursorPounce(now)) {
@@ -85,12 +85,55 @@ struct Host {
         return contact;
     }
 
+    const cat::sprite_assets::Descriptor* PunchArt() const {
+        const auto* asset=LoadedCareSprite(cat::sprite_sequence::Clip::Punch,g.preferences.character);
+        return asset && asset->layout->program.stepCount?asset->layout:nullptr;
+    }
+    ULONGLONG PawDuration() const {
+        const auto* asset=PunchArt();
+        return asset?cat::sprite_sequence::ProgramDuration(asset->program):
+            cat::cursor::DurationMs(cat::cursor::AttackKind::Gentle);
+    }
+    unsigned PawFrames() const { return static_cast<unsigned>((PawDuration()+15)/16+2); }
+    unsigned ExpectedPawContacts() const {
+        const auto* asset=PunchArt();
+        if(!asset)return 2;
+        unsigned count=0;
+        for(unsigned i=0;i<asset->program.cueCount;++i)
+            if(asset->program.cues[i].events&cat::sprite_sequence::Contact)++count;
+        return count;
+    }
+    ULONGLONG FirstPawContactMs() const {
+        const auto* asset=PunchArt();
+        if(!asset)return 220;
+        for(unsigned i=0;i<asset->program.cueCount;++i) {
+            const auto& cue=asset->program.cues[i];
+            if(!(cue.events&cat::sprite_sequence::Contact))continue;
+            ULONGLONG time=cue.offsetMs;
+            for(unsigned step=0;step<cue.step;++step)time+=asset->program.steps[step].durationMs;
+            return time;
+        }
+        return PawDuration();
+    }
+    unsigned PawContactIndex() const {
+        if(now<g.motionStart)return 0;
+        if(const auto* asset=PunchArt()) {
+            cat::sprite_sequence::Options options;options.sheetFrames=asset->frameCount;
+            return cat::sprite_sequence::ProgramContactIndex(cat::sprite_sequence::Clip::Punch,
+                asset->program,now-g.motionStart,options);
+        }
+        return static_cast<unsigned>(cat::cursor::ContactIndex(cat::cursor::AttackKind::Gentle,now-g.motionStart));
+    }
     double PawX() const {
+        if(PunchArt())return g.physics.CurrentPose().x+g.direction*38.15*
+            cat::nutrition::VisualModifiers(g.nutrition).bodyWidth*cat::GrowthScale(g.pet.bornUtc,UtcNow());
         const auto geometry = CursorAttackGeometry();
         return g.physics.CurrentPose().x + (geometry.pawAnchorX-.5)*geometry.width*
             cat::GrowthScale(g.pet.bornUtc,UtcNow());
     }
     double PawHeight() const {
+        if(PunchArt())return 38.89*cat::nutrition::VisualModifiers(g.nutrition).bodyHeight*
+            cat::GrowthScale(g.pet.bornUtc,UtcNow());
         return .04*CursorAttackGeometry().height*cat::GrowthScale(g.pet.bornUtc,UtcNow());
     }
 
@@ -155,23 +198,41 @@ int Run() {
         if (CursorAttackGeometry().width <= 20 || CursorAttackGeometry().height <= 20) return 241;
         if (!host.StartPaw(host.PawHeight()) || g.lifeInteractionUntil != 0) return 242;
         bool touched = false;
-        for (int frame = 0; frame < 48 && cursorInteraction.session.Action() == Action::Paw; ++frame) {
+        const auto expected=host.ExpectedPawContacts();
+        if(!expected || (character==cat::Character::Rabbit && expected!=2))return 244;
+        std::vector<bool> contactWindows(expected,false);
+        for (unsigned frame = 0; frame < host.PawFrames() && cursorInteraction.session.Action() == Action::Paw; ++frame) {
             if (host.Frame(host.PawX(),host.PawHeight())) {
                 touched = true;
                 // A second callback in the same contact window cannot award
                 // another interaction for the same physical paw strike.
                 if (UpdateCursorContact(host.now,g.physics.CurrentPose())) return 243;
             }
+            if(cursorInteraction.session.Action()==Action::Paw) {
+                const auto index=host.PawContactIndex();
+                if(index>expected)return 244;
+                if(index)contactWindows[index-1]=true;
+            }
         }
-        if (!touched || host.contacts != 2 || g.lifeInteractionUntil == 0) return 244;
+        if (!touched || host.contacts != expected ||
+                std::find(contactWindows.begin(),contactWindows.end(),false)!=contactWindows.end() ||
+                g.lifeInteractionUntil == 0) return 244;
         if (cat::Serialize(g.pet) != savedPet || cat::memory::Serialize(g.memory.state) != savedMemory ||
                 cat::nutrition::Serialize(g.nutrition) != savedNutrition) return 245;
     }
 
-    host.Reset();
-    if (!host.StartPaw(70)) return 246;
-    for (int frame = 0; frame < 48; ++frame) host.Frame(host.PawX(),70);
-    if (host.contacts || g.lifeInteractionUntil) return 247; // Selected attack is a real miss.
+    for(const double height:{6.,70.}) {
+        host.Reset();
+        if (!host.StartPaw(height)) return 246;
+        bool sawMissWindow=false;
+        for (unsigned frame = 0; frame < host.PawFrames(); ++frame) {
+            host.Frame(host.PawX(),height);
+            sawMissWindow=sawMissWindow || (cursorInteraction.session.Action()==Action::Paw && host.PawContactIndex()!=0);
+        }
+        // The provided punch's fixed paw cannot touch a floor cursor or a
+        // pointer above its head; an elapsed cue alone awards nothing.
+        if (!sawMissWindow || host.contacts || g.lifeInteractionUntil) return 247;
+    }
 
     host.Reset();
     if (!host.StartPaw(host.PawHeight())) return 248;
@@ -187,7 +248,7 @@ int Run() {
     host.Frame(host.PawX(),host.PawHeight());
     if (host.contacts || cursorInteraction.session.Action() != Action::Paw) return 250;
     host.Sample(host.PawX(),host.PawHeight(),150);
-    const auto contactTime = g.motionStart+270;
+    const auto contactTime = g.motionStart+host.FirstPawContactMs()+10;
     // These are production render/contact guards, tested before a valid
     // contact consumes the one-strike latch.
     for (bool* flag : {&g.pet.roamingPaused, &g.hidden, &g.menuOpen, &g.dragging, &g.closing, &updates.applying}) {
@@ -211,7 +272,7 @@ int Run() {
         if (!host.StartPaw(host.PawHeight())) return 254;
         SetMotion(replacement,2100);
         const auto start = g.motionStart, end = g.nextDecision, serial = g.motionSerial;
-        if (UpdateCursorContact(host.now+270,g.physics.CurrentPose())) return 255;
+        if (UpdateCursorContact(host.now+host.FirstPawContactMs()+10,g.physics.CurrentPose())) return 255;
         host.Sample(host.PawX(),host.PawHeight());
         if (EnvironmentBusy() || g.motion != replacement || g.motionStart != start ||
                 g.nextDecision != end || g.motionSerial != serial || g.lifeInteractionUntil) return 256;
@@ -240,9 +301,15 @@ int Run() {
             std::mt19937 preview(seed);
             if (std::uniform_real_distribution<double>(0,1)(preview)<.24) {g.random.seed(seed);break;}
         }
-        const double x=g.physics.CurrentPose().x+120,height=host.PawHeight();
+        const double x=g.physics.CurrentPose().x+120;
+        const double contactHeight=host.PawHeight();
+        double height=std::min(30.0,contactHeight);
         bool sneaked=false,pawed=false;
         for (int frame=0;frame<1800;++frame) {
+            // The rare approach starts at the planner's low-cursor height.
+            // Raise gently after discovery, below its120px/s departure limit,
+            // so the new authored paw can actually touch the same pointer.
+            if(sneaked)height=std::min(contactHeight,height+.64);
             host.Frame(x,height);
             const auto action=cursorInteraction.session.Action();
             if (action==Action::Sneak) {
@@ -253,7 +320,7 @@ int Run() {
             if (action==Action::Sit || action==Action::ApproachSit) return 264;
             if (pawed&&!EnvironmentBusy())break;
         }
-        if (!sneaked||!pawed||EnvironmentBusy()||host.contacts!=2||host.launches) return 265;
+        if (!sneaked||!pawed||EnvironmentBusy()||host.contacts!=host.ExpectedPawContacts()||host.launches) return 265;
     }
 
     // OFF and a newer care action revoke contact/reward, not an impulse that
