@@ -4163,6 +4163,36 @@ int NativeToyHostTest() {
             if(g.motionSerial!=restSerial || g.nextDecision!=restDeadline)return 219;
             SetMotion(Motion::Eat,3300);
             if(g.motion!=Motion::Eat || g.autonomousResting || g.motionSerial==restSerial)return 219;
+
+            // Join a real running primary through the production host context.
+            // Matching its story must not restart the primary's run or permit
+            // an unrelated social gesture to replace unfinished care.
+            SetMotion(Motion::Zoomies,5000);
+            g.physics.SetTargetVelocity(70);
+            for(unsigned frame=0;frame<30;++frame)g.physics.Update(.016);
+            g.companionStore.state=cat::companion::NewState(now);
+            g.companionStore.state.pet.position=std::clamp(
+                (g.physics.CurrentPose().x-60-96)/(1184.0-96),0.0,1.0);
+            g.companionModel.Bind(g.companionStore.state);g.companionModel.Reset(96,1184,740);
+            const auto runSerial=g.motionSerial;
+            auto paired=CompanionContext(GetTickCount64(),.016);
+            if(paired.primaryBusy || paired.primaryMotion!=Motion::Zoomies)return 235;
+            if(!g.companionModel.TrySocial(cat::companion::Interaction::RunTogether,paired))return 236;
+            for(unsigned frame=0;frame<30;++frame) {
+                g.physics.Update(.016);paired=CompanionContext(paired.ticks+16,.016);
+                g.companionModel.Tick(paired);
+            }
+            if(g.companionModel.Physical().velocityX<30 || g.companionStore.state.mutualPlay!=1 ||
+                    g.motionSerial!=runSerial || cat::Serialize(g.pet)!=birthdayRecord)return 237;
+            g.physics.SetTargetVelocity(0);
+            for(unsigned frame=0;frame<80;++frame)g.physics.Update(.016);
+            for(const auto protectedMotion:{Motion::Eat,Motion::Treat,Motion::Groom,Motion::Punch}) {
+                SetMotion(protectedMotion,5000);
+                if(g.waitingForStop || !CompanionContext(GetTickCount64(),.016).primaryBusy)return 238;
+            }
+            SetMotion(Motion::Zoomies,5000);g.lifeSequenceCount=1;
+            if(!CompanionContext(GetTickCount64(),.016).primaryBusy)return 238;
+            g.lifeSequenceCount=0;
             return 0;
         }();
     }

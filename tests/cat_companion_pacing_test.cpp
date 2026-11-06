@@ -148,6 +148,43 @@ void RenderingGenerationChangesAcrossResetsAndIdentity() {
     model.Bind(state);model.Reset(0,1600,700);CHECK(model.View(c.ticks).presentationGeneration>switched);
     CHECK(Valid(state));
 }
+void AutonomousPairRunningRemainsReachableAfterQuietRest() {
+    unsigned joined=0;
+    for(unsigned seed=0;seed<24;++seed) {
+        const auto birthday=born+seed*86400;
+        auto state=NewState(birthday);Model model;model.Bind(state);model.Reset(0,1600,700);
+        auto c=Frame(100,model.Physical().x+60);c.nowUtc=birthday;c.primaryMotion=M::Zoomies;
+        c.primary.velocityX=70;c.primaryBusy=false;
+        bool paired=false;
+        while(c.ticks<60000) {
+            c.primary.x=model.Physical().x+60;
+            c.nowUtc=birthday+static_cast<std::int64_t>(c.ticks/1000);
+            model.Tick(c);
+            if(model.View(c.ticks).interaction==Interaction::RunTogether) {paired=true;break;}
+            c.ticks+=17;
+        }
+        if(!paired)continue;
+        CHECK(c.ticks>=18000);++joined;
+        for(unsigned frame=0;frame<30;++frame) {
+            c.ticks+=17;c.primary.x=model.Physical().x+60;
+            c.nowUtc=birthday+static_cast<std::int64_t>(c.ticks/1000);model.Tick(c);
+        }
+        CHECK(model.Physical().velocityX>30);
+        CHECK(state.mutualPlay==1&&state.pet.feedCount==0&&state.pet.snackCount==0);
+    }
+    CHECK(joined>=5); // Exercise autonomous selection, not direct TrySocial.
+
+    auto state=NewState(born);state.preferences.character=cat::Character::Cream;
+    state.nutrition.fullness=state.pet.hunger=45;
+    Model model;model.Bind(state);model.Reset(0,1600,700);
+    auto c=Frame(100,model.Physical().x+60);c.primaryMotion=M::Zoomies;c.primary.velocityX=70;
+    CHECK(model.Feed(c.nowUtc,c.ticks,false)==cat::nutrition::FeedResult::Accepted);
+    while(c.ticks<9000) {
+        model.Tick(c);const auto pose=model.View(c.ticks);
+        CHECK(pose.interaction==Interaction::None&&state.mutualPlay==0);
+        CHECK(pose.motion==M::Eat||pose.motion==M::Groom);Step(model,c);
+    }
+}
 }
 int main() {
     try {StartupHasAQuietInterval();CompletedSocialActionCannotImmediatelyStartAnother();
@@ -155,6 +192,7 @@ int main() {
         AcceptedMealKeepsItsCompleteGroomFollowUp();LongZeroPhysicsStallFreezesActionAndPresentation();
         SocialSleepWakesBeforeItsNeutralRest();SocialGesturesFinishBeforeFollowingTheNextPosition();
         RenderingGenerationChangesAcrossResetsAndIdentity();
+        AutonomousPairRunningRemainsReachableAfterQuietRest();
         std::cout<<"Companion pacing: "<<checks<<" checks passed\n";return EXIT_SUCCESS;
     } catch(const std::exception& error) {std::cerr<<error.what()<<'\n';return EXIT_FAILURE;}
 }

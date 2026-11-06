@@ -26,7 +26,10 @@ cat::companion::Context CompanionContext(ULONGLONG ticks, double elapsed) {
     c.primaryBusy = g.dragging || g.perch.transitioning || g.waitingForStop ||
         g.toyEngaged || g.approachingToy || g.approachingUser || g.memorySequenceCount || g.lifeSequenceCount ||
         g.lifeCrossing.Active() || g.physics.Hanging() || EnvironmentBusy() || !c.primary.grounded ||
-        (!g.companionReaction && g.motion!=Motion::Sleep && !PrimarySocialBoundary(ticks));
+        // Joining an existing sleep/run story does not replace the primary's
+        // action. Care and unrelated gestures still require a quiet boundary.
+        (!g.companionReaction && g.motion!=Motion::Sleep && g.motion!=Motion::Zoomies &&
+            !PrimarySocialBoundary(ticks));
     if (g.perch.active) c.primaryPlatform = CompanionPlatform(g.perch.hwnd);
     const auto support = reinterpret_cast<HWND>(g.companionModel.SupportId());
     if (support) c.supportPlatform = CompanionPlatform(support);
