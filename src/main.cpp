@@ -1964,7 +1964,7 @@ bool DrawCareSprite(Graphics& graphics,const cat::animation::Pose& pose,REAL cen
     // anchors. Never resize an individual frame to its own tight alpha bounds.
     const auto saved=graphics.Save();graphics.TranslateTransform(center,bottom);
     graphics.ScaleTransform(pose.flip && sprite->layout->clip!=cat::sprite_sequence::Clip::Box?-1.0f:1.0f,1);
-    ImageAttributes attributes;attributes.SetWrapMode(WrapModeClamp);
+    ImageAttributes attributes;attributes.SetWrapMode(WrapModeClamp,Color(0,0,0,0));
     auto* isolated=sprite->frames[index].get();
     const auto status=graphics.DrawImage(isolated?isolated:sprite->image.get(),
         RectF(static_cast<REAL>(-frame.anchor.x*sx),static_cast<REAL>(-frame.anchor.y*sy),
@@ -2048,7 +2048,7 @@ bool DrawAuthoredBoxProp(Graphics& graphics,REAL localX,REAL ground,bool foregro
     const REAL height=static_cast<REAL>(51*g.dpiScale*growth*visual.bodyHeight);
     const int cut=foreground?static_cast<int>(source.Height*.45):0;
     const REAL fraction=static_cast<REAL>(source.Height-cut)/source.Height;
-    ImageAttributes attributes;attributes.SetWrapMode(WrapModeClamp);
+    ImageAttributes attributes;attributes.SetWrapMode(WrapModeClamp,Color(0,0,0,0));
     return graphics.DrawImage(g.authoredBoxProp.image.get(),
         RectF(localX-width/2,ground-height*fraction,width,height*fraction),
         source.X,source.Y+cut,source.Width,source.Height-cut,UnitPixel,&attributes)==Ok;

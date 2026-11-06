@@ -265,8 +265,8 @@ int NativeActualCareSpriteRenderTest(std::string& context) {
             const auto direct=copy();
             const auto& f=layout.frames[frame];
             // Read the original source independently through GDI+ GetPixel.
-            // A PARGB Clone can mark transparent crop padding as opaque on
-            // Windows; it cannot serve as the reference for an alpha test.
+            // This also avoids relying on the renderer's cached pixel buffers
+            // when checking source alpha and frame ownership.
             std::vector<std::uint32_t> reference(static_cast<std::size_t>(f.rect.width)*f.rect.height);
             for(int y=0;y<f.rect.height;++y)for(int x=0;x<f.rect.width;++x) {
                 Color color;
@@ -279,7 +279,7 @@ int NativeActualCareSpriteRenderTest(std::string& context) {
             {
                 Graphics graphics(canvas.image.get());configure(graphics);
                 const REAL scale=static_cast<REAL>(110/layout.referenceHeight);
-                ImageAttributes attributes;attributes.SetWrapMode(WrapModeClamp);
+                ImageAttributes attributes;attributes.SetWrapMode(WrapModeClamp,Color(0,0,0,0));
                 const auto status=graphics.DrawImage(crop.get(),RectF(center-static_cast<REAL>(f.anchor.x)*scale,
                     bottom-static_cast<REAL>(f.anchor.y)*scale,f.rect.width*scale,f.rect.height*scale),
                     0,0,f.rect.width,f.rect.height,UnitPixel,&attributes);
