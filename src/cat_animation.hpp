@@ -32,6 +32,9 @@ struct Pose {
     bool fishMeal=false; // Transient accepted feeding presentation; never serialized.
     cat::sprite_sequence::Clip spriteClip=cat::sprite_sequence::Clip::None;
     unsigned spriteFrame=0;
+    bool spriteTimed=false;
+    std::uint64_t spriteElapsedMs=0;
+    cat::sprite_sequence::Options spriteOptions{};
     int frame = 4;
     double x = 0, lift = 0, scaleX = 1, scaleY = 1, angle = 0;
     bool flip = false;
@@ -57,7 +60,8 @@ struct Pose {
 // physical root height and saved state remain independent of sheet layouts.
 inline void AttachSprite(Pose& pose,cat::sprite_sequence::Clip clip,std::uint64_t elapsed,
                          const cat::sprite_sequence::Options& options={}) {
-    pose.spriteClip=clip;
+    pose.spriteClip=clip;pose.spriteTimed=true;
+    pose.spriteElapsedMs=elapsed;pose.spriteOptions=options;
     pose.spriteFrame=cat::sprite_sequence::Sample(clip,elapsed,options).frame;
 }
 

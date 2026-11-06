@@ -13,19 +13,24 @@ enum class Clip { Groom, Sleep, Box, Fish, Punch, Eat, Jump, Treat, None };
 constexpr std::array<Clip,8> kClips{{Clip::Groom,Clip::Sleep,Clip::Box,Clip::Fish,
                                    Clip::Punch,Clip::Eat,Clip::Jump,Clip::Treat}};
 struct Grid { unsigned columns=0,rows=0,count=0; };
-constexpr Grid GridFor(Clip clip) {
+constexpr Grid GridFor(Clip clip,unsigned sheetFrames=0) {
+    Grid grid;
     switch(clip) {
-    case Clip::Groom:return {4,4,16};
-    case Clip::Sleep:return {4,3,12};
-    case Clip::Box:return {4,2,8};
-    case Clip::Fish:return {4,2,8};
-    case Clip::Punch:return {4,3,12};
-    case Clip::Eat:return {3,4,12};
-    case Clip::Jump:return {4,4,16};
-    case Clip::Treat:return {6,4,24};
-    case Clip::None:return {};
+    case Clip::Groom:grid={4,4,16};break;
+    case Clip::Sleep:grid=sheetFrames==8?Grid{4,2,8}:Grid{4,3,12};break;
+    case Clip::Box:grid={4,2,8};break;
+    case Clip::Fish:grid={4,2,8};break;
+    case Clip::Punch:grid={4,3,12};break;
+    case Clip::Eat:grid={3,4,12};break;
+    case Clip::Jump:grid={4,4,16};break;
+    case Clip::Treat:grid={6,4,24};break;
+    case Clip::None:break;
     }
-    return {};
+    return sheetFrames==0 || sheetFrames==grid.count?grid:Grid{};
+}
+constexpr bool GridAllowed(Clip clip,unsigned columns,unsigned rows) {
+    const auto grid=GridFor(clip,columns*rows);
+    return grid.count!=0 && grid.columns==columns && grid.rows==rows;
 }
 
 enum class SleepStage { Entering, Resting, Waking };
@@ -41,6 +46,9 @@ struct Options {
     // Zero selects the clip's default duration. Groom stays within 4–8s;
     // Eat/Treat accept 2.5–12s without shortening their entrance or exit.
     std::uint64_t durationMs=0;
+    // Zero retains the original sheet layout. Authored eight-frame sleep
+    // sheets use a different story: awake/yawn/drowsy, then resting poses.
+    unsigned sheetFrames=0;
 };
 struct Frame {
     unsigned frame=0;
@@ -53,10 +61,26 @@ constexpr unsigned kPunchImpactFrame=4;
 constexpr unsigned kPunchSecondImpactFrame=5;
 constexpr std::array<std::uint64_t,2> kPunchImpacts{{kPunchImpactMs,kPunchSecondImpactMs}};
 constexpr std::uint64_t kSleepIntroMs=1200;
+constexpr std::uint64_t kSleepStoryIntroMs=1400;
+constexpr std::uint64_t kSleepStoryRestMs=60000;
 constexpr std::uint64_t kSleepWakeMs=880;
 constexpr std::uint64_t kLandingMs=280;
 constexpr std::uint64_t kEatDurationMs=5000;
 constexpr std::uint64_t kTreatDurationMs=4200;
+
+inline unsigned SelectSleepVariant(double roll,bool authored) {
+    if(!std::isfinite(roll))return 0;
+    roll=std::clamp(roll,0.0,1.0);
+    if(!authored)return std::min(5u,static_cast<unsigned>(roll*6));
+    // Choose once per sleep event. The authored story is the usual sleep;
+    // the five existing alternate poses remain available as rare events.
+    if(roll<.75)return 0;
+    if(roll<.80)return 1;
+    if(roll<.85)return 2;
+    if(roll<.90)return 3;
+    if(roll<.95)return 4;
+    return 5;
+}
 
 inline std::uint64_t GroomDuration(std::uint64_t requested) {
     return requested==0?6000:std::clamp<std::uint64_t>(requested,4000,8000);
@@ -85,24 +109,57 @@ inline Frame Timed(std::uint64_t elapsed,const std::array<std::uint64_t,N>& dura
     return {static_cast<unsigned>(N-1),durations[N-1],durations[N-1],false,true,true,true};
 }
 
+inline Frame SampleSleep(std::uint64_t elapsed,const Options& options={}) {
+    if(GridFor(Clip::Sleep,options.sheetFrames).count==0)
+        return {0,0,0,false,true,true,true};
+    if(options.sheetFrames==8) {
+        if(options.sleep==SleepStage::Waking) {
+            // Reuse the actual story drawings in reverse: drowsy, yawn,
+            // awake. Once awake, hold frame0 rather than returning to sleep.
+            auto pose=Timed(elapsed,std::array<std::uint64_t,3>{{220,330,330}});
+            constexpr std::array<unsigned,3> frames{{2,1,0}};
+            pose.frame=frames[pose.frame];
+            return pose;
+        }
+        if(options.sleep==SleepStage::Entering && elapsed<kSleepStoryIntroMs)
+            return Timed(elapsed,std::array<std::uint64_t,3>{{250,650,500}});
+        const auto rest=options.sleep==SleepStage::Entering?elapsed-kSleepStoryIntroMs:elapsed;
+        // Curled/deep sleep occupy over96% of this minute. Dreaming,
+        // stretching in sleep and a small twitch are brief rare accents;
+        // neither awake nor the entrance yawn occurs in the resting loop.
+        auto pose=Timed(rest%kSleepStoryRestMs,
+            std::array<std::uint64_t,9>{{5000,18000,800,16000,600,14000,900,4000,700}});
+        constexpr std::array<unsigned,9> frames{{3,4,5,4,7,4,6,3,4}};
+        pose.frame=frames[pose.frame];pose.looping=true;
+        return pose;
+    }
+    // The default12-frame contract and its ordinals/timing remain intact.
+    if(options.sleep==SleepStage::Waking)return Uniform(elapsed,8,4,kSleepWakeMs/4,false);
+    if(options.sleep==SleepStage::Entering && elapsed<kSleepIntroMs) {
+        return elapsed<500?Frame{0,elapsed,500,false,false,false,true}:
+                           Frame{1,elapsed-500,700,false,false,false,true};
+    }
+    return Uniform(options.sleep==SleepStage::Entering?elapsed-kSleepIntroMs:elapsed,2,6,600,true);
+}
+
 inline Frame Sample(Clip clip,std::uint64_t elapsed,const Options& options={}) {
+    if(GridFor(clip,options.sheetFrames).count==0)return {0,0,0,false,true,true,true};
     switch(clip) {
     case Clip::Groom: {
         const auto duration=GroomDuration(options.durationMs);
         if(elapsed>=duration)return {15,140,140,false,true,true,true};
         return Uniform(elapsed,0,16,140,true);
     }
-    case Clip::Sleep:
-        if(options.sleep==SleepStage::Waking)return Uniform(elapsed,8,4,kSleepWakeMs/4,false);
-        if(options.sleep==SleepStage::Entering && elapsed<kSleepIntroMs) {
-            return elapsed<500?Frame{0,elapsed,500,false,false,false,true}:
-                               Frame{1,elapsed-500,700,false,false,false,true};
-        }
-        return Uniform(options.sleep==SleepStage::Entering?elapsed-kSleepIntroMs:elapsed,2,6,600,true);
+    case Clip::Sleep:return SampleSleep(elapsed,options);
     case Clip::Box:
-        // Approach/paw -> entering -> hiding -> peeking. A completed visit
-        // holds its final pose instead of repeating the approach in place.
-        return Timed(elapsed,std::array<std::uint64_t,8>{{300,260,260,320,700,360,400,750}});
+        // The host physically approaches and touches the rim first. Source
+        // frames0/1 place the cat on opposite sides of the prop; replaying
+        // them after arrival would visibly teleport the cat across the box.
+        // Once centered, use the continuous entered/hide/peek/recover poses.
+        {
+            auto pose=Timed(elapsed,std::array<std::uint64_t,6>{{560,520,600,500,470,700}});
+            pose.frame+=2;return pose;
+        }
     case Clip::Fish:
         return Timed(elapsed,std::array<std::uint64_t,8>{{160,140,180,200,260,240,220,400}});
     case Clip::Punch: {
@@ -134,8 +191,10 @@ inline Frame Sample(Clip clip,std::uint64_t elapsed,const Options& options={}) {
     case Clip::Jump: {
         if(!options.grounded) {
             const double speed=std::isfinite(options.velocityY)?options.velocityY:0;
-            const unsigned frame=speed>140?4:speed>70?5:speed>25?6:speed>8?7:
-                                 speed>=-8?8:speed>=-40?9:speed>=-100?10:11;
+            // Frame4 is the source sheet's planted prelaunch pose. Once
+            // Box2D has left support, use only the true flight drawings.
+            const unsigned frame=speed>140?5:speed>70?6:speed>25?7:speed>8?8:
+                                 speed>=-8?9:speed>=-100?10:11;
             return {frame,0,0,false,true,false,false};
         }
         if(options.jump!=JumpPhase::Crouch)

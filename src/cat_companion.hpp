@@ -480,7 +480,8 @@ public:
             sprite.durationMs=nextDecision_>=motionStart_?nextDecision_-motionStart_:0;
             cat::animation::AttachSprite(s.animation,cat::sprite_sequence::Clip::Groom,elapsed,sprite);
         }
-        if(displayed==cat::animation::Motion::Stretch && wakingFromSleep_ && s.physical.grounded &&
+        if(displayed==cat::animation::Motion::Stretch && wakingFromSleep_ && sleepVariant_==0 &&
+                s.physical.grounded && !s.physical.onPlatform &&
                 !waitingForStop_ && elapsed<cat::sprite_sequence::kSleepWakeMs) {
             cat::sprite_sequence::Options sprite;sprite.sleep=cat::sprite_sequence::SleepStage::Waking;
             cat::animation::AttachSprite(s.animation,cat::sprite_sequence::Clip::Sleep,elapsed,sprite);
@@ -538,7 +539,9 @@ private:
             feedingKind_=cat::feeding::FoodKind::Meal;
             ++motionSerial_;
             motionStart_=ticks; motion_=m;
-            if(m==cat::animation::Motion::Sleep) sleepVariant_=static_cast<unsigned>(Random()*6);
+            if(m==cat::animation::Motion::Sleep) sleepVariant_=cat::sprite_sequence::SelectSleepVariant(Random(),
+                cat::sprite_assets::Find(cat::sprite_sequence::Clip::Sleep,
+                    static_cast<unsigned>(state_->preferences.character),cat::sprite_assets::kCareSprites)!=nullptr);
             const auto physical=physics_.CurrentPose();
             waitingForStop_=cat::motion::NeedsStop(m,physical.grounded,physical.velocityX-physical.supportVelocityX,alreadyAirborne);
             jumpPending_=jumping && !alreadyAirborne;

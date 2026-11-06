@@ -2,9 +2,13 @@
 #include "native_posture_tests.hpp"
 #include "native_walking_tests.hpp"
 #include "native_recline_tests.hpp"
+#include "native_care_sprite_tests.hpp"
 // Runs only under --render-self-test, after loading resources. No save paths,
 // audio device, updater or user interaction is involved.
 int NativeExpandedRenderTest(std::string& context) {
+    // Preserve the original canonical-pixel assertions for all ten animals;
+    // real authored sheets have their own complete native regression below.
+    DisabledCareSpriteScope canonicalArtwork;
     Surface canvas;
     if (!canvas.Create(420,320)) return 120;
     const auto originalPreferences = cat::SerializePreferences(g.preferences);

@@ -103,6 +103,15 @@ class CareSpriteImportTests(unittest.TestCase):
         self.assertEqual((self.root/'assets/care-sprites/c0-groom.png').read_bytes(),data)
         self.assertIn('Frame{{18,0,12,14},{5.25,12.5}}',(self.root/importer.HEADER).read_text())
 
+    def test_eight_frame_sleep_story_preserves_all_uploaded_poses(self):
+        entry=self.entry('sleep');entry['rows']=2
+        data,_=sheet(4,2);(self.inputs/entry['source']).write_bytes(data)
+        self.apply([entry]);canonical=json.loads((self.root/importer.CANONICAL).read_text())['clips'][0]
+        self.assertEqual(len(canonical['frames']),8)
+        self.assertEqual(canonical['reference_height'],40)
+        self.assertEqual((self.root/'assets/care-sprites/c0-sleep.png').read_bytes(),data)
+        self.assertEqual(importer.prepare_import(self.root,check=True)['resource_ids'],[114])
+
     def test_all_eight_layouts_and_stable_resource_ids(self):
         entries=[self.entry(name) for name,_,_,_ in importer.CLIPS]+[self.entry('treat',9)]
         result=self.apply(entries)

@@ -149,8 +149,10 @@ def load_entries(manifest_path):
         clip_index,enum,columns,rows=LAYOUT[name];character=integer(entry['character'],label+'.character',0,9)
         require((name,character) not in seen,f'{label}: duplicate character/clip')
         seen.add((name,character))
-        require(type(entry['columns']) is int and type(entry['rows']) is int and (entry['columns'],entry['rows'])==(columns,rows),
-                f'{label}: {name} requires exactly{columns}columns ×{rows}rows')
+        permitted={(columns,rows)}|({(4,2)} if name=='sleep' else set())
+        require(type(entry['columns']) is int and type(entry['rows']) is int and (entry['columns'],entry['rows']) in permitted,
+                f'{label}: {name} grid must be one of {sorted(permitted)}')
+        columns,rows=entry['columns'],entry['rows']
         require(isinstance(entry['source'],str) and entry['source'] and '\0' not in entry['source'],f'{label}: PNG source path required')
         source=(manifest_path.parent/entry['source']).resolve()
         require(source.suffix.lower()=='.png' and source.is_file(),f'{label}: missing original PNG: {source}')

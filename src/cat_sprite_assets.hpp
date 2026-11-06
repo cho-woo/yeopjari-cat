@@ -28,9 +28,9 @@ constexpr int ResourceId(cat::sprite_sequence::Clip clip,unsigned character) {
         113+static_cast<int>(character*8+static_cast<unsigned>(clip)):0;
 }
 constexpr bool Valid(const Descriptor& asset) {
-    const auto grid=cat::sprite_sequence::GridFor(asset.clip);
+    const auto grid=cat::sprite_sequence::GridFor(asset.clip,asset.frameCount);
     if(asset.character>=kCharacters||asset.resourceId!=ResourceId(asset.clip,asset.character)||
-       grid.count==0||asset.columns!=grid.columns||asset.rows!=grid.rows||asset.frameCount!=grid.count||
+       grid.count==0||!cat::sprite_sequence::GridAllowed(asset.clip,asset.columns,asset.rows)||asset.frameCount!=grid.count||
        asset.frameCount>kMaxFrames||asset.imageWidth==0||asset.imageHeight==0||
        asset.imageWidth>16384||asset.imageHeight>16384||
        !(asset.referenceHeight>0&&asset.referenceHeight<=16384))return false;

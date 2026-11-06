@@ -1,5 +1,17 @@
 #pragma once
 
+// Isolate the retained canonical renderer without altering its pixel proofs.
+// Authored resources are exercised separately below and restored on every exit.
+class DisabledCareSpriteScope {
+public:
+    DisabledCareSpriteScope() { saved_.swap(g.careSprites); }
+    ~DisabledCareSpriteScope() { g.careSprites.clear();saved_.swap(g.careSprites); }
+    DisabledCareSpriteScope(const DisabledCareSpriteScope&)=delete;
+    DisabledCareSpriteScope& operator=(const DisabledCareSpriteScope&)=delete;
+private:
+    std::vector<std::unique_ptr<CareSpriteAtlas>> saved_;
+};
+
 // Synthetic-atlas regression only. This exercises the real shared GDI+
 // dispatcher and registered anchors; it does not certify user artwork that
 // has not been imported, or execute audio, storage, nutrition or physics.
@@ -9,10 +21,7 @@ int NativeCareSpriteRenderTest(std::string& context) {
     constexpr REAL center=90,bottom=110;
     std::array<cat::sprite_assets::Descriptor,8> layouts{};
     std::array<std::vector<std::uint32_t>,8> pixels;
-    struct RestoreAtlases {
-        std::vector<std::unique_ptr<CareSpriteAtlas>> original;
-        ~RestoreAtlases() { g.careSprites.clear();g.careSprites=std::move(original); }
-    } restore{std::move(g.careSprites)};
+    DisabledCareSpriteScope restore;
     Surface canvas,from,to;
     if(!canvas.Create(canvasWidth,canvasHeight))return 280;
     const auto sample=[&](const std::vector<BYTE>& image,int x,int y) {
@@ -151,5 +160,176 @@ int NativeCareSpriteRenderTest(std::string& context) {
     context="synthetic care atlas invalid frame fallback";
     pose.spriteFrame=cat::sprite_assets::kMaxFrames;
     if(CareSpriteFor(pose,cat::Character::Cream))return 293;
+    return 0;
+}
+
+// Unlike the fixture above, this reads every imported PNG from its actual
+// embedded resource. The independent cropped Bitmap verifies that the common
+// dispatcher selects the requested source rectangle and registered anchor.
+int NativeActualCareSpriteRenderTest(std::string& context) {
+    using Clip=cat::sprite_sequence::Clip;
+    if(cat::sprite_assets::kCareSprites.empty()) {
+        context="no imported care resources in this development build";return 0;
+    }
+    context="actual care resource inventory";
+    if(cat::sprite_assets::kCareSprites.size()!=8||g.careSprites.size()!=8)return 294;
+    std::array<bool,8> found{};
+    for(const auto& asset:g.careSprites) {
+        if(!asset||!asset->layout||!asset->image||!cat::sprite_assets::Valid(*asset->layout))return 294;
+        const auto& layout=*asset->layout;
+        const auto index=static_cast<unsigned>(layout.clip);
+        if(layout.character!=static_cast<unsigned>(cat::Character::Cream)||index>=found.size()||found[index])return 294;
+        found[index]=true;
+        if(asset->image->GetWidth()!=layout.imageWidth||asset->image->GetHeight()!=layout.imageHeight||
+                !std::isfinite(layout.referenceHeight)||layout.referenceHeight<=0)return 294;
+    }
+    for(bool present:found)if(!present)return 294;
+    constexpr int width=640,height=480;
+    constexpr REAL center=320,bottom=400;
+    Surface canvas,from,to;
+    if(!canvas.Create(width,height))return 295;
+    auto normal=cat::nutrition::VisualModifiers(g.nutrition);normal.bodyWidth=normal.bodyHeight=1;
+    const auto preferences=cat::SerializePreferences(g.preferences);
+    const auto nutrition=cat::nutrition::Serialize(g.nutrition);
+    const auto configure=[](Graphics& graphics) {
+        graphics.SetCompositingMode(CompositingModeSourceCopy);graphics.Clear(Color(0,0,0,0));
+        graphics.SetCompositingMode(CompositingModeSourceOver);
+        graphics.SetInterpolationMode(InterpolationModeHighQualityBicubic);
+        graphics.SetPixelOffsetMode(PixelOffsetModeHighQuality);
+    };
+    const auto copy=[&] {return std::vector<BYTE>(canvas.pixels,canvas.pixels+width*height*4);};
+    const auto draw=[&](const cat::animation::Pose& pose,cat::Character character,
+                        const cat::nutrition::Visual& body,REAL desiredHeight,bool direct) {
+        Graphics graphics(canvas.image.get());configure(graphics);
+        const REAL scale=desiredHeight/std::max(1,CurrentArt(character).base.standingHeight);
+        const bool success=direct?DrawCareSprite(graphics,pose,center,bottom,scale,character,body):true;
+        if(!direct)DrawStyledAnimation(graphics,pose,center,bottom,scale,character,cat::Outfit::None,
+            body,from,to,width,height);
+        graphics.Flush(FlushIntentionSync);
+        return success&&graphics.GetLastStatus()==Ok;
+    };
+    const auto inspect=[&](const std::vector<BYTE>& image,std::array<int,4>& bounds) {
+        bounds={{width,height,0,0}};std::size_t visible=0;
+        for(int y=0;y<height;++y)for(int x=0;x<width;++x) {
+            const auto* p=image.data()+static_cast<std::size_t>(y*width+x)*4;
+            if(p[0]>p[3]+1||p[1]>p[3]+1||p[2]>p[3]+1)return false;
+            if((x<=1||x>=width-2||y<=1||y>=height-2)&&p[3]>=32)return false;
+            if(p[3]>=128) {
+                ++visible;bounds[0]=std::min(bounds[0],x);bounds[1]=std::min(bounds[1],y);
+                bounds[2]=std::max(bounds[2],x+1);bounds[3]=std::max(bounds[3],y+1);
+            }
+        }
+        return visible>=100;
+    };
+    const auto nearPixels=[](const std::vector<BYTE>& a,const std::vector<BYTE>& b) {
+        if(a.size()!=b.size())return false;
+        for(std::size_t i=0;i<a.size();++i)
+            if(std::abs(static_cast<int>(a[i])-static_cast<int>(b[i]))>1)return false;
+        return true;
+    };
+    for(const auto& asset:g.careSprites) {
+        const auto& layout=*asset->layout;
+        std::array<std::array<int,4>,cat::sprite_assets::kMaxFrames> sourceBounds{};
+        {
+            BitmapData decoded{};Rect whole(0,0,layout.imageWidth,layout.imageHeight);
+            if(asset->image->LockBits(&whole,ImageLockModeRead,PixelFormat32bppPARGB,&decoded)!=Ok)return 296;
+            struct UnlockBitmap {Bitmap* image;BitmapData* data;~UnlockBitmap(){image->UnlockBits(data);}} unlock{asset->image.get(),&decoded};
+            for(unsigned frame=0;frame<layout.frameCount;++frame) {
+                context="actual care source clip="+std::to_string(static_cast<unsigned>(layout.clip))+" frame="+std::to_string(frame);
+                const auto& rect=layout.frames[frame].rect;
+                auto& bounds=sourceBounds[frame];bounds={{rect.width,rect.height,0,0}};
+                std::size_t clear=0,visible=0;unsigned clearCorners=0;
+                for(int y=0;y<rect.height;++y) {
+                    const auto* row=static_cast<const BYTE*>(decoded.Scan0)+static_cast<ptrdiff_t>(rect.y+y)*decoded.Stride+rect.x*4;
+                    for(int x=0;x<rect.width;++x) {
+                        const auto* p=row+x*4;
+                        if(p[0]>p[3]+1||p[1]>p[3]+1||p[2]>p[3]+1)return 297;
+                        clear+=p[3]<=16;
+                        if((x==0||x==rect.width-1)&&(y==0||y==rect.height-1)&&p[3]<=16)++clearCorners;
+                        if(p[3]>=128) {
+                            ++visible;bounds[0]=std::min(bounds[0],x);bounds[1]=std::min(bounds[1],y);
+                            bounds[2]=std::max(bounds[2],x+1);bounds[3]=std::max(bounds[3],y+1);
+                        }
+                    }
+                }
+                // An opaque white/beige panel or solid crop cannot pass as a
+                // transparent sprite merely because another tile has alpha.
+                if(clear<static_cast<std::size_t>(rect.width)*rect.height/100||visible<100||!clearCorners)return 298;
+            }
+        }
+        for(unsigned frame=0;frame<layout.frameCount;++frame) {
+            context="actual care selected ROI clip="+std::to_string(static_cast<unsigned>(layout.clip))+" frame="+std::to_string(frame);
+            cat::animation::Pose pose;pose.spriteTimed=false;pose.spriteClip=layout.clip;pose.spriteFrame=frame;
+            pose.groundContact=layout.clip!=Clip::Jump||frame<4||frame>=12;
+            if(CareSpriteFor(pose,cat::Character::Cream)!=asset.get()||!draw(pose,cat::Character::Cream,normal,110,true))return 299;
+            const auto direct=copy();
+            const auto& f=layout.frames[frame];
+            std::unique_ptr<Bitmap> crop(asset->image->Clone(Rect(f.rect.x,f.rect.y,f.rect.width,f.rect.height),PixelFormat32bppPARGB));
+            if(!crop||crop->GetLastStatus()!=Ok)return 300;
+            {
+                Graphics graphics(canvas.image.get());configure(graphics);
+                const REAL scale=static_cast<REAL>(110/layout.referenceHeight);
+                ImageAttributes attributes;attributes.SetWrapMode(WrapModeClamp);
+                const auto status=graphics.DrawImage(crop.get(),RectF(center-static_cast<REAL>(f.anchor.x)*scale,
+                    bottom-static_cast<REAL>(f.anchor.y)*scale,f.rect.width*scale,f.rect.height*scale),
+                    0,0,f.rect.width,f.rect.height,UnitPixel,&attributes);
+                graphics.Flush(FlushIntentionSync);
+                if(status!=Ok||graphics.GetLastStatus()!=Ok)return 300;
+            }
+            if(!nearPixels(copy(),direct)){context+=" wrong source rectangle/anchor";return 301;}
+            pose.angle=4;pose.scaleX=.8;pose.scaleY=1.2;pose.joints.headNod=.7;
+            pose.joints.crouch=.8;pose.joints.frontLeft=.6;pose.face.blink=.9;
+            if(!draw(pose,cat::Character::Cream,normal,110,false)||copy()!=direct)return 302;
+            std::array<int,4> bounds{};
+            if(!inspect(direct,bounds)){context+=" invalid alpha, missing body or canvas clipping";return 303;}
+            if(pose.groundContact&&bounds[3]>bottom+2){context+=" below registered support";return 304;}
+        }
+        // Independently change nutrition dimensions and DPI/age scale. The
+        // source alpha bounds must follow one common source scale and anchor,
+        // rather than a pose's individual opaque height or whole-body tilt.
+        const unsigned frame=layout.frameCount/2;
+        const auto& f=layout.frames[frame];const auto& src=sourceBounds[frame];
+        for(const auto dimensions:{std::pair<double,double>{1,1},{.78,.96},{1.26,.98}})
+        for(int facing:{-1,1})for(REAL desiredHeight:{80.0f,165.0f}) {
+            auto body=normal;body.bodyWidth=dimensions.first;body.bodyHeight=dimensions.second;
+            cat::animation::Pose pose;pose.spriteTimed=false;pose.spriteClip=layout.clip;pose.spriteFrame=frame;
+            pose.flip=facing<0;pose.groundContact=layout.clip!=Clip::Jump;
+            context="actual care shape clip="+std::to_string(static_cast<unsigned>(layout.clip))+
+                " facing="+std::to_string(facing)+" width="+std::to_string(dimensions.first)+
+                " height="+std::to_string(desiredHeight);
+            if(!draw(pose,cat::Character::Cream,body,desiredHeight,true))return 299;
+            const auto direct=copy();
+            if(!draw(pose,cat::Character::Cream,body,desiredHeight,false)||copy()!=direct)return 302;
+            std::array<int,4> actual{};
+            if(!inspect(direct,actual))return 303;
+            const double sx=desiredHeight/layout.referenceHeight*body.bodyWidth;
+            const double sy=desiredHeight/layout.referenceHeight*body.bodyHeight;
+            const double left=(src[0]-f.anchor.x)*sx,right=(src[2]-f.anchor.x)*sx;
+            const bool mirrored=pose.flip && layout.clip!=Clip::Box;
+            const std::array<double,4> expected{{center+(mirrored?-right:left),bottom+(src[1]-f.anchor.y)*sy,
+                center+(mirrored?-left:right),bottom+(src[3]-f.anchor.y)*sy}};
+            for(unsigned edge=0;edge<4;++edge)
+                if(!std::isfinite(expected[edge])||std::abs(actual[edge]-expected[edge])>2.1) {
+                    context+=" unexpected anchored bounds edge="+std::to_string(edge)+
+                        " actual="+std::to_string(actual[edge])+" expected="+std::to_string(expected[edge]);return 305;
+                }
+            if(pose.groundContact&&actual[3]>bottom+2)return 304;
+        }
+        if(layout.clip!=Clip::Jump) {
+            cat::animation::Pose airborne;airborne.spriteClip=layout.clip;airborne.groundContact=false;
+            if(CareSpriteFor(airborne,cat::Character::Cream))return 306;
+        }
+    }
+    context="actual care sheet species ownership and fish presentation";
+    cat::animation::Pose pose;pose.spriteTimed=false;pose.spriteClip=Clip::Groom;
+    for(unsigned character=1;character<cat::kCharacterCount;++character)
+        if(CareSpriteFor(pose,static_cast<cat::Character>(character)))return 307;
+    pose.spriteClip=Clip::Eat;pose.spriteFrame=3;pose.fishMeal=true;
+    const auto* fish=CareSpriteFor(pose,cat::Character::Cream);
+    if(!fish||fish->layout->clip!=Clip::Fish||!draw(pose,cat::Character::Cream,normal,110,false))return 308;
+    const auto fishPixels=copy();pose.fishMeal=false;pose.spriteClip=Clip::Fish;
+    if(!draw(pose,cat::Character::Cream,normal,110,false)||copy()!=fishPixels)return 308;
+    if(cat::SerializePreferences(g.preferences)!=preferences||cat::nutrition::Serialize(g.nutrition)!=nutrition)return 309;
+    context="all actual authored care resources, source ROIs, anchors, shapes and dispatcher checks passed";
     return 0;
 }

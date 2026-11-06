@@ -13,6 +13,7 @@
 110 RCDATA "../assets/companions-hang.png"
 111 RCDATA "../assets/companions-back.png"
 112 RCDATA "../assets/companions-sleep.png"
+193 RCDATA "../assets/care-sprites/box-prop.png"
 1 RT_MANIFEST "app.manifest"
 
 1 VERSIONINFO
