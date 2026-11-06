@@ -54,3 +54,8 @@ python3 tools/import_care_sprites.py --check
 가져오기는 PNG 바이트를 그대로 `assets/care-sprites/`에 복사하고 정규 매니페스트와 C++/리소스 목록을 생성한다. `--check`는 읽기 전용으로 원본 체크섬·프레임·생성 파일의 일치를 검증한다. 칸마다 여백이 다르거나 설명문이 포함된 시트는 `frames`에 각 `rect: [x,y,width,height]`와 `anchor: [x,y]`를 명시한다. 이때도 클립의 기준 높이는 공통으로 유지한다.
 
 병합·배포 전에는 실제 원본을 가져와 얼굴·크기·발 지지점·배경·박스 가림을 검토하고, Windows에서 실제 PNG를 그리는 검사와 창 이동·낙하·착지를 확인해야 한다. 이어 Windows x64 빌드·회귀 검사·ZIP·업데이트 피드 검증을 통과한 경우에만 배포한다. 현재 빈 목록의 통과 결과는 원본 시트의 시각 품질 검증을 대신하지 않는다.
+
+
+## 준비 코드의 검증
+
+[PR #8](https://github.com/cho-woo/yeopjari-cat/pull/8)의 소스 `03fb4a78ee6c3ad32ff95d62390cedbcc6de6334`가 [Windows 검사](https://github.com/cho-woo/yeopjari-cat/actions/runs/42152196944)를 통과했다. Linux 단위·저장·Box2D 검사, Windows x64 빌드·실제 실행·메뉴와 지연 급여·기존 GDI+ 동작, 합성 아틀라스의 선택·고정 기준점·반전·체형·공중 제한, 무음·ZIP·피드를 확인했다. 실제 사용자 시트는 0개이므로 이 결과는 새 그림의 품질·배경 제거·행동 간 전환을 검증한 결과가 아니다. PR은 초안으로 유지하며 병합·배포하지 않는다.
