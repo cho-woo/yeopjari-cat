@@ -9,6 +9,12 @@ reference_height controls the clip; individual poses are never height-normalized
 Explicit rectangles should exclude captions. The importer never guesses or
 removes white/black/checkerboard backgrounds and never generates missing art.
 
+Schema2 adds independent frame_count (1..256), arbitrary bounded grids and an
+explicit sequence: intro/loop/outro lists of {frame,ms}, finish (hold/complete),
+optional duration_ms and events [{step,offset_ms,type}]. Event step addresses
+the concatenated intro, loop and outro lists. Walk/run additionally require
+stride_pixels: logical travel per complete cycle, independent of frame count.
+
   python3 tools/import_care_sprites.py --manifest /path/to/manifest.json
   python3 tools/import_care_sprites.py --check
 
@@ -20,6 +26,7 @@ missing manifests, opaque images and generated-file drift fail closed.
 from __future__ import annotations
 
 import argparse
+from collections import OrderedDict
 import hashlib
 import json
 import math
@@ -34,8 +41,14 @@ ROOT=Path(__file__).resolve().parents[1]
 CLIPS=(('groom','Groom',4,4),('sleep','Sleep',4,3),('box','Box',4,2),('fish','Fish',4,2),
        ('punch','Punch',4,3),('eat','Eat',3,4),('jump','Jump',4,4),('treat','Treat',6,4))
 LAYOUT={name:(index,enum,columns,rows) for index,(name,enum,columns,rows) in enumerate(CLIPS)}
+LAYOUT.update({'walk':(9,'Walk',4,2),'run':(10,'Run',4,2)})
+MAX_FRAMES=256
+MAX_STEPS=512
+MAX_CUES=64
+MAX_DURATION_MS=24*60*60*1000
 MAX_BYTES=32*1024*1024
 MAX_PIXELS=32*1024*1024
+MAX_RESIDENT_PIXELS=48*1024*1024
 MAX_SIDE=16384
 HEADER='src/care_sprites.generated.hpp'
 RC='src/care_sprites.generated.rc'
@@ -131,41 +144,103 @@ def anchor(value,width,height,label):
     return [number(value[0],label+'.x',0,width),number(value[1],label+'.y',0,height)]
 
 
+def sequence(value,frame_count,label):
+    fields={'intro','loop','outro','finish','duration_ms','events'}
+    require(isinstance(value,dict) and set(value)<=fields,f'{label}: unsupported sequence fields')
+    steps=[];ranges=[];canonical={}
+    for section in ('intro','loop','outro'):
+        raw=value.get(section,[])
+        require(isinstance(raw,list),f'{label}.{section}: timed step list required')
+        first=len(steps);canonical[section]=[]
+        for index,step in enumerate(raw):
+            name=f'{label}.{section}[{index}]'
+            require(isinstance(step,dict) and set(step)=={'frame','ms'},f'{name}: frame and ms required')
+            normalized={'frame':integer(step['frame'],name+'.frame',0,frame_count-1),
+                        'ms':integer(step['ms'],name+'.ms',1,60000)}
+            steps.append(normalized);canonical[section].append(normalized)
+        ranges.append((first,len(raw)))
+    require(1<=len(steps)<=MAX_STEPS,f'{label}: 1..{MAX_STEPS} timed steps required')
+    finish=value.get('finish','complete')
+    require(finish in ('hold','complete'),f'{label}.finish: hold or complete required')
+    duration=integer(value.get('duration_ms',0),label+'.duration_ms',0,MAX_DURATION_MS)
+    boundaries=sum(step['ms'] for name in ('intro','outro') for step in canonical[name])
+    require(duration==0 or duration>=boundaries,f'{label}: duration_ms truncates the entrance or ending')
+    raw_events=value.get('events',[])
+    require(isinstance(raw_events,list) and len(raw_events)<=MAX_CUES,f'{label}: at most {MAX_CUES} events allowed')
+    event_bits={'contact':1,'takeoff':2,'landing':4,'marker':8}
+    cues=[];events=[];seen=set()
+    for index,cue in enumerate(raw_events):
+        name=f'{label}.events[{index}]'
+        require(isinstance(cue,dict) and set(cue)=={'step','offset_ms','type'},f'{name}: step, offset_ms and type required')
+        step=integer(cue['step'],name+'.step',0,len(steps)-1)
+        offset=integer(cue['offset_ms'],name+'.offset_ms',0,steps[step]['ms']-1)
+        require(isinstance(cue['type'],str) and cue['type'] in event_bits,f'{name}: unsupported event type')
+        key=(step,offset,cue['type']);require(key not in seen,f'{name}: duplicate event')
+        seen.add(key);cues.append((step,offset,event_bits[cue['type']]))
+        events.append({'step':step,'offset_ms':offset,'type':cue['type']})
+    canonical.update({'finish':finish,'duration_ms':duration,'events':events})
+    return {'steps':steps,'ranges':ranges,'finish':finish,'duration_ms':duration,'cues':cues,'canonical':canonical}
+
+
 def load_entries(manifest_path):
     if manifest_path is None:return []
     require(manifest_path.is_file(),f'Missing manifest: {manifest_path}')
     require(manifest_path.stat().st_size<=1024*1024,'Manifest exceeds1MiB')
     try:manifest=json.loads(manifest_path.read_text(encoding='utf-8-sig'),object_pairs_hook=unique_object)
     except (OSError,UnicodeError,ValueError) as error:raise ImportError('Cannot read manifest JSON') from error
-    require(isinstance(manifest,dict) and set(manifest)=={'schema','clips'} and type(manifest['schema']) is int and manifest['schema']==1,
-            'Manifest requires schema1 and clips')
-    require(isinstance(manifest['clips'],list) and len(manifest['clips'])<=80,'clips must be a list with at most80 entries')
-    entries=[];seen=set()
+    require(isinstance(manifest,dict) and set(manifest)=={'schema','clips'} and type(manifest['schema']) is int and manifest['schema'] in (1,2),
+            'Manifest requires schema1 or schema2 and clips')
+    schema=manifest['schema']
+    require(isinstance(manifest['clips'],list) and len(manifest['clips'])<=100,'clips must be a list with at most100 entries')
+    entries=[];seen=set();resident_pixels=0
+    # Keep alpha validation bounded while decoding a repeated/shared sheet only
+    # once. The cache stores alpha, not a second RGBA copy of every source.
+    decoded=OrderedDict();cached_pixels=0
     for index,entry in enumerate(manifest['clips']):
         label=f'clips[{index}]'
         required={'clip','character','source','columns','rows','reference_height'}
-        require(isinstance(entry,dict) and required<=set(entry) and set(entry)<=required|{'frames','anchor','sha256'},f'{label}: unsupported or missing fields')
+        optional={'frames','anchor','sha256'}|({'frame_count','sequence','stride_pixels'} if schema==2 else set())
+        require(isinstance(entry,dict) and required<=set(entry) and set(entry)<=required|optional,f'{label}: unsupported or missing fields')
         name=entry['clip'];require(isinstance(name,str) and name in LAYOUT,f'{label}: unknown clip')
+        require(schema==2 or name not in ('walk','run'),f'{label}: locomotion requires schema2 and a sequence')
         clip_index,enum,columns,rows=LAYOUT[name];character=integer(entry['character'],label+'.character',0,9)
         require((name,character) not in seen,f'{label}: duplicate character/clip')
         seen.add((name,character))
         permitted={(columns,rows)}|({(4,2)} if name=='sleep' else set())
-        require(type(entry['columns']) is int and type(entry['rows']) is int and (entry['columns'],entry['rows']) in permitted,
-                f'{label}: {name} grid must be one of {sorted(permitted)}')
-        columns,rows=entry['columns'],entry['rows']
+        if schema==1:
+            require(type(entry['columns']) is int and type(entry['rows']) is int and (entry['columns'],entry['rows']) in permitted,
+                    f'{label}: {name} grid must be one of {sorted(permitted)}')
+        columns=integer(entry['columns'],label+'.columns',1,MAX_FRAMES)
+        rows=integer(entry['rows'],label+'.rows',1,MAX_FRAMES)
+        require(columns*rows<=MAX_FRAMES,f'{label}: grid capacity exceeds {MAX_FRAMES}')
         require(isinstance(entry['source'],str) and entry['source'] and '\0' not in entry['source'],f'{label}: PNG source path required')
         source=(manifest_path.parent/entry['source']).resolve()
         require(source.suffix.lower()=='.png' and source.is_file(),f'{label}: missing original PNG: {source}')
         require(source.stat().st_size<=MAX_BYTES,f'{label}: PNG exceeds32MiB')
         data=source.read_bytes();digest=hashlib.sha256(data).hexdigest()
         if 'sha256' in entry:require(entry['sha256']==digest,f'{label}: original PNG checksum mismatch')
-        width,height,alpha=png_alpha(data)
+        if digest in decoded:
+            width,height,alpha=decoded.pop(digest);decoded[digest]=(width,height,alpha)
+        else:
+            width,height,alpha=png_alpha(data)
+            while decoded and cached_pixels+width*height>MAX_PIXELS:
+                _,old=decoded.popitem(last=False);cached_pixels-=old[0]*old[1]
+            decoded[digest]=(width,height,alpha);cached_pixels+=width*height
         require(width>=columns and height>=rows,f'{label}: image is smaller than its frame grid')
         reference=number(entry['reference_height'],label+'.reference_height',.000001,MAX_SIDE)
         raw_frames=entry.get('frames')
-        require(raw_frames is None or isinstance(raw_frames,list) and len(raw_frames)==columns*rows,f'{label}: wrong frame count')
+        require(raw_frames is None or isinstance(raw_frames,list),f'{label}: frames must be a list')
+        count=integer(entry.get('frame_count',len(raw_frames) if raw_frames is not None else columns*rows),
+                      label+'.frame_count',1,min(MAX_FRAMES,columns*rows))
+        require(raw_frames is None or len(raw_frames)==count,f'{label}: wrong frame count')
+        require(schema==2 or count==columns*rows,f'{label}: schema1 frame count must match its grid')
+        program=sequence(entry['sequence'],count,label+'.sequence') if 'sequence' in entry else None
+        require(program is not None or ((columns,rows) in permitted and count==columns*rows and name not in ('walk','run')),
+                f'{label}: custom frame count or locomotion requires an explicit sequence')
+        stride=number(entry.get('stride_pixels',0),label+'.stride_pixels',0,4096)
+        require(name not in ('walk','run') or stride>0,f'{label}: locomotion stride_pixels must be positive')
         frames=[]
-        for frame_index in range(columns*rows):
+        for frame_index in range(count):
             frame_label=f'{label}.frames[{frame_index}]'
             if raw_frames is None:
                 col,row=frame_index%columns,frame_index//columns
@@ -184,16 +259,39 @@ def load_entries(manifest_path):
             for scanline in range(y,y+fh):
                 values=alpha[scanline*width+x:scanline*width+x+fw];minimum=min(minimum,min(values));maximum=max(maximum,max(values))
             require(minimum<=16 and maximum>16,f'{frame_label}: frame must contain transparent padding and visible artwork')
+            resident_pixels+=fw*fh
+            require(resident_pixels<=MAX_RESIDENT_PIXELS,f'{label}: decoded frame storage exceeds192MiB resident budget')
             frames.append({'rect':[x,y,fw,fh],'anchor':fixed_anchor})
         filename=f'c{character}-{name}.png'
-        entries.append({'clip':name,'enum':enum,'character':character,'resource':113+character*8+clip_index,
+        # 301..314 remain reserved by the retired-audio compatibility checks.
+        resource=400+character*2+(name=='run') if name in ('walk','run') else 113+character*8+clip_index
+        entries.append({'clip':name,'enum':enum,'character':character,'resource':resource,'schema':schema,
                         'columns':columns,'rows':rows,'reference_height':reference,'width':width,'height':height,
-                        'frames':frames,'filename':filename,'sha256':digest,'data':data})
-    return sorted(entries,key=lambda value:(value['character'],LAYOUT[value['clip']][0]))
+                        'frames':frames,'filename':filename,'sha256':digest,'data':data,'program':program,'stride_pixels':stride})
+    entries.sort(key=lambda value:(value['character'],LAYOUT[value['clip']][0]))
+    for entry in entries:
+        if entry['clip']=='run':
+            walking=next((value for value in entries if value['clip']=='walk' and value['character']==entry['character']),None)
+            if walking and walking['sha256']==entry['sha256']:
+                entry['resource']=walking['resource'];entry['filename']=walking['filename'];entry['data']=walking['data']
+    return entries
 
 
 def numeric(value):
     return repr(value) if type(value) is float else str(value)
+
+
+def generated_program(program):
+    if program is None:return 'cat::sprite_sequence::Program{}'
+    scope='cat::sprite_sequence::'
+    result=scope+'Program{'+str(len(program['steps']))+',{{\n'
+    for step in program['steps']:
+        result+='        '+scope+'Step{'+str(step['frame'])+','+str(step['ms'])+'},\n'
+    result+='    }},'+','.join(scope+'Range{'+str(first)+','+str(count)+'}' for first,count in program['ranges'])
+    result+=','+scope+'Finish::'+('Hold' if program['finish']=='hold' else 'Complete')
+    result+=','+str(program['duration_ms'])+','+str(len(program['cues']))+',{{'
+    result+=','.join(scope+'Cue{'+','.join(map(str,cue))+'}' for cue in program['cues'])
+    return result+'}}}'
 
 
 def generated(entries):
@@ -206,13 +304,21 @@ def generated(entries):
     if not entries:header+='inline constexpr std::array<Descriptor,0> kCareSprites{};\n'
     else:
         header+=f'inline constexpr std::array<Descriptor,{len(entries)}> kCareSprites{{{{\n'
+        resources={}
         for entry in entries:
             header+='    Descriptor{cat::sprite_sequence::Clip::'+entry['enum']+','+','.join(str(entry[k]) for k in ['character','resource','columns','rows'])+','
             header+=f'{len(entry["frames"])},{entry["width"]},{entry["height"]},{numeric(entry["reference_height"])},{{{{\n'
             for frame in entry['frames']:
                 header+='        Frame{{'+','.join(map(str,frame['rect']))+'},{'+','.join(map(numeric,frame['anchor']))+'}},\n'
-            header+='    }},"'+entry['sha256']+'","assets/care-sprites/'+entry['filename']+'"},\n'
-            rc+=f'{entry["resource"]} RCDATA "../assets/care-sprites/{entry["filename"]}"\n'
+            header+='    }},"'+entry['sha256']+'","assets/care-sprites/'+entry['filename']+'"'
+            if entry['program'] is not None or entry['stride_pixels']:
+                header+=','+generated_program(entry['program'])+','+numeric(entry['stride_pixels'])
+            header+='},\n'
+            if entry['resource'] in resources:
+                require(resources[entry['resource']]==entry['sha256'],'Conflicting PNGs share a resource identifier')
+            else:
+                resources[entry['resource']]=entry['sha256']
+                rc+=f'{entry["resource"]} RCDATA "../assets/care-sprites/{entry["filename"]}"\n'
         header+='}};\n'
     header+='}\n'
     return header.encode(),rc.encode()
@@ -225,8 +331,17 @@ def prepare_import(root,manifest_path=None,check=False):
     outputs={root/HEADER:header,root/RC:rc}
     for entry in entries:outputs[root/'assets/care-sprites'/entry['filename']]=entry['data']
     if selected is not None:
-        canonical={'schema':1,'clips':[{key:entry[key] for key in ('clip','character','columns','rows','reference_height','frames','sha256')}|
-                    {'source':entry['filename']} for entry in entries]}
+        schema=2 if any(entry['schema']==2 for entry in entries) else 1
+        clips=[]
+        for entry in entries:
+            value={key:entry[key] for key in ('clip','character','columns','rows','reference_height','frames','sha256')}
+            value['source']=entry['filename']
+            if schema==2:
+                value['frame_count']=len(entry['frames'])
+                if entry['program'] is not None:value['sequence']=entry['program']['canonical']
+                if entry['stride_pixels']:value['stride_pixels']=entry['stride_pixels']
+            clips.append(value)
+        canonical={'schema':schema,'clips':clips}
         outputs[default]=(json.dumps(canonical,ensure_ascii=False,indent=2)+'\n').encode()
     # Complete preflight before touching any generated or copied file.
     if check:
@@ -244,7 +359,10 @@ def prepare_import(root,manifest_path=None,check=False):
             try:os.replace(temporary,path)
             finally:temporary.unlink(missing_ok=True)
     return {'status':'verified' if check else 'imported','clips':len(entries),'original_png_bytes_preserved':True,
-            'resource_ids':[entry['resource'] for entry in entries]}
+            'resource_ids':[entry['resource'] for entry in entries],
+            'unique_sheets':len({entry['sha256'] for entry in entries}),
+            'actual_frames':sum(len(entry['frames']) for entry in entries),
+            'decoded_frame_bytes':sum(frame['rect'][2]*frame['rect'][3]*4 for entry in entries for frame in entry['frames'])}
 
 
 def main():

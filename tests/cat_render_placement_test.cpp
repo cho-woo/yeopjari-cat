@@ -2,6 +2,7 @@
 #include "../src/cat_animation.hpp"
 #include <cmath>
 #include <iostream>
+#include <limits>
 #include <stdexcept>
 #include <string>
 
@@ -102,6 +103,50 @@ void SlowVerticalMotionKeepsEveryFractionalStep() {
         }
     }
 }
+
+void AuthoredPropCanvasDoesNotMoveTheCatRoot() {
+    cat::sprite_assets::Descriptor fish;
+    fish.frameCount=2;fish.referenceHeight=360;
+    fish.frames[0]={{0,0,443,443},{255,386}};
+    fish.frames[1]={{443,443,444,444},{238,386}};
+    CHECK(cat::render::SpriteBottomSafetyInset(fish,110)==18);
+    for(double dpi:{1.,1.25,1.5,2.,3.,4.})
+    for(double growth:{.55,.82,1.,1.1})
+    for(double bodyHeight:{.9,1.,1.04})
+    for(double lift:{0.,180.37,520.75}) {
+        const int height=static_cast<int>(std::ceil(235*dpi));
+        const double renderedHeight=110*dpi*growth;
+        const int inset=cat::render::SpriteBottomSafetyInset(fish,renderedHeight,bodyHeight);
+        const auto original=cat::render::BuildPlacement(-60,height,dpi,lift,0,dpi*growth);
+        const auto reserved=cat::render::WithBottomSafetyInset(original,inset);
+        CHECK(reserved.screenFeetY==original.screenFeetY);
+        CHECK(reserved.windowTop-original.windowTop==inset);
+        CHECK(reserved.localBottom==original.localBottom-inset);
+        CHECK(std::abs((reserved.windowTop+reserved.localBottom)-
+            (original.windowTop+original.localBottom))<1e-9);
+        for(unsigned i=0;i<fish.frameCount;++i) {
+            const auto& frame=fish.frames[i];
+            const double belowRoot=(frame.rect.height-frame.anchor.y)*renderedHeight*bodyHeight/fish.referenceHeight;
+            CHECK(reserved.localBottom+belowRoot<=height-.5+1e-9);
+            CHECK(inset-belowRoot>=-1e-9); // The whole original ROI fits below the unchanged root.
+        }
+    }
+    // An anchor already at the rectangle bottom needs no extra canvas.
+    for(unsigned i=0;i<fish.frameCount;++i)fish.frames[i].anchor.y=fish.frames[i].rect.height;
+    CHECK(cat::render::SpriteBottomSafetyInset(fish,110)==0);
+    fish.frames[0].anchor.y=std::numeric_limits<double>::quiet_NaN();
+    CHECK(cat::render::SpriteBottomSafetyInset(fish,110)==0);
+    fish.frames[0].anchor.y=444;
+    CHECK(cat::render::SpriteBottomSafetyInset(fish,110)==0);
+    fish.frames[0].anchor.y=386;
+    CHECK(cat::render::SpriteBottomSafetyInset(fish,110,0)==0);
+    CHECK(cat::render::SpriteBottomSafetyInset(fish,std::numeric_limits<double>::infinity())==0);
+    CHECK(cat::render::SpriteBottomSafetyInset(fish,std::numeric_limits<double>::max())==0);
+    fish.frameCount=0;
+    CHECK(cat::render::SpriteBottomSafetyInset(fish,110)==0);
+    fish.frameCount=cat::sprite_assets::kMaxFrames+1;
+    CHECK(cat::render::SpriteBottomSafetyInset(fish,110)==0);
+}
 }
 
 int main() {
@@ -110,6 +155,7 @@ int main() {
         GrowthAndCosmeticMotionCannotRescalePhysicalHeight();
         EveryScheduledMotionUsesTheSamePhysicalSupportCoordinate();
         SlowVerticalMotionKeepsEveryFractionalStep();
+        AuthoredPropCanvasDoesNotMoveTheCatRoot();
         std::cout << "Render placement: " << checks << " checks passed\n";
         return 0;
     } catch (const std::exception& error) {

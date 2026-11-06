@@ -7,3 +7,4 @@
 118 RCDATA "../assets/care-sprites/c0-eat.png"
 119 RCDATA "../assets/care-sprites/c0-jump.png"
 120 RCDATA "../assets/care-sprites/c0-treat.png"
+400 RCDATA "../assets/care-sprites/c0-walk.png"

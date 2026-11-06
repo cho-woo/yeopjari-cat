@@ -1,5 +1,16 @@
 #pragma once
 
+inline bool NativeCarePngEncoder(CLSID& result) {
+    UINT count=0,bytes=0;
+    if(GetImageEncodersSize(&count,&bytes)!=Ok||!count||!bytes)return false;
+    std::vector<BYTE> storage(bytes);auto* encoders=reinterpret_cast<ImageCodecInfo*>(storage.data());
+    if(GetImageEncoders(count,bytes,encoders)!=Ok)return false;
+    for(UINT index=0;index<count;++index)if(encoders[index].MimeType&&std::wcscmp(encoders[index].MimeType,L"image/png")==0) {
+        result=encoders[index].Clsid;return true;
+    }
+    return false;
+}
+
 // Isolate the retained canonical renderer without altering its pixel proofs.
 // Authored resources are exercised separately below and restored on every exit.
 class DisabledCareSpriteScope {
@@ -163,6 +174,29 @@ int NativeCareSpriteRenderTest(std::string& context) {
     return 0;
 }
 
+// The production decoder releases its whole atlas after prewarming frames.
+// Tests decode the embedded resource independently so source-reference checks
+// do not accidentally compare a cached frame with the same cached frame.
+class NativeCareSourceReference {
+public:
+    std::unique_ptr<Bitmap> image;
+    IStream* stream=nullptr;
+    ~NativeCareSourceReference(){image.reset();if(stream)stream->Release();}
+    bool Load(const cat::sprite_assets::Descriptor& layout) {
+        const auto resource=FindResourceW(g.instance,MAKEINTRESOURCEW(layout.resourceId),RT_RCDATA);
+        const auto loaded=resource?LoadResource(g.instance,resource):nullptr;
+        const DWORD count=resource?SizeofResource(g.instance,resource):0;
+        const void* bytes=loaded?LockResource(loaded):nullptr;
+        if(!bytes||!count)return false;
+        HGLOBAL memory=GlobalAlloc(GMEM_MOVEABLE,count);if(!memory)return false;
+        void* target=GlobalLock(memory);if(!target){GlobalFree(memory);return false;}
+        std::memcpy(target,bytes,count);GlobalUnlock(memory);
+        if(FAILED(CreateStreamOnHGlobal(memory,TRUE,&stream))){GlobalFree(memory);return false;}
+        image.reset(Bitmap::FromStream(stream,FALSE));
+        return image&&image->GetLastStatus()==Ok&&image->GetWidth()==layout.imageWidth&&image->GetHeight()==layout.imageHeight;
+    }
+};
+
 // Unlike the fixture above, this reads every imported PNG from its actual
 // embedded resource. The independent cropped Bitmap verifies that the common
 // dispatcher selects the requested source rectangle and registered anchor.
@@ -172,18 +206,26 @@ int NativeActualCareSpriteRenderTest(std::string& context) {
         context="no imported care resources in this development build";return 0;
     }
     context="actual care resource inventory";
-    if(cat::sprite_assets::kCareSprites.size()!=8||g.careSprites.size()!=8)return 294;
-    std::array<bool,8> found{};
+    if(g.careSprites.size()!=cat::sprite_assets::kCareSprites.size())return 294;
+    std::vector<std::pair<unsigned,unsigned>> found;
+    std::vector<int> resources;std::size_t totalPixels=0,totalFrames=0;
     for(const auto& asset:g.careSprites) {
-        if(!asset||!asset->layout||!asset->image||!cat::sprite_assets::Valid(*asset->layout))return 294;
+        if(!asset||!asset->layout||asset->image||asset->stream||!cat::sprite_assets::Valid(*asset->layout))return 294;
         const auto& layout=*asset->layout;
-        const auto index=static_cast<unsigned>(layout.clip);
-        if(layout.character!=static_cast<unsigned>(cat::Character::Cream)||index>=found.size()||found[index])return 294;
-        found[index]=true;
-        if(asset->image->GetWidth()!=layout.imageWidth||asset->image->GetHeight()!=layout.imageHeight||
-                !std::isfinite(layout.referenceHeight)||layout.referenceHeight<=0)return 294;
+        const auto key=std::make_pair(layout.character,static_cast<unsigned>(layout.clip));
+        if(std::find(found.begin(),found.end(),key)!=found.end())return 294;
+        found.push_back(key);
+        if(std::find(resources.begin(),resources.end(),layout.resourceId)==resources.end())resources.push_back(layout.resourceId);
+        if(!std::isfinite(layout.referenceHeight)||layout.referenceHeight<=0)return 294;
+        for(unsigned index=0;index<layout.frameCount;++index) {
+            const auto& rect=layout.frames[index].rect;
+            const std::size_t pixels=static_cast<std::size_t>(rect.width)*rect.height;
+            if(!asset->frames[index]||asset->framePixels[index].size()!=pixels)return 294;
+            totalPixels+=pixels;++totalFrames;
+        }
     }
-    for(bool present:found)if(!present)return 294;
+    if(totalPixels!=careSpriteMemory.residentPixels||totalFrames!=careSpriteMemory.residentFrames||
+            resources.size()!=careSpriteMemory.decodedAtlases||totalPixels>cat::sprite_assets::kMaxResidentPixels)return 294;
     constexpr int width=640,height=480;
     constexpr REAL center=320,bottom=400;
     Surface canvas,from,to;
@@ -231,14 +273,14 @@ int NativeActualCareSpriteRenderTest(std::string& context) {
             if(std::abs(static_cast<int>(a[i])-static_cast<int>(b[i]))>(i%4==3?1:2))return false;
         return true;
     };
-    const auto decodeReference=[](const CareSpriteAtlas& asset,unsigned index,std::vector<std::uint32_t>& pixels) {
-        const auto& rect=asset.layout->frames[index].rect;
+    const auto decodeReference=[](Bitmap& atlas,const cat::sprite_assets::Descriptor& layout,unsigned index,std::vector<std::uint32_t>& pixels) {
+        const auto& rect=layout.frames[index].rect;
         pixels.resize(static_cast<std::size_t>(rect.width)*rect.height);
         // GetPixel is independent of the production LockBits frame cache.
         for(int y=0;y<rect.height;++y)for(int x=0;x<rect.width;++x) {
             Color color;
-            if(asset.image->GetPixel(rect.x+x,rect.y+y,&color)!=Ok)return false;
-            const unsigned alpha=color.GetA();
+            if(atlas.GetPixel(rect.x+x,rect.y+y,&color)!=Ok)return false;
+            const unsigned alpha=color.GetA()<=16?0:color.GetA();
             pixels[static_cast<std::size_t>(y)*rect.width+x]=(alpha<<24)|
                 (((color.GetR()*alpha+127)/255)<<16)|(((color.GetG()*alpha+127)/255)<<8)|
                 ((color.GetB()*alpha+127)/255);
@@ -255,7 +297,7 @@ int NativeActualCareSpriteRenderTest(std::string& context) {
         // Match the physical transform exactly. An absolute RectF rounds its
         // origin differently from a translated local RectF (Groom14 differs
         // by1/65536px), changing GDI+'s bicubic alpha weights.
-        const int standingHeight=CurrentArt(cat::Character::Cream).base.standingHeight;
+        const int standingHeight=CurrentArt(static_cast<cat::Character>(layout.character)).base.standingHeight;
         const REAL callerScale=desiredHeight/std::max(1,standingHeight);
         const double referenceScale=callerScale*standingHeight/layout.referenceHeight;
         const REAL sx=static_cast<REAL>(referenceScale*body.bodyWidth);
@@ -269,13 +311,21 @@ int NativeActualCareSpriteRenderTest(std::string& context) {
         graphics.Flush(FlushIntentionSync);
         return status==Ok&&graphics.GetLastStatus()==Ok;
     };
+    if(!CreateDirectoryW(L"render-self-test",nullptr)&&GetLastError()!=ERROR_ALREADY_EXISTS)return 310;
+    Surface review;
+    if(!review.Create(1920,static_cast<int>((totalFrames+2+7)/8)*260))return 310;
+    {Graphics graphics(review.image.get());graphics.Clear(Color(255,235,239,243));}
+    unsigned reviewCell=0;
     for(const auto& asset:g.careSprites) {
         const auto& layout=*asset->layout;
+        const auto character=static_cast<cat::Character>(layout.character);
+        NativeCareSourceReference original;
+        if(!original.Load(layout))return 296;
         std::array<std::array<int,4>,cat::sprite_assets::kMaxFrames> sourceBounds{};
         {
             BitmapData decoded{};Rect whole(0,0,layout.imageWidth,layout.imageHeight);
-            if(asset->image->LockBits(&whole,ImageLockModeRead,PixelFormat32bppPARGB,&decoded)!=Ok)return 296;
-            struct UnlockBitmap {Bitmap* image;BitmapData* data;~UnlockBitmap(){image->UnlockBits(data);}} unlock{asset->image.get(),&decoded};
+            if(original.image->LockBits(&whole,ImageLockModeRead,PixelFormat32bppPARGB,&decoded)!=Ok)return 296;
+            struct UnlockBitmap {Bitmap* image;BitmapData* data;~UnlockBitmap(){image->UnlockBits(data);}} unlock{original.image.get(),&decoded};
             for(unsigned frame=0;frame<layout.frameCount;++frame) {
                 context="actual care source clip="+std::to_string(static_cast<unsigned>(layout.clip))+" frame="+std::to_string(frame);
                 const auto& rect=layout.frames[frame].rect;
@@ -302,14 +352,14 @@ int NativeActualCareSpriteRenderTest(std::string& context) {
         for(unsigned frame=0;frame<layout.frameCount;++frame) {
             context="actual care selected ROI clip="+std::to_string(static_cast<unsigned>(layout.clip))+" frame="+std::to_string(frame);
             cat::animation::Pose pose;pose.spriteTimed=false;pose.spriteClip=layout.clip;pose.spriteFrame=frame;
-            pose.groundContact=layout.clip!=Clip::Jump||frame<4||frame>=12;
-            if(CareSpriteFor(pose,cat::Character::Cream)!=asset.get()||!draw(pose,cat::Character::Cream,normal,110,true))return 299;
+            pose.groundContact=layout.clip!=Clip::Jump;
+            if(CareSpriteFor(pose,character)!=asset.get()||!draw(pose,character,normal,110,true))return 299;
             const auto direct=copy();
             const auto& f=layout.frames[frame];
             // Independently decoded PARGB input verifies selected source
             // ownership without straight-alpha interpolation differences.
             std::vector<std::uint32_t> reference;
-            if(!decodeReference(*asset,frame,reference)||
+            if(!decodeReference(*original.image,layout,frame,reference)||
                     !drawReference(layout,frame,reference,normal,110,false))return 300;
             if(!nearPixels(copy(),direct)){
                 const auto expected=copy();unsigned maxRgb=0,maxAlpha=0;std::size_t firstBad=expected.size(),changed=0;
@@ -327,16 +377,31 @@ int NativeActualCareSpriteRenderTest(std::string& context) {
             }
             pose.angle=4;pose.scaleX=.8;pose.scaleY=1.2;pose.joints.headNod=.7;
             pose.joints.crouch=.8;pose.joints.frontLeft=.6;pose.face.blink=.9;
-            if(!draw(pose,cat::Character::Cream,normal,110,false)||copy()!=direct)return 302;
+            if(!draw(pose,character,normal,110,false)||copy()!=direct)return 302;
             std::array<int,4> bounds{};
             if(!inspect(direct,bounds)){context+=" invalid alpha, missing body or canvas clipping";return 303;}
-            if(pose.groundContact&&bounds[3]>bottom+2){
+            // Authored props may extend below the anatomical support. The
+            // shared host policy reserves this canvas without moving the root.
+            const auto safety=cat::render::SpriteBottomSafetyInset(layout,110,normal.bodyHeight);
+            if(pose.groundContact&&bounds[3]>bottom+safety+2){
                 const auto& src=sourceBounds[frame];
                 context+=" below registered support actualBottom="+std::to_string(bounds[3])+
                     " ground="+std::to_string(bottom)+" anchorY="+std::to_string(f.anchor.y)+
                     " reference="+std::to_string(layout.referenceHeight)+
                     " sourceBounds="+std::to_string(src[0])+","+std::to_string(src[1])+","+
                         std::to_string(src[2])+","+std::to_string(src[3]);return 304;
+            }
+            {
+                Graphics graphics(review.image.get());graphics.SetInterpolationMode(InterpolationModeNearestNeighbor);
+                graphics.SetPixelOffsetMode(PixelOffsetModeHalf);
+                const int left=static_cast<int>(reviewCell%8)*240,top=static_cast<int>(reviewCell/8)*260;
+                Pen ground(Color(255,145,154,165),1);graphics.DrawLine(&ground,left,top+220,left+240,top+220);
+                graphics.DrawImage(canvas.image.get(),Rect(left,top+20,240,240),200,200,240,240,UnitPixel);
+                Font font(L"Segoe UI",10,FontStyleRegular,UnitPixel);SolidBrush ink(Color(255,30,43,57));
+                const std::wstring label=L"clip"+std::to_wstring(static_cast<unsigned>(layout.clip))+L" / frame"+
+                    std::to_wstring(frame)+L" of"+std::to_wstring(layout.frameCount)+L" / native110ref";
+                graphics.DrawString(label.c_str(),-1,&font,PointF(static_cast<REAL>(left+4),static_cast<REAL>(top+3)),&ink);
+                ++reviewCell;
             }
         }
         // Independently change nutrition dimensions and DPI/age scale.
@@ -346,7 +411,7 @@ int NativeActualCareSpriteRenderTest(std::string& context) {
         // retaining strict per-pixel coverage, canvas and support checks.
         const unsigned frame=layout.frameCount/2;
         std::vector<std::uint32_t> reference;
-        if(!decodeReference(*asset,frame,reference))return 300;
+        if(!decodeReference(*original.image,layout,frame,reference))return 300;
         for(const auto dimensions:{std::pair<double,double>{1,1},{.78,.96},{1.26,.98}})
         for(int facing:{-1,1})for(REAL desiredHeight:{80.0f,165.0f}) {
             auto body=normal;body.bodyWidth=dimensions.first;body.bodyHeight=dimensions.second;
@@ -355,9 +420,9 @@ int NativeActualCareSpriteRenderTest(std::string& context) {
             context="actual care shape clip="+std::to_string(static_cast<unsigned>(layout.clip))+
                 " facing="+std::to_string(facing)+" width="+std::to_string(dimensions.first)+
                 " height="+std::to_string(desiredHeight);
-            if(!draw(pose,cat::Character::Cream,body,desiredHeight,true))return 299;
+            if(!draw(pose,character,body,desiredHeight,true))return 299;
             const auto direct=copy();
-            if(!draw(pose,cat::Character::Cream,body,desiredHeight,false)||copy()!=direct)return 302;
+            if(!draw(pose,character,body,desiredHeight,false)||copy()!=direct)return 302;
             std::array<int,4> actual{};
             if(!inspect(direct,actual))return 303;
             if(!drawReference(layout,frame,reference,body,desiredHeight,pose.flip))return 300;
@@ -376,23 +441,141 @@ int NativeActualCareSpriteRenderTest(std::string& context) {
                     std::to_string(expected[firstBad])+" actual="+std::to_string(direct[firstBad]);
                 return 305;
             }
-            if(pose.groundContact&&actual[3]>bottom+2)return 304;
+            if(pose.groundContact&&actual[3]>bottom+cat::render::SpriteBottomSafetyInset(layout,desiredHeight,body.bodyHeight)+2)return 304;
         }
         if(layout.clip!=Clip::Jump) {
             cat::animation::Pose airborne;airborne.spriteClip=layout.clip;airborne.groundContact=false;
-            if(CareSpriteFor(airborne,cat::Character::Cream))return 306;
+            if(CareSpriteFor(airborne,character))return 306;
         }
+
     }
-    context="actual care sheet species ownership and fish presentation";
-    cat::animation::Pose pose;pose.spriteTimed=false;pose.spriteClip=Clip::Groom;
-    for(unsigned character=1;character<cat::kCharacterCount;++character)
-        if(CareSpriteFor(pose,static_cast<cat::Character>(character)))return 307;
-    pose.spriteClip=Clip::Eat;pose.spriteFrame=3;pose.fishMeal=true;
+    // Include the very same masked cardboard asset and front strip used by
+    // the desktop toy renderer, rather than an independently redrawn box.
+    for(const bool foreground:{false,true}) {
+        bool drawn=false;
+        {
+            struct RestoreBoxContext {
+                ToyKind toy=g.toy;bool small=g.smallBoxEvent;cat::Character character=g.preferences.character;
+                ~RestoreBoxContext(){g.toy=toy;g.smallBoxEvent=small;g.preferences.character=character;}
+            } restore;
+            g.toy=ToyKind::Box;g.smallBoxEvent=false;g.preferences.character=cat::Character::Cream;
+            Graphics graphics(canvas.image.get());configure(graphics);
+            drawn=DrawAuthoredBoxProp(graphics,center,bottom,foreground);graphics.Flush(FlushIntentionSync);
+        }
+        if(!drawn)return 310;
+        Graphics graphics(review.image.get());graphics.SetInterpolationMode(InterpolationModeNearestNeighbor);
+        graphics.SetPixelOffsetMode(PixelOffsetModeHalf);
+        const int left=static_cast<int>(reviewCell%8)*240,top=static_cast<int>(reviewCell/8)*260;
+        Pen ground(Color(255,145,154,165),1);graphics.DrawLine(&ground,left,top+220,left+240,top+220);
+        graphics.DrawImage(canvas.image.get(),Rect(left,top+20,240,240),200,200,240,240,UnitPixel);
+        Font font(L"Segoe UI",10,FontStyleRegular,UnitPixel);SolidBrush ink(Color(255,30,43,57));
+        graphics.DrawString(foreground?L"Runtime box prop / front strip":L"Runtime box prop / background",-1,&font,
+            PointF(static_cast<REAL>(left+4),static_cast<REAL>(top+3)),&ink);++reviewCell;
+    }
+    CLSID png{};
+    if(!NativeCarePngEncoder(png)||review.image->Save(L"render-self-test/care-sprites-gdi.png",&png,nullptr)!=Ok)return 310;
+    context="actual care sheet declared species ownership";
+    for(const auto clip:cat::sprite_sequence::kAuthoredClips)for(unsigned character=0;character<cat::kCharacterCount;++character) {
+        const CareSpriteAtlas* expected=nullptr;
+        for(const auto& asset:g.careSprites)if(asset->layout->clip==clip&&asset->layout->character==character)expected=asset.get();
+        cat::animation::Pose pose;pose.spriteTimed=false;pose.spriteClip=clip;
+        if(CareSpriteFor(pose,static_cast<cat::Character>(character))!=expected)return 307;
+    }
+    cat::animation::Pose pose;pose.spriteTimed=false;pose.spriteClip=Clip::Eat;pose.fishMeal=true;
     const auto* fish=CareSpriteFor(pose,cat::Character::Cream);
-    if(!fish||fish->layout->clip!=Clip::Fish||!draw(pose,cat::Character::Cream,normal,110,false))return 308;
-    const auto fishPixels=copy();pose.fishMeal=false;pose.spriteClip=Clip::Fish;
-    if(!draw(pose,cat::Character::Cream,normal,110,false)||copy()!=fishPixels)return 308;
+    if(fish) {
+        if(fish->layout->clip!=Clip::Fish||!draw(pose,cat::Character::Cream,normal,110,false))return 308;
+        const auto fishPixels=copy();pose.fishMeal=false;pose.spriteClip=Clip::Fish;
+        if(!draw(pose,cat::Character::Cream,normal,110,false)||copy()!=fishPixels)return 308;
+    }
     if(cat::SerializePreferences(g.preferences)!=preferences||cat::nutrition::Serialize(g.nutrition)!=nutrition)return 309;
     context="all actual authored care resources, source ROIs, anchors, shapes and dispatcher checks passed";
     return 0;
+}
+
+// Invoke from the initialized in-memory NativeToyHostTest fixture, never from
+// an application session. Metadata-only assets exercise the real host boundary
+// without opening files, decoding artwork or requiring an application window.
+int NativeAuthoredHoldHostTest() {
+    using namespace cat::sprite_sequence;
+    const auto before=g.physics.CurrentPose();
+    if(g.window||g.initialized||g.brain||!g.physicsReady||!before.grounded||before.onPlatform||
+            before.hanging||std::abs(before.velocityX)>.5||g.toy!=ToyKind::None||EnvironmentBusy())return 490;
+    const auto birthday=cat::Serialize(g.pet);
+    const auto limits=MovementBoundsLogical();
+    struct RestoreHost {
+        cat::Preferences preferences=g.preferences;
+        decltype(g.life.outcome) life=g.life.outcome;
+        decltype(g.memory.outcome) memory=g.memory.outcome;
+        Motion motion=g.motion,walking=g.walkingMotion;
+        ULONGLONG start=g.motionStart,decision=g.nextDecision,serial=g.motionSerial,
+            claimed=g.autonomousClaimedAt,tick=g.autonomousTick;
+        bool fish=g.fishMeal,rest=g.autonomousResting,dispatch=g.autonomousDispatching,
+            reaction=g.companionReaction,waiting=g.waitingForStop,pending=g.jumpPending,
+            launched=g.jumpLaunched,waking=g.wakingFromSleep;
+        unsigned groom=g.groomVariant,sleep=g.sleepVariant;
+        int punch=g.punchHits;
+        decltype(g.punchCues) cues=g.punchCues;
+        decltype(g.random) random=g.random;
+        double x=0,low=0,high=0,speed=g.speed;
+        ~RestoreHost() {
+            g.preferences=preferences;g.life.outcome=life;g.memory.outcome=memory;
+            g.motion=motion;g.walkingMotion=walking;g.motionStart=start;g.nextDecision=decision;g.motionSerial=serial;
+            g.autonomousClaimedAt=claimed;g.autonomousTick=tick;g.fishMeal=fish;g.autonomousResting=rest;
+            g.autonomousDispatching=dispatch;g.companionReaction=reaction;g.waitingForStop=waiting;
+            g.jumpPending=pending;g.jumpLaunched=launched;g.wakingFromSleep=waking;
+            g.groomVariant=groom;g.sleepVariant=sleep;g.punchHits=punch;g.punchCues=cues;g.random=random;
+            g.speed=speed;
+            g.physics.Reset(x,low,high);
+        }
+    } restoreHost;
+    restoreHost.x=before.x;restoreHost.low=limits.first;restoreHost.high=limits.second;
+    // Declare metadata before the scope: a dummy asset's layout remains alive
+    // until the scope clears it and restores the actual loaded resources.
+    auto layout=std::make_unique<cat::sprite_assets::Descriptor>();
+    DisabledCareSpriteScope restoreAssets;
+    layout->character=0;layout->columns=2;layout->rows=1;layout->frameCount=2;
+    layout->imageWidth=48;layout->imageHeight=32;layout->referenceHeight=32;
+    layout->frames[0]={{0,0,24,32},{12,30}};layout->frames[1]={{24,0,24,32},{12,30}};
+    layout->program.stepCount=2;layout->program.steps[0]={0,30};layout->program.steps[1]={1,30};
+    layout->program.intro={0,1};layout->program.loop={1,0};layout->program.outro={1,1};
+    auto dummy=std::make_unique<CareSpriteAtlas>();dummy->layout=layout.get();g.careSprites.push_back(std::move(dummy));
+    g.preferences.character=cat::Character::Cream;
+    g.life.outcome=cat::life::storage::Outcome::Blocked;g.memory.outcome=cat::memory::storage::Outcome::Blocked;
+    g.physics.SetTargetVelocity(0);
+    const auto begin=[&](Clip clip,Finish finish) {
+        layout->clip=clip;layout->resourceId=cat::sprite_assets::ResourceId(clip,0);layout->program.finish=finish;
+        const auto motion=clip==Clip::Groom?Motion::Groom:clip==Clip::Treat?Motion::Treat:
+            clip==Clip::Punch?Motion::Punch:Motion::Eat;
+        g.autonomousDispatching=false;g.autonomousClaimedAt=std::numeric_limits<ULONGLONG>::max();
+        SetMotion(motion,60);g.fishMeal=clip==Clip::Fish;g.waitingForStop=false;
+    };
+    for(const auto clip:{Clip::Groom,Clip::Eat,Clip::Fish,Clip::Treat,Clip::Punch}) {
+        begin(clip,Finish::Hold);
+        if(!cat::sprite_assets::Valid(*layout))return 491;
+        const auto serial=g.motionSerial,start=g.motionStart,end=g.nextDecision;
+        const auto held=g.motion;
+        if(PrimaryAuthoredCareHolding(start+20)||!PrimaryAuthoredCareHolding(end))return 491;
+        for(const auto offset:{0ULL,16ULL,1000ULL,60000ULL}) {
+            DispatchAutonomousMotion(end+offset);
+            if(g.motion!=held||g.motionSerial!=serial||g.motionStart!=start||g.nextDecision!=end||g.autonomousResting)return 492;
+        }
+        if(clip==Clip::Groom) {
+            // Holding the final picture is not a physics pause or an airborne
+            // lock. An external loss of support still follows Box2D gravity.
+            if(!g.physics.Jump(25))return 493;
+            g.physics.Update(1./60);
+            if(g.physics.CurrentPose().lift<=.1||PrimaryAuthoredCareHolding(end+1000))return 493;
+            for(unsigned frame=0;frame<240&&!g.physics.CurrentPose().grounded;++frame)g.physics.Update(1./60);
+            if(!g.physics.CurrentPose().grounded||g.physics.CurrentPose().lift>.2||g.motionSerial!=serial)return 493;
+        }
+        SetMotion(Motion::Watch,5000);
+        if(g.motion!=Motion::Watch||g.motionSerial==serial||PrimaryAuthoredCareHolding(GetTickCount64()+60000))return 494;
+        begin(clip,Finish::Complete);
+        const auto completeEnd=g.nextDecision;
+        if(PrimaryAuthoredCareHolding(completeEnd+1))return 495;
+        DispatchAutonomousMotion(completeEnd+1);
+        if(g.motion!=Motion::Idle||!g.autonomousResting)return 495;
+    }
+    return cat::Serialize(g.pet)==birthday?0:496;
 }

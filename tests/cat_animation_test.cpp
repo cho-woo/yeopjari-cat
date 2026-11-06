@@ -628,6 +628,206 @@ void IntactWalkingCadenceIsBoundedAndShared() {
     }
 }
 
+void AuthoredLocomotionUsesPhysicalDistanceAtEveryFrameRate() {
+    using namespace cat::animation;
+    using Mode=cat::authored_locomotion::Mode;
+    // Registered reference-size distances, rather than an elapsed animation
+    // clock or the old four-drawing presentation cap, drive the new cycles.
+    constexpr double walkStride=72,runStride=150;
+    for(const double speed:{12.,22.,42.,80.,165.})for(const int direction:{-1,1}) {
+        double previousResult=-1;
+        for(const int fps:{30,60,120,240}) {
+            Locomotion gait;
+            CHECK(gait.ConfigureAuthoredStrides(walkStride,runStride));
+            const bool running=speed>=cat::authored_locomotion::Cycle::RunEnterSpeed;
+            const double stride=running?runStride:walkStride;
+            double accumulated=0;
+            for(int sample=0;sample<fps*2;++sample) {
+                const double before=gait.AuthoredPhase();
+                // The requested action deliberately remains Walk at high
+                // speed: the Box2D travel chooses the actual run artwork.
+                CHECK(gait.Advance(Motion::Walk,direction*speed/fps,1.0/fps,true));
+                const double after=gait.AuthoredPhase();
+                const double delta=after>=before?after-before:after+1-before;
+                CHECK(std::abs(delta-speed/(stride*fps))<1e-12);
+                accumulated+=delta;
+                CHECK(after>=0 && after<1);
+                CHECK(gait.AuthoredMode()==(running?Mode::Run:Mode::Walk));
+            }
+            CHECK(std::abs(accumulated-speed*2/stride)<1e-11);
+            if(previousResult>=0)CHECK(std::abs(gait.AuthoredPhase()-previousResult)<1e-11);
+            previousResult=gait.AuthoredPhase();
+        }
+    }
+}
+
+void AuthoredLocomotionFreezesItsDrawingAndModeWithoutRelativeTravel() {
+    using namespace cat::animation;
+    using Mode=cat::authored_locomotion::Mode;
+    Locomotion gait;
+    CHECK(gait.ConfigureAuthoredStrides(72,150));
+    CHECK(gait.Advance(Motion::Walk,10,.1,true));
+    CHECK(gait.AuthoredMode()==Mode::Run);
+    const double held=gait.AuthoredPhase();
+    // A support can move far across the desktop while its relative travel is
+    // zero. Time passing, pauses and a blocked motor hold BOTH phase and mode.
+    for(int sample=0;sample<600;++sample) {
+        CHECK(gait.Advance(sample%2?Motion::Walk:Motion::Zoomies,0,.01,true));
+        CHECK(gait.AuthoredPhase()==held && gait.AuthoredMode()==Mode::Run);
+    }
+    CHECK(gait.Advance(Motion::Walk,0,0,true));
+    CHECK(gait.AuthoredPhase()==held && gait.AuthoredMode()==Mode::Run);
+    // A Walk request can survive a window being closed underneath the cat.
+    // Physical contact, not the action label, prevents stepping in free fall.
+    for(int sample=0;sample<30;++sample) {
+        CHECK(gait.Advance(Motion::Walk,2,.02,false));
+        CHECK(gait.AuthoredPhase()==held && gait.AuthoredMode()==Mode::Run);
+    }
+    for(const auto motion:{Motion::Jump,Motion::Pounce,Motion::Idle,Motion::Eat}) {
+        CHECK(gait.Advance(motion,1,.02,true));
+        CHECK(gait.AuthoredPhase()==held && gait.AuthoredMode()==Mode::Run);
+    }
+    CHECK(gait.Advance(Motion::Stalk,-.44,.02,true));
+    CHECK(gait.AuthoredMode()==Mode::Walk);
+    CHECK(std::abs(gait.AuthoredPhase()-(held+.44/72))<1e-12);
+}
+
+void AuthoredGaitChangesPreservePhaseAndUseSpeedHysteresis() {
+    using namespace cat::animation;
+    using Mode=cat::authored_locomotion::Mode;
+    Locomotion gait;
+    CHECK(gait.ConfigureAuthoredStrides(72,150));
+    Mode expected=Mode::Walk;
+    double phase=0;
+    const std::array<double,13> speeds{{22,59.99,60,59.99,48,45.01,45,45.01,59.99,60,80,44.99,22}};
+    const std::array<Motion,3> requests{{Motion::Stalk,Motion::Walk,Motion::Zoomies}};
+    for(unsigned sample=0;sample<speeds.size();++sample) {
+        const double speed=speeds[sample];
+        if(expected==Mode::Walk && speed>=60)expected=Mode::Run;
+        else if(expected==Mode::Run && speed<=45)expected=Mode::Walk;
+        const double stride=expected==Mode::Run?150:72;
+        phase=std::fmod(phase+speed*.02/stride,1.0);
+        CHECK(gait.Advance(requests[sample%requests.size()],speed*.02,.02,true));
+        CHECK(gait.AuthoredMode()==expected);
+        CHECK(std::abs(gait.AuthoredPhase()-phase)<1e-12);
+        // Rendering the same step with a freshly restarted action clock is
+        // independent of requested motion and facing. Hosts attach it later.
+        for(const auto motion:requests) {
+            const auto pose=Evaluate(motion,0,0,-1,gait);
+            CHECK(pose.flip && pose.originalWalk && pose.spriteClip==cat::sprite_sequence::Clip::None);
+            CHECK(std::abs(gait.AuthoredPhase()-phase)<1e-12);
+        }
+    }
+    const double held=gait.AuthoredPhase();const auto mode=gait.AuthoredMode();
+    // Nutrition width/growth registration must not reset a half-finished step.
+    CHECK(gait.ConfigureAuthoredStrides(72*1.15,150*1.15));
+    CHECK(gait.AuthoredPhase()==held && gait.AuthoredMode()==mode);
+    for(double invalid:{0.,-1.,std::numeric_limits<double>::infinity(),std::numeric_limits<double>::quiet_NaN()}) {
+        CHECK(!gait.ConfigureAuthoredStrides(invalid,150));
+        CHECK(!gait.ConfigureAuthoredStrides(72,invalid));
+        CHECK(gait.AuthoredPhase()==held && gait.AuthoredMode()==mode);
+    }
+    gait.Reset();
+    CHECK(gait.AuthoredConfigured() && gait.AuthoredPhase()==0 && gait.AuthoredMode()==Mode::Walk);
+    CHECK(gait.Advance(Motion::Walk,7.2*1.15,.2,true));
+    CHECK(std::abs(gait.AuthoredPhase()-.1)<1e-12);
+}
+
+void ActualTakeoffKeepsPreparationsGroundedPastPreviewDeadline() {
+    using namespace cat::animation;
+    using Clip=cat::sprite_sequence::Clip;
+    for(const int facing:{-1,1})for(const bool pounce:{false,true})
+        for(const std::uint64_t elapsed:{0,219,220,239,240,700,6000,86400000}) {
+            const auto pose=JumpPreparationPose(elapsed,facing,pounce);
+            CHECK(pose.groundContact && pose.spriteOptions.grounded && pose.spriteClip==Clip::Jump);
+            CHECK(pose.frame==4 && pose.flip==(facing<0) && pose.lift==0 && pose.x==0);
+            CHECK(pose.spriteOptions.jump==cat::sprite_sequence::JumpPhase::Crouch);
+            CHECK(pose.joints.crouch>=0 && pose.joints.crouch<=.65);
+            CHECK(pose.spriteFrame<4);
+        }
+}
+
+void AuthoredLocomotionAttachesOnlyAvailableGroundedWalking() {
+    using namespace cat::animation;
+    using Clip=cat::sprite_sequence::Clip;
+    for(const auto motion:{Motion::Walk,Motion::Stalk,Motion::Zoomies})
+        for(const double speed:{12.,22.,42.,80.,165.})for(const int direction:{-1,1}) {
+            Locomotion gait;
+            CHECK(gait.ConfigureAuthoredStrides(72,150));
+            for(int sample=0;sample<60;++sample)
+                CHECK(gait.Advance(motion,direction*speed/60,1./60,true));
+            const auto fallback=Evaluate(motion,9000,9000,direction,gait);
+            auto unavailable=fallback;
+            // Silver and other characters without this exact new asset keep
+            // their old complete drawings, even when the gait chooses Run.
+            CHECK(!ApplyAuthoredLocomotion(unavailable,motion,gait,false));
+            CHECK(unavailable.frame==fallback.frame && unavailable.originalWalk);
+            CHECK(unavailable.spriteClip==Clip::None && !unavailable.spriteTimed);
+            CHECK(unavailable.flip==fallback.flip && WeightDistance(unavailable,fallback)==0);
+            auto pose=fallback;
+            CHECK(ApplyAuthoredLocomotion(pose,motion,gait,true));
+            CHECK(pose.spriteClip==AuthoredLocomotionClip(gait));
+            CHECK(pose.spriteClip==(speed>=60?Clip::Run:Clip::Walk));
+            CHECK(pose.spriteTimed && pose.spriteElapsedMs==0);
+            CHECK(pose.spriteOptions.cyclePhase==gait.AuthoredPhase());
+            CHECK(pose.spriteFrame<8 && pose.spriteFrame==static_cast<unsigned>(gait.AuthoredPhase()*8));
+            CHECK(!pose.originalWalk && !pose.jointWalk && !pose.walkingRig);
+            CHECK(pose.flip==(direction<0) && pose.groundContact);
+            CHECK(pose.lift==0 && pose.x==0 && pose.angle==0 && pose.scaleX==1 && pose.scaleY==1);
+            CHECK(pose.blendFrame==-1 && pose.blend==0);
+            for(const auto joint:JointValues(pose.joints))CHECK(joint==0);
+        }
+    Locomotion unconfigured;
+    auto fallback=Evaluate(Motion::Walk,0,0,1,unconfigured);
+    CHECK(!ApplyAuthoredLocomotion(fallback,Motion::Walk,unconfigured,true));
+    Locomotion gait;CHECK(gait.ConfigureAuthoredStrides(72,150));
+    CHECK(gait.Advance(Motion::Walk,2,.1,true));
+    for(const auto motion:{Motion::Idle,Motion::Eat,Motion::Punch,Motion::ToyPaw,Motion::BoxSit}) {
+        auto pose=Evaluate(motion,300,300,1,gait);
+        const auto original=pose;
+        CHECK(!ApplyAuthoredLocomotion(pose,Motion::Walk,gait,true));
+        CHECK(pose.spriteClip==original.spriteClip && pose.frame==original.frame);
+    }
+    for(auto pose:{AirbornePose(80,1),LandingPose(70,1,1),JumpPreparationPose(900,1)}) {
+        const auto clip=pose.spriteClip;const auto frame=pose.spriteFrame;
+        CHECK(!ApplyAuthoredLocomotion(pose,Motion::Walk,gait,true));
+        CHECK(pose.spriteClip==clip && pose.spriteFrame==frame);
+    }
+    auto box=Evaluate(Motion::Walk,0,0,1,gait);
+    AttachSprite(box,Clip::Box,3000);
+    CHECK(!ApplyAuthoredLocomotion(box,Motion::Walk,gait,true));
+    CHECK(box.spriteClip==Clip::Box);
+    auto stopped=Evaluate(Motion::Walk,0,0,1,gait);
+    CHECK(!ApplyAuthoredLocomotion(stopped,Motion::Idle,gait,true));
+}
+
+void AuthoredWrapAndActionClockRestartsKeepOnePhysicalStep() {
+    using namespace cat::animation;
+    using Clip=cat::sprite_sequence::Clip;
+    Locomotion gait;CHECK(gait.ConfigureAuthoredStrides(72,150));
+    // Exactly one low-speed source cycle visits all eight supplied drawings.
+    // Use many small physical samples so neither a reset nor a frame-rate cap
+    // can be hidden by sampling just the cycle endpoint.
+    std::array<bool,8> seen{};
+    for(int step=0;step<=720;++step) {
+        auto pose=Evaluate(step%2?Motion::Stalk:Motion::Walk,0,86400000,-1,gait);
+        CHECK(ApplyAuthoredLocomotion(pose,Motion::Walk,gait,true));
+        CHECK(pose.spriteClip==Clip::Walk && pose.spriteFrame<seen.size());
+        seen[pose.spriteFrame]=true;
+        if(step<720)CHECK(gait.Advance(Motion::Walk,-.1,.01,true));
+    }
+    for(bool visited:seen)CHECK(visited);
+    CHECK(std::min(gait.AuthoredPhase(),1-gait.AuthoredPhase())<1e-10);
+    auto before=Evaluate(Motion::Walk,9000,9000,1,gait);
+    CHECK(ApplyAuthoredLocomotion(before,Motion::Walk,gait,true));
+    const double phase=gait.AuthoredPhase();
+    for(int pause=0;pause<100;++pause)CHECK(gait.Advance(Motion::Walk,0,.1,true));
+    auto restarted=Evaluate(Motion::Zoomies,0,86400000,1,gait);
+    CHECK(ApplyAuthoredLocomotion(restarted,Motion::Zoomies,gait,true));
+    CHECK(gait.AuthoredPhase()==phase && restarted.spriteFrame==before.spriteFrame);
+    CHECK(restarted.spriteClip==before.spriteClip && restarted.spriteOptions.cyclePhase==before.spriteOptions.cyclePhase);
+}
+
 void AuthoredClipsFollowHostPhysicsAndPreserveFallbacks() {
     using namespace cat::animation;
     using Clip=cat::sprite_sequence::Clip;
@@ -723,6 +923,7 @@ void FallbackContactsStayPlantedAcrossGaitChanges() {
 void GaitDiscontinuityGuardsAndLegacyPoseCompatibility() {
     using namespace cat::animation;
     Locomotion gait;
+    CHECK(gait.ConfigureAuthoredStrides(72,150));
     CHECK(gait.Advance(Motion::Zoomies, 30, .12)); // Real delayed running tick.
     const double heldPhase = gait.Phase();
     CHECK(gait.Advance(Motion::Zoomies, 0, 0));
@@ -734,6 +935,7 @@ void GaitDiscontinuityGuardsAndLegacyPoseCompatibility() {
         CHECK(gait.Advance(Motion::Walk, 1, .02));
         CHECK(!gait.Advance(Motion::Walk, invalid.first, invalid.second));
         CHECK(gait.Phase() == 0 && gait.OriginalWalkPhase() == 0 && gait.Speed() == 0);
+        CHECK(gait.AuthoredPhase()==0 && gait.AuthoredConfigured());
     }
     CHECK(gait.Advance(Motion::Walk, 2, .1));
     for (const auto motion : motions) {
@@ -773,11 +975,17 @@ int main() {
         AllWalkingActionsUseIntactSourceDrawings();
         WalkingActionChangesKeepTheSameDrawing();
         IntactWalkingCadenceIsBoundedAndShared();
+        AuthoredLocomotionUsesPhysicalDistanceAtEveryFrameRate();
+        AuthoredLocomotionFreezesItsDrawingAndModeWithoutRelativeTravel();
+        AuthoredGaitChangesPreservePhaseAndUseSpeedHysteresis();
+        ActualTakeoffKeepsPreparationsGroundedPastPreviewDeadline();
+        AuthoredLocomotionAttachesOnlyAvailableGroundedWalking();
+        AuthoredWrapAndActionClockRestartsKeepOnePhysicalStep();
         AuthoredClipsFollowHostPhysicsAndPreserveFallbacks();
         NewAnimalFallbackKeepsItsContactMetadata();
         FallbackContactsStayPlantedAcrossGaitChanges();
         GaitDiscontinuityGuardsAndLegacyPoseCompatibility();
-        std::cout << "22 animation groups; " << checks << " checks passed\n";
+        std::cout << "28 animation groups; " << checks << " checks passed\n";
         return EXIT_SUCCESS;
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';

@@ -1,5 +1,6 @@
 #pragma once
 #include "cat_physics.hpp"
+#include "cat_sprite_sequence.hpp"
 #include <algorithm>
 #include <cmath>
 
@@ -23,16 +24,16 @@ public:
     void Reset() { contacts_ = 0; }
     bool Observe(unsigned contactIndex, bool allowed, double pawX, double pawHeight,
                  double cursorX, double cursorHeight, double radius) {
-        if (!allowed || contactIndex < 1 || contactIndex > 2 ||
-                (contacts_ & (1U<<contactIndex)) || !std::isfinite(pawX) ||
+        if (!allowed || contactIndex < 1 || contactIndex > cat::sprite_sequence::kMaxProgramCues ||
+                (contacts_ & (std::uint64_t{1}<<(contactIndex-1))) || !std::isfinite(pawX) ||
                 !std::isfinite(pawHeight) || !std::isfinite(cursorX) ||
                 !std::isfinite(cursorHeight) || !std::isfinite(radius) || radius <= 0 ||
                 std::hypot(pawX-cursorX,pawHeight-cursorHeight) > radius) return false;
-        contacts_ |= 1U<<contactIndex;
+        contacts_ |= std::uint64_t{1}<<(contactIndex-1);
         return true;
     }
 private:
-    unsigned contacts_ = 0;
+    std::uint64_t contacts_ = 0;
 };
 
 inline bool LandingContact(bool allowed, const physics::Pose& pose, double cursorX,

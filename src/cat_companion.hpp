@@ -279,7 +279,8 @@ public:
     bool Bound() const { return state_ && brain_; }
     bool Busy() const {
         if(!Bound() || !ready_ || !state_->enabled) return false;
-        return !physics_.CurrentPose().grounded || waitingForStop_ || jumpPending_ || interaction_!=Interaction::None ||
+        return !physics_.CurrentPose().grounded || StationaryLanding(lastTicks_,physics_.CurrentPose()) ||
+            waitingForStop_ || jumpPending_ || interaction_!=Interaction::None ||
             motion_==cat::animation::Motion::Eat || motion_==cat::animation::Motion::Treat ||
             motion_==cat::animation::Motion::TailRaise || motion_==cat::animation::Motion::ToyPaw;
     }
@@ -331,16 +332,26 @@ public:
         presentationTicks_+=wallDelta;
         UpdateSupport(c);
         const auto before=physics_.CurrentPose();
+        const bool landingRecovery=StationaryLanding(c.ticks,before);
+        if(landingRecovery) {
+            // A newly accepted care action keeps its full clock while the
+            // contact-owned recovery finishes. The actual landing clock is
+            // deliberately independent and continues toward its outro end.
+            const auto held=std::min(wallDelta,c.ticks>=motionStart_?c.ticks-motionStart_:0);
+            motionStart_+=held;nextDecision_+=held;socialUntil_+=held;
+            if(careUntil_)careUntil_+=held;
+        }
         if(c.ticks < lastTicks_) {
             interaction_=Interaction::None; socialUntil_=0; poseTransition_.Reset();
             brain_->Interrupt(c.ticks); BeginQuiet(c.ticks);
         }
         lastTicks_=c.ticks;
-        if(interaction_!=Interaction::None && c.ticks >= socialUntil_) FinishSocial(c);
+        if(!landingRecovery && interaction_!=Interaction::None && c.ticks >= socialUntil_) FinishSocial(c);
         if(interaction_!=Interaction::None && (!c.primaryVisible || Busy(c,interaction_) || state_->pet.roamingPaused)) {
             FinishSocial(c);
         }
-        if(before.grounded && !waitingForStop_ && !jumpPending_ && interaction_==Interaction::None && c.ticks>=nextDecision_) {
+        if(!landingRecovery && before.grounded && !waitingForStop_ && !jumpPending_ && interaction_==Interaction::None &&
+                c.ticks>=nextDecision_ && !AuthoredCareHolding(c.ticks)) {
             const bool continuation=storyActive_ && !quietActive_ && brain_->HasContinuation();
             if(!quietActive_ && !continuation) BeginQuiet(c.ticks);
             else {
@@ -357,8 +368,8 @@ public:
             }
         }
         double velocity=0;
-        if(interaction_!=Interaction::None) velocity=SocialVelocity(c);
-        else if(cat::animation::Walking(motion_) && !state_->pet.roamingPaused) velocity=direction_*speed_;
+        if(!landingRecovery && interaction_!=Interaction::None) velocity=SocialVelocity(c);
+        else if(!landingRecovery && cat::animation::Walking(motion_) && !state_->pet.roamingPaused) velocity=direction_*speed_;
         // Keep the complete action and care interval after the moving body has
         // actually braked. Rendering alone must not hide a sliding meal/crouch.
         if(waitingForStop_) {
@@ -379,8 +390,12 @@ public:
         }
         if(std::abs(velocity)>.1) facing_=velocity<0?-1:1;
         if(before.grounded) physics_.SetTargetVelocity(velocity*cat::nutrition::VisualModifiers(state_->nutrition).speed*species.movementSpeedMultiplier);
+        const auto* jumpArt=Registered(cat::sprite_sequence::Clip::Jump);
+        const auto takeoff=jumpArt && jumpArt->program.stepCount?
+            cat::sprite_sequence::Duration(jumpArt->program,jumpArt->program.intro):
+            (motion_==cat::animation::Motion::Jump?220U:240U);
         if(!waitingForStop_ && jumpPending_ && before.grounded && c.ticks>=motionStart_ &&
-            c.ticks-motionStart_ >= (motion_==cat::animation::Motion::Jump?220U:240U)) {
+            c.ticks-motionStart_ >= takeoff) {
             jumpPending_=false;
             const auto body=cat::nutrition::VisualModifiers(state_->nutrition);
             const double growth=cat::GrowthScale(state_->pet.bornUtc,state_->pet.updatedUtc);
@@ -401,7 +416,16 @@ public:
         const double stride=rendered.relativeTravelX-beforeRendered.relativeTravelX;
         const auto walking=cat::motion::DisplayedMotion(motion_,walkingMotion_,rendered.grounded,waitingForStop_,
             rendered.velocityX-rendered.supportVelocityX);
-        gait_.Advance(walking,stride/std::max(.1,cat::GrowthScale(state_->pet.bornUtc,state_->pet.updatedUtc)),c.elapsedSeconds);
+        using Clip=cat::sprite_sequence::Clip;
+        const auto character=static_cast<unsigned>(state_->preferences.character);
+        const auto* walk=cat::sprite_assets::Find(Clip::Walk,character,cat::sprite_assets::kCareSprites);
+        const auto* run=cat::sprite_assets::Find(Clip::Run,character,cat::sprite_assets::kCareSprites);
+        if(walk && run) {
+            const double width=cat::nutrition::VisualModifiers(state_->nutrition).bodyWidth;
+            gait_.ConfigureAuthoredStrides(walk->stridePixels*width,run->stridePixels*width);
+        }
+        gait_.Advance(walking,stride/std::max(.1,cat::GrowthScale(state_->pet.bornUtc,state_->pet.updatedUtc)),
+            c.elapsedSeconds,rendered.grounded);
         state_->pet.position=std::clamp((after.x-minX_)/(maxX_-minX_),0.0,1.0);
     }
 
@@ -453,10 +477,9 @@ public:
         brain_->Fed(ticks,treat); interaction_=Interaction::None;storyActive_=true;quietActive_=false;
         const auto clip=kind==cat::feeding::FoodKind::Fish?cat::sprite_sequence::Clip::Fish:
             treat?cat::sprite_sequence::Clip::Treat:cat::sprite_sequence::Clip::Eat;
-        const bool authored=cat::sprite_assets::Find(clip,
-                static_cast<unsigned>(state_->preferences.character),cat::sprite_assets::kCareSprites);
-        const auto duration=authored?cat::sprite_sequence::CareDuration(clip,0):4200;
-        SetMotion(treat?cat::animation::Motion::Treat:cat::animation::Motion::Eat,ticks,duration,0);
+        const auto* authored=Registered(clip);
+        const auto duration=RegisteredDuration(clip,authored?cat::sprite_sequence::CareDuration(clip,0):4200);
+        SetMotion(treat?cat::animation::Motion::Treat:cat::animation::Motion::Eat,ticks,duration,0,false,clip);
         feedingKind_=kind;
         careUntil_=nextDecision_;
         return result;
@@ -487,6 +510,9 @@ public:
         brain_->Interrupt(lastTicks_);
         ++presentationGeneration_;
     }
+    bool HoldingFinalCarePose(std::uint64_t ticks) const {
+        return Bound() && ready_ && !waitingForStop_ && AuthoredCareHolding(ticks);
+    }
     Snapshot View(std::uint64_t ticks) const {
         Snapshot s;
         if(!Bound() || !ready_) return s;
@@ -502,10 +528,15 @@ public:
         const int displayedFacing=s.physical.grounded && std::abs(relativeVelocity)>2?(relativeVelocity<0?-1:1):facing_;
         s.motion=displayed;
         const auto elapsed=ticks>=motionStart_?ticks-motionStart_:0;
+        const bool authoredSleep=Registered(cat::sprite_sequence::Clip::Sleep)!=nullptr;
         s.animation=displayed==cat::animation::Motion::Sleep?
-            cat::animation::EvaluateSleep(sleepVariant_,elapsed,ticks,displayedFacing,s.physical.onPlatform):
+            cat::animation::EvaluateSleep(sleepVariant_,elapsed,ticks,displayedFacing,s.physical.onPlatform && !authoredSleep):
             cat::animation::Evaluate(displayed,elapsed,ticks,displayedFacing,gait_);
         if(!s.physical.grounded) s.animation=cat::animation::AirbornePose(s.physical.velocityY,facing_);
+        else if((displayed==cat::animation::Motion::Jump || displayed==cat::animation::Motion::Pounce) && jumpPending_) {
+            s.animation=cat::animation::JumpPreparationPose(elapsed,displayedFacing,
+                displayed==cat::animation::Motion::Pounce);
+        }
         else if((displayed==cat::animation::Motion::Jump || displayed==cat::animation::Motion::Pounce) && !jumpPending_) {
             s.animation=cat::animation::LandingPose(landedAt_ && ticks>=landedAt_?ticks-landedAt_:280,landingStrength_,displayedFacing);
         }
@@ -526,7 +557,7 @@ public:
             cat::animation::AttachSprite(s.animation,cat::sprite_sequence::Clip::Groom,elapsed,sprite);
         }
         if(displayed==cat::animation::Motion::Stretch && wakingFromSleep_ && sleepVariant_==0 &&
-                s.physical.grounded && !s.physical.onPlatform &&
+                s.physical.grounded && (!s.physical.onPlatform || authoredSleep) &&
                 !waitingForStop_) {
             cat::sprite_sequence::Options sprite;sprite.sleep=cat::sprite_sequence::SleepStage::Waking;
             cat::animation::AttachSprite(s.animation,cat::sprite_sequence::Clip::Sleep,elapsed,sprite);
@@ -536,6 +567,29 @@ public:
         s.animation.fishMeal=displayed==cat::animation::Motion::Eat && s.physical.grounded &&
             feedingKind_==cat::feeding::FoodKind::Fish && cat::feeding::CanOfferFish(s.preferences.character);
         if(s.animation.fishMeal)cat::animation::AttachSprite(s.animation,cat::sprite_sequence::Clip::Fish,elapsed);
+        if(s.animation.spriteClip==cat::sprite_sequence::Clip::Groom ||
+                s.animation.spriteClip==cat::sprite_sequence::Clip::Eat ||
+                s.animation.spriteClip==cat::sprite_sequence::Clip::Treat ||
+                s.animation.spriteClip==cat::sprite_sequence::Clip::Fish ||
+                s.animation.spriteClip==cat::sprite_sequence::Clip::Punch)
+            s.animation.spriteOptions.durationMs=nextDecision_>=motionStart_?nextDecision_-motionStart_:0;
+        const auto gaitClip=cat::animation::AuthoredLocomotionClip(gait_);
+        cat::animation::ApplyAuthoredLocomotion(s.animation,displayed,gait_,
+            cat::sprite_assets::Find(gaitClip,static_cast<unsigned>(s.preferences.character),
+                cat::sprite_assets::kCareSprites)!=nullptr);
+        if((displayed==cat::animation::Motion::Idle || displayed==cat::animation::Motion::Watch) &&
+                s.physical.grounded && s.animation.spriteClip==cat::sprite_sequence::Clip::None &&
+                Registered(cat::sprite_sequence::Clip::Sleep)) {
+            s.animation.spriteClip=cat::sprite_sequence::Clip::Sleep;
+            s.animation.spriteFrame=0;s.animation.spriteTimed=false;
+        }
+        if(StationaryLanding(ticks,s.physical)) {
+            cat::sprite_sequence::Options sprite;
+            sprite.jump=cat::sprite_sequence::JumpPhase::Landing;
+            sprite.contactElapsedMs=ticks-landedAt_;
+            cat::animation::AttachSprite(s.animation,cat::sprite_sequence::Clip::Jump,0,sprite);
+            s.animation.fishMeal=false;
+        }
         if(cat::sprite_assets::Find(s.animation.spriteClip,static_cast<unsigned>(s.preferences.character),
                 cat::sprite_assets::kCareSprites))cat::animation::UseAuthoredSprite(s.animation);
         return s;
@@ -564,6 +618,33 @@ private:
     cat::feeding::FoodKind feedingKind_=cat::feeding::FoodKind::Meal;
     Interaction interaction_=Interaction::None,event_=Interaction::None;
     double Random() { rng_^=rng_>>12; rng_^=rng_<<25; rng_^=rng_>>27; return ((rng_*2685821657736338717ULL)>>11)*(1.0/9007199254740992.0); }
+    const cat::sprite_assets::Descriptor* Registered(cat::sprite_sequence::Clip clip) const {
+        return Bound()?cat::sprite_assets::Find(clip,static_cast<unsigned>(state_->preferences.character),
+            cat::sprite_assets::kCareSprites):nullptr;
+    }
+    std::uint64_t RegisteredDuration(cat::sprite_sequence::Clip clip,std::uint64_t fallback) const {
+        const auto* asset=Registered(clip);
+        return asset && asset->program.stepCount?cat::sprite_sequence::ProgramDuration(asset->program):fallback;
+    }
+    bool AuthoredCareHolding(std::uint64_t ticks) const {
+        using Clip=cat::sprite_sequence::Clip;using Motion=cat::animation::Motion;
+        const auto clip=motion_==Motion::Groom?Clip::Groom:motion_==Motion::Eat?
+            (feedingKind_==cat::feeding::FoodKind::Fish?Clip::Fish:Clip::Eat):
+            motion_==Motion::Treat?Clip::Treat:motion_==Motion::Punch?Clip::Punch:Clip::None;
+        const auto* asset=Registered(clip);
+        if(!asset || !asset->program.stepCount || ticks<motionStart_)return false;
+        cat::sprite_sequence::Options options;options.sheetFrames=asset->frameCount;
+        options.durationMs=nextDecision_>=motionStart_?nextDecision_-motionStart_:0;
+        options.grounded=physics_.CurrentPose().grounded;
+        return cat::sprite_sequence::HoldsFinalCarePose(clip,asset->program,ticks-motionStart_,options);
+    }
+    bool StationaryLanding(std::uint64_t ticks,const cat::physics::Pose& physical) const {
+        const auto* asset=Registered(cat::sprite_sequence::Clip::Jump);
+        const auto duration=asset && asset->program.stepCount?
+            cat::sprite_sequence::Duration(asset->program,asset->program.outro):0;
+        return duration && landedAt_ && ticks>=landedAt_ && ticks-landedAt_<duration &&
+            physical.grounded && std::abs(physical.velocityX-physical.supportVelocityX)<=2;
+    }
     void BeginQuiet(std::uint64_t ticks) {
         storyActive_=false;quietActive_=true;
         SetMotion(cat::animation::Motion::Idle,ticks,
@@ -601,11 +682,23 @@ private:
         cat::Advance(state_->pet,now); cat::nutrition::Advance(state_->nutrition,now); cat::memory::Advance(state_->memory,now);
         state_->pet.hunger=state_->nutrition.fullness;
     }
-    void SetMotion(cat::animation::Motion m,std::uint64_t ticks,std::uint64_t duration,double speed,bool alreadyAirborne=false) {
-        if(motion_==cat::animation::Motion::Sleep && m==cat::animation::Motion::Stretch &&
-                cat::sprite_assets::Find(cat::sprite_sequence::Clip::Sleep,
-                    static_cast<unsigned>(state_->preferences.character),cat::sprite_assets::kCareSprites))
-            duration=std::max(duration,cat::sprite_sequence::kSleepWakeMs+500);
+    void SetMotion(cat::animation::Motion m,std::uint64_t ticks,std::uint64_t duration,double speed,bool alreadyAirborne=false,
+                   cat::sprite_sequence::Clip requestedClip=cat::sprite_sequence::Clip::None) {
+        using Clip=cat::sprite_sequence::Clip;
+        if(requestedClip==Clip::None) {
+            if(m==cat::animation::Motion::Groom)requestedClip=Clip::Groom;
+            else if(m==cat::animation::Motion::Punch)requestedClip=Clip::Punch;
+            else if(m==cat::animation::Motion::Eat)requestedClip=Clip::Eat;
+            else if(m==cat::animation::Motion::Treat)requestedClip=Clip::Treat;
+        }
+        if(requestedClip!=Clip::None)duration=RegisteredDuration(requestedClip,duration);
+        if(motion_==cat::animation::Motion::Sleep && m==cat::animation::Motion::Stretch) {
+            if(const auto* sleep=Registered(Clip::Sleep)) {
+                const auto wake=sleep->program.stepCount?
+                    cat::sprite_sequence::Duration(sleep->program,sleep->program.outro):cat::sprite_sequence::kSleepWakeMs;
+                duration=std::max(duration,wake+500);
+            }
+        }
         const bool jumping=m==cat::animation::Motion::Jump || m==cat::animation::Motion::Pounce;
         const bool authoredGroom=m==cat::animation::Motion::Groom &&
             cat::sprite_assets::Find(cat::sprite_sequence::Clip::Groom,
@@ -620,9 +713,8 @@ private:
             ++motionSerial_;
             motionStart_=ticks; motion_=m;
             if(authoredGroom)groomVariant_=std::min(2u,static_cast<unsigned>(Random()*3));
-            if(m==cat::animation::Motion::Sleep) sleepVariant_=cat::sprite_sequence::SelectSleepVariant(Random(),
-                cat::sprite_assets::Find(cat::sprite_sequence::Clip::Sleep,
-                    static_cast<unsigned>(state_->preferences.character),cat::sprite_assets::kCareSprites)!=nullptr);
+            if(m==cat::animation::Motion::Sleep) sleepVariant_=Registered(Clip::Sleep)?0:
+                cat::sprite_sequence::SelectSleepVariant(Random(),false);
             const auto physical=physics_.CurrentPose();
             waitingForStop_=cat::motion::NeedsStop(m,physical.grounded,physical.velocityX-physical.supportVelocityX,alreadyAirborne);
             jumpPending_=jumping && !alreadyAirborne;

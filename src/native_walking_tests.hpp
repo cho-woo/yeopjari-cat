@@ -14,6 +14,128 @@ inline bool SaveNativeWalkingReview(Bitmap& image,const wchar_t* path) {
     return false;
 }
 
+// Run with authored resources enabled, before DisabledCareSpriteScope. This
+// captures the live distance-driven controller and dispatcher, rather than
+// only drawing every registered source rectangle in isolation.
+int NativeAuthoredWalkingRenderTest(std::string& context) {
+    using Clip=cat::sprite_sequence::Clip;
+    constexpr auto character=cat::Character::Cream;
+    const auto* walk=cat::sprite_assets::Find(Clip::Walk,0,cat::sprite_assets::kCareSprites);
+    const auto* run=cat::sprite_assets::Find(Clip::Run,0,cat::sprite_assets::kCareSprites);
+    if(!walk && !run)return 0;
+    context="authored runtime gait resources";
+    if(!walk || !run || !LoadedCareSprite(Clip::Walk,character) || !LoadedCareSprite(Clip::Run,character))return 430;
+    if(!CreateDirectoryW(L"render-self-test",nullptr)&&GetLastError()!=ERROR_ALREADY_EXISTS)return 430;
+    constexpr int width=420,height=340,cellWidth=300,rowHeight=260;
+    Surface canvas,from,to,evidence;
+    if(!canvas.Create(width,height)||!from.Create(width,height)||!to.Create(width,height)||
+            !evidence.Create(cellWidth*8,rowHeight*12))return 430;
+    {Graphics graphics(evidence.image.get());graphics.Clear(Color(255,235,239,243));}
+    const auto preferences=cat::SerializePreferences(g.preferences);
+    const auto nutrition=cat::nutrition::Serialize(g.nutrition);
+    const auto normal=cat::nutrition::VisualModifiers(g.nutrition);
+    const auto copy=[&]{return std::vector<BYTE>(canvas.pixels,canvas.pixels+width*height*4);};
+    const auto draw=[&](const cat::animation::Pose& pose,const cat::nutrition::Visual& body,
+                        REAL desiredHeight,bool direct) {
+        Graphics graphics(canvas.image.get());
+        graphics.SetCompositingMode(CompositingModeSourceCopy);graphics.Clear(Color(0,0,0,0));
+        graphics.SetCompositingMode(CompositingModeSourceOver);
+        graphics.SetSmoothingMode(SmoothingModeAntiAlias);
+        graphics.SetInterpolationMode(InterpolationModeHighQualityBicubic);
+        graphics.SetPixelOffsetMode(PixelOffsetModeHighQuality);
+        const REAL scale=desiredHeight/std::max(1,CurrentArt(character).base.standingHeight);
+        if(direct) {
+            if(!DrawCareSprite(graphics,pose,210,280,scale,character,body))return false;
+        } else DrawStyledAnimationDirect(graphics,pose,210,280,scale,character,cat::Outfit::None,
+            body,from,to,width,height);
+        graphics.Flush(FlushIntentionSync);
+        return graphics.GetLastStatus()==Ok;
+    };
+    unsigned captured[12]{};
+    for(const auto motion:{Motion::Walk,Motion::Stalk,Motion::Zoomies})
+    for(const auto dimensions:{std::pair<double,double>{1,1},{.82,1.04},{1.26,.98}})
+    for(const REAL desiredHeight:{80.0f,110.0f,165.0f})for(const int facing:{-1,1}) {
+        auto body=normal;body.bodyWidth=dimensions.first;body.bodyHeight=dimensions.second;
+        cat::animation::Locomotion gait;
+        if(!gait.ConfigureAuthoredStrides(walk->stridePixels*body.bodyWidth,run->stridePixels*body.bodyWidth))return 431;
+        const double speed=motion==Motion::Zoomies?165:motion==Motion::Stalk?12.5:22;
+        const auto* layout=motion==Motion::Zoomies?run:walk;
+        const auto range=layout->program.loop.count?layout->program.loop:
+            cat::sprite_sequence::Range{0,layout->program.stepCount};
+        std::vector<unsigned> expectedFrames;
+        for(unsigned step=0;step<range.count;++step) {
+            const auto frame=layout->program.steps[range.first+step].frame;
+            if(std::find(expectedFrames.begin(),expectedFrames.end(),frame)==expectedFrames.end())expectedFrames.push_back(frame);
+        }
+        // The checked-in final sheet supplies eight Walk plus eight Run
+        // drawings. General playlist/cache capacity has separate synthetic
+        // coverage; this review must not invent additional source poses.
+        if(expectedFrames.empty()||expectedFrames.size()!=8)return 431;
+        std::vector<bool> seen(layout->frameCount,false);unsigned visited=0;
+        std::vector<BYTE> heldPixels;unsigned heldFrame=0;
+        for(unsigned tick=0;tick<1200&&visited<expectedFrames.size();++tick) {
+            if(!gait.Advance(motion,speed/60,1./60,true))return 431;
+            auto pose=cat::animation::Evaluate(motion,tick*1000/60,500000,facing,gait);
+            if(!cat::animation::ApplyAuthoredLocomotion(pose,motion,gait,true))return 431;
+            context="authored runtime gait clip="+std::to_string(static_cast<unsigned>(pose.spriteClip))+
+                " facing="+std::to_string(facing)+" width="+std::to_string(body.bodyWidth)+
+                " height="+std::to_string(desiredHeight)+" tick="+std::to_string(tick);
+            if(pose.spriteClip!=layout->clip||!pose.spriteTimed||pose.originalWalk||pose.jointWalk||pose.walkingRig||
+                    pose.x!=0||pose.lift!=0||pose.angle!=0||pose.scaleX!=1||pose.scaleY!=1||
+                    pose.blendFrame!=-1||!cat::deform::Zero(pose.joints))return 432;
+            const auto* selected=CareSpriteFor(pose,character);
+            if(!selected||selected->layout!=layout)return 432;
+            const auto frame=SpriteFrameFor(pose,*layout);
+            if(frame>=layout->frameCount||std::find(expectedFrames.begin(),expectedFrames.end(),frame)==expectedFrames.end())return 432;
+            if(seen[frame])continue;
+            seen[frame]=true;++visited;context+=" source="+std::to_string(frame);
+            if(!draw(pose,body,desiredHeight,false))return 433;
+            const auto actual=copy();
+            if(!draw(pose,body,desiredHeight,true)||copy()!=actual)return 434;
+            std::size_t visible=0;
+            for(int y=0;y<height;++y)for(int x=0;x<width;++x) {
+                const auto* pixel=actual.data()+static_cast<std::size_t>(y*width+x)*4;
+                if(pixel[0]>pixel[3]+1||pixel[1]>pixel[3]+1||pixel[2]>pixel[3]+1)return 435;
+                if(pixel[3]>=64)++visible;
+                if((x==0||x==width-1||y==0||y>=283)&&pixel[3]>=128) {
+                    context+=" clipped/below-floor x="+std::to_string(x)+" y="+std::to_string(y);return 435;
+                }
+            }
+            if(visible<350)return 435;
+            heldPixels=actual;heldFrame=frame;
+            if(dimensions.first==1 && motion!=Motion::Stalk) {
+                const unsigned column=static_cast<unsigned>(std::find(expectedFrames.begin(),expectedFrames.end(),frame)-expectedFrames.begin());
+                const unsigned size=desiredHeight==80?0:desiredHeight==110?1:2;
+                const unsigned row=size*4+(motion==Motion::Zoomies?2:0)+(facing<0?1:0);
+                Graphics graphics(evidence.image.get());graphics.SetInterpolationMode(InterpolationModeNearestNeighbor);
+                graphics.SetPixelOffsetMode(PixelOffsetModeHalf);
+                const int left=static_cast<int>(column)*cellWidth,top=static_cast<int>(row)*rowHeight;
+                Pen ground(Color(255,145,154,165),1);graphics.DrawLine(&ground,left,top+230,left+cellWidth,top+230);
+                graphics.DrawImage(canvas.image.get(),Rect(left,top+20,300,230),60,70,300,230,UnitPixel);
+                Font font(L"Segoe UI",12,FontStyleRegular,UnitPixel);SolidBrush ink(Color(255,30,43,57));
+                const std::wstring label=(motion==Motion::Zoomies?L"Run":L"Walk")+
+                    std::wstring(L" / native ")+std::to_wstring(static_cast<int>(desiredHeight))+L"px / source "+
+                    std::to_wstring(frame)+(facing<0?L" / left":L" / right");
+                graphics.DrawString(label.c_str(),-1,&font,PointF(static_cast<REAL>(left+4),static_cast<REAL>(top+2)),&ink);
+                captured[row]|=1u<<column;
+            }
+        }
+        if(visited!=expectedFrames.size())return 436;
+        const auto phase=gait.AuthoredPhase();
+        for(unsigned tick=0;tick<30;++tick)if(!gait.Advance(motion,0,1./60,true))return 436;
+        auto paused=cat::animation::Evaluate(motion,900000,900000,facing,gait);
+        if(!cat::animation::ApplyAuthoredLocomotion(paused,motion,gait,true)||gait.AuthoredPhase()!=phase||
+                SpriteFrameFor(paused,*layout)!=heldFrame||!draw(paused,body,desiredHeight,false)||copy()!=heldPixels)return 436;
+        if(!gait.Advance(motion,speed/60,1./60,false)||gait.AuthoredPhase()!=phase)return 436;
+        auto falling=cat::animation::AirbornePose(-100,facing);
+        if(cat::animation::ApplyAuthoredLocomotion(falling,motion,gait,true)||falling.spriteClip!=Clip::Jump)return 436;
+    }
+    for(const auto row:captured)if(row!=255)return 437;
+    if(!SaveNativeWalkingReview(*evidence.image,L"render-self-test/walk-cream-gdi.png"))return 437;
+    if(cat::SerializePreferences(g.preferences)!=preferences||cat::nutrition::Serialize(g.nutrition)!=nutrition)return 437;
+    return 0;
+}
+
 int NativeWalkingRenderTest(std::string& context) {
     Surface canvas;
     if(!canvas.Create(420,320))return 151;
@@ -162,7 +284,9 @@ int NativeWalkingRenderTest(std::string& context) {
         }
         for(const auto& size:captured)if(size[0]!=15||size[1]!=15)return 359;
         const auto path=character==cat::Character::Cream?L"render-self-test/walk-cream-gdi.png":L"render-self-test/walk-silver-gdi.png";
-        if(!SaveNativeWalkingReview(*evidence.image,path))return 359;
+        if((character!=cat::Character::Cream ||
+                !cat::sprite_assets::Find(cat::sprite_sequence::Clip::Walk,0,cat::sprite_assets::kCareSprites)) &&
+                !SaveNativeWalkingReview(*evidence.image,path))return 359;
         for(int frame=0;frame<4;++frame) {
             const auto& source=atlas.skins[frame].source;
             if(cat::Checksum(std::string(reinterpret_cast<const char*>(source.data()),source.size()*4))!=sourceHashes[frame])return 359;

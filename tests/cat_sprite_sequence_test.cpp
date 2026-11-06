@@ -1,4 +1,5 @@
 #include "../src/cat_sprite_sequence.hpp"
+#include "../src/cat_sprite_assets.hpp"
 #include <cstdlib>
 #include <iostream>
 #include <limits>
@@ -370,6 +371,256 @@ void MealsHaveOneEntranceAndOneEnding() {
     CHECK(CareDuration(Clip::Eat,1)==kCareMinDurationMs&&CareDuration(Clip::Treat,std::numeric_limits<std::uint64_t>::max())==kCareMaxDurationMs);
 }
 
+Program LinearProgram(unsigned count,unsigned exposure=17) {
+    Program result;result.stepCount=count;result.intro={0,count};result.loop={count,0};result.outro={count,0};
+    for(unsigned i=0;i<count;++i)result.steps[i]={i,exposure+i%3};
+    return result;
 }
-int main(){try{SheetMetadataAndEveryFrame();SleepDoesNotRestartYawnOrWake();AuthoredSheetGridsPreserveTheLegacyLayout();EightFrameSleepUsesStoryPosesWithoutWakingInItsRestLoop();EightFrameSleepWakePauseAndInterruptionRemainBounded();SleepVariantSelectionPreservesLegacyAndKeepsAlternatesRare();PunchCuesDoNotRepeatOrReplay();JumpTracksPhysicalState();JumpFlightNeverReusesThePlantedPrelaunchFrame();GroundedVisitsHoldAndGroomBounds();MealsHaveOneEntranceAndOneEnding();
+void ExpandedProgramsVisitEveryDistinctDrawing() {
+    for(const auto count:{8u,12u,16u,24u,64u,128u,256u}) {
+        auto program=LinearProgram(count);
+        CHECK(ValidProgram(program,count));
+        Options options;options.sheetFrames=count;
+        std::uint64_t clock=0;
+        ProgramPlayer player;player.Start(Clip::Groom,program,options);
+        for(unsigned i=0;i<count;++i) {
+            CHECK(SampleProgram(Clip::Groom,program,clock,options).frame==i);
+            CHECK(player.Current().frame==i&&!player.Current().finished);
+            const auto exposure=program.steps[i].durationMs;
+            CHECK(SampleProgram(Clip::Groom,program,clock+exposure-1,options).frame==i);
+            player.Advance(exposure);clock+=exposure;
+        }
+        CHECK(clock==ProgramDuration(program));
+        CHECK(player.Current().frame==count-1&&player.Current().finished&&player.Current().holding);
+        CHECK(SampleProgram(Clip::Groom,program,std::numeric_limits<std::uint64_t>::max(),options).frame==count-1);
+        player.Advance(std::numeric_limits<std::uint64_t>::max());
+        CHECK(player.Elapsed()==std::numeric_limits<std::uint64_t>::max()&&player.Current().finished);
+        CHECK(player.Advance(1).pose.frame==count-1);
+        program.finish=Finish::Hold;
+        const auto held=SampleProgram(Clip::Groom,program,clock,options);
+        CHECK(held.holding&&!held.finished&&held.frame==count-1);
+    }
+}
+Program ThreeSectionProgram() {
+    auto program=LinearProgram(6,100);
+    for(auto& step:program.steps)step.durationMs=100;
+    program.intro={0,2};program.loop={2,2};program.outro={4,2};program.durationMs=1000;
+    return program;
+}
+void AuthoredSectionsPreserveExposureAndPersistentRest() {
+    const auto program=ThreeSectionProgram();
+    CHECK(ValidProgram(program,6));
+    for(const auto& point:{std::pair<std::uint64_t,unsigned>{0,0},{99,0},{100,1},{199,1},
+            {200,2},{300,3},{400,2},{700,3},{800,4},{900,5},{1000,5}}) {
+        const auto pose=SampleProgram(Clip::Treat,program,point.first);
+        CHECK(pose.frame==point.second);
+        CHECK(pose.finished==(point.first>=1000));
+    }
+    Options shortened;shortened.durationMs=1;
+    CHECK(ProgramDuration(program,shortened)==400);
+    CHECK(SampleProgram(Clip::Treat,program,200,shortened).frame==4);
+    CHECK(SampleProgram(Clip::Treat,program,399,shortened).frame==5);
+    CHECK(SampleProgram(Clip::Treat,program,400,shortened).finished);
+    auto noLoop=program;noLoop.intro={0,4};noLoop.loop={4,0};noLoop.outro={4,2};
+    CHECK(SampleProgram(Clip::Eat,noLoop,700).frame==3);
+    CHECK(SampleProgram(Clip::Eat,noLoop,700).holding);
+    CHECK(SampleProgram(Clip::Eat,noLoop,800).frame==4);
+    for(const auto clip:{Clip::Sleep,Clip::Box}) {
+        ProgramPlayer player;player.Start(clip,program);
+        player.Advance(86400000);
+        CHECK(player.Current().looping&&!player.Current().finished);
+        CHECK(player.Current().frame>=2&&player.Current().frame<=3);
+        player.Exit();CHECK(player.Elapsed()==0&&player.Current().frame==4);
+        player.Advance(100);CHECK(player.Current().frame==5);
+        player.Exit();CHECK(player.Elapsed()==100); // Repeated exit does not restart.
+        player.Advance(100);CHECK(player.Current().finished);
+    }
+    Options resting;resting.sleep=SleepStage::Resting;
+    CHECK(SampleProgram(Clip::Sleep,program,0,resting).frame==2);
+    resting.sleep=SleepStage::Waking;
+    CHECK(SampleProgram(Clip::Sleep,program,0,resting).frame==4);
+    Options entering;entering.stage=Stage::Entering;
+    CHECK(SampleProgram(Clip::Groom,program,100000,entering).frame==1);
+    CHECK(!SampleProgram(Clip::Groom,program,100000,entering).finished);
+    auto held=program;held.finish=Finish::Hold;
+    for(const auto clip:{Clip::Groom,Clip::Eat,Clip::Fish,Clip::Treat,Clip::Punch}) {
+        CHECK(!HoldsFinalCarePose(clip,held,999));CHECK(HoldsFinalCarePose(clip,held,1000));
+        CHECK(HoldsFinalCarePose(clip,held,100000));CHECK(!HoldsFinalCarePose(clip,program,100000));
+        Options airborne;airborne.grounded=false;CHECK(!HoldsFinalCarePose(clip,held,100000,airborne));
+    }
+    for(const auto clip:{Clip::Sleep,Clip::Box,Clip::Jump,Clip::Walk,Clip::Run})
+        CHECK(!HoldsFinalCarePose(clip,held,100000));
+    noLoop.finish=Finish::Hold;
+    CHECK(!HoldsFinalCarePose(Clip::Eat,noLoop,700)); // Mid-action wait is not the final hold.
+    CHECK(HoldsFinalCarePose(Clip::Eat,noLoop,1000));
+    Options extended;extended.durationMs=3000;
+    CHECK(!HoldsFinalCarePose(Clip::Eat,noLoop,2000,extended));
+    CHECK(HoldsFinalCarePose(Clip::Eat,noLoop,3000,extended));
+}
+void AuthoredCuesAreSimulationEventsOncePerAction() {
+    auto program=ThreeSectionProgram();program.cueCount=4;
+    program.cues[0]={0,0,Marker};program.cues[1]={1,50,Contact};
+    program.cues[2]={2,25,Contact|Marker};program.cues[3]={4,50,Landing};
+    ProgramPlayer player;player.Start(Clip::Punch,program);
+    CHECK(player.Advance(0).eventCount==0);
+    auto tick=player.Advance(149);CHECK(tick.eventCount==1&&tick.events==Marker&&tick.contactCount==0);
+    CHECK(player.Current().frame==1);
+    player.Pause(true);CHECK(player.Advance(10000).eventCount==0&&player.Elapsed()==149);
+    player.Pause(false);tick=player.Advance(1);
+    CHECK(tick.eventCount==1&&tick.events==Contact&&tick.contactCount==1);
+    tick=player.Advance(10000);
+    CHECK(tick.eventCount==2&&tick.contactCount==1&&(tick.events&Landing)!=0);
+    CHECK(player.Advance(10000).eventCount==0);
+    player.Start(Clip::Punch,program);tick=player.Advance(std::numeric_limits<std::uint64_t>::max());
+    CHECK(tick.eventCount==4&&tick.contactCount==2&&tick.events==(Contact|Marker|Landing));
+    CHECK(player.Advance(1).eventCount==0);
+    player.Start(Clip::Box,program);tick=player.Advance(10000);
+    CHECK(tick.eventCount==3&&(tick.events&Landing)==0); // Outro cannot occur during persistent rest.
+    CHECK(player.Advance(10000).eventCount==0);
+    player.Exit();CHECK(player.Advance(49).eventCount==0);
+    tick=player.Advance(1);CHECK(tick.eventCount==1&&tick.events==Landing);
+    CHECK(player.Advance(10000).eventCount==0);
+    ProgramCueCursor cursor;
+    CHECK(cursor.Consume(Clip::Punch,program,1000).eventCount==4);
+    CHECK(cursor.Consume(Clip::Punch,program,0).eventCount==0);
+    CHECK(cursor.Consume(Clip::Punch,program,1000).eventCount==0);
+    cursor.Reset();CHECK(cursor.Consume(Clip::Punch,program,1000).eventCount==4);
+    // The last cue bit must be a real64-bit shift, not undefined32-bit math.
+    auto many=LinearProgram(64);many.cueCount=64;
+    for(unsigned i=0;i<64;++i)many.cues[i]={i,0,Marker};
+    player.Start(Clip::Groom,many);CHECK(player.Advance(100000).eventCount==64);
+    CHECK(player.Advance(100000).eventCount==0);
+    CHECK(!ProgramContactActive(Clip::Punch,program,149));
+    CHECK(ProgramContactActive(Clip::Punch,program,150));
+    CHECK(ProgramContactIndex(Clip::Punch,program,150)==1);
+    CHECK(!ProgramContactActive(Clip::Punch,program,200));
+    CHECK(ProgramContactIndex(Clip::Punch,program,225)==2);
+    CHECK(!ProgramContactActive(Clip::Punch,program,100000));
+    auto repeatedDrawing=program;
+    repeatedDrawing.steps[3].frame=repeatedDrawing.steps[1].frame;
+    CHECK(!ProgramContactActive(Clip::Punch,repeatedDrawing,350));
+    repeatedDrawing.finish=Finish::Hold;
+    repeatedDrawing.cueCount=1;repeatedDrawing.cues[0]={5,0,Contact};
+    CHECK(ProgramContactActive(Clip::Punch,repeatedDrawing,900));
+    CHECK(!ProgramContactActive(Clip::Punch,repeatedDrawing,100000));
+}
+void SameStepContactsUseTheLatestVisibleOffset() {
+    auto program=LinearProgram(2,1000);program.finish=Finish::Hold;program.cueCount=4;
+    // Deliberately unsorted. Equal offsets select the first registered cue,
+    // while independent simulation-event consumption still sees both cues.
+    program.cues[0]={0,800,Contact};program.cues[1]={0,200,Contact};
+    program.cues[2]={0,800,Contact|Marker};program.cues[3]={1,100,Contact};
+    CHECK(ValidProgram(program,2));
+    for(const auto& point:{std::pair<std::uint64_t,unsigned>{0,0},{199,0},{200,2},{799,2},
+            {800,1},{999,1},{1000,0},{1099,0},{1100,4},{2000,4},{2001,0},{100000,0}})
+        CHECK(ProgramContactIndex(Clip::Punch,program,point.first)==point.second);
+    ProgramPlayer player;player.Start(Clip::Punch,program);
+    CHECK(player.Advance(850).contactCount==3);
+    CHECK(ProgramContactIndex(Clip::Punch,program,player.Elapsed())==1);
+    player.Pause(true);CHECK(player.Advance(10000).contactCount==0&&player.Elapsed()==850);
+    CHECK(ProgramContactIndex(Clip::Punch,program,player.Elapsed())==1);
+    player.Pause(false);CHECK(player.Advance(10000).contactCount==1);
+    CHECK(!ProgramContactActive(Clip::Punch,program,player.Elapsed()));
+    CHECK(player.Advance(10000).contactCount==0);
+    // A skipped earlier pose does not remain eligible during the next step.
+    ProgramCueCursor cursor;
+    CHECK(cursor.Consume(Clip::Punch,program,1000).contactCount==3);
+    CHECK(!ProgramContactActive(Clip::Punch,program,1000));
+}
+void ExpandedJumpAndLocomotionFollowPhysics() {
+    auto jump=LinearProgram(128,100);
+    jump.intro={0,16};jump.loop={16,96};jump.outro={112,16};
+    jump.cueCount=2;jump.cues[0]={16,0,Takeoff};jump.cues[1]={112,0,Landing};
+    Options physical;physical.sheetFrames=128;
+    CHECK(SampleProgram(Clip::Jump,jump,100000,physical).frame==15);
+    CHECK(!SampleProgram(Clip::Jump,jump,100000,physical).finished);
+    ProgramCueCursor events;
+    CHECK(events.Consume(Clip::Jump,jump,100000,physical).eventCount==0);
+    physical.grounded=false;physical.jump=JumpPhase::Airborne;
+    unsigned previous=16;
+    for(int speed=400;speed>=-400;--speed) {
+        physical.velocityY=speed;
+        const auto pose=SampleProgram(Clip::Jump,jump,100000,physical);
+        CHECK(pose.frame>=16&&pose.frame<112&&!pose.groundContact&&!pose.finished);
+        CHECK(pose.frame>=previous);previous=pose.frame;
+    }
+    CHECK(events.Consume(Clip::Jump,jump,0,physical).events==Takeoff);
+    CHECK(events.Consume(Clip::Jump,jump,0,physical).eventCount==0);
+    physical.velocityY=std::numeric_limits<double>::quiet_NaN();
+    CHECK(SampleProgram(Clip::Jump,jump,0,physical).frame<112);
+    auto sixteen=LinearProgram(16,100);
+    for(auto& step:sixteen.steps)step.durationMs=100;
+    sixteen.intro={0,3};sixteen.loop={3,8};sixteen.outro={11,5};
+    Options apex;apex.grounded=false;apex.jump=JumpPhase::Airborne;apex.velocityY=0;
+    CHECK(SampleProgram(Clip::Jump,sixteen,0,apex).frame==7);
+    physical.grounded=true;physical.jump=JumpPhase::Landing;physical.contactElapsedMs=0;
+    CHECK(SampleProgram(Clip::Jump,jump,100000,physical).frame==112);
+    CHECK(events.Consume(Clip::Jump,jump,100000,physical).events==Landing);
+    physical.contactElapsedMs=100000;
+    CHECK(SampleProgram(Clip::Jump,jump,0,physical).frame==127);
+    CHECK(SampleProgram(Clip::Jump,jump,0,physical).finished);
+    CHECK(events.Consume(Clip::Jump,jump,100000,physical).eventCount==0);
+    for(const auto count:{8u,64u,128u,256u})for(const auto clip:{Clip::Walk,Clip::Run}) {
+        auto gait=LinearProgram(count,100);
+        for(unsigned i=0;i<count;++i)gait.steps[i].durationMs=100;
+        gait.intro={0,0};gait.loop={0,count};gait.outro={count,0};
+        Options distance;distance.sheetFrames=count;
+        for(unsigned i=0;i<count;++i) {
+            distance.cyclePhase=(static_cast<double>(i)+.25)/count;
+            const auto pose=SampleProgram(clip,gait,0,distance);
+            CHECK(pose.frame==i&&pose.looping&&pose.groundContact&&!pose.finished);
+            CHECK(SameFrame(pose,SampleProgram(clip,gait,100000,distance))); // Blocked feet do not cycle.
+        }
+        distance.cyclePhase=1;CHECK(SampleProgram(clip,gait,0,distance).frame==0);
+        distance.cyclePhase=std::numeric_limits<double>::infinity();
+        CHECK(SampleProgram(clip,gait,0,distance).frame==0);
+    }
+}
+void ProgramAndAtlasValidationRejectUnsafeInputs() {
+    const auto good=ThreeSectionProgram();
+    auto bad=good;bad.stepCount=kMaxProgramSteps+1;CHECK(!ValidProgram(bad));
+    bad=good;bad.cueCount=kMaxProgramCues+1;CHECK(!ValidProgram(bad));
+    bad=good;bad.steps[0].frame=256;CHECK(!ValidProgram(bad));
+    bad=good;bad.steps[0].durationMs=0;CHECK(!ValidProgram(bad));
+    bad=good;bad.steps[0].durationMs=kMaxStepMs+1;CHECK(!ValidProgram(bad));
+    bad=good;bad.loop.first=1;CHECK(!ValidProgram(bad));
+    bad=good;bad.outro.count=std::numeric_limits<unsigned>::max();CHECK(!ValidProgram(bad));
+    bad=good;bad.durationMs=399;CHECK(!ValidProgram(bad));
+    bad=good;bad.durationMs=kMaxProgramMs+1;CHECK(!ValidProgram(bad));
+    bad=good;bad.cueCount=1;bad.cues[0]={0,100,Contact};CHECK(!ValidProgram(bad));
+    bad.cues[0]={6,0,Contact};CHECK(!ValidProgram(bad));
+    bad.cues[0]={0,0,16};CHECK(!ValidProgram(bad));
+    CHECK(SampleProgram(Clip::Groom,bad,0).finished);
+    CHECK(ValidProgram(good,6)&&!ValidProgram(good,5));
+    CHECK(GridAllowed(Clip::Groom,8,8,64));CHECK(GridAllowed(Clip::Groom,16,8,128));
+    CHECK(GridAllowed(Clip::Groom,16,16,256));CHECK(GridAllowed(Clip::Groom,4,4,8));
+    CHECK(!GridAllowed(Clip::Groom,16,16,257));CHECK(!GridAllowed(Clip::Groom,17,16,256));
+    CHECK(!GridAllowed(Clip::Groom,std::numeric_limits<unsigned>::max(),4,256));
+    using cat::sprite_assets::Descriptor;using cat::sprite_assets::Valid;using cat::sprite_assets::ResourceId;
+    Descriptor asset;asset.clip=Clip::Groom;asset.resourceId=ResourceId(asset.clip,0);
+    asset.columns=16;asset.rows=16;asset.frameCount=256;asset.imageWidth=256;asset.imageHeight=256;
+    asset.referenceHeight=12;asset.program=LinearProgram(256);
+    for(unsigned i=0;i<256;++i)asset.frames[i]={{static_cast<int>(i%16*16),static_cast<int>(i/16*16),16,16},{8,16}};
+    CHECK(Valid(asset));asset.program={};CHECK(!Valid(asset));
+    asset.program=LinearProgram(256);asset.frames[255].rect.width=17;CHECK(!Valid(asset));
+    asset.frames[255].rect.width=16;asset.imageWidth=16384;asset.imageHeight=16384;CHECK(!Valid(asset));
+    asset.imageWidth=256;asset.imageHeight=256;
+    asset.referenceHeight=std::numeric_limits<double>::quiet_NaN();CHECK(!Valid(asset));
+    asset.referenceHeight=12;asset.clip=Clip::Walk;asset.resourceId=ResourceId(Clip::Walk,0);
+    CHECK(!Valid(asset));asset.stridePixels=72;CHECK(Valid(asset));
+    asset.clip=Clip::Run;CHECK(Valid(asset)); // Shared combined atlas uses Walk's resource.
+    asset.resourceId=ResourceId(Clip::Run,0);CHECK(Valid(asset));
+    CHECK(ResourceId(Clip::Box,0)==115&&ResourceId(Clip::Treat,9)==192);
+    CHECK(ResourceId(Clip::Walk,0)==400&&ResourceId(Clip::Run,0)==401);
+    for(unsigned character=0;character<cat::sprite_assets::kCharacters;++character) {
+        const auto walkId=ResourceId(Clip::Walk,character),runId=ResourceId(Clip::Run,character);
+        CHECK(walkId==400+static_cast<int>(2*character));CHECK(runId==walkId+1);
+        CHECK(!(walkId>=301&&walkId<=314));CHECK(!(runId>=301&&runId<=314));
+        CHECK(walkId!=193&&runId!=193); // Existing empty-box prop remains separate.
+    }
+    CHECK(ResourceId(Clip::None,0)==0&&ResourceId(Clip::Walk,10)==0);
+}
+
+}
+int main(){try{SheetMetadataAndEveryFrame();SleepDoesNotRestartYawnOrWake();AuthoredSheetGridsPreserveTheLegacyLayout();EightFrameSleepUsesStoryPosesWithoutWakingInItsRestLoop();EightFrameSleepWakePauseAndInterruptionRemainBounded();SleepVariantSelectionPreservesLegacyAndKeepsAlternatesRare();PunchCuesDoNotRepeatOrReplay();JumpTracksPhysicalState();JumpFlightNeverReusesThePlantedPrelaunchFrame();GroundedVisitsHoldAndGroomBounds();MealsHaveOneEntranceAndOneEnding();ExpandedProgramsVisitEveryDistinctDrawing();AuthoredSectionsPreserveExposureAndPersistentRest();AuthoredCuesAreSimulationEventsOncePerAction();SameStepContactsUseTheLatestVisibleOffset();ExpandedJumpAndLocomotionFollowPhysics();ProgramAndAtlasValidationRejectUnsafeInputs();
 std::cout<<"Sprite sequences: "<<checks<<" checks passed\n";return EXIT_SUCCESS;}catch(const std::exception& error){std::cerr<<error.what()<<'\n';return EXIT_FAILURE;}}

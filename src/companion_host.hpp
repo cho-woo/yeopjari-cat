@@ -35,6 +35,12 @@ cat::companion::Context CompanionContext(ULONGLONG ticks, double elapsed) {
     if (support) c.supportPlatform = CompanionPlatform(support);
     return c;
 }
+int CompanionSpriteBottomInset(const cat::companion::Snapshot& s,double dpi) {
+    const auto* sprite=CareSpriteFor(s.animation,s.preferences.character);
+    if(!sprite || (sprite->layout->clip!=cat::sprite_sequence::Clip::Fish &&
+            sprite->layout->clip!=cat::sprite_sequence::Clip::Jump))return 0;
+    return cat::render::SpriteBottomSafetyInset(*sprite->layout,110*dpi*s.growthScale,s.body.bodyHeight);
+}
 void PaintCompanion(HDC, unsigned char* pixels, int width, int height,
                     const cat::companion::Snapshot& s, double dpi) {
     Bitmap bitmap(width, height, width * 4, PixelFormat32bppPARGB, pixels);
@@ -44,9 +50,10 @@ void PaintCompanion(HDC, unsigned char* pixels, int width, int height,
     graphics.SetSmoothingMode(SmoothingModeAntiAlias);
     graphics.SetInterpolationMode(InterpolationModeHighQualityBicubic);
     graphics.SetPixelOffsetMode(PixelOffsetModeHighQuality);
+    const int bottomInset=std::clamp(CompanionSpriteBottomInset(s,dpi),0,height-1);
     DrawPetStyle(graphics, s.preferences.character, s.preferences.outfit, s.animation, s.body,
         static_cast<REAL>(width / 2.0 + s.animation.x * dpi * s.growthScale),
-        static_cast<REAL>(height - 1 - s.animation.lift * dpi * s.growthScale),
+        static_cast<REAL>(height - 1 - bottomInset - s.animation.lift * dpi * s.growthScale),
         static_cast<REAL>(110 * dpi * s.growthScale),
         s.presentationTicks?&CompanionCarePresentation():nullptr,
         s.presentationTicks,s.presentationGeneration,s.presentationPaused);
@@ -195,7 +202,9 @@ void TickCompanion(ULONGLONG ticks, double elapsed) {
     const auto hwnd = reinterpret_cast<HWND>(g.companionModel.SupportId());
     const bool supported = hwnd && QueryPerchRect(hwnd,support);
     g.companionWindow.SetSupportRect(supported ? &support : nullptr);
-    g.companionWindow.Present(g.companionModel.View(ticks),g.work.left,g.work.bottom,g.dpiScale,g.hidden);
+    const auto snapshot=g.companionModel.View(ticks);
+    g.companionWindow.Present(snapshot,g.work.left,g.work.bottom,g.dpiScale,g.hidden,
+        CompanionSpriteBottomInset(snapshot,g.dpiScale));
 }
 void NotifyCompanionFood() {
     if (g.companionStore.enabled() && g.companionModel.Bound())

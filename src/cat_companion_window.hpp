@@ -40,16 +40,18 @@ public:
     void SetSupportRect(const RECT* rect) { supportRect_=rect?*rect:RECT{}; hasSupportRect_=rect!=nullptr; }
     bool Dragging() const { return pressed_ && moved_; }
     bool Interacting() const { return pressed_ || dispatching_; }
-    bool Present(const Snapshot& s,int workLeft,int workBottom,double dpi,bool hidden=false) {
+    bool Present(const Snapshot& s,int workLeft,int workBottom,double dpi,bool hidden=false,
+                 int bottomSafetyInset=0) {
         if(!hwnd_) return false;
         if(hidden || !s.enabled) { ShowWindow(hwnd_,SW_HIDE); return true; }
         dpi_=std::isfinite(dpi)?std::clamp(dpi,.5,4.0):1;
         const int width=static_cast<int>(std::ceil(280*dpi_)),height=static_cast<int>(std::ceil(235*dpi_));
         if((width!=width_ || height!=height_) && !Resize(width,height)) return false;
+        bottomSafetyInset=std::clamp(bottomSafetyInset,0,height_-1);
         std::memset(pixels_,0,static_cast<std::size_t>(width_)*height_*4);
         if(painter_) painter_(dc_,pixels_,width_,height_,s,dpi_);
         POINT destination{workLeft+static_cast<LONG>(std::lround(s.physical.x*dpi_))-width_/2,
-            workBottom-static_cast<LONG>(std::lround(s.physical.lift*dpi_))-height_};
+            workBottom-static_cast<LONG>(std::lround(s.physical.lift*dpi_))-height_+bottomSafetyInset};
         POINT origin{}; SIZE size{width_,height_}; BLENDFUNCTION blend{AC_SRC_OVER,0,255,AC_SRC_ALPHA};
         HDC screen=GetDC(nullptr);
         const bool rendered=UpdateLayeredWindow(hwnd_,screen,&destination,&size,dc_,&origin,0,&blend,ULW_ALPHA)!=FALSE;

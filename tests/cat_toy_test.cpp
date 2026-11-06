@@ -279,6 +279,72 @@ void AuthoredBoxVisitCompletesBeforeSleep() {
     CHECK(session.PhaseDuration()==Duration(Kind::Ball,Phase::Interact));
 }
 
+void AuthoredBoxExitHoldsBeforeTravel() {
+    using namespace cat::toy;
+    static_assert(static_cast<int>(Phase::Exit)==8 && static_cast<int>(Phase::Wait)==9);
+    Session session;session.Start(Kind::Box,-1);session.boxExitMs=1250;
+    session.Set(Phase::Sleep);session.elapsedMs=session.PhaseDuration();
+    CHECK(session.Advance(.001,true,false) && session.phase==Phase::BoxExit);
+    CHECK(session.elapsedMs==0 && session.PhaseDuration()==1250);
+    CHECK(!Travels(session.phase));
+    CHECK(SessionTarget(session,500,470,.82,96,1500)==500);
+    CHECK(SessionTarget(session,40,96,1,96,1500)==96);
+    for(int step=0;step<4;++step)CHECK(!session.Advance(.25,true,false));
+    CHECK(!session.Advance(.2,true,false));
+    const auto before=session;
+    CHECK(!session.Advance(.25,false,true));
+    CHECK(!session.Advance(1,true,true));
+    CHECK(session.elapsedMs==before.elapsedMs && session.activeMs==before.activeMs);
+    CHECK(!session.Advance(.049,true,false));
+    CHECK(session.phase==Phase::BoxExit && Near(session.elapsedMs,1249));
+    // The authored outro finishes at the box even if no travel arrival was supplied.
+    CHECK(session.Advance(.001,true,false) && session.phase==Phase::Exit);
+    CHECK(Travels(session.phase) && SessionTarget(session,500,500,1,96,1500)==600);
+    CHECK(!session.Advance(.25,true,false) && session.phase==Phase::Exit);
+    CHECK(session.Advance(.001,true,true) && session.phase==Phase::Wait);
+
+    // Direct exit requests retain their existing immediate travel contract.
+    session.Set(Phase::Exit);
+    CHECK(Travels(session.phase) && session.elapsedMs==0);
+    session.Start(Kind::Box);
+    CHECK(session.boxExitMs==0);
+    for(double disabled:{0.0,-1.0,std::numeric_limits<double>::infinity(),
+                         std::numeric_limits<double>::quiet_NaN()}) {
+        session.boxExitMs=disabled;session.Set(Phase::Sleep);
+        session.elapsedMs=session.PhaseDuration();
+        CHECK(session.Advance(.001,true,true) && session.phase==Phase::Exit);
+    }
+    for(Kind kind:{Kind::PaperBag,Kind::Cushion,Kind::Ball}) {
+        session.Start(kind);session.boxExitMs=1250;session.Set(Phase::Rest);
+        session.elapsedMs=session.PhaseDuration();
+        CHECK(session.Advance(.001,true,true) && session.phase==Phase::Exit);
+    }
+    session.Start(Kind::Box);session.boxExitMs=1250;session.Set(Phase::BoxExit);
+    session.Cancel();
+    CHECK(session.boxExitMs==0 && session.phase==Phase::None);
+}
+
+void LongAuthoredBoxProgramsKeepTheirCompleteDuration() {
+    using namespace cat::toy;
+    // A 128-frame program at 100ms per frame must finish its last 28 frames,
+    // rather than advance to sleeping/travel when the former 10s cap expires.
+    for(Phase phase:{Phase::Interact,Phase::BoxExit}) {
+        Session session;session.Start(Kind::Box);
+        session.boxVisitMs=session.boxExitMs=12800;session.Set(phase);
+        CHECK(session.PhaseDuration()==12800);
+        for(int step=0;step<40;++step)CHECK(!session.Advance(.25,true,false));
+        CHECK(session.phase==phase && session.elapsedMs==10000);
+        for(int step=0;step<11;++step)CHECK(!session.Advance(.25,true,false));
+        CHECK(!session.Advance(.049,true,false));
+        CHECK(session.phase==phase && Near(session.elapsedMs,12799));
+        CHECK(session.Advance(.001,true,false));
+        CHECK(session.phase==(phase==Phase::Interact?Phase::Sleep:Phase::Exit));
+        session.Set(phase);
+        session.boxVisitMs=session.boxExitMs=static_cast<double>(cat::sprite_sequence::kMaxProgramMs)+1;
+        CHECK(session.PhaseDuration()==cat::sprite_sequence::kMaxProgramMs);
+    }
+}
+
 void AutomaticWatchdog() {
     using namespace cat::toy;
     Automatic automatic; AutoInput input; input.eligible=true;
@@ -299,7 +365,8 @@ int main() {
     try {
         ReachableTargets(); ContactAndContinuousRoll(); EdgesRemainReachable(); FrameRateAndPause();
         RealContactGate(); DistinctActivitiesAndInterruptions(); ContainerPathsAndFeather();
-        AuthoredBoxVisitCompletesBeforeSleep();
+        AuthoredBoxVisitCompletesBeforeSleep(); AuthoredBoxExitHoldsBeforeTravel();
+        LongAuthoredBoxProgramsKeepTheirCompleteDuration();
         AutomaticTimingAndArbitration(); AutomaticCompletionAndTeardown(); AutomaticWatchdog();
         std::cout << "Toy interaction: " << checks << " checks passed\n";
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }

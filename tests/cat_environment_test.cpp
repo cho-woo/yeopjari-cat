@@ -274,6 +274,82 @@ void NearbyTeasingEscalatesAndChaseNeverBacksAway() {
     }
 }
 
+void AuthoredPawDurationsOutlastLegacyAndEpisodeTimers() {
+    using cat::environment::CursorAttackDuration;
+    auto defaults=Input();
+    CHECK(CursorAttackDuration(CursorAction::Paw,defaults)==850);
+    CHECK(CursorAttackDuration(CursorAction::Punch,defaults)==650);
+    defaults.pawDurationMs=0;defaults.punchDurationMs=std::numeric_limits<std::uint64_t>::max();
+    CHECK(CursorAttackDuration(CursorAction::Paw,defaults)==850);
+    CHECK(CursorAttackDuration(CursorAction::Punch,defaults)==86400000);
+    for(const auto target:{CursorAction::Paw,CursorAction::Punch}) {
+        CursorReaction reaction;auto input=Input();
+        input.cursorHeight=target==CursorAction::Punch?6:60;
+        input.cursorX=430;
+        input.pawDurationMs=target==CursorAction::Paw?10000:850;
+        input.punchDurationMs=10000;
+        std::uint64_t began=0;
+        for(unsigned frame=0;frame<1000;++frame) {
+            input.nowMs=frame*16;
+            if(target==CursorAction::Punch)
+                input.cursorX=input.catX+28+15*std::sin(frame*.016*2*3.141592653589793*1.2);
+            const auto output=reaction.Step(input);
+            input.catX+=output.velocity*.016;
+            if(output.action==target){began=input.nowMs;break;}
+        }
+        CHECK(began>0);
+        const double fixedCursor=input.cursorX;
+        // Keep sampling at normal tick intervals; large sample gaps correctly
+        // cancel a cursor episode independently of animation duration.
+        for(std::uint64_t elapsed=16;elapsed<10000;elapsed+=16) {
+            input.nowMs=began+elapsed;input.cursorX=fixedCursor;
+            CHECK(reaction.Step(input).action==target);
+        }
+        input.nowMs=began+10000;
+        CHECK(reaction.Step(input).action!=target);
+    }
+    // Longer art must not override explicit user cancellation.
+    CursorReaction disabled;auto input=Input();input.cursorX=430;input.pawDurationMs=10000;
+    for(unsigned frame=0;frame<1000 && disabled.Action()!=CursorAction::Paw;++frame) {
+        input.nowMs=frame*16;disabled.Step(input);
+    }
+    CHECK(disabled.Action()==CursorAction::Paw);
+    input.enabled=false;input.nowMs+=16;
+    CHECK(disabled.Step(input).action==CursorAction::None);
+}
+
+void AuthoredPouncePreparationWaitsForItsPhysicalLaunch() {
+    using cat::environment::CursorPounceTimeout;
+    auto defaults=Input();CHECK(CursorPounceTimeout(defaults)==1400);
+    defaults.pouncePreparationMs=0;CHECK(CursorPounceTimeout(defaults)==1400);
+    defaults.pouncePreparationMs=std::numeric_limits<std::uint64_t>::max();
+    CHECK(CursorPounceTimeout(defaults)==86401160);
+    for(const bool launch:{false,true}) {
+        CursorReaction reaction;auto input=Input();input.cursorHeight=6;input.pouncePreparationMs=10000;
+        std::uint64_t began=0;
+        for(unsigned frame=0;frame<1000;++frame) {
+            input.nowMs=frame*16;
+            input.cursorX=input.catX+28+15*std::sin(frame*.016*2*3.141592653589793*1.2);
+            if(reaction.Step(input).action==CursorAction::Pounce){began=input.nowMs;break;}
+        }
+        CHECK(began>0);
+        input.cursorX=reaction.TargetX();
+        const auto deadline=launch?input.pouncePreparationMs:CursorPounceTimeout(input);
+        for(std::uint64_t elapsed=16;elapsed<deadline;elapsed+=16) {
+            input.nowMs=began+elapsed;
+            CHECK(reaction.Step(input).action==CursorAction::Pounce);
+            CHECK(!reaction.InFlight());
+        }
+        input.nowMs=began+deadline;
+        if(launch) {
+            reaction.ConfirmLaunch(true);input.grounded=false;
+            CHECK(reaction.Step(input).action==CursorAction::Pounce&&reaction.InFlight());
+            input.nowMs+=16;input.grounded=true;
+            CHECK(reaction.Step(input).action==CursorAction::None&&!reaction.InFlight());
+        } else CHECK(reaction.Step(input).action!=CursorAction::Pounce);
+    }
+}
+
 void MovingSupportDoesNotImpersonatePointerMotion() {
     CursorReaction reaction;
     auto input=Input(); input.cursorX=430; input.cursorHeight=6; input.supportHeight=400;
@@ -372,6 +448,8 @@ int main() {
         RareSitCooldownAndSpeciesInterestAreReal();
         WindowRiseBudgetUsesWorkAreaAndSpecies();
         NearbyTeasingEscalatesAndChaseNeverBacksAway(); FastDepartureBeforeTakeoffCancelsTheAttack();
+        AuthoredPawDurationsOutlastLegacyAndEpisodeTimers();
+        AuthoredPouncePreparationWaitsForItsPhysicalLaunch();
         MovingSupportDoesNotImpersonatePointerMotion(); SneakingIsRareAndCancelsWhenDisabledOrPointerLeaves();
         std::cout << "Environment reactions: " << checks << " checks passed\n";
     } catch (const std::exception& e) { std::cerr << e.what() << '\n'; return 1; }

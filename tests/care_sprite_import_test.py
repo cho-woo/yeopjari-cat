@@ -10,6 +10,7 @@ import struct
 import subprocess
 import tempfile
 import unittest
+from unittest import mock
 import zlib
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -70,11 +71,26 @@ class CareSpriteImportTests(unittest.TestCase):
         result={'clip':name,'character':character,'source':filename,'columns':columns,'rows':rows,'reference_height':40,'anchor':[8,16]}
         result.update(overrides);return result
 
-    def write_manifest(self,entries):
-        self.manifest.write_text(json.dumps({'schema':1,'clips':entries})+'\n');return self.manifest
+    def write_manifest(self,entries,schema=1):
+        self.manifest.write_text(json.dumps({'schema':schema,'clips':entries})+'\n');return self.manifest
 
-    def apply(self,entries,check=False):
-        return importer.prepare_import(self.root,self.write_manifest(entries),check)
+    def apply(self,entries,check=False,schema=1):
+        return importer.prepare_import(self.root,self.write_manifest(entries,schema),check)
+
+    def authored(self,count,columns=16,clip='groom',**overrides):
+        rows=(count+columns-1)//columns
+        entry=self.entry(clip,columns=columns,rows=rows,frame_count=count)
+        _,pixels=sheet(columns,rows)
+        # Fixture poses are individually identifiable, not duplicate images
+        # presented as newly authored production artwork.
+        width=columns*16
+        for frame in range(count):
+            x=(frame%columns)*16+7;y=(frame//columns)*16+5
+            pixels[(y*width+x)*4:(y*width+x+1)*4]=bytes((frame,255-frame,frame//2,255))
+        (self.inputs/entry['source']).write_bytes(png(width,rows*16,pixels))
+        entry['sequence']={'loop':[{'frame':index,'ms':25+(index%3)} for index in range(count)],'finish':'complete'}
+        if clip in ('walk','run'):entry['stride_pixels']=72 if clip=='walk' else 150
+        entry.update(overrides);return entry
 
     def test_empty_default_keeps_legacy_artwork(self):
         result=importer.prepare_import(self.root,check=True)
@@ -197,5 +213,116 @@ int main(){return 0;}
         with self.assertRaisesRegex(importer.ImportError,'Missing manifest'):importer.prepare_import(self.root,self.inputs/'missing.json')
         self.manifest.write_text('{"schema":1,"schema":1,"clips":[]}')
         with self.assertRaises(importer.ImportError):importer.prepare_import(self.root,self.manifest)
+
+    @unittest.skipUnless(shutil.which('g++'),'C++ compiler unavailable')
+    def test_64_128_256_authored_frames_generate_valid_compilable_programs(self):
+        for count in (64,128,256):
+            with self.subTest(frames=count):
+                entry=self.authored(count);original=(self.inputs/entry['source']).read_bytes()
+                result=self.apply([entry],schema=2)
+                self.assertEqual(result['actual_frames'],count)
+                self.assertEqual(result['unique_sheets'],1)
+                self.assertEqual(result['decoded_frame_bytes'],count*16*16*4)
+                self.assertEqual((self.root/'assets/care-sprites/c0-groom.png').read_bytes(),original)
+                self.assertEqual(importer.prepare_import(self.root,check=True)['actual_frames'],count)
+                source=self.base/'authored.cpp';source.write_text('''#include "care_sprites.generated.hpp"
+using namespace cat::sprite_assets;
+constexpr auto& asset=kCareSprites[0];
+static_assert(Valid(asset));
+static_assert(asset.frameCount==COUNT);
+static_assert(asset.program.stepCount==COUNT);
+static_assert(asset.program.loop.first==0&&asset.program.loop.count==COUNT);
+static_assert(asset.program.steps[COUNT-1].frame==COUNT-1);
+static_assert(asset.frames[COUNT-1].rect.width==16);
+int main(){
+    std::uint64_t elapsed=0;
+    cat::sprite_sequence::Options options;options.sheetFrames=COUNT;
+    for(unsigned i=0;i<COUNT;++i){
+        if(asset.program.steps[i].frame!=i||asset.program.steps[i].durationMs!=25+i%3)return 1;
+        const auto pose=cat::sprite_sequence::SampleProgram(asset.clip,asset.program,elapsed+12,options);
+        if(pose.frame!=i||pose.finished)return 2;
+        elapsed+=asset.program.steps[i].durationMs;
+    }
+    const auto done=cat::sprite_sequence::SampleProgram(asset.clip,asset.program,elapsed,options);
+    if(!done.finished||done.frame!=COUNT-1)return 3;
+    return 0;
+}
+'''.replace('COUNT',str(count)))
+                result=subprocess.run(['g++','-std=c++17','-Wall','-Wextra','-Werror','-I',str(self.root/'src'),str(source),'-o',str(self.base/'authored')],capture_output=True,text=True)
+                self.assertEqual(result.returncode,0,result.stderr[:6000])
+                subprocess.run([str(self.base/'authored')],check=True,capture_output=True)
+
+    def test_timed_entrance_loop_exit_events_and_partial_grid_are_preserved(self):
+        entry=self.authored(65,sequence={'intro':[{'frame':0,'ms':400}],
+            'loop':[{'frame':32,'ms':125},{'frame':63,'ms':175}],
+            'outro':[{'frame':64,'ms':800}],'finish':'hold','duration_ms':5000,
+            'events':[{'step':1,'offset_ms':90,'type':'contact'},{'step':3,'offset_ms':0,'type':'landing'}]})
+        self.apply([entry],schema=2)
+        canonical=json.loads((self.root/importer.CANONICAL).read_text())
+        self.assertEqual(canonical['schema'],2)
+        self.assertEqual(canonical['clips'][0]['frame_count'],65)
+        self.assertEqual(canonical['clips'][0]['sequence'],entry['sequence'])
+        header=(self.root/importer.HEADER).read_text()
+        for fragment in ('Range{0,1}','Range{1,2}','Range{3,1}','Finish::Hold,5000,2', 'Cue{1,90,1}','Cue{3,0,4}'):
+            self.assertIn(fragment,header)
+
+    def test_walk_run_shared_atlas_is_decoded_once_and_embedded_once(self):
+        walk=self.authored(16,columns=4,clip='walk');run=dict(walk,clip='run',stride_pixels=150)
+        walk['frame_count']=run['frame_count']=8
+        frames=[{'rect':[(i%4)*16,(i//4)*16,16,16],'anchor':[8,16]} for i in range(16)]
+        walk['frames']=frames[:8];run['frames']=frames[8:]
+        walk['sequence']=run['sequence']={'loop':[{'frame':i,'ms':100} for i in range(8)]}
+        with mock.patch.object(importer,'png_alpha',wraps=importer.png_alpha) as decode:
+            result=self.apply([run,walk],schema=2)
+            self.assertEqual(decode.call_count,1)
+        self.assertEqual(result['resource_ids'],[400,400])
+        self.assertEqual(result['unique_sheets'],1)
+        self.assertEqual(result['actual_frames'],16)
+        self.assertEqual((self.root/importer.RC).read_text().count(' RCDATA '),1)
+        self.assertFalse((self.root/'assets/care-sprites/c0-run.png').exists())
+        canonical=json.loads((self.root/importer.CANONICAL).read_text())['clips']
+        self.assertEqual([clip['source'] for clip in canonical],['c0-walk.png','c0-walk.png'])
+        self.assertEqual(importer.prepare_import(self.root,check=True)['resource_ids'],[400,400])
+        run=self.authored(8,columns=4,clip='run')
+        self.assertEqual(self.apply([walk,run],schema=2)['resource_ids'],[400,401])
+        all_characters=[dict(entry,character=character) for character in range(10) for entry in (walk,run)]
+        ids=self.apply(all_characters,schema=2)['resource_ids']
+        self.assertEqual(ids,list(range(400,420)))
+        self.assertTrue(set(ids).isdisjoint(range(301,315)))
+
+    def test_authored_metadata_bounds_fail_before_output_mutation(self):
+        baseline={name:(self.root/name).read_bytes() for name in (importer.HEADER,importer.RC)}
+        entry=self.authored(64)
+        malformed=[dict(entry,frame_count=257),dict(entry,frame_count=0),dict(entry,columns=17,rows=16),
+                   dict(entry,sequence={'loop':[{'frame':64,'ms':10}]}),
+                   dict(entry,sequence={'loop':[{'frame':0,'ms':0}]}),
+                   dict(entry,sequence={'loop':[{'frame':0,'ms':60001}]}),
+                   dict(entry,sequence={'loop':[{'frame':0,'ms':True}]}),
+                   dict(entry,sequence={'loop':[{'frame':0,'ms':10}]*513}),
+                   dict(entry,sequence={'loop':[]}),dict(entry,sequence={'finish':'unknown'}),
+                   dict(entry,sequence={'intro':[{'frame':0,'ms':500}],'duration_ms':499}),
+                   dict(entry,sequence={'loop':[{'frame':0,'ms':10}],'duration_ms':86400001}),
+                   dict(entry,sequence={'loop':[{'frame':0,'ms':10}],'events':[{'step':0,'offset_ms':10,'type':'contact'}]}),
+                   dict(entry,sequence={'loop':[{'frame':0,'ms':10}],'events':[{'step':1,'offset_ms':0,'type':'contact'}]}),
+                   dict(entry,sequence={'loop':[{'frame':0,'ms':10}],'events':[{'step':0,'offset_ms':0,'type':'unknown'}]}),
+                   dict(entry,sequence={'loop':[{'frame':0,'ms':10}],'events':[{'step':0,'offset_ms':0,'type':'contact'}]*65}),
+                   dict(entry,stride_pixels=float('nan')),dict(entry,stride_pixels=-1)]
+        no_sequence=dict(entry);no_sequence.pop('sequence');malformed.append(no_sequence)
+        for value in malformed:
+            with self.subTest(value=str(value)[-200:]),self.assertRaises(importer.ImportError):self.apply([value],schema=2)
+            for name,data in baseline.items():self.assertEqual((self.root/name).read_bytes(),data)
+            self.assertFalse((self.root/'assets').exists())
+
+    def test_oversize_png_and_resident_frame_budget_reject(self):
+        for width,height in ((16385,1),(16384,2049),(1,0)):
+            # Hostile dimensions must fail before attempting zlib decode.
+            value=b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('>IIBBBBB',width,height,8,6,0,0,0))+chunk(b'IDAT',b'')+chunk(b'IEND',b'')
+            with self.subTest(size=(width,height)),self.assertRaisesRegex(importer.ImportError,'dimensions'):importer.png_alpha(value)
+        entry=self.authored(64)
+        with mock.patch.object(importer,'MAX_BYTES',10),self.assertRaisesRegex(importer.ImportError,'32MiB'):
+            self.apply([entry],schema=2)
+        with mock.patch.object(importer,'MAX_RESIDENT_PIXELS',64*16*16-1),self.assertRaisesRegex(importer.ImportError,'resident budget'):
+            self.apply([entry],schema=2)
+        self.assertFalse((self.root/'assets').exists())
 
 if __name__=='__main__':unittest.main()

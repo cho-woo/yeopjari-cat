@@ -1,3 +1,9 @@
+// Give this test a mutable registration table without changing generated
+// production art. The real Model still resolves its usual descriptor API.
+#define kCareSprites kOriginalCareSprites
+#include "../src/care_sprites.generated.hpp"
+#undef kCareSprites
+namespace cat::sprite_assets { auto kCareSprites=kOriginalCareSprites; }
 #include "../src/cat_companion.hpp"
 #include <cstdlib>
 #include <iostream>
@@ -68,7 +74,12 @@ void AcceptedMealKeepsItsCompleteGroomFollowUp() {
     auto c=Frame(100,model.Physical().x+60);c.primaryVisible=false;
     CHECK(model.Feed(c.nowUtc,c.ticks,false)==cat::nutrition::FeedResult::Accepted);
     model.Tick(c);
-    while(c.ticks<5100) {
+    const auto* meal=cat::sprite_assets::Find(cat::sprite_sequence::Clip::Eat,0,cat::sprite_assets::kCareSprites);
+    const auto* groom=cat::sprite_assets::Find(cat::sprite_sequence::Clip::Groom,0,cat::sprite_assets::kCareSprites);
+    CHECK(meal && groom && meal->program.stepCount && groom->program.stepCount);
+    const auto mealEnd=100+cat::sprite_sequence::ProgramDuration(meal->program);
+    const auto groomDuration=cat::sprite_sequence::ProgramDuration(groom->program);
+    while(c.ticks<mealEnd) {
         const auto view=model.View(c.ticks);
         CHECK(view.motion==M::Eat);Step(model,c);
     }
@@ -76,15 +87,48 @@ void AcceptedMealKeepsItsCompleteGroomFollowUp() {
     const auto groomAt=c.ticks;
     const auto groomFamily=model.View(c.ticks).animation.spriteOptions.variant;
     CHECK(groomFamily<3);
-    while(model.View(c.ticks).motion==M::Groom&&c.ticks-groomAt<8500) {
+    while(model.View(c.ticks).motion==M::Groom&&c.ticks-groomAt<groomDuration+34) {
         CHECK(model.View(c.ticks).animation.spriteOptions.variant==groomFamily);
         CHECK(!model.FoodOffered(c));Step(model,c);
     }
-    CHECK(c.ticks-groomAt>=3983&&c.ticks-groomAt<=8017);
+    CHECK(c.ticks-groomAt>=groomDuration&&c.ticks-groomAt<=groomDuration+17);
     CHECK(model.View(c.ticks).motion==M::Idle);
     const auto restedAt=c.ticks;
     while(c.ticks-restedAt<17900) {Step(model,c);CHECK(model.View(c.ticks).motion==M::Idle);}
     CHECK(state.pet.feedCount==1&&state.memory.meals==1);
+}
+void HeldCareSurvivesAutomaticExpiryButExplicitFoodStillWins() {
+    using namespace cat::sprite_sequence;
+    auto found=std::find_if(cat::sprite_assets::kCareSprites.begin(),cat::sprite_assets::kCareSprites.end(),
+        [](const auto& asset){return asset.character==0&&asset.clip==Clip::Eat;});
+    CHECK(found!=cat::sprite_assets::kCareSprites.end());
+    struct RestoreFinish {Program& program;Finish original;~RestoreFinish(){program.finish=original;}} restore{found->program,found->program.finish};
+    found->program.finish=Finish::Hold;
+    auto state=NewState(born);state.preferences.character=cat::Character::Cream;
+    state.nutrition.fullness=state.pet.hunger=45;
+    Model model;model.Bind(state);model.Reset(0,1600,700);
+    auto c=Frame(100,model.Physical().x+60);c.primaryVisible=false;
+    CHECK(model.Feed(c.nowUtc,c.ticks,false)==cat::nutrition::FeedResult::Accepted);
+    const auto duration=ProgramDuration(found->program),deadline=100+duration;
+    model.Tick(c);
+    // Honor the same nutrition cooldown as production; the held pose survives
+    // many ordinary decisions before a valid explicit feeding overrides it.
+    while(c.ticks<deadline+cat::nutrition::FeedingCooldown*1000) {
+        Step(model,c);const auto view=model.View(c.ticks);
+        CHECK(view.motion==M::Eat&&view.physical.grounded&&std::abs(view.physical.velocityX)<.1);
+        CHECK(model.HoldingFinalCarePose(c.ticks)==(c.ticks>=deadline));
+        if(c.ticks>=deadline) {
+            const auto pose=SampleProgram(Clip::Eat,found->program,view.animation.spriteElapsedMs,view.animation.spriteOptions);
+            CHECK(pose.holding&&!pose.finished&&pose.frame==found->program.steps[found->program.stepCount-1].frame);
+        }
+    }
+    CHECK(state.pet.feedCount==1&&state.memory.meals==1);
+    state.nutrition.fullness=state.pet.hunger=45;
+    CHECK(model.Feed(c.nowUtc,c.ticks,true)==cat::nutrition::FeedResult::Accepted);
+    CHECK(model.View(c.ticks).motion==M::Treat);
+    CHECK(!model.HoldingFinalCarePose(c.ticks));
+    Step(model,c);CHECK(model.View(c.ticks).motion==M::Treat);
+    CHECK(state.pet.feedCount==1&&state.pet.snackCount==1);
 }
 void LongZeroPhysicsStallFreezesActionAndPresentation() {
     auto state=NewState(born);state.preferences.character=cat::Character::Cream;
@@ -111,13 +155,19 @@ void SocialSleepWakesBeforeItsNeutralRest() {
     while(c.ticks<30100)Step(model,c);
     CHECK(model.View(c.ticks).motion==M::Stretch);
     const auto wakeAt=c.ticks;
-    while(c.ticks-wakeAt<3490) {
+    const auto* sleep=cat::sprite_assets::Find(cat::sprite_sequence::Clip::Sleep,0,cat::sprite_assets::kCareSprites);
+    CHECK(sleep && sleep->program.stepCount);
+    const auto wakeDuration=std::max<std::uint64_t>(3200,
+        cat::sprite_sequence::Duration(sleep->program,sleep->program.outro)+500);
+    while(c.ticks+17<wakeAt+wakeDuration) {
         const auto pose=model.View(c.ticks);
         CHECK(pose.motion==M::Stretch);
         CHECK(pose.animation.spriteClip==cat::sprite_sequence::Clip::Sleep);
         Step(model,c);
     }
-    Step(model,c);CHECK(model.View(c.ticks).motion==M::Idle);
+    CHECK(model.View(wakeAt+wakeDuration-1).motion==M::Stretch);
+    c.ticks=wakeAt+wakeDuration;c.nowUtc=born+static_cast<std::int64_t>(c.ticks/1000);model.Tick(c);
+    CHECK(model.View(c.ticks).motion==M::Idle);
 }
 void SocialGesturesFinishBeforeFollowingTheNextPosition() {
     for(const auto kind:{Interaction::Paw,Interaction::Sniff,Interaction::FoodCompetition}) {
@@ -190,6 +240,7 @@ int main() {
     try {StartupHasAQuietInterval();CompletedSocialActionCannotImmediatelyStartAnother();
         ExplicitFoodCanInviteARaceAfterTheMinimumRest();
         AcceptedMealKeepsItsCompleteGroomFollowUp();LongZeroPhysicsStallFreezesActionAndPresentation();
+        HeldCareSurvivesAutomaticExpiryButExplicitFoodStillWins();
         SocialSleepWakesBeforeItsNeutralRest();SocialGesturesFinishBeforeFollowingTheNextPosition();
         RenderingGenerationChangesAcrossResetsAndIdentity();
         AutonomousPairRunningRemainsReachableAfterQuietRest();

@@ -5,8 +5,12 @@
 #include <cstddef>
 
 namespace cat::sprite_assets {
-constexpr unsigned kMaxFrames=24;
+constexpr unsigned kMaxFrames=cat::sprite_sequence::kMaxAuthoredFrames;
 constexpr unsigned kCharacters=10;
+constexpr unsigned kMaxSide=16384;
+constexpr std::uint64_t kMaxImagePixels=32ull*1024*1024;
+constexpr std::uint64_t kMaxResidentPixels=48ull*1024*1024;
+constexpr std::uint64_t kMaxImageBytes=32ull*1024*1024;
 struct Rect { int x=0,y=0,width=0,height=0; };
 // Anchors are local to the frame rectangle, in unscaled source pixels.
 // Every clip has one common referenceHeight; frames are never normalized by
@@ -22,18 +26,36 @@ struct Descriptor {
     std::array<Frame,kMaxFrames> frames{};
     const char* sha256="";
     const char* sourcePath="";
+    cat::sprite_sequence::Program program{};
+    double stridePixels=0;
 };
 constexpr int ResourceId(cat::sprite_sequence::Clip clip,unsigned character) {
-    return static_cast<unsigned>(clip)<8&&character<kCharacters?
-        113+static_cast<int>(character*8+static_cast<unsigned>(clip)):0;
+    if(character>=kCharacters)return 0;
+    if(static_cast<unsigned>(clip)<8)return 113+static_cast<int>(character*8+static_cast<unsigned>(clip));
+    // 301..314 remain reserved for retired audio and are checked absent by
+    // the silent-build verification. Locomotion must never reuse those IDs.
+    if(clip==cat::sprite_sequence::Clip::Walk)return 400+static_cast<int>(character*2);
+    if(clip==cat::sprite_sequence::Clip::Run)return 401+static_cast<int>(character*2);
+    return 0;
 }
 constexpr bool Valid(const Descriptor& asset) {
+    using namespace cat::sprite_sequence;
     const auto grid=cat::sprite_sequence::GridFor(asset.clip,asset.frameCount);
-    if(asset.character>=kCharacters||asset.resourceId!=ResourceId(asset.clip,asset.character)||
-       grid.count==0||!cat::sprite_sequence::GridAllowed(asset.clip,asset.columns,asset.rows)||asset.frameCount!=grid.count||
-       asset.frameCount>kMaxFrames||asset.imageWidth==0||asset.imageHeight==0||
-       asset.imageWidth>16384||asset.imageHeight>16384||
-       !(asset.referenceHeight>0&&asset.referenceHeight<=16384))return false;
+    const bool aliasedRun=asset.clip==Clip::Run && asset.resourceId==ResourceId(Clip::Walk,asset.character);
+    if(asset.character>=kCharacters||!KnownClip(asset.clip)||
+       (asset.resourceId!=ResourceId(asset.clip,asset.character)&&!aliasedRun)||
+       asset.frameCount==0||asset.frameCount>kMaxFrames||asset.imageWidth==0||asset.imageHeight==0||
+       asset.imageWidth>kMaxSide||asset.imageHeight>kMaxSide||
+       static_cast<std::uint64_t>(asset.imageWidth)*asset.imageHeight>kMaxImagePixels||
+       !(asset.referenceHeight>0&&asset.referenceHeight<=kMaxSide)||
+       !(asset.stridePixels>=0&&asset.stridePixels<=kMaxSide))return false;
+    if(asset.program.stepCount) {
+        if(!GridAllowed(asset.clip,asset.columns,asset.rows,asset.frameCount)||
+           !ValidProgram(asset.program,asset.frameCount))return false;
+    } else if(grid.count==0||!GridAllowed(asset.clip,asset.columns,asset.rows)||asset.frameCount!=grid.count||
+              asset.clip==Clip::Walk||asset.clip==Clip::Run)return false;
+    if((asset.clip==Clip::Walk||asset.clip==Clip::Run)&&asset.stridePixels<=0)return false;
+    std::uint64_t residentPixels=0;
     for(unsigned index=0;index<asset.frameCount;++index) {
         const auto& f=asset.frames[index];
         if(f.rect.x<0||f.rect.y<0||f.rect.width<=0||f.rect.height<=0||
@@ -41,6 +63,8 @@ constexpr bool Valid(const Descriptor& asset) {
            f.rect.width>static_cast<int>(asset.imageWidth)-f.rect.x||
            f.rect.height>static_cast<int>(asset.imageHeight)-f.rect.y||
            !(f.anchor.x>=0&&f.anchor.x<=f.rect.width&&f.anchor.y>=0&&f.anchor.y<=f.rect.height))return false;
+        residentPixels+=static_cast<std::uint64_t>(f.rect.width)*f.rect.height;
+        if(residentPixels>kMaxResidentPixels)return false;
     }
     return true;
 }
