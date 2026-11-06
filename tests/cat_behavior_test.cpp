@@ -277,11 +277,45 @@ void FeedingAndPettingCreateCalmFollowups() {
     auto reply=brain.Next(ctx);
     CHECK(reply.action==Action::Watch || reply.action==Action::Groom || reply.action==Action::Knead);
 }
+
+void ContinuationsAreObservableWithoutChangingTheStory() {
+    Brain brain(Birthday,13);Context ctx;ctx.ticks=100000;ctx.cursorNear=true;
+    CHECK(!brain.HasContinuation());
+    brain.Fed(ctx.ticks,false);CHECK(brain.HasContinuation());
+    CHECK(brain.Next(ctx).action==Action::Groom);CHECK(!brain.HasContinuation());
+    brain.Pet(ctx.ticks);CHECK(brain.HasContinuation());
+    brain.Interrupt(ctx.ticks);CHECK(!brain.HasContinuation());
+    brain.MarkPunch(ctx.ticks);CHECK(brain.HasContinuation());
+    CHECK(brain.Next(ctx).action==Action::Idle);CHECK(!brain.HasContinuation());
+    unsigned protectedFollowups=0;
+    for(unsigned index=0;index<5000;++index) {
+        auto unobserved=brain;
+        const bool continuing=brain.HasContinuation();
+        CHECK(brain.HasContinuation()==continuing);
+        const auto observed=brain.Next(ctx),expected=unobserved.Next(ctx);
+        CHECK(observed.action==expected.action && observed.durationMs==expected.durationMs && observed.speed==expected.speed);
+        if(observed.action==Action::Sleep || observed.action==Action::Punch ||
+           observed.action==Action::Stalk || observed.action==Action::Pounce ||
+           observed.action==Action::EarFlick || observed.action==Action::TailRaise ||
+           observed.action==Action::Zoomies || observed.action==Action::TailChase) {
+            CHECK(brain.HasContinuation());++protectedFollowups;
+        }
+        ctx.ticks+=observed.durationMs;
+    }
+    CHECK(protectedFollowups>100);
+    CHECK(Brain::NeutralRestDuration(0)==18000);
+    CHECK(Brain::NeutralRestDuration(std::numeric_limits<std::uint32_t>::max())==45000);
+    std::uint64_t previous=0;
+    for(std::uint64_t entropy=0;entropy<=std::numeric_limits<std::uint32_t>::max();entropy+=1000003) {
+        const auto duration=Brain::NeutralRestDuration(static_cast<std::uint32_t>(entropy));
+        CHECK(duration>=18000&&duration<=45000&&duration>=previous);previous=duration;
+    }
+}
 }
 
 int main(){
     try{
-        StablePersonalityAndName(); DeterministicDailyOrder(); PausedCatStaysPut(); PausingAnActiveStoryCancelsItsTravel(); InteractionsCancelStaleStories(); NewActionsAndSequencesAppear(); AutomaticGesturesDoNotRequireCursorOrCommands(); FeedingAndPettingCreateCalmFollowups(); ExperiencePreservesBirthAndBoundsLearning(); DailyRoutineChangesActualChoices(); LearnedCareChangesResponsesWithoutForcingThem();
+        StablePersonalityAndName(); DeterministicDailyOrder(); PausedCatStaysPut(); PausingAnActiveStoryCancelsItsTravel(); InteractionsCancelStaleStories(); NewActionsAndSequencesAppear(); AutomaticGesturesDoNotRequireCursorOrCommands(); FeedingAndPettingCreateCalmFollowups(); ContinuationsAreObservableWithoutChangingTheStory(); ExperiencePreservesBirthAndBoundsLearning(); DailyRoutineChangesActualChoices(); LearnedCareChangesResponsesWithoutForcingThem();
         std::cout<<"PASS: personality, new actions and sequences; "<<checks<<" checks\n"; return 0;
     } catch(const std::exception& e){ std::cerr<<e.what()<<'\n'; return 1; }
 }

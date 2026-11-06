@@ -6,7 +6,7 @@ Pillow supplies final placement; this is not live Windows/GDI+/Box2D output.
 Pinterest references are not downloaded or inferred by this tool.
 """
 from pathlib import Path
-import argparse,ctypes,hashlib,json,subprocess
+import argparse,ctypes,hashlib,json,math,subprocess
 from PIL import Image,ImageDraw,ImageChops
 from render_motion_preview import atlas
 from render_walk_review import save_gif
@@ -84,6 +84,7 @@ def main():
     ap.add_argument('--audit-transitions',action='store_true',help='Audit actual solved-paw world anchors across Walk/Run configuration changes')
     ap.add_argument('--body-width',type=float,default=1.0)
     ap.add_argument('--body-height',type=float,default=1.0)
+    ap.add_argument('--walk-speed',type=float,default=22.0,help='Actual logical body speed for walking, including faster window/toy approaches')
     ap.add_argument('--audit-only',action='store_true')
     ap.add_argument('--frames',type=int,default=90)
     ap.add_argument('--compare-before',type=Path,help='Optional output directory from an earlier pinned run')
@@ -91,6 +92,7 @@ def main():
     args=ap.parse_args();out=args.output.resolve();out.mkdir(parents=True,exist_ok=True)
     if args.frames<22:ap.error('--frames must be at least22')
     if not (.5<=args.body_width<=2 and .5<=args.body_height<=2):ap.error('Body dimensions out of review range')
+    if not math.isfinite(args.walk_speed) or not (0<args.walk_speed<=85):ap.error('--walk-speed must be greater than0 and at most85 bodypx/s')
     working=args.source_ref=='WORKTREE'
     sha=subprocess.check_output(['git','rev-parse','HEAD' if working else args.source_ref],cwd=ROOT,text=True).strip()
     inc=out/'source';inc.mkdir(exist_ok=True);hashes={}
@@ -110,7 +112,7 @@ def main():
     cases=[]
     for character,file in enumerate(('cat.png','cat-silver.png')):
         frames,_=atlas(file);source=frames[1];scale=110/max(im.height for im in frames[:6]);raw=source.convert('RGBa').tobytes('raw','BGRa');memory=ctypes.create_string_buffer(raw,len(raw))
-        for gait,speed in ((0,22.),(1,165.)):
+        for gait,speed in ((0,args.walk_speed),(1,165.)):
             instance=lib.audit_create(memory,source.width,source.height,character)
             if not instance:raise RuntimeError('Prepare')
             for _ in range(180):
@@ -137,7 +139,7 @@ def main():
         x=130*zoom-image.width/2;y=ground-image.height+((2+lib.audit_padding(instance))*scale*args.body_height+lib.audit_offset(instance))*zoom
         placed=image.transform(canvas.size,Image.Transform.AFFINE,(1,0,-x,0,1,-y),Image.Resampling.BICUBIC)
         canvas.alpha_composite(placed)
-        draw.text((4*zoom,4*zoom),('Cream','Silver')[character]+' '+('WALK 22 px/s','RUN 165 px/s')[gait]+f' t={time:.2f}s',fill='#203344')
+        draw.text((4*zoom,4*zoom),('Cream','Silver')[character]+' '+('WALK','RUN')[gait]+f' {speed:g} px/s t={time:.2f}s',fill='#203344')
         return canvas.convert('RGB')
     movies=[];details={};samples=[]
     try:
@@ -145,7 +147,7 @@ def main():
             time=frame*.04;board=Image.new('RGB',(520,400));large=Image.new('RGB',(1560,1200))
             for case in cases:
                 character,gait,speed,source,scale,memory,instance=case;values=(d*36)()
-                if not lib.audit_step(instance,gait,0 if frame==0 else speed*.04,.04,source.width*scale*args.body_width,source.height*scale*args.body_height,values):raise RuntimeError('Raster')
+                if not lib.audit_step(instance,gait,0 if frame==0 else speed*.04,0 if frame==0 else .04,source.width*scale*args.body_width,source.height*scale*args.body_height,values):raise RuntimeError('Raster')
                 board.paste(panel(case,time),(gait*260,character*200));view=None if args.audit_only else panel(case,time,3)
                 if view is not None:large.paste(view,(gait*780,character*600))
                 samples.append({'character':character,'running':bool(gait),'actual_joint_mode':lib.audit_mode(instance),'t':time,'phase':values[0],'stride':values[1],'duty':values[2],'lift':values[3],'body_offset':lib.audit_offset(instance),'feet':list(values)[4:16],'torso_x':values[16],'torso_y':values[17],'pitch_degrees':values[18],'airborne_weight':values[19],'reach_error':values[20],'spine_stretch':values[21],'tail_degrees':values[22],'clamped_leg_mask':int(values[35]),'contact_ids':list(values)[23:27],'solved_paws_bodypx':list(values)[27:35],**raster_audit[(character,gait,time)]})

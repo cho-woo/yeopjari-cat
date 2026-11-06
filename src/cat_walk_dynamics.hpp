@@ -46,16 +46,39 @@ inline double Smooth(double x) {
     return x*x*(3-2*x);
 }
 inline double Wrap(double phase) { return phase-std::floor(phase); }
+inline Mode SelectMode(Mode current,double speed) {
+    if(!std::isfinite(speed) || speed<30)return Mode::Walk;
+    if(speed>100 || (current==Mode::Gallop && speed>=85))return Mode::Gallop;
+    if(current==Mode::Walk && speed<=35)return Mode::Walk;
+    return Mode::Trot;
+}
 inline cat::gait::Parameters ParametersFor(Mode mode) {
     // The short painted limbs cannot support the old 52px sprint stride.
     // Trot duty .54 also selects exact diagonal pairs in gait::LegPhase.
     if(mode==Mode::Gallop)return {42,.32,8.0,cat::gait::Sequence::Gallop};
-    return mode==Mode::Trot ? cat::gait::Parameters{26,.54,4.0}
+    return mode==Mode::Trot ? cat::gait::Parameters{24,.54,4.0}
                             : cat::gait::Parameters{18,.72,3.1};
 }
+inline cat::gait::Parameters ParametersForStalk() { return {16,.78,1.8}; }
 inline double PawBias(Mode mode,unsigned leg) {
     if(mode!=Mode::Gallop || leg>=4)return 0;
     return leg==2?4.0:leg==3?2.5:0.0;
+}
+inline Frame Blend(const Frame& a,const Frame& b,double weight) {
+    if(weight<=0)return a;
+    if(weight>=1)return b;
+    auto mix=[&](double x,double y){return x+(y-x)*weight;};
+    Frame result;
+    result.torsoX=mix(a.torsoX,b.torsoX);result.torsoY=mix(a.torsoY,b.torsoY);
+    result.pitchDegrees=mix(a.pitchDegrees,b.pitchDegrees);
+    result.spineStretch=mix(a.spineStretch,b.spineStretch);result.tailDegrees=mix(a.tailDegrees,b.tailDegrees);
+    result.pivotU=mix(a.pivotU,b.pivotU);result.pivotV=mix(a.pivotV,b.pivotV);
+    result.airborneWeight=mix(a.airborneWeight,b.airborneWeight);
+    for(unsigned leg=0;leg<result.rootOffsets.size();++leg) {
+        result.rootOffsets[leg].x=mix(a.rootOffsets[leg].x,b.rootOffsets[leg].x);
+        result.rootOffsets[leg].y=mix(a.rootOffsets[leg].y,b.rootOffsets[leg].y);
+    }
+    return result;
 }
 inline Frame Evaluate(double phase,double speed,Mode mode=Mode::Walk,
                       const cat::gait::Feet* actualFeet=nullptr) {
@@ -63,21 +86,21 @@ inline Frame Evaluate(double phase,double speed,Mode mode=Mode::Walk,
     if(!std::isfinite(phase)||!std::isfinite(speed))return frame;
     const double activity=Smooth(std::max(0.0,speed)/12.0);
     if(activity==0)return frame;
-    // A retained gallop controller can brake down to the walk threshold.
-    // Return the identical walk pose at zero blend, including local roots,
-    // so changing the mode cannot introduce even a one-frame posture pop.
-    if(mode==Mode::Gallop && speed<=35)return Evaluate(phase,speed,Mode::Walk,actualFeet);
+    // A faster walk uses a diagonal trot, not fore/hind gallop pairs under
+    // an upright body. Hysteresis changes happen where both body poses agree.
+    if(mode==Mode::Trot && speed<=35)return Evaluate(phase,speed,Mode::Walk,actualFeet);
+    if(mode==Mode::Gallop && speed<=100)return Evaluate(phase,speed,Mode::Trot,actualFeet);
     phase=Wrap(phase);
     const double angle=phase*2*kPi;
     const bool trot=mode==Mode::Trot;
 
-    // A walk transfers support four times per cycle; a diagonal trot loads
-    // two pairs. Positive y lowers the torso and compresses the loaded legs.
+    // The body loads twice per walk/trot stride. Four separate torso bobs
+    // made the large head vibrate faster than the visible leg cycle.
     // There is no decorative airborne lift when the physical body is grounded.
-    const double load=.5-.5*std::cos((trot?2:4)*angle);
+    const double load=.5-.5*std::cos(2*angle);
     frame.torsoX=activity*(trot?.18:.10)*std::sin(2*angle);
-    frame.torsoY=activity*((trot?.45:.30)+(trot?.90:.38)*load);
-    frame.pitchDegrees=activity*(trot?.70:.40)*std::sin(2*angle);
+    frame.torsoY=activity*((trot?.45:.25)+(trot?.60:.30)*load);
+    frame.pitchDegrees=activity*(trot?.55:.35)*std::sin(2*angle);
 
     const auto gait=ParametersFor(mode);
     if(mode==Mode::Gallop) {
@@ -87,7 +110,7 @@ inline Frame Evaluate(double phase,double speed,Mode mode=Mode::Walk,
         const double half=phase-std::floor(phase*2)*.5;
         const double flight=std::clamp((half-.42)/.08,0.,1.);
         frame.airborneWeight=half>.42 ? std::pow(std::sin(kPi*flight),2) : 0;
-        const double gather=.5+.5*std::cos(4*kPi*(phase-.20));
+        const double gather=.5+.5*std::cos(2*kPi*(phase-.20));
         const double compression=.95+.85*gather;
         double clearance=12;
         for(unsigned leg=0;leg<4;++leg) {
@@ -101,20 +124,16 @@ inline Frame Evaluate(double phase,double speed,Mode mode=Mode::Walk,
         // Close-to-landing paws can be only a fraction of a pixel clear.
         // A large decorative body hop there would force IK past its reach.
         const double flightLift=std::min(1.6,.55*clearance);
-        const double runBlend=Smooth((speed-35)/90.0);
-        const double walkDrop=.30+.38*(.5-.5*std::cos(4*angle));
         const double runDrop=compression*(1-frame.airborneWeight)-flightLift*frame.airborneWeight;
-        frame.torsoY=activity*(walkDrop*(1-runBlend)+runDrop*runBlend);
+        frame.torsoY=activity*runDrop;
         // Retain the lowered running posture through flight. Letting the
         // short far hind root rise while its toe has just left the ground
         // exceeds the painted limb's reach even when the goal is correct.
-        frame.torsoY=std::max(frame.torsoY,runBlend);
-        frame.torsoX=activity*(.10*std::sin(2*angle)*(1-runBlend)+.25*std::sin(angle)*runBlend);
-        frame.pitchDegrees=activity*(.40*std::sin(2*angle)*(1-runBlend)+
-            runBlend*(1.20+.85*std::cos(2*kPi*(phase-.20))));
-        frame.spineStretch=-.025*runBlend*std::cos(2*kPi*(phase-.20));
-        frame.tailDegrees=-45*runBlend;
-        frame.airborneWeight*=runBlend;
+        frame.torsoY=std::max(frame.torsoY,1.0);
+        frame.torsoX=activity*.25*std::sin(angle);
+        frame.pitchDegrees=activity*(1.20+.85*std::cos(2*kPi*(phase-.20)));
+        frame.spineStretch=-.025*std::cos(2*kPi*(phase-.20));
+        frame.tailDegrees=-45;
     }
     for(unsigned leg=0;leg<frame.rootOffsets.size();++leg) {
         const double limbPhase=Wrap(phase+cat::gait::LegPhase(leg,gait.duty,gait.sequence));
@@ -122,16 +141,11 @@ inline Frame Evaluate(double phase,double speed,Mode mode=Mode::Walk,
         // attachment, rather than scaling the animal or moving its paw goal.
         const bool fore=leg>=2;
         double sine=std::sin(limbPhase*2*kPi),compression=1-std::cos(limbPhase*2*kPi);
-        if(mode==Mode::Gallop) {
-            const double blend=Smooth((speed-35)/90.0);
-            const auto walk=ParametersFor(Mode::Walk);
-            const double walkPhase=Wrap(phase+cat::gait::LegPhase(leg,walk.duty,walk.sequence));
-            sine=std::sin(walkPhase*2*kPi)*(1-blend)+sine*blend;
-            compression=(1-std::cos(walkPhase*2*kPi))*(1-blend)+compression*blend;
-        }
         frame.rootOffsets[leg].x=activity*(fore?.48:.24)*sine;
         frame.rootOffsets[leg].y=activity*(fore?.08:.06)*compression;
     }
+    if(mode==Mode::Trot)return Blend(Evaluate(phase,speed,Mode::Walk,actualFeet),frame,Smooth((speed-35)/35));
+    if(mode==Mode::Gallop)return Blend(Evaluate(phase,speed,Mode::Trot,actualFeet),frame,Smooth((speed-100)/50));
     return frame;
 }
 

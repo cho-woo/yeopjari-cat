@@ -67,6 +67,8 @@ public:
     static constexpr std::uint64_t SurpriseMinGapMs = 4 * 60 * 1000;
     static constexpr std::uint64_t StalkMinGapMs = 90 * 1000;
     static constexpr std::uint64_t GestureMinGapMs = 15 * 1000;
+    static constexpr std::uint64_t NeutralRestMinMs = 18000;
+    static constexpr std::uint64_t NeutralRestMaxMs = 45000;
     static constexpr double MaximumExperienceShift = .15;
     static constexpr double ArchetypeChangeMargin = .04;
 
@@ -85,6 +87,20 @@ public:
     Personality GetBirthPersonality() const { return traits_; }
     Personality GetPersonality() const { return effectiveTraits_; }
     Archetype GetArchetype() const { return effectiveArchetype_; }
+
+    // Hosts finish an existing story before opening another autonomous owner.
+    // This query neither consumes randomness nor starts/extends an action.
+    bool HasContinuation() const {
+        return pendingGroom_ || pendingPet_ || queueCount_>0 ||
+            lastAction_==Action::Sleep || lastAction_==Action::Punch ||
+            lastAction_==Action::Stalk || lastAction_==Action::Pounce ||
+            lastAction_==Action::EarFlick || lastAction_==Action::TailRaise ||
+            lastAction_==Action::Zoomies || lastAction_==Action::TailChase;
+    }
+    static constexpr std::uint64_t NeutralRestDuration(std::uint32_t entropy) {
+        return NeutralRestMinMs+static_cast<std::uint64_t>(entropy)*
+            (NeutralRestMaxMs-NeutralRestMinMs)/std::numeric_limits<std::uint32_t>::max();
+    }
 
     // Hidden mood and the stable new-pet temperament affect choices, never
     // the birth-derived identity or legacy save values. Neutral is exact legacy.

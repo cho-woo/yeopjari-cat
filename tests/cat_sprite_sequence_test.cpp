@@ -44,9 +44,9 @@ void SleepDoesNotRestartYawnOrWake() {
     Player player;player.Start(Clip::Sleep);player.Advance(3600000);
     CHECK(player.Current().frame>=2&&player.Current().frame<=7);
     player.Wake();CHECK(player.Current().frame==8);
-    player.Advance(220);CHECK(player.Current().frame==9);
+    player.Advance(kSleepWakeMs/4);CHECK(player.Current().frame==9);
     player.Wake();CHECK(player.Current().frame==9); // no repeated wake restart
-    player.Advance(660);CHECK(player.Current().frame==11&&player.Current().finished);
+    player.Advance(kSleepWakeMs*3/4);CHECK(player.Current().frame==11&&player.Current().finished);
     Options rest;rest.sleep=SleepStage::Resting;
     CHECK(Sample(Clip::Sleep,0,rest).frame==2);
 }
@@ -97,59 +97,58 @@ void AuthoredSheetGridsPreserveTheLegacyLayout() {
 }
 void EightFrameSleepUsesStoryPosesWithoutWakingInItsRestLoop() {
     Options story;story.sheetFrames=8;
-    for(const auto& boundary:{std::pair<std::uint64_t,unsigned>{0,0},{249,0},{250,1},{899,1},
-            {900,2},{1399,2},{1400,3},{6399,3},{6400,4}}) {
+    for(const auto& boundary:{std::pair<std::uint64_t,unsigned>{0,0},{899,0},{900,1},{2199,1},
+            {2200,2},{3799,2},{3800,3},{15799,3},{15800,4}}) {
         const auto pose=SampleSleep(boundary.first,story);
         CHECK(pose.frame==boundary.second && pose.groundContact && !pose.finished);
         CHECK(pose.looping==(boundary.first>=kSleepStoryIntroMs));
     }
     story.sleep=SleepStage::Resting;
     CHECK(SampleSleep(0,story).frame==3);
-    CHECK(SampleSleep(5000,story).frame==4);
-    CHECK(SampleSleep(23000,story).frame==5);
-    CHECK(SampleSleep(23800,story).frame==4);
-    CHECK(SampleSleep(39800,story).frame==7);
-    CHECK(SampleSleep(40400,story).frame==4);
-    CHECK(SampleSleep(54400,story).frame==6);
-    CHECK(SampleSleep(55300,story).frame==3);
-    CHECK(SampleSleep(59300,story).frame==4);
+    CHECK(SampleSleep(12000,story).frame==4);
+    CHECK(SampleSleep(54000,story).frame==5);
+    CHECK(SampleSleep(56000,story).frame==4);
+    CHECK(SampleSleep(106000,story).frame==3);
     std::array<unsigned,8> restingSamples{};
     for(std::uint64_t elapsed=0;elapsed<kSleepStoryRestMs;elapsed+=25) {
         const auto pose=SampleSleep(elapsed,story);++restingSamples[pose.frame];
-        CHECK(pose.frame>=3 && pose.frame<=7 && pose.looping && !pose.finished);
+        // All normal sleeping poses are curled. The full stretch/seated
+        // twitch must not interrupt sleep, however long the event lasts.
+        CHECK(pose.frame>=3 && pose.frame<=5 && pose.looping && !pose.finished);
         CHECK(pose.groundContact && pose.localMs<pose.holdMs);
         CHECK(SameFrame(pose,SampleSleep(elapsed+kSleepStoryRestMs,story)));
     }
     CHECK(restingSamples[0]==0 && restingSamples[1]==0 && restingSamples[2]==0);
-    CHECK(restingSamples[3]==360 && restingSamples[4]==1948);
-    CHECK(restingSamples[5]==32 && restingSamples[6]==36 && restingSamples[7]==24);
-    CHECK((restingSamples[3]+restingSamples[4])*100>2400*96);
+    CHECK(restingSamples[3]==1040 && restingSamples[4]==3680 && restingSamples[5]==80);
+    CHECK(restingSamples[6]==0 && restingSamples[7]==0);
+    CHECK((restingSamples[3]+restingSamples[4])*100>4800*98);
     story.sleep=SleepStage::Entering;
-    CHECK(SameFrame(SampleSleep(1400,story),SampleSleep(1400+kSleepStoryRestMs,story)));
+    CHECK(SameFrame(SampleSleep(kSleepStoryIntroMs,story),SampleSleep(kSleepStoryIntroMs+kSleepStoryRestMs,story)));
     const auto huge=SampleSleep(std::numeric_limits<std::uint64_t>::max(),story);
-    CHECK(huge.frame>=3 && huge.frame<=7 && huge.looping && !huge.finished);
+    CHECK(huge.frame>=3 && huge.frame<=5 && huge.looping && !huge.finished);
 }
 void EightFrameSleepWakePauseAndInterruptionRemainBounded() {
     Options story;story.sheetFrames=8;
-    for(std::uint64_t interrupt:{0ULL,249ULL,250ULL,899ULL,900ULL,1399ULL,1400ULL,3600000ULL}) {
+    for(std::uint64_t interrupt:{0ULL,899ULL,900ULL,2199ULL,2200ULL,3799ULL,3800ULL,3600000ULL}) {
         Player player;player.Start(Clip::Sleep,story);player.Advance(interrupt);
         const auto before=player.Current();player.Pause(true);
         player.Advance(86400000);CHECK(player.Elapsed()==interrupt && SameFrame(before,player.Current()));
-        player.Wake();CHECK(player.Current().frame==2 && player.Elapsed()==0 && player.Paused());
-        CHECK(!player.Advance(86400000).impact && player.Elapsed()==0 && player.Current().frame==2);
-        player.Pause(false);player.Advance(219);CHECK(player.Current().frame==2);
-        player.Advance(1);CHECK(player.Current().frame==1);
-        player.Wake();CHECK(player.Elapsed()==220 && player.Current().frame==1);
-        player.Advance(329);CHECK(player.Current().frame==1);
-        player.Advance(1);CHECK(player.Current().frame==0 && !player.Current().finished);
-        player.Pause(true);player.Advance(86400000);CHECK(player.Elapsed()==550 && player.Current().frame==0);
-        player.Pause(false);player.Advance(330);
+        player.Wake();CHECK(player.Current().frame==6 && player.Elapsed()==0 && player.Paused());
+        CHECK(!player.Advance(86400000).impact && player.Elapsed()==0 && player.Current().frame==6);
+        player.Pause(false);player.Advance(699);CHECK(player.Current().frame==6);
+        player.Advance(1);CHECK(player.Current().frame==7);
+        player.Wake();CHECK(player.Elapsed()==700 && player.Current().frame==7);
+        player.Advance(650);CHECK(player.Current().frame==2);
+        player.Advance(650);CHECK(player.Current().frame==1);
+        player.Advance(600);CHECK(player.Current().frame==0 && !player.Current().finished);
+        player.Pause(true);player.Advance(86400000);CHECK(player.Elapsed()==2600 && player.Current().frame==0);
+        player.Pause(false);player.Advance(400);
         CHECK(player.Elapsed()==kSleepWakeMs && player.Current().frame==0 && player.Current().holding && player.Current().finished);
         player.Advance(std::numeric_limits<std::uint64_t>::max());
         CHECK(player.Current().frame==0 && player.Current().finished && !player.Current().looping);
         player.Start(Clip::Groom);const auto grooming=player.Current();player.Wake();
         CHECK(player.Elapsed()==0 && SameFrame(grooming,player.Current()));
-        player.Advance(280);CHECK(player.Current().frame==2 && player.Current().looping);
+        player.Advance(600);CHECK(player.Current().frame==1 && !player.Current().looping);
     }
 }
 void SleepVariantSelectionPreservesLegacyAndKeepsAlternatesRare() {
@@ -266,41 +265,92 @@ void JumpFlightNeverReusesThePlantedPrelaunchFrame() {
     CHECK(player.Current().frame==15 && player.Current().groundContact && player.Current().finished);
 }
 void GroundedVisitsHoldAndGroomBounds() {
-    CHECK(GroomDuration(0)==6000&&GroomDuration(1)==4000&&GroomDuration(100000)==8000);
-    CHECK(Sample(Clip::Groom,5999).looping);
+    CHECK(GroomDuration(0)==kGroomDefaultMs&&GroomDuration(1)==kGroomMinMs&&GroomDuration(100000)==kGroomMaxMs);
+    CHECK(Sample(Clip::Groom,5999).frame==0&&!Sample(Clip::Groom,5999).looping);
     CHECK(Sample(Clip::Groom,6000).finished);
-    CHECK(Sample(Clip::Box,0).frame==2);
-    for(std::uint64_t elapsed=0;elapsed<4000;elapsed+=7)CHECK(Sample(Clip::Box,elapsed).frame>=2);
-    CHECK(Sample(Clip::Box,100000).frame==7&&Sample(Clip::Box,100000).holding);
-    CHECK(Sample(Clip::Fish,100000).frame==7&&Sample(Clip::Fish,100000).finished);
+    for(unsigned variant=0;variant<6;++variant)
+    for(std::uint64_t duration:{4000ULL,6000ULL,8000ULL}) {
+        Options options;options.durationMs=duration;options.variant=variant;
+        bool acted=false,settled=false;unsigned changes=0,last=0;
+        for(std::uint64_t elapsed=0;elapsed<duration;elapsed+=7) {
+            const auto pose=Sample(Clip::Groom,elapsed,options);
+            CHECK(!pose.looping&&!pose.finished&&pose.holdMs>=300);
+            if(pose.frame!=last){++changes;last=pose.frame;}
+            if(pose.frame==0) {if(acted)settled=true;}
+            else {
+                CHECK(!settled);acted=true;
+                CHECK(variant%3==0?(pose.frame>=1&&pose.frame<=8):
+                    variant%3==1?(pose.frame>=9&&pose.frame<=12):(pose.frame>=13&&pose.frame<=15));
+            }
+        }
+        CHECK(acted&&settled&&changes<=10);
+        const auto done=Sample(Clip::Groom,duration,options);
+        CHECK(done.frame==0&&done.finished&&done.holding&&!done.looping);
+        CHECK(Sample(Clip::Groom,std::numeric_limits<std::uint64_t>::max(),options).frame==0);
+    }
+    for(const auto& boundary:{std::pair<std::uint64_t,unsigned>{0,2},{1199,2},{1200,3},{2199,3},
+            {2200,4},{4799,4},{4800,5},{5899,5},{5900,6},{7299,6},{7300,7},{8500,7}})
+        CHECK(Sample(Clip::Box,boundary.first).frame==boundary.second);
+    CHECK(!Sample(Clip::Box,kBoxDurationMs-1).finished);
+    CHECK(Sample(Clip::Box,kBoxDurationMs).frame==7&&Sample(Clip::Box,kBoxDurationMs).finished);
+    CHECK(Sample(Clip::Box,100000).holding);
+    for(std::uint64_t elapsed=0;elapsed<kBoxDurationMs;elapsed+=7)CHECK(Sample(Clip::Box,elapsed).frame>=2);
+    for(const auto clip:{Clip::Box,Clip::Fish,Clip::Groom}) {
+        Player player;player.Start(clip);player.Advance(1400);const auto before=player.Current();
+        player.Pause(true);player.Advance(100000);CHECK(player.Elapsed()==1400&&SameFrame(before,player.Current()));
+        player.Pause(false);player.Advance(100000);CHECK(player.Current().finished&&!player.Current().looping);
+    }
+    unsigned previous=0;
+    for(std::uint64_t elapsed=0;elapsed<kFishDurationMs;elapsed+=7) {
+        const auto fish=Sample(Clip::Fish,elapsed);
+        CHECK(fish.frame>=previous&&fish.holdMs>=400&&!fish.looping&&!fish.finished);
+        previous=fish.frame;
+    }
+    CHECK(Sample(Clip::Fish,4999).frame==7&&!Sample(Clip::Fish,4999).finished);
+    CHECK(Sample(Clip::Fish,kFishDurationMs).frame==7&&Sample(Clip::Fish,kFishDurationMs).finished);
 }
 void MealsHaveOneEntranceAndOneEnding() {
     CHECK(Sample(Clip::Eat,0).frame==0);
-    CHECK(Sample(Clip::Eat,200).frame==1);
-    CHECK(Sample(Clip::Eat,400).frame==2);
-    CHECK(Sample(Clip::Eat,4200).frame==9);
-    CHECK(Sample(Clip::Eat,4460).frame==10);
-    CHECK(Sample(Clip::Eat,4720).frame==11);
+    CHECK(Sample(Clip::Eat,600).frame==4);
+    CHECK(Sample(Clip::Eat,1000).frame==1);
+    CHECK(Sample(Clip::Eat,1350).frame==2);
+    CHECK(Sample(Clip::Eat,3600).frame==8);
+    CHECK(Sample(Clip::Eat,3900).frame==9);
+    CHECK(Sample(Clip::Eat,4150).frame==10);
+    CHECK(Sample(Clip::Eat,4450).frame==11);
     CHECK(Sample(Clip::Treat,0).frame==0);
-    CHECK(Sample(Clip::Treat,450).frame==5);
-    CHECK(Sample(Clip::Treat,540).frame==6);
-    CHECK(Sample(Clip::Treat,3400).frame==15);
-    CHECK(Sample(Clip::Treat,4120).frame==23);
+    CHECK(Sample(Clip::Treat,400).frame==3);
+    CHECK(Sample(Clip::Treat,600).frame==4);
+    CHECK(Sample(Clip::Treat,850).frame==5);
+    CHECK(Sample(Clip::Treat,1100).frame==6);
+    CHECK(Sample(Clip::Treat,2800).frame==15);
+    CHECK(Sample(Clip::Treat,3300).frame==20);
+    CHECK(Sample(Clip::Treat,3600).frame==23);
     for(const auto clip:{Clip::Eat,Clip::Treat}) {
-        const unsigned firstLoop=clip==Clip::Eat?2:6,lastLoop=clip==Clip::Eat?8:14;
-        const unsigned firstOutro=lastLoop+1,last=GridFor(clip).count-1;
-        const std::uint64_t introMs=clip==Clip::Eat?400:540;
-        for(const std::uint64_t requested:{0ULL,1ULL,2500ULL,3300ULL,4200ULL,5000ULL,12000ULL,100000ULL}) {
+        const unsigned firstOutro=clip==Clip::Eat?8:15,last=GridFor(clip).count-1;
+        const std::uint64_t introMs=clip==Clip::Eat?1000:1100;
+        for(const std::uint64_t requested:{0ULL,1ULL,2500ULL,3300ULL,3500ULL,4200ULL,5000ULL,12000ULL,100000ULL}) {
             Options options;options.durationMs=requested;
-            const auto duration=CareDuration(clip,requested),outroAt=duration-800;
+            const auto duration=CareDuration(clip,requested),outroAt=duration-kCareOutroMs;
             bool seenOutro=false;
             for(std::uint64_t elapsed=0;elapsed<duration+1000;elapsed+=7) {
                 const auto pose=Sample(clip,elapsed,options);
                 CHECK(pose.frame<=last);
-                if(elapsed<introMs)CHECK(pose.frame<firstLoop&&!pose.looping&&!pose.finished);
-                else if(elapsed<outroAt)CHECK(pose.frame>=firstLoop&&pose.frame<=lastLoop&&pose.looping);
-                else {seenOutro=true;CHECK(pose.frame>=firstOutro&&!pose.looping);}
-                if(seenOutro)CHECK(pose.frame>=firstOutro); // no emptied bowl -> chewing reset
+                if(elapsed<introMs) {
+                    CHECK(!pose.looping&&!pose.finished);
+                    CHECK(clip==Clip::Eat?(pose.frame==0||pose.frame==4):
+                        (pose.frame==0||pose.frame==3||pose.frame==4||pose.frame==5));
+                } else if(elapsed<outroAt) {
+                    // A meal never cycles through upright or emptied-bowl
+                    // pictures while eating, and the tube never re-enters.
+                    CHECK(pose.looping&&!pose.finished&&pose.holdMs>=220);
+                    CHECK(clip==Clip::Eat?(pose.frame==1||pose.frame==2):(pose.frame>=6&&pose.frame<=8));
+                } else {
+                    seenOutro=true;CHECK(!pose.looping);
+                    CHECK(clip==Clip::Eat?(pose.frame>=8&&pose.frame<=11):
+                        (pose.frame==15||pose.frame==16||pose.frame==20||pose.frame==23));
+                }
+                if(seenOutro)CHECK(pose.frame>=firstOutro);
                 CHECK(pose.finished==(elapsed>=duration));
             }
             CHECK(seenOutro);
@@ -309,16 +359,17 @@ void MealsHaveOneEntranceAndOneEnding() {
         Player paused;paused.Start(clip);paused.Advance(introMs+1000);paused.Pause(true);
         const auto before=paused.Current();
         paused.Advance(100000);
-        CHECK(paused.Elapsed()==introMs+1000&&paused.Current().frame==before.frame);
-        paused.Pause(false);paused.Advance(CareDuration(clip,0)-800-paused.Elapsed());
+        CHECK(paused.Elapsed()==introMs+1000&&SameFrame(before,paused.Current()));
+        paused.Pause(false);paused.Advance(CareDuration(clip,0)-kCareOutroMs-paused.Elapsed());
         CHECK(paused.Current().frame==firstOutro);
         paused.Pause(true);paused.Advance(100000);CHECK(paused.Current().frame==firstOutro);
-        paused.Pause(false);paused.Advance(800);CHECK(paused.Current().frame==last&&paused.Current().finished);
+        paused.Pause(false);paused.Advance(kCareOutroMs);CHECK(paused.Current().frame==last&&paused.Current().finished);
         paused.Advance(100000);CHECK(paused.Current().frame==last&&paused.Current().finished);
     }
-    CHECK(CareDuration(Clip::Eat,0)==5000&&CareDuration(Clip::Treat,0)==4200);
-    CHECK(CareDuration(Clip::Eat,1)==2500&&CareDuration(Clip::Treat,std::numeric_limits<std::uint64_t>::max())==12000);
+    CHECK(CareDuration(Clip::Eat,0)==5000&&CareDuration(Clip::Treat,0)==4200&&CareDuration(Clip::Fish,0)==5000);
+    CHECK(CareDuration(Clip::Eat,1)==kCareMinDurationMs&&CareDuration(Clip::Treat,std::numeric_limits<std::uint64_t>::max())==kCareMaxDurationMs);
 }
+
 }
 int main(){try{SheetMetadataAndEveryFrame();SleepDoesNotRestartYawnOrWake();AuthoredSheetGridsPreserveTheLegacyLayout();EightFrameSleepUsesStoryPosesWithoutWakingInItsRestLoop();EightFrameSleepWakePauseAndInterruptionRemainBounded();SleepVariantSelectionPreservesLegacyAndKeepsAlternatesRare();PunchCuesDoNotRepeatOrReplay();JumpTracksPhysicalState();JumpFlightNeverReusesThePlantedPrelaunchFrame();GroundedVisitsHoldAndGroomBounds();MealsHaveOneEntranceAndOneEnding();
 std::cout<<"Sprite sequences: "<<checks<<" checks passed\n";return EXIT_SUCCESS;}catch(const std::exception& error){std::cerr<<error.what()<<'\n';return EXIT_FAILURE;}}

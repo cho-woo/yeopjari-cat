@@ -54,5 +54,13 @@ int main() {
         const auto result=transition.Apply(target,t,2);
         if(t>=196)assert(result.joints.headNod==target.joints.headNod);
     }
-    std::cout << "Canonical posture transitions: continuity, interrupted blending, pause, contact bypass and fixed head/feet passed\n";
+    transition.Reset();transition.Apply(loaf,4000,1);
+    auto balanced=idle;balanced.joints.headNod=.35;
+    const auto late=transition.Apply(balanced,5200,2,0,true,4180);
+    assert(late.joints.headNod==balanced.joints.headNod&&late.joints.crouch==balanced.joints.crouch);
+    // An action still inside its real transition follows elapsed action time.
+    transition.Reset();transition.Apply(loaf,4000,1);
+    const auto delayed=transition.Apply(idle,4270,2,0,true,4180);
+    assert(std::abs(delayed.joints.crouch-loaf.joints.crouch*.5)<1e-12);
+    std::cout << "Canonical posture transitions: continuity, interrupted blending, pause, contact bypass, real action start and fixed head/feet passed\n";
 }

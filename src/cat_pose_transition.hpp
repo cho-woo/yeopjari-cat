@@ -18,14 +18,17 @@ public:
             std::numeric_limits<std::uint64_t>::max() - started_);
     }
     Pose Apply(Pose target, std::uint64_t ticks, std::uint64_t actionSerial,
-               unsigned identity = 0, bool enabled = true) {
+               unsigned identity = 0, bool enabled = true,
+               std::uint64_t actionStartedMs=std::numeric_limits<std::uint64_t>::max()) {
         const bool compatible = enabled && Canonical(target,identity) && valid_ &&
             Canonical(previous_,identity_) && previous_.flip == target.flip && identity_ == identity;
         if (!compatible) active_ = false;
         else if (serial_ != actionSerial) {
             // Interrupted transitions continue from what was actually drawn.
             from_ = previous_.joints;
-            started_ = ticks;
+            // A late first paint must not replay an already-completed action
+            // transition or erase a moving-platform balance correction.
+            started_ = std::min(ticks,actionStartedMs);
             active_ = true;
         }
         if (active_) {

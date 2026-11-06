@@ -38,13 +38,13 @@ int NativeWalkingRenderTest(std::string& context) {
     // source preservation, pixels, cache and the real top-level dispatcher.
     for(const auto character:{cat::Character::Cream,cat::Character::SilverTabby})for(int facing:{-1,1})
     for(const auto dimensions:{std::pair<double,double>{1,1},{.82,1.04},{1.25,.96}})
-    for(REAL desiredHeight:{80.0f,110.0f,165.0f})for(const auto motion:{Motion::Walk,Motion::Zoomies})for(int sample=0;sample<16;++sample) {
+    for(REAL desiredHeight:{80.0f,110.0f,165.0f})for(const auto motion:{Motion::Walk,Motion::Stalk,Motion::Zoomies})for(int sample=0;sample<16;++sample) {
         auto body=normalBody;body.bodyWidth=dimensions.first;body.bodyHeight=dimensions.second;
         cat::animation::Locomotion gait;
         // Cover a complete independent four-foot cycle.
         const double phase=sample/16.;
-        const double speed=motion==Motion::Zoomies?165:22;
-        double remaining=phase*(motion==Motion::Zoomies?42:18);
+        const double speed=motion==Motion::Zoomies?165:motion==Motion::Stalk?12:22;
+        double remaining=phase*(motion==Motion::Zoomies?42:motion==Motion::Stalk?16:18);
         while(remaining>1e-12) {
             const double step=std::min(remaining,2.2);
             if(!gait.Advance(motion,step,step/speed))return 152;
@@ -120,6 +120,9 @@ int NativeWalkingRenderTest(std::string& context) {
         for(const auto motion:{Motion::Walk,Motion::Stalk,Motion::Zoomies}) {
             if((motion==Motion::Walk || motion==Motion::Zoomies) && !cat::species::UsesNewArt(character))continue;
             auto pose=poseFor(motion,facing);
+            // Keep exercising the retained inverse-warp fallback explicitly;
+            // original Cream/Silver stalking now uses the shared joint rig.
+            pose.jointWalk=false;
             if((motion==Motion::Walk?(!pose.originalWalk || pose.walkingRig):
                     (!pose.walkingRig || pose.originalWalk || pose.frame!=1 || pose.blendFrame!=-1)) ||
                     pose.x!=0 || pose.lift!=0 || pose.angle!=0 || pose.scaleX!=1 || pose.scaleY!=1)return 152;
@@ -195,6 +198,10 @@ int NativeWalkingRenderTest(std::string& context) {
         const auto& source=art.base.skins[cat::species::UsesNewArt(character)?2:1];
         const double reference=110.0/std::max(1,art.base.standingHeight);
         auto pose=poseFor(cat::species::UsesNewArt(character)?Motion::Walk:Motion::Stalk,1);pose.walkPhase=.375;
+        // This block intentionally exercises the retained inverse-warp
+        // fallback. Cream stalking now dispatches to the joint rig normally;
+        // do not compare its output with an unrelated stale legacy cache.
+        pose.jointWalk=false;
         for(const auto dimensions:{std::pair<double,double>{1,1},{.82,1.04},{1.25,.96},{1,1}}) {
             auto body=normalBody;body.bodyWidth=dimensions.first;body.bodyHeight=dimensions.second;
             context="walking nutrition c="+std::to_string(static_cast<int>(character))+" width="+std::to_string(body.bodyWidth);
@@ -206,6 +213,33 @@ int NativeWalkingRenderTest(std::string& context) {
                         pose.walkFeetValid?&pose.walkFeet:nullptr) ||
                     expected.Width()!=art.walking->rig.Width() || expected.Height()!=art.walking->rig.Height() ||
                     std::memcmp(expected.Pixels(),art.walking->rig.Pixels(),static_cast<std::size_t>(expected.Width())*expected.Height()*4)!=0)return 159;
+        }
+    }
+    // Independently verify the production joint path's nutrition cache too.
+    // Feet and dynamics stay fixed: only width/height change, then return to
+    // the first shape, so a missing dimension in the cache key is observable.
+    for(const auto character:{cat::Character::Cream,cat::Character::SilverTabby}) {
+        auto& art=CurrentArt(character);const auto& source=art.base.skins[1];
+        const double reference=110.0/std::max(1,art.base.standingHeight);
+        const auto pose=poseFor(Motion::Stalk,1);
+        cat::articulated::Rig expected;
+        if(!pose.jointWalk || !expected.Prepare(source.source.data(),source.width,source.height,source.width*4)) {
+            context="joint nutrition independent rig preparation";return 159;
+        }
+        for(const auto dimensions:{std::pair<double,double>{1,1},{.82,1.04},{1.25,.96},{1,1}}) {
+            auto body=normalBody;body.bodyWidth=dimensions.first;body.bodyHeight=dimensions.second;
+            context="joint walking nutrition c="+std::to_string(static_cast<int>(character))+
+                " width="+std::to_string(body.bodyWidth)+" height="+std::to_string(body.bodyHeight);
+            if(!draw(character,cat::Outfit::Scarf,pose,body,true) || !art.jointWalking) {
+                context+=" production joint cache unavailable";return 159;
+            }
+            const auto& cached=art.jointWalking->rig;
+            if(!expected.Raster(pose.jointFeet,source.width*reference*body.bodyWidth,
+                    source.height*reference*body.bodyHeight,pose.jointDynamics) ||
+                    expected.Width()!=cached.Width() || expected.Height()!=cached.Height() ||
+                    std::memcmp(expected.Pixels(),cached.Pixels(),static_cast<std::size_t>(expected.Width())*expected.Height()*4)!=0) {
+                context+=" cached joint raster differs from independent rig";return 159;
+            }
         }
     }
     // Drive the same persistent controller used by both pets through real

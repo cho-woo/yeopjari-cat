@@ -594,8 +594,9 @@ void WalkingPoseCarriesIndependentJointContacts() {
         CHECK(cat::gait::SameFeet(pose.jointFeet,expected.Targets()));
         CHECK(pose.blendFrame==-1 && pose.blend==0);
     }
-    for(Motion motion:{Motion::Idle,Motion::Sleep,Motion::Stalk,Motion::Jump})
+    for(Motion motion:{Motion::Idle,Motion::Sleep,Motion::Jump})
         CHECK(!Evaluate(motion,0,0,1,gait).jointWalk);
+    CHECK(Evaluate(Motion::Stalk,0,0,1,gait).jointWalk);
     CHECK(Evaluate(Motion::Zoomies,0,0,1,gait).jointWalk);
     gait.Reset();
     expected.Reset();
@@ -608,9 +609,12 @@ void PhysicalBrakingKeepsRunningPosture() {
     for(int i=0;i<90;++i)CHECK(gait.Advance(Motion::Zoomies,165./60,1./60));
     const auto running=Evaluate(Motion::Zoomies,0,0,1,gait);
     const auto requestedWalk=Evaluate(Motion::Walk,0,0,1,gait);
+    const auto requestedStalk=Evaluate(Motion::Stalk,0,0,1,gait);
     // An action change alone cannot snap the torso or supporting paws.
     CHECK(cat::gait::SameFeet(running.jointFeet,requestedWalk.jointFeet));
     CHECK(cat::walk_dynamics::Same(running.jointDynamics,requestedWalk.jointDynamics));
+    CHECK(cat::gait::SameFeet(running.jointFeet,requestedStalk.jointFeet));
+    CHECK(cat::walk_dynamics::Same(running.jointDynamics,requestedStalk.jointDynamics));
     CHECK(requestedWalk.jointDynamics.tailDegrees < -40);
     CHECK(gait.Advance(Motion::Walk,165./60,1./60));
     CHECK(Evaluate(Motion::Walk,0,0,1,gait).jointDynamics.tailDegrees < -40);
@@ -618,6 +622,39 @@ void PhysicalBrakingKeepsRunningPosture() {
     CHECK(Evaluate(Motion::Walk,0,0,1,gait).jointDynamics.tailDegrees==0);
     gait.Reset();
     CHECK(gait.JointMode()==cat::walk_dynamics::Mode::Walk);
+}
+void FastWalkingUsesTrotAndStalkingKeepsTheSameContacts() {
+    using namespace cat::animation;
+    using cat::walk_dynamics::Mode;
+    for(const auto& example:{std::pair{18.,Mode::Walk},std::pair{29.,Mode::Walk},
+            std::pair{38.,Mode::Trot},std::pair{45.,Mode::Trot},std::pair{80.,Mode::Trot},std::pair{140.,Mode::Gallop}}) {
+        Locomotion gait;
+        for(int step=0;step<180;++step)CHECK(gait.Advance(Motion::Walk,example.first/120,1./120));
+        CHECK(gait.JointMode()==example.second);
+        const auto pose=Evaluate(Motion::Walk,0,0,1,gait);
+        CHECK(pose.jointWalk && pose.x==0 && pose.lift==0);
+        if(example.second!=Mode::Gallop)CHECK(pose.jointDynamics.tailDegrees==0 && pose.jointDynamics.airborneWeight==0);
+    }
+    Locomotion gait;cat::gait::Feet previous=gait.JointFeet();
+    std::array<double,4> previousWorld{};double root=0;int anchors=0;
+    for(unsigned leg=0;leg<4;++leg)previousWorld[leg]=previous[leg].x;
+    for(int step=0;step<900;++step) {
+        const auto motion=step<300||step>=600?Motion::Walk:Motion::Stalk;
+        const double travel=(motion==Motion::Stalk?12.:22.)/120;root+=travel;
+        CHECK(gait.Advance(motion,travel,1./120));
+        const auto pose=Evaluate(motion,0,0,1,gait);
+        CHECK(pose.jointWalk && pose.groundContact);
+        if(motion==Motion::Stalk)CHECK(pose.walkingRig && !pose.originalWalk);
+        for(unsigned leg=0;leg<4;++leg) {
+            const auto foot=pose.jointFeet[leg];const double world=root+foot.x;
+            if(foot.stance && previous[leg].stance && foot.contact==previous[leg].contact) {
+                CHECK(std::abs(world-previousWorld[leg])<1e-8);++anchors;
+            }
+            previousWorld[leg]=world;
+        }
+        previous=pose.jointFeet;
+    }
+    CHECK(anchors>1000);
 }
 
 void AuthoredClipsFollowHostPhysicsAndPreserveFallbacks() {
@@ -765,6 +802,7 @@ int main() {
         DistanceDrivenFrameTransitionsRemainContinuous();
         WalkingPoseCarriesIndependentJointContacts();
         PhysicalBrakingKeepsRunningPosture();
+        FastWalkingUsesTrotAndStalkingKeepsTheSameContacts();
         AuthoredClipsFollowHostPhysicsAndPreserveFallbacks();
         RealSpeedsChooseAReachableCadence();
         ContactsStayPlantedWhileGaitAndSpeedChange();

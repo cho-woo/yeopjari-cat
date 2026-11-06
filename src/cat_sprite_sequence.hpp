@@ -43,9 +43,11 @@ struct Options {
     bool grounded=true;
     double velocityY=0;
     std::uint64_t contactElapsedMs=0;
-    // Zero selects the clip's default duration. Groom stays within 4–8s;
-    // Eat/Treat accept 2.5–12s without shortening their entrance or exit.
+    // Zero selects the clip's default duration. Groom stays within4–8s;
+    // meals accept3.5–12s without shortening their entrance or exit.
     std::uint64_t durationMs=0;
+    // Choose once per event, not per render: paw/face, chest, or hind leg.
+    unsigned variant=0;
     // Zero retains the original sheet layout. Authored eight-frame sleep
     // sheets use a different story: awake/yawn/drowsy, then resting poses.
     unsigned sheetFrames=0;
@@ -61,11 +63,19 @@ constexpr unsigned kPunchImpactFrame=4;
 constexpr unsigned kPunchSecondImpactFrame=5;
 constexpr std::array<std::uint64_t,2> kPunchImpacts{{kPunchImpactMs,kPunchSecondImpactMs}};
 constexpr std::uint64_t kSleepIntroMs=1200;
-constexpr std::uint64_t kSleepStoryIntroMs=1400;
-constexpr std::uint64_t kSleepStoryRestMs=60000;
-constexpr std::uint64_t kSleepWakeMs=880;
+constexpr std::uint64_t kSleepStoryIntroMs=3800;
+constexpr std::uint64_t kSleepStoryRestMs=120000;
+constexpr std::uint64_t kSleepWakeMs=3000;
+constexpr std::uint64_t kGroomDefaultMs=6000;
+constexpr std::uint64_t kGroomMinMs=4000;
+constexpr std::uint64_t kGroomMaxMs=8000;
+constexpr std::uint64_t kBoxDurationMs=8500;
+constexpr std::uint64_t kCareMinDurationMs=3500;
+constexpr std::uint64_t kCareMaxDurationMs=12000;
+constexpr std::uint64_t kCareOutroMs=1400;
 constexpr std::uint64_t kLandingMs=280;
 constexpr std::uint64_t kEatDurationMs=5000;
+constexpr std::uint64_t kFishDurationMs=5000;
 constexpr std::uint64_t kTreatDurationMs=4200;
 
 inline unsigned SelectSleepVariant(double roll,bool authored) {
@@ -83,11 +93,11 @@ inline unsigned SelectSleepVariant(double roll,bool authored) {
 }
 
 inline std::uint64_t GroomDuration(std::uint64_t requested) {
-    return requested==0?6000:std::clamp<std::uint64_t>(requested,4000,8000);
+    return requested==0?kGroomDefaultMs:std::clamp(requested,kGroomMinMs,kGroomMaxMs);
 }
 inline std::uint64_t CareDuration(Clip clip,std::uint64_t requested) {
-    return requested==0?(clip==Clip::Treat?kTreatDurationMs:kEatDurationMs):
-                        std::clamp<std::uint64_t>(requested,2500,12000);
+    return requested==0?(clip==Clip::Treat?kTreatDurationMs:clip==Clip::Fish?kFishDurationMs:kEatDurationMs):
+                        std::clamp(requested,kCareMinDurationMs,kCareMaxDurationMs);
 }
 inline Frame Uniform(std::uint64_t elapsed,unsigned first,unsigned count,
                      std::uint64_t frameMs,bool loop) {
@@ -109,31 +119,55 @@ inline Frame Timed(std::uint64_t elapsed,const std::array<std::uint64_t,N>& dura
     return {static_cast<unsigned>(N-1),durations[N-1],durations[N-1],false,true,true,true};
 }
 
+// A bounded story visits one related family of poses once. Stretch its
+// holds to the host's actual event duration; never wrap the whole storyboard
+// back to its entrance or switch grooming posture families mid-event.
+template<std::size_t N>
+inline Frame Story(std::uint64_t elapsed,const std::array<unsigned,N>& frames,
+                   const std::array<std::uint64_t,N>& weights,std::uint64_t duration) {
+    static_assert(N>0);
+    std::uint64_t total=0;for(const auto weight:weights)total+=weight;
+    if(duration==0||total==0)return {frames[N-1],0,0,false,true,true,true};
+    const bool finished=elapsed>=duration;
+    if(finished)elapsed=duration-1;
+    std::uint64_t start=0,accumulated=0;
+    for(unsigned index=0;index<N;++index) {
+        accumulated+=weights[index];
+        const auto end=duration*accumulated/total;
+        if(elapsed<end) {
+            const auto hold=end-start;
+            return {frames[index],finished?hold:elapsed-start,hold,false,finished,finished,true};
+        }
+        start=end;
+    }
+    return {frames[N-1],0,0,false,true,true,true};
+}
+
 inline Frame SampleSleep(std::uint64_t elapsed,const Options& options={}) {
     if(GridFor(Clip::Sleep,options.sheetFrames).count==0)
         return {0,0,0,false,true,true,true};
     if(options.sheetFrames==8) {
         if(options.sleep==SleepStage::Waking) {
-            // Reuse the actual story drawings in reverse: drowsy, yawn,
-            // awake. Once awake, hold frame0 rather than returning to sleep.
-            auto pose=Timed(elapsed,std::array<std::uint64_t,3>{{220,330,330}});
-            constexpr std::array<unsigned,3> frames{{2,1,0}};
-            pose.frame=frames[pose.frame];
-            return pose;
+            // Rise from the curled posture through a low stretch and tucked
+            // paws before sitting up. The resting loop never replays these
+            // large changes; once awake, keep the quiet final frame.
+            return Story(elapsed,std::array<unsigned,5>{{6,7,2,1,0}},
+                std::array<std::uint64_t,5>{{700,650,650,600,400}},kSleepWakeMs);
         }
         if(options.sleep==SleepStage::Entering && elapsed<kSleepStoryIntroMs)
-            return Timed(elapsed,std::array<std::uint64_t,3>{{250,650,500}});
+            return Timed(elapsed,std::array<std::uint64_t,3>{{900,1300,1600}});
         const auto rest=options.sleep==SleepStage::Entering?elapsed-kSleepStoryIntroMs:elapsed;
-        // Curled/deep sleep occupy over96% of this minute. Dreaming,
-        // stretching in sleep and a small twitch are brief rare accents;
-        // neither awake nor the entrance yawn occurs in the resting loop.
+        // Sleep stays curled for minutes. A seated twitch or full stretch
+        // is a large posture change and belongs to waking, not a fast cycle
+        // between incompatible sleeping silhouettes.
         auto pose=Timed(rest%kSleepStoryRestMs,
-            std::array<std::uint64_t,9>{{5000,18000,800,16000,600,14000,900,4000,700}});
-        constexpr std::array<unsigned,9> frames{{3,4,5,4,7,4,6,3,4}};
+            std::array<std::uint64_t,5>{{12000,42000,2000,50000,14000}});
+        constexpr std::array<unsigned,5> frames{{3,4,5,4,3}};
         pose.frame=frames[pose.frame];pose.looping=true;
         return pose;
     }
-    // The default12-frame contract and its ordinals/timing remain intact.
+    // The default12-frame layout retains its entrance/rest ordinals.
+    // Its waking hold uses the same calmer duration as the uploaded sheet.
     if(options.sleep==SleepStage::Waking)return Uniform(elapsed,8,4,kSleepWakeMs/4,false);
     if(options.sleep==SleepStage::Entering && elapsed<kSleepIntroMs) {
         return elapsed<500?Frame{0,elapsed,500,false,false,false,true}:
@@ -147,8 +181,14 @@ inline Frame Sample(Clip clip,std::uint64_t elapsed,const Options& options={}) {
     switch(clip) {
     case Clip::Groom: {
         const auto duration=GroomDuration(options.durationMs);
-        if(elapsed>=duration)return {15,140,140,false,true,true,true};
-        return Uniform(elapsed,0,16,140,true);
+        switch(options.variant%3) {
+        case 1:return Story(elapsed,std::array<unsigned,6>{{0,9,10,11,12,0}},
+            std::array<std::uint64_t,6>{{650,950,1200,1200,1150,850}},duration);
+        case 2:return Story(elapsed,std::array<unsigned,5>{{0,13,14,15,0}},
+            std::array<std::uint64_t,5>{{750,1300,1600,1350,1000}},duration);
+        default:return Story(elapsed,std::array<unsigned,10>{{0,1,2,3,4,5,6,7,8,0}},
+            std::array<std::uint64_t,10>{{600,600,700,600,600,600,600,600,500,600}},duration);
+        }
     }
     case Clip::Sleep:return SampleSleep(elapsed,options);
     case Clip::Box:
@@ -157,36 +197,47 @@ inline Frame Sample(Clip clip,std::uint64_t elapsed,const Options& options={}) {
         // them after arrival would visibly teleport the cat across the box.
         // Once centered, use the continuous entered/hide/peek/recover poses.
         {
-            auto pose=Timed(elapsed,std::array<std::uint64_t,6>{{560,520,600,500,470,700}});
+            auto pose=Timed(elapsed,std::array<std::uint64_t,6>{{1200,1000,2600,1100,1400,1200}});
             pose.frame+=2;return pose;
         }
     case Clip::Fish:
-        return Timed(elapsed,std::array<std::uint64_t,8>{{160,140,180,200,260,240,220,400}});
+        return Story(elapsed,std::array<unsigned,8>{{0,1,2,3,4,5,6,7}},
+            std::array<std::uint64_t,8>{{600,700,900,700,700,600,400,400}},
+            CareDuration(clip,options.durationMs));
     case Clip::Punch: {
         // Preserve the host's two contacts at 300/600ms. The short second
         // anticipation reuses windup drawings; it never translates the root.
         constexpr std::array<unsigned,15> frames{{0,1,2,3,4,5,2,3,5,6,7,8,9,10,11}};
-        auto pose=Timed(elapsed,std::array<std::uint64_t,15>{{90,80,70,60,80,70,70,80,70,80,80,100,120,120,180}});
+        auto pose=Timed(elapsed,std::array<std::uint64_t,15>{{90,80,70,60,80,70,70,80,70,180,200,260,300,340,700}});
         pose.frame=frames[pose.frame];
         return pose;
     }
     case Clip::Eat: {
-        const auto outroAt=CareDuration(clip,options.durationMs)-800;
-        if(elapsed<400)return Uniform(elapsed,0,2,200,false);
-        if(elapsed<outroAt)return Uniform(elapsed-400,2,7,120,true);
-        // Depleting the bowl and finishing happen once, after chewing.
-        auto pose=Timed(elapsed-outroAt,std::array<std::uint64_t,3>{{260,260,280}});
-        pose.frame+=9;
-        return pose;
+        const auto outroAt=CareDuration(clip,options.durationMs)-kCareOutroMs;
+        if(elapsed<1000) {
+            auto pose=Timed(elapsed,std::array<std::uint64_t,2>{{600,400}});
+            constexpr std::array<unsigned,2> frames{{0,4}};pose.frame=frames[pose.frame];return pose;
+        }
+        // Only the adjacent head-down drawings chew. Cycling all the upright
+        // and empty-bowl poses refilled the bowl and jerked the head upright.
+        if(elapsed<outroAt)return Uniform(elapsed-1000,1,2,350,true);
+        auto pose=Timed(elapsed-outroAt,std::array<std::uint64_t,4>{{300,250,300,550}});
+        pose.frame+=8;return pose;
     }
     case Clip::Treat: {
-        const auto outroAt=CareDuration(clip,options.durationMs)-800;
-        if(elapsed<540)return Uniform(elapsed,0,6,90,false);
-        if(elapsed<outroAt)return Uniform(elapsed-540,6,9,90,true);
-        // The hand/tube entrance is never replayed by the licking loop.
-        auto pose=Timed(elapsed-outroAt,std::array<std::uint64_t,9>{{90,90,90,90,90,90,90,90,80}});
-        pose.frame+=15;
-        return pose;
+        const auto outroAt=CareDuration(clip,options.durationMs)-kCareOutroMs;
+        if(elapsed<1100) {
+            auto pose=Timed(elapsed,std::array<std::uint64_t,4>{{400,200,250,250}});
+            constexpr std::array<unsigned,4> frames{{0,3,4,5}};pose.frame=frames[pose.frame];return pose;
+        }
+        if(elapsed<outroAt) {
+            auto pose=Timed((elapsed-1100)%880,std::array<std::uint64_t,4>{{220,220,220,220}});
+            constexpr std::array<unsigned,4> frames{{6,7,8,7}};pose.frame=frames[pose.frame];pose.looping=true;return pose;
+        }
+        // Withdraw once and settle; never restart the tube's entrance or
+        // cycle through every independently painted facial expression.
+        auto pose=Timed(elapsed-outroAt,std::array<std::uint64_t,4>{{250,250,300,600}});
+        constexpr std::array<unsigned,4> frames{{15,16,20,23}};pose.frame=frames[pose.frame];return pose;
     }
     case Clip::Jump: {
         if(!options.grounded) {

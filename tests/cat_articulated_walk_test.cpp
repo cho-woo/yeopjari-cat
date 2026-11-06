@@ -98,7 +98,12 @@ void BonesKeepLengthAndPawsKeepWorldContacts() {
                 }
                 if(!feet[leg].stance) {
                     CHECK(bone.paw.y<height-2+1e-7);++swingSamples;
-                } else CHECK(std::abs(bone.paw.y-(height-2))<1e-7);
+                    CHECK(bone.pawAngle<=0 && bone.pawAngle>=-(leg>=2?10.0:8.0)*cat::walk_dynamics::kPi/180);
+                    if(feet[leg].y<-.1)CHECK(bone.pawAngle<0);
+                } else {
+                    CHECK(std::abs(bone.paw.y-(height-2))<1e-7);
+                    CHECK(bone.pawAngle==0);
+                }
                 // A solved foot must exist in the raster too. Numeric IK by
                 // itself cannot catch holes introduced by the skin triangles.
                 CHECK(AlphaAt(rig,bone.paw)>96);
