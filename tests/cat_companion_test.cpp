@@ -210,6 +210,52 @@ void FishCareKeepsTheExistingMealAndBusyContracts() {
     CHECK(model.View(c.ticks).motion!=cat::animation::Motion::Eat);
     CHECK(!model.View(c.ticks).animation.fishMeal && state.pet.feedCount==1 && state.memory.meals==1);
 }
+void AcceptedFoodRestartsItsClockAfterLongMenuPauses() {
+    using cat::feeding::FoodKind;
+    using cat::nutrition::FeedResult;
+    using cat::sprite_sequence::Clip;
+    for(const auto& kinds:{std::pair{FoodKind::Meal,FoodKind::Fish},std::pair{FoodKind::Treat,FoodKind::Treat}}) {
+        State state=NewState(born);state.preferences.character=cat::Character::Cream;
+        state.nutrition.fullness=state.pet.hunger=45;
+        Model model;model.Bind(state);model.Reset(40,1000,700);
+        CHECK(model.FeedFood(born,100,kinds.first,1)==FeedResult::Accepted);
+        auto c=Frame(100,model.Physical().x+60);c.primaryVisible=false;
+        model.Tick(c);c.ticks=3100;model.Tick(c);
+        CHECK(model.View(c.ticks).animation.spriteElapsedMs==3000);
+        // The real menu freezes the action clock while UTC still advances
+        // nutrition. Five minutes later another serving can be accepted.
+        c.paused=true;c.ticks+=300000;c.nowUtc=born+300;model.Tick(c);
+        CHECK(model.View(c.ticks).animation.spriteElapsedMs==3000);
+        CHECK(model.FeedFood(c.nowUtc,c.ticks,kinds.second,1)==FeedResult::Accepted);
+        const auto fresh=model.View(c.ticks);
+        const bool treat=kinds.second==FoodKind::Treat;
+        CHECK(fresh.motion==(treat?cat::animation::Motion::Treat:cat::animation::Motion::Eat));
+        CHECK(fresh.animation.spriteClip==(treat?Clip::Treat:Clip::Fish));
+        CHECK(fresh.animation.spriteElapsedMs==0 && fresh.animation.spriteFrame==0);
+        CHECK(fresh.animation.fishMeal==!treat);
+        CHECK(state.pet.feedCount==(treat?0u:2u) && state.pet.snackCount==(treat?2u:0u));
+        CHECK(state.memory.meals==state.pet.feedCount && state.memory.treats==state.pet.snackCount);
+        // A rejected repeat is not a new serving or action. Check its clock
+        // and transient variant after77ms, where a reset would be observable.
+        const auto visible=model.View(c.ticks+77);const auto saved=Serialize(state);
+        CHECK(model.FeedFood(c.nowUtc,c.ticks+77,kinds.first,1)==FeedResult::TooSoon);
+        const auto rejected=model.View(c.ticks+77);
+        CHECK(rejected.animation.spriteElapsedMs==visible.animation.spriteElapsedMs);
+        CHECK(rejected.animation.spriteFrame==visible.animation.spriteFrame);
+        CHECK(rejected.animation.fishMeal==visible.animation.fishMeal && Serialize(state)==saved);
+        if(!treat) {
+            c.paused=false;c.ticks+=500;model.Tick(c);
+            c.paused=true;c.ticks+=300000;c.nowUtc=born+600;model.Tick(c);
+            const auto fullBefore=model.View(c.ticks);const auto fullSave=Serialize(state);
+            CHECK(fullBefore.animation.spriteElapsedMs==500 && fullBefore.animation.fishMeal);
+            CHECK(model.FeedFood(c.nowUtc,c.ticks,FoodKind::Meal,0)==FeedResult::Full);
+            const auto refused=model.View(c.ticks);
+            CHECK(refused.animation.spriteElapsedMs==500 && refused.animation.fishMeal);
+            CHECK(refused.animation.spriteFrame==fullBefore.animation.spriteFrame && Serialize(state)==fullSave);
+        }
+        CHECK(Valid(state));
+    }
+}
 void SocialContactAndCompetition() {
     for(const auto kind:{Interaction::Sniff,Interaction::Paw,Interaction::SharedSleep,Interaction::RunTogether,Interaction::FoodCompetition}) {
         State s=NewState(born);s.nutrition.fullness=60;s.pet.hunger=60;
@@ -481,7 +527,7 @@ void HighRefreshGaitFollowsRenderedTravel() {
 }
 }
 int main() {
-    try { SeparateAdoptionAndRestart();IndividualStableTemperaments();StrictBundleParsing();RecoveryAndFaults();IndependentCareAndAge();FishCareKeepsTheExistingMealAndBusyContracts();SocialContactAndCompetition();RealWindowFollowingAndClosure();SpeciesLimitsAndBraking();ManualCareIsNotInterrupted();NaturalTakeoffAndLandingUsePhysicalMotion();SocialGesturesWaitForPlantedFeet();BrakingPreservesTheCompleteMeal();PairedRunningUsesOneSupportAndBodyMultiplier();HighWindowFollowingRespectsTheRealCeiling();
+    try { SeparateAdoptionAndRestart();IndividualStableTemperaments();StrictBundleParsing();RecoveryAndFaults();IndependentCareAndAge();FishCareKeepsTheExistingMealAndBusyContracts();AcceptedFoodRestartsItsClockAfterLongMenuPauses();SocialContactAndCompetition();RealWindowFollowingAndClosure();SpeciesLimitsAndBraking();ManualCareIsNotInterrupted();NaturalTakeoffAndLandingUsePhysicalMotion();SocialGesturesWaitForPlantedFeet();BrakingPreservesTheCompleteMeal();PairedRunningUsesOneSupportAndBodyMultiplier();HighWindowFollowingRespectsTheRealCeiling();
         HighRefreshGaitFollowsRenderedTravel();CanonicalPoseTransitionUsesHostActionAndPause();
         std::cout<<"companion checks passed: "<<checks<<'\n';return 0;
     } catch(const std::exception& e) { std::cerr<<e.what()<<'\n';return 1; }

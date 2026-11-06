@@ -170,6 +170,7 @@ struct SpriteAtlas {
 };
 struct CareSpriteAtlas {
     const cat::sprite_assets::Descriptor* layout=nullptr;
+    std::array<std::vector<std::uint32_t>,cat::sprite_assets::kMaxFrames> framePixels;
     std::array<std::unique_ptr<Bitmap>,cat::sprite_assets::kMaxFrames> frames;
     IStream* stream=nullptr;
     std::unique_ptr<Bitmap> image;
@@ -1125,11 +1126,23 @@ bool LoadCareSprites() {
         // GDI+ bicubic sampling may read beyond a source subrectangle into
         // the adjacent atlas cell. Isolate each authored frame once; a narrow
         // original gutter can no longer leak another ear, tail or paw.
+        BitmapData premultiplied{};
+        if(sprite->image->LockBits(&whole,ImageLockModeRead,PixelFormat32bppPARGB,&premultiplied)!=Ok)return false;
+        bool cellsReady=true;
         for(unsigned frame=0;frame<layout.frameCount;++frame) {
             const auto& r=layout.frames[frame].rect;
-            sprite->frames[frame].reset(sprite->image->Clone(Rect(r.x,r.y,r.width,r.height),PixelFormat32bppPARGB));
-            if(!sprite->frames[frame] || sprite->frames[frame]->GetLastStatus()!=Ok)return false;
+            auto& pixels=sprite->framePixels[frame];pixels.resize(static_cast<std::size_t>(r.width)*r.height);
+            for(int y=0;y<r.height;++y) {
+                const auto* source=static_cast<const BYTE*>(premultiplied.Scan0)+
+                    static_cast<ptrdiff_t>(r.y+y)*premultiplied.Stride+r.x*4;
+                std::memcpy(pixels.data()+static_cast<std::size_t>(y)*r.width,source,r.width*4);
+            }
+            sprite->frames[frame]=std::make_unique<Bitmap>(r.width,r.height,r.width*4,
+                PixelFormat32bppPARGB,reinterpret_cast<BYTE*>(pixels.data()));
+            if(sprite->frames[frame]->GetLastStatus()!=Ok){cellsReady=false;break;}
         }
+        sprite->image->UnlockBits(&premultiplied);
+        if(!cellsReady)return false;
         g.careSprites.push_back(std::move(sprite));
     }
     return true;

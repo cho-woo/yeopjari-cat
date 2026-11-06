@@ -534,7 +534,11 @@ private:
         const bool authoredGroom=m==cat::animation::Motion::Groom &&
             cat::sprite_assets::Find(cat::sprite_sequence::Clip::Groom,
                 static_cast<unsigned>(state_->preferences.character),cat::sprite_assets::kCareSprites);
-        if(motion_!=m || jumping || authoredGroom) {
+        // Food reaches SetMotion only after acceptance. A long menu can
+        // preserve an Eat/Treat pose while UTC passes the feeding cooldown;
+        // its next accepted serving is a new action, even of the same kind.
+        const bool freshFood=m==cat::animation::Motion::Eat || m==cat::animation::Motion::Treat;
+        if(motion_!=m || jumping || authoredGroom || freshFood) {
             wakingFromSleep_=motion_==cat::animation::Motion::Sleep && m==cat::animation::Motion::Stretch;
             feedingKind_=cat::feeding::FoodKind::Meal;
             ++motionSerial_;
