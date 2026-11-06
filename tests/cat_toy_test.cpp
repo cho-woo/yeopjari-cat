@@ -324,6 +324,26 @@ void AuthoredBoxExitHoldsBeforeTravel() {
     CHECK(session.boxExitMs==0 && session.phase==Phase::None);
 }
 
+void AuthoredPawStoryCompletesBeforeAnotherApproach() {
+    using namespace cat::toy;
+    for(Kind kind:{Kind::Ball,Kind::FishingRod}) {
+        Session session;session.Start(kind);session.pawVisitMs=2420;session.Set(Phase::Interact);
+        CHECK(session.PhaseDuration()==2420);
+        for(int step=0;step<9;++step)CHECK(!session.Advance(.25,true,true));
+        CHECK(session.phase==Phase::Interact && session.rounds==0);
+        CHECK(!session.Advance(.169,true,true));
+        CHECK(session.Advance(.001,true,true) && session.phase==Phase::Approach && session.rounds==1);
+        session.Start(kind);session.Set(Phase::Interact);
+        CHECK(session.pawVisitMs==0 && session.PhaseDuration()==Duration(kind,Phase::Interact));
+        session.pawVisitMs=std::numeric_limits<double>::quiet_NaN();
+        CHECK(session.PhaseDuration()==Duration(kind,Phase::Interact));
+    }
+    for(Kind kind:{Kind::Box,Kind::PaperBag,Kind::Catnip,Kind::Cushion}) {
+        Session session;session.Start(kind);session.pawVisitMs=2420;session.Set(Phase::Interact);
+        CHECK(session.PhaseDuration()==Duration(kind,Phase::Interact));
+    }
+}
+
 void AutomaticWatchdog() {
     using namespace cat::toy;
     Automatic automatic; AutoInput input; input.eligible=true;
@@ -345,6 +365,7 @@ int main() {
         ReachableTargets(); ContactAndContinuousRoll(); EdgesRemainReachable(); FrameRateAndPause();
         RealContactGate(); DistinctActivitiesAndInterruptions(); ContainerPathsAndFeather();
         AuthoredBoxVisitCompletesBeforeSleep(); AuthoredBoxExitHoldsBeforeTravel();
+        AuthoredPawStoryCompletesBeforeAnotherApproach();
         AutomaticTimingAndArbitration(); AutomaticCompletionAndTeardown(); AutomaticWatchdog();
         std::cout << "Toy interaction: " << checks << " checks passed\n";
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
