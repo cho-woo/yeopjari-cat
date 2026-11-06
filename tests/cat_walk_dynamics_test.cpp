@@ -104,7 +104,7 @@ void PhaseWrapAndStoppedBodyRemainStable(){
 }
 void MovingBodyKeepsSolvedPawsOnTheirGroundContacts(){
     const auto source=Artwork();
-    for(auto mode:{motion::Mode::Walk,motion::Mode::Gallop})
+    for(auto mode:{motion::Mode::Walk,motion::Mode::Trot,motion::Mode::Gallop})
     // Production dimensions use one common source scale, then nutrition.
     // Do not invent an independent square-body normalization before applying
     // the thin/wide factors: that would vertically stretch the actual art.
@@ -112,7 +112,7 @@ void MovingBodyKeepsSolvedPawsOnTheirGroundContacts(){
             {114.2*.82,114.2*sourceHeight/sourceWidth*1.04},
             {114.2*1.25,114.2*sourceHeight/sourceWidth*.96}}){
         cat::articulated::Rig rig;CHECK(rig.Prepare(source.data(),sourceWidth,sourceHeight,sourceWidth*4));
-        const auto parameters=motion::ParametersFor(mode);const double speed=mode==motion::Mode::Walk?22:165;
+        const auto parameters=motion::ParametersFor(mode);const double speed=mode==motion::Mode::Walk?22:mode==motion::Mode::Trot?55:165;
         cat::gait::Cycle cycle(parameters,false,0);auto previous=BiasedFeet(cycle,mode);
         std::array<double,4> previousWorld{};bool first=true;
         int plantedChecks=0,flightSamples=0,movingRoots=0;double root=0;
@@ -150,7 +150,7 @@ void MovingBodyKeepsSolvedPawsOnTheirGroundContacts(){
             flightSamples+=supports==0;previous=feet;first=false;
         }
         CHECK(plantedChecks>50 && movingRoots>100);
-        CHECK(mode==motion::Mode::Walk?flightSamples==0:flightSamples>0);
+        CHECK(mode==motion::Mode::Gallop?flightSamples>0:flightSamples==0);
     }
 }
 void ModeTransitionKeepsExistingSupportLoaded() {
@@ -187,6 +187,38 @@ void ModeTransitionKeepsExistingSupportLoaded() {
         previous=feet;
     }
     CHECK(anchors>500);
+}
+void GaitModesMeetAtTheirActualSpeedBoundaries() {
+    using motion::Mode;
+    CHECK(motion::SelectMode(Mode::Walk,29)==Mode::Walk);
+    CHECK(motion::SelectMode(Mode::Walk,35)==Mode::Walk);
+    CHECK(motion::SelectMode(Mode::Walk,38)==Mode::Trot);
+    CHECK(motion::SelectMode(Mode::Trot,100)==Mode::Trot);
+    CHECK(motion::SelectMode(Mode::Trot,101)==Mode::Gallop);
+    CHECK(motion::SelectMode(Mode::Gallop,85)==Mode::Gallop);
+    CHECK(motion::SelectMode(Mode::Gallop,84)==Mode::Trot);
+    CHECK(motion::SelectMode(Mode::Trot,30)==Mode::Trot);
+    CHECK(motion::SelectMode(Mode::Trot,29)==Mode::Walk);
+    CHECK(motion::SelectMode(Mode::Gallop,std::numeric_limits<double>::quiet_NaN())==Mode::Walk);
+    for(int sample=0;sample<128;++sample) {
+        const double phase=sample/128.;
+        CHECK(motion::Same(motion::Evaluate(phase,35,Mode::Walk),motion::Evaluate(phase,35,Mode::Trot)));
+        CHECK(motion::Same(motion::Evaluate(phase,100,Mode::Trot),motion::Evaluate(phase,100,Mode::Gallop)));
+        const auto walking=motion::Evaluate(phase,22,Mode::Walk);
+        CHECK(walking.torsoY>=.25-1e-9 && walking.torsoY<=.55+1e-9);
+        const auto opposite=motion::Evaluate(phase+.5,22,Mode::Walk);
+        CHECK(Near(walking.torsoY,opposite.torsoY));
+    }
+    // Two weight-transfer lows per stride; the old four-pulse head vibration
+    // would satisfy the height bounds but fail this independent count.
+    int peaks=0;
+    for(int sample=0;sample<128;++sample) {
+        const double a=motion::Evaluate((sample-1)/128.,22).torsoY;
+        const double b=motion::Evaluate(sample/128.,22).torsoY;
+        const double c=motion::Evaluate((sample+1)/128.,22).torsoY;
+        peaks+=b>a && b>c;
+    }
+    CHECK(peaks==2);
 }
 
 void InvalidFrameRejectedWithoutDestroyingTheCachedBitmap(){
@@ -236,6 +268,7 @@ int main(){
         RigidHeadAndInvertibleLowerSpine();EveryMotionParameterParticipatesInCacheIdentity();
         PhaseWrapAndStoppedBodyRemainStable();MovingBodyKeepsSolvedPawsOnTheirGroundContacts();
         ModeTransitionKeepsExistingSupportLoaded();
+        GaitModesMeetAtTheirActualSpeedBoundaries();
         InvalidFrameRejectedWithoutDestroyingTheCachedBitmap();TailRotationKeepsThePaintedShapeRigid();
         std::cout<<"Walk/run body dynamics: "<<checks<<" checks passed\n";return EXIT_SUCCESS;
     }catch(const std::exception& error){std::cerr<<error.what()<<'\n';return EXIT_FAILURE;}

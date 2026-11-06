@@ -16,7 +16,7 @@ inline Point operator-(Point a,Point b){return {a.x-b.x,a.y-b.y};}
 inline Point operator*(Point a,double b){return {a.x*b,a.y*b};}
 inline double Length(Point a){return std::hypot(a.x,a.y);}
 inline double Smooth(double x){x=std::clamp(x,0.,1.);return x*x*(3-2*x);}
-struct SolvedLeg { Point root,knee,ankle,paw,targetPaw; double upperLength=0,lowerLength=0; bool clamped=false; };
+struct SolvedLeg { Point root,knee,ankle,paw,targetPaw; double upperLength=0,lowerLength=0; bool clamped=false; double pawAngle=0; };
 class Rig {
 public:
  bool Prepare(const std::uint32_t* src,int w,int h,int stride){
@@ -281,7 +281,13 @@ private:
       static_cast<unsigned>(index),dynamics_,widthBody,heightBody);
   targetRoot={moved.x*w_/widthBody,moved.y*h_/heightBody};
   Point targetSole{baseRoot.x+foot.x/widthBody*w_,h_-2+foot.y/heightBody*h_};
-  Point targetAnkle=targetSole-(sole-ankle)*size;
+  // A recovering paw flexes slightly instead of sliding through the air as
+  // a horizontal plate. Rotate around its registered sole and solve the same
+  // ankle offset, so supporting feet and painted bone lengths stay exact.
+  const double pawAngle=foot.stance?0:-(fore?10.0:8.0)*cat::walk_dynamics::kPi/180*
+      Smooth(-foot.y/2.5);
+  const Point soleOffset=Rotate((sole-ankle)*size,pawAngle);
+  Point targetAnkle=targetSole-soleOffset;
   double upper=Length(joint-root)*size,lower=Length(ankle-joint)*size;
   Point direction=targetAnkle-targetRoot;double distance=Length(direction),reach=upper+lower;
   const double minimum=std::abs(upper-lower)+.01;
@@ -295,10 +301,10 @@ private:
   double projection=(upper*upper-lower*lower+distance*distance)/(2*std::max(.01,distance));
   double bend=std::sqrt(std::max(0.,upper*upper-projection*projection));Point unit=direction*(1/std::max(.01,distance));
   const double side=fore?1:-1;Point targetJoint=targetRoot+unit*projection+Point{-unit.y,unit.x}*(side*bend);
-  solutions_[index]={targetRoot,targetJoint,targetAnkle,targetAnkle+(sole-ankle)*size,targetSole,upper,lower,clamped};
+  solutions_[index]={targetRoot,targetJoint,targetAnkle,targetAnkle+soleOffset,targetSole,upper,lower,clamped,pawAngle};
   double angleUpper=Angle(targetJoint-targetRoot)-Angle(joint-root),angleLower=Angle(targetAnkle-targetJoint)-Angle(ankle-joint);
   auto transform=[&](Point p){double nearKnee=Smooth((p.y-joint.y+8)/16);double nearPaw=Smooth((p.y-ankle.y+12)/8);
-   Point a=targetRoot+Rotate((p-root)*size,angleUpper),b=targetJoint+Rotate((p-joint)*size,angleLower),c=targetAnkle+(p-ankle)*size;
+   Point a=targetRoot+Rotate((p-root)*size,angleUpper),b=targetJoint+Rotate((p-joint)*size,angleLower),c=targetAnkle+Rotate((p-ankle)*size,pawAngle);
    return (a*(1-nearKnee)+b*nearKnee)*(1-nearPaw)+c*nearPaw+Point{static_cast<double>(pad_),0};};
   // Piecewise rigid bones with a narrow skin blend at real joints. The paw
   // itself translates as a rigid painted patch, without shear or scale pulse.

@@ -38,13 +38,13 @@ int NativeWalkingRenderTest(std::string& context) {
     // source preservation, pixels, cache and the real top-level dispatcher.
     for(const auto character:{cat::Character::Cream,cat::Character::SilverTabby})for(int facing:{-1,1})
     for(const auto dimensions:{std::pair<double,double>{1,1},{.82,1.04},{1.25,.96}})
-    for(REAL desiredHeight:{80.0f,110.0f,165.0f})for(const auto motion:{Motion::Walk,Motion::Zoomies})for(int sample=0;sample<16;++sample) {
+    for(REAL desiredHeight:{80.0f,110.0f,165.0f})for(const auto motion:{Motion::Walk,Motion::Stalk,Motion::Zoomies})for(int sample=0;sample<16;++sample) {
         auto body=normalBody;body.bodyWidth=dimensions.first;body.bodyHeight=dimensions.second;
         cat::animation::Locomotion gait;
         // Cover a complete independent four-foot cycle.
         const double phase=sample/16.;
-        const double speed=motion==Motion::Zoomies?165:22;
-        double remaining=phase*(motion==Motion::Zoomies?42:18);
+        const double speed=motion==Motion::Zoomies?165:motion==Motion::Stalk?12:22;
+        double remaining=phase*(motion==Motion::Zoomies?42:motion==Motion::Stalk?16:18);
         while(remaining>1e-12) {
             const double step=std::min(remaining,2.2);
             if(!gait.Advance(motion,step,step/speed))return 152;
@@ -120,6 +120,9 @@ int NativeWalkingRenderTest(std::string& context) {
         for(const auto motion:{Motion::Walk,Motion::Stalk,Motion::Zoomies}) {
             if((motion==Motion::Walk || motion==Motion::Zoomies) && !cat::species::UsesNewArt(character))continue;
             auto pose=poseFor(motion,facing);
+            // Keep exercising the retained inverse-warp fallback explicitly;
+            // original Cream/Silver stalking now uses the shared joint rig.
+            pose.jointWalk=false;
             if((motion==Motion::Walk?(!pose.originalWalk || pose.walkingRig):
                     (!pose.walkingRig || pose.originalWalk || pose.frame!=1 || pose.blendFrame!=-1)) ||
                     pose.x!=0 || pose.lift!=0 || pose.angle!=0 || pose.scaleX!=1 || pose.scaleY!=1)return 152;
