@@ -2555,7 +2555,7 @@ void Render() {
     const double bodyScale = g.dpiScale * cat::GrowthScale(g.pet.bornUtc, now);
     auto placement = cat::render::BuildPlacement(g.work.bottom, g.surface.height,
         g.dpiScale, physical.lift, pose.lift, bodyScale);
-    // The fish is drawn in front of the feet in the supplied art. Reserve
+    // Some props and airborne legs extend below the registered root. Reserve
     // transparent room below the registered root for props and airborne legs,
     // without lifting/resizing the cat to fit the image's bounding box.
     int bottomInset=0;
@@ -2588,7 +2588,7 @@ void Render() {
     if (ticks < g.bubbleUntil && !g.bubble.empty()) {
         const bool twoLines = g.bubble.find(L'\n') != std::wstring::npos;
         const REAL width = static_cast<REAL>(132 * g.dpiScale), height = static_cast<REAL>((twoLines ? 44 : 28) * g.dpiScale);
-        const REAL x = center - width / 2, y = static_cast<REAL>(g.surface.height - (twoLines ? 172 : 156) * g.dpiScale);
+        const REAL x = center - width / 2, y = static_cast<REAL>(g.surface.height - bottomInset - (twoLines ? 172 : 156) * g.dpiScale);
         GraphicsPath bubble; RoundedRect(bubble, x, y, width, height, static_cast<REAL>(11 * g.dpiScale));
         SolidBrush fill(Color(239, 255, 250, 240)); Pen border(Color(210, 204, 181, 162), static_cast<REAL>(0.8 * g.dpiScale));
         graphics.FillPath(&fill, &bubble); graphics.DrawPath(&border, &bubble);
