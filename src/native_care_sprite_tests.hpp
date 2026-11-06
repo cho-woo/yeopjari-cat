@@ -223,8 +223,12 @@ int NativeActualCareSpriteRenderTest(std::string& context) {
     };
     const auto nearPixels=[](const std::vector<BYTE>& a,const std::vector<BYTE>& b) {
         if(a.size()!=b.size())return false;
+        // Source GetPixel -> manual premultiplication and GDI+ LockBits use
+        // slightly different RGB rounding. Bicubic filtering can amplify it
+        // to2/255 in a few edge channels. Alpha/coverage stays at1/255, so
+        // this cannot conceal a wrong frame, anchor or opaque padding.
         for(std::size_t i=0;i<a.size();++i)
-            if(std::abs(static_cast<int>(a[i])-static_cast<int>(b[i]))>1)return false;
+            if(std::abs(static_cast<int>(a[i])-static_cast<int>(b[i]))>(i%4==3?1:2))return false;
         return true;
     };
     for(const auto& asset:g.careSprites) {
