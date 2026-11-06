@@ -9,9 +9,16 @@
 namespace cat::sprite_sequence {
 
 // The first eight ordinals are stable asset identifiers. None is not a sheet.
-enum class Clip { Groom, Sleep, Box, Fish, Punch, Eat, Jump, Treat, None };
+enum class Clip { Groom, Sleep, Box, Fish, Punch, Eat, Jump, Treat, None, Walk, Run };
 constexpr std::array<Clip,8> kClips{{Clip::Groom,Clip::Sleep,Clip::Box,Clip::Fish,
                                    Clip::Punch,Clip::Eat,Clip::Jump,Clip::Treat}};
+constexpr std::array<Clip,10> kAuthoredClips{{Clip::Groom,Clip::Sleep,Clip::Box,Clip::Fish,
+    Clip::Punch,Clip::Eat,Clip::Jump,Clip::Treat,Clip::Walk,Clip::Run}};
+constexpr unsigned kMaxAuthoredFrames=256,kMaxProgramSteps=512,kMaxProgramCues=64;
+constexpr std::uint32_t kMaxStepMs=60000,kMaxProgramMs=86400000;
+constexpr bool KnownClip(Clip clip) {
+    return static_cast<unsigned>(clip)<8 || clip==Clip::Walk || clip==Clip::Run;
+}
 struct Grid { unsigned columns=0,rows=0,count=0; };
 constexpr Grid GridFor(Clip clip,unsigned sheetFrames=0) {
     Grid grid;
@@ -24,6 +31,7 @@ constexpr Grid GridFor(Clip clip,unsigned sheetFrames=0) {
     case Clip::Eat:grid={3,4,12};break;
     case Clip::Jump:grid={4,4,16};break;
     case Clip::Treat:grid={6,4,24};break;
+    case Clip::Walk:case Clip::Run:grid={8,1,8};break;
     case Clip::None:break;
     }
     return sheetFrames==0 || sheetFrames==grid.count?grid:Grid{};
@@ -32,9 +40,17 @@ constexpr bool GridAllowed(Clip clip,unsigned columns,unsigned rows) {
     const auto grid=GridFor(clip,columns*rows);
     return grid.count!=0 && grid.columns==columns && grid.rows==rows;
 }
+// Explicit programs declare their own frame lists; the grid only supplies
+// storage capacity. Keep the three-argument legacy layout check unchanged.
+constexpr bool GridAllowed(Clip clip,unsigned columns,unsigned rows,unsigned frameCount) {
+    return KnownClip(clip) && columns>0 && rows>0 && columns<=kMaxAuthoredFrames && rows<=kMaxAuthoredFrames &&
+        static_cast<std::uint64_t>(columns)*rows<=kMaxAuthoredFrames && frameCount>0 &&
+        frameCount<=static_cast<std::uint64_t>(columns)*rows;
+}
 
 enum class SleepStage { Entering, Resting, Waking };
 enum class JumpPhase { Crouch, Airborne, Landing };
+enum class Stage { Automatic, Entering, Looping, Exiting };
 struct Options {
     SleepStage sleep=SleepStage::Entering;
     JumpPhase jump=JumpPhase::Crouch;
@@ -51,11 +67,251 @@ struct Options {
     // Zero retains the original sheet layout. Authored eight-frame sleep
     // sheets use a different story: awake/yawn/drowsy, then resting poses.
     unsigned sheetFrames=0;
+    // Explicit authored programs use separate host-controlled phase clocks.
+    // Exiting starts at elapsed=0; a sleeping/hidden cat never exits by timeout.
+    Stage stage=Stage::Automatic;
+    // Ground-relative travel supplies this phase for authored Walk/Run. Merely
+    // rendering another timer tick must not advance a blocked animal's feet.
+    double cyclePhase=0;
 };
 struct Frame {
     unsigned frame=0;
     std::uint64_t localMs=0,holdMs=0;
     bool looping=false,holding=false,finished=false,groundContact=true;
+    // Playlist position distinguishes two uses of the same drawing. Legacy
+    // clips have no authored step and leave this sentinel unchanged.
+    unsigned step=kMaxProgramSteps;
+};
+
+// Authored art count, playlist length, exposure time and the host's refresh
+// interval are deliberately independent. Reusing a step never creates art.
+struct Step { unsigned frame=0; std::uint32_t durationMs=0; };
+struct Range { unsigned first=0,count=0; };
+enum class Finish { Hold=0, Complete=1 };
+enum Event : std::uint32_t { Contact=1, Takeoff=2, Landing=4, Marker=8 };
+struct Cue { unsigned step=0; std::uint32_t offsetMs=0,events=0; };
+struct Program {
+    unsigned stepCount=0;
+    std::array<Step,kMaxProgramSteps> steps{};
+    Range intro{},loop{},outro{};
+    Finish finish=Finish::Complete;
+    std::uint32_t durationMs=0;
+    unsigned cueCount=0;
+    std::array<Cue,kMaxProgramCues> cues{};
+};
+constexpr std::uint64_t Duration(const Program& program,Range range) {
+    if(range.first>program.stepCount || range.count>program.stepCount-range.first ||
+       program.stepCount>kMaxProgramSteps)return 0;
+    std::uint64_t result=0;
+    for(unsigned i=0;i<range.count;++i)result+=program.steps[range.first+i].durationMs;
+    return result;
+}
+constexpr bool ValidProgram(const Program& program,unsigned frameCount=kMaxAuthoredFrames) {
+    if(frameCount==0 || frameCount>kMaxAuthoredFrames || program.stepCount==0 ||
+       program.stepCount>kMaxProgramSteps || program.cueCount>kMaxProgramCues ||
+       program.durationMs>kMaxProgramMs ||
+       (program.finish!=Finish::Hold && program.finish!=Finish::Complete))return false;
+    if(program.intro.first!=0 || program.intro.count>program.stepCount ||
+       program.loop.first!=program.intro.count || program.loop.count>program.stepCount-program.intro.count ||
+       program.outro.first!=program.intro.count+program.loop.count ||
+       program.outro.count!=program.stepCount-program.outro.first)return false;
+    for(unsigned i=0;i<program.stepCount;++i)
+        if(program.steps[i].frame>=frameCount || program.steps[i].durationMs==0 ||
+           program.steps[i].durationMs>kMaxStepMs)return false;
+    for(unsigned i=0;i<program.cueCount;++i) {
+        const auto& cue=program.cues[i];
+        if(cue.step>=program.stepCount || cue.offsetMs>=program.steps[cue.step].durationMs ||
+           cue.events==0 || (cue.events&~std::uint32_t{15})!=0)return false;
+    }
+    const auto edges=Duration(program,program.intro)+Duration(program,program.outro);
+    return program.durationMs==0 || program.durationMs>=edges;
+}
+inline Frame SampleRange(const Program& program,Range range,std::uint64_t elapsed,
+                         bool repeat,bool finish=false) {
+    const auto duration=Duration(program,range);
+    if(range.count==0 || duration==0)return {0,0,0,false,true,finish,true};
+    const bool ended=!repeat && elapsed>=duration;
+    auto local=repeat?elapsed%duration:std::min(elapsed,duration-1);
+    for(unsigned i=0;i<range.count;++i) {
+        const auto& step=program.steps[range.first+i];
+        if(local<step.durationMs)
+            return {step.frame,ended?step.durationMs:local,step.durationMs,repeat,ended,ended&&finish,true,range.first+i};
+        local-=step.durationMs;
+    }
+    return {}; // All validated ranges have positive exposures.
+}
+inline std::uint64_t ProgramDuration(const Program& program,const Options& options={}) {
+    const auto edges=Duration(program,program.intro)+Duration(program,program.outro);
+    const auto requested=options.durationMs?options.durationMs:program.durationMs;
+    return requested?std::max(edges,std::min<std::uint64_t>(requested,kMaxProgramMs)):
+        edges+Duration(program,program.loop);
+}
+inline Stage ProgramStage(Clip clip,const Options& options) {
+    if(options.stage!=Stage::Automatic)return options.stage;
+    if(clip==Clip::Sleep) {
+        if(options.sleep==SleepStage::Waking)return Stage::Exiting;
+        if(options.sleep==SleepStage::Resting)return Stage::Looping;
+    }
+    return Stage::Automatic;
+}
+inline double UnitPhase(double phase) {
+    return std::isfinite(phase)?phase-std::floor(phase):0;
+}
+// Upward-positive velocity is supplied by Box2D in screen pixels/second. The
+// flight strip is sampled through ascent/apex/descent; it adds no translation.
+inline std::uint64_t FlightClock(const Program& program,const Options& options) {
+    const auto duration=Duration(program,program.loop);
+    const double speed=std::isfinite(options.velocityY)?options.velocityY:0;
+    const double progress=std::clamp((200.0-speed)/400.0,0.0,1.0);
+    return duration?std::min(duration-1,static_cast<std::uint64_t>(progress*static_cast<double>(duration))):0;
+}
+inline Frame SampleProgram(Clip clip,const Program& program,std::uint64_t elapsed,
+                           const Options& options={}) {
+    if(!KnownClip(clip) || !ValidProgram(program,options.sheetFrames?options.sheetFrames:kMaxAuthoredFrames))
+        return {0,0,0,false,true,true,true};
+    const bool finish=program.finish==Finish::Complete;
+    const auto intro=Duration(program,program.intro),loop=Duration(program,program.loop);
+    const auto stage=ProgramStage(clip,options);
+    if(clip==Clip::Walk || clip==Clip::Run) {
+        const Range range=program.loop.count?program.loop:Range{0,program.stepCount};
+        const auto duration=Duration(program,range);
+        return SampleRange(program,range,static_cast<std::uint64_t>(UnitPhase(options.cyclePhase)*duration),true);
+    }
+    if(clip==Clip::Jump) {
+        if(!options.grounded) {
+            auto pose=SampleRange(program,program.loop,FlightClock(program,options),false);
+            pose.finished=false;pose.groundContact=false;return pose;
+        }
+        if(options.jump==JumpPhase::Crouch)
+            return SampleRange(program,program.intro,elapsed,false);
+        return SampleRange(program,program.outro,options.contactElapsedMs,false,finish);
+    }
+    if(stage==Stage::Entering)return SampleRange(program,program.intro,elapsed,false);
+    if(stage==Stage::Looping) {
+        if(loop)return SampleRange(program,program.loop,elapsed,true);
+        return SampleRange(program,program.intro,intro,false);
+    }
+    if(stage==Stage::Exiting) {
+        if(program.outro.count)return SampleRange(program,program.outro,elapsed,false,finish);
+        auto pose=SampleRange(program,{0,program.stepCount},Duration(program,{0,program.stepCount}),false,finish);
+        return pose;
+    }
+    if(elapsed<intro)return SampleRange(program,program.intro,elapsed,false);
+    // Persistent rest must not restart its entrance or wake on a timer.
+    if(clip==Clip::Sleep || clip==Clip::Box) {
+        if(loop)return SampleRange(program,program.loop,elapsed-intro,true);
+        return SampleRange(program,program.intro,intro,false);
+    }
+    const auto duration=ProgramDuration(program,options);
+    const auto outroAt=duration-Duration(program,program.outro);
+    if(elapsed>=outroAt && program.outro.count)
+        return SampleRange(program,program.outro,elapsed-outroAt,false,finish);
+    if(elapsed>=duration)
+        return SampleRange(program,{0,program.stepCount},Duration(program,{0,program.stepCount}),false,finish);
+    if(loop)return SampleRange(program,program.loop,elapsed-intro,true);
+    return SampleRange(program,program.intro,intro,false);
+}
+
+// Effects can consume a crossed cue even when its drawing was skipped, while
+// cursor/prank contact additionally requires that the contact pose is visible
+// now. A later reuse of that drawing or an indefinite final hold is not a hit.
+inline unsigned ProgramContactIndex(Clip clip,const Program& program,std::uint64_t elapsed,
+                                    const Options& options={}) {
+    const auto pose=SampleProgram(clip,program,elapsed,options);
+    if(pose.step==kMaxProgramSteps || pose.holding || pose.finished)return 0;
+    unsigned index=0;
+    for(unsigned i=0;i<program.cueCount;++i) {
+        const auto& cue=program.cues[i];
+        if((cue.events&Contact)==0)continue;
+        ++index;
+        if(pose.step==cue.step && pose.localMs>=cue.offsetMs)return index;
+    }
+    return 0;
+}
+inline bool ProgramContactActive(Clip clip,const Program& program,std::uint64_t elapsed,
+                                 const Options& options={}) {
+    return ProgramContactIndex(clip,program,elapsed,options)!=0;
+}
+
+struct ProgramEvents { std::uint32_t events=0;unsigned eventCount=0,contactCount=0; };
+// Consume is called by the simulation, never by drawing. Every authored cue
+// has its own bit, so skipped drawings, repeated loops and pauses cannot
+// duplicate contact/effect requests. Reset only when a new action begins.
+class ProgramCueCursor {
+public:
+    void Reset() { consumed_=0; }
+    ProgramEvents Consume(Clip clip,const Program& program,std::uint64_t elapsed,
+                          const Options& options={}) {
+        ProgramEvents result;
+        if(!KnownClip(clip) || !ValidProgram(program,options.sheetFrames?options.sheetFrames:kMaxAuthoredFrames))return result;
+        for(unsigned i=0;i<program.cueCount;++i) {
+            const auto bit=std::uint64_t{1}<<i;
+            if((consumed_&bit)!=0 || !Due(clip,program,program.cues[i],elapsed,options))continue;
+            consumed_|=bit;result.events|=program.cues[i].events;++result.eventCount;
+            if((program.cues[i].events&Contact)!=0)++result.contactCount;
+        }
+        return result;
+    }
+private:
+    static bool In(Range range,unsigned step) { return step>=range.first && step-range.first<range.count; }
+    static std::uint64_t Offset(const Program& program,Range range,const Cue& cue) {
+        return Duration(program,{range.first,cue.step-range.first})+cue.offsetMs;
+    }
+    static bool Due(Clip clip,const Program& program,const Cue& cue,std::uint64_t elapsed,const Options& options) {
+        const auto stage=ProgramStage(clip,options);
+        const bool inIntro=In(program.intro,cue.step),inLoop=In(program.loop,cue.step);
+        const Range range=inIntro?program.intro:inLoop?program.loop:program.outro;
+        const auto offset=Offset(program,range,cue);
+        if(clip==Clip::Jump) {
+            if(!options.grounded)return inLoop && FlightClock(program,options)>=offset;
+            if(options.jump==JumpPhase::Crouch)return inIntro && elapsed>=offset;
+            return !inIntro && !inLoop && options.contactElapsedMs>=offset;
+        }
+        if(clip==Clip::Walk || clip==Clip::Run) {
+            const Range selected=program.loop.count?program.loop:Range{0,program.stepCount};
+            if(!In(selected,cue.step))return false;
+            const auto distanceClock=static_cast<std::uint64_t>(UnitPhase(options.cyclePhase)*Duration(program,selected));
+            return distanceClock>=Offset(program,selected,cue);
+        }
+        if(stage==Stage::Entering)return inIntro && elapsed>=offset;
+        if(stage==Stage::Looping)return inLoop && elapsed>=offset;
+        if(stage==Stage::Exiting)return !inIntro && !inLoop && elapsed>=offset;
+        const auto intro=Duration(program,program.intro);
+        if(inIntro)return elapsed>=offset;
+        if(clip==Clip::Sleep || clip==Clip::Box)return inLoop && elapsed>=intro+offset;
+        const auto outroAt=ProgramDuration(program,options)-Duration(program,program.outro);
+        if(inLoop)return intro+offset<outroAt && elapsed>=intro+offset;
+        return elapsed>=outroAt+offset;
+    }
+    std::uint64_t consumed_=0;
+};
+struct ProgramTick { Frame pose;std::uint32_t events=0;unsigned eventCount=0,contactCount=0; };
+class ProgramPlayer {
+public:
+    // Program descriptors are immutable and outlive the player; no art or
+    // playlists are copied and playback performs no allocation or decoding.
+    void Start(Clip clip,const Program& program,const Options& options={}) {
+        clip_=clip;program_=&program;options_=options;elapsed_=0;paused_=false;cues_.Reset();
+    }
+    void Pause(bool paused) { paused_=paused; }
+    bool Paused()const { return paused_; }
+    std::uint64_t Elapsed()const { return elapsed_; }
+    void SetOptions(const Options& options) { options_=options; }
+    void Exit() { if(options_.stage!=Stage::Exiting){ options_.stage=Stage::Exiting;elapsed_=0; } }
+    Frame Current()const { return program_?SampleProgram(clip_,*program_,elapsed_,options_):Frame{}; }
+    ProgramTick Advance(std::uint64_t milliseconds) {
+        if(!program_ || paused_ || milliseconds==0)return {Current(),0,0,0};
+        elapsed_+=std::min(milliseconds,std::numeric_limits<std::uint64_t>::max()-elapsed_);
+        const auto events=cues_.Consume(clip_,*program_,elapsed_,options_);
+        return {Current(),events.events,events.eventCount,events.contactCount};
+    }
+private:
+    Clip clip_=Clip::None;
+    const Program* program_=nullptr;
+    Options options_{};
+    std::uint64_t elapsed_=0;
+    bool paused_=false;
+    ProgramCueCursor cues_{};
 };
 constexpr std::uint64_t kPunchImpactMs=300;
 constexpr std::uint64_t kPunchSecondImpactMs=600;
@@ -255,6 +511,10 @@ inline Frame Sample(Clip clip,std::uint64_t elapsed,const Options& options={}) {
         // an airborne drawing while Box2D still reports floor contact.
         pose.finished=false;
         return pose;
+    }
+    case Clip::Walk:case Clip::Run: {
+        const double phase=std::isfinite(options.cyclePhase)?options.cyclePhase-std::floor(options.cyclePhase):0;
+        return {std::min(7u,static_cast<unsigned>(phase*8)),0,0,true,true,false,true};
     }
     case Clip::None:break;
     }
