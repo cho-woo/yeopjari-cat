@@ -25,7 +25,8 @@ cat::companion::Context CompanionContext(ULONGLONG ticks, double elapsed) {
     c.primary = g.physics.CurrentPose(); c.primaryMotion = g.motion;
     c.primaryBusy = g.dragging || g.perch.transitioning || g.waitingForStop ||
         g.toyEngaged || g.approachingToy || g.approachingUser || g.memorySequenceCount || g.lifeSequenceCount ||
-        g.lifeCrossing.Active() || g.physics.Hanging() || EnvironmentBusy() || !c.primary.grounded;
+        g.lifeCrossing.Active() || g.physics.Hanging() || EnvironmentBusy() || !c.primary.grounded ||
+        (!g.companionReaction && g.motion!=Motion::Sleep && !PrimarySocialBoundary(ticks));
     if (g.perch.active) c.primaryPlatform = CompanionPlatform(g.perch.hwnd);
     const auto support = reinterpret_cast<HWND>(g.companionModel.SupportId());
     if (support) c.supportPlatform = CompanionPlatform(support);
@@ -43,7 +44,9 @@ void PaintCompanion(HDC, unsigned char* pixels, int width, int height,
     DrawPetStyle(graphics, s.preferences.character, s.preferences.outfit, s.animation, s.body,
         static_cast<REAL>(width / 2.0 + s.animation.x * dpi * s.growthScale),
         static_cast<REAL>(height - 1 - s.animation.lift * dpi * s.growthScale),
-        static_cast<REAL>(110 * dpi * s.growthScale));
+        static_cast<REAL>(110 * dpi * s.growthScale),
+        s.presentationTicks?&CompanionCarePresentation():nullptr,
+        s.presentationTicks,s.presentationGeneration,s.presentationPaused);
     graphics.Flush(FlushIntentionSync);
 }
 void ShowCompanionStatus() {
@@ -174,13 +177,15 @@ void TickCompanion(ULONGLONG ticks, double elapsed) {
             (g.motion==Motion::Idle || g.motion==Motion::Watch || g.motion==Motion::Walk)) {
             if (event==E::Sniff || event==E::Paw)
                 g.direction=g.companionModel.Physical().x<context.primary.x ? -1 : 1;
-            if (event==E::Sniff) SetMotion(Motion::Sniff,2200);
-            else if (event==E::Paw) SetMotion(Motion::ToyPaw,1500);
-            else if (event==E::SharedSleep) SetMotion(Motion::Sleep,30000);
+            bool reacted=false;
+            if (event==E::Sniff) {SetMotion(Motion::Sniff,2200);reacted=true;}
+            else if (event==E::Paw) {SetMotion(Motion::ToyPaw,1500);reacted=true;}
+            else if (event==E::SharedSleep) {SetMotion(Motion::Sleep,30000);reacted=true;}
             else if (event==E::RunTogether && !g.pet.roamingPaused) {
                 g.direction = g.companionModel.Physical().velocityX < 0 ? -1 : 1;
-                g.speed = 105*g.dpiScale; SetMotion(Motion::Zoomies,5500);
+                g.speed = 105*g.dpiScale; SetMotion(Motion::Zoomies,5500);reacted=true;
             }
+            if(reacted)g.companionReaction=true;
         }
     }
     RECT support{};

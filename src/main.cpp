@@ -21,6 +21,7 @@
 #include <cstdint>
 #include <cstring>
 #include <memory>
+#include <limits>
 #include <random>
 #include <sstream>
 #include <string>
@@ -38,6 +39,7 @@
 #include "cat_routine.hpp"
 #include "cat_animation.hpp"
 #include "cat_pose_transition.hpp"
+#include "cat_care_presentation.hpp"
 #include "cat_locomotion_rig.hpp"
 #include "cat_articulated_walk.hpp"
 #include "cat_motion_gate.hpp"
@@ -67,6 +69,9 @@
 #include "care_sprites.generated.hpp"
 
 using namespace Gdiplus;
+void PausePrimaryCarePresentation(std::uint64_t milliseconds);
+void ResetPrimaryCarePresentation();
+void ReleaseCarePresentation();
 constexpr wchar_t kClass[] = L"YeopjariCat.Native.v1";
 constexpr wchar_t kTitle[] = L"옆자리 고양이";
 constexpr UINT kTrayMessage = WM_APP + 1;
@@ -241,7 +246,7 @@ struct App {
     int pendingCare = -1;
     bool fishMeal = false; // Transient presentation; fish remains a meal in every saved record.
     bool wakingFromSleep = false;
-    unsigned sleepVariant = 0;
+    unsigned sleepVariant = 0, groomVariant = 0;
     bool authoredBoxVisible = false;
     cat::toy::PhysicsBall toyBall;
     cat::toy::Lure toyLure;
@@ -312,6 +317,8 @@ struct App {
     POINT dragStart{};
     Motion motion = Motion::Idle;
     std::uint64_t motionSerial = 0; // Transient ownership; clocks can be rebased during pauses.
+    bool autonomousResting = false, autonomousDispatching = false, companionReaction = false;
+    ULONGLONG autonomousTick = 0, autonomousClaimedAt = std::numeric_limits<ULONGLONG>::max();
     int direction = 1, facing = 1;
     double speed = 24.0;
     int punchHits = 0;
@@ -1171,6 +1178,7 @@ bool LoadAtlas() {
     return true;
 }
 void ReleaseAtlases() {
+    ReleaseCarePresentation();
     g.careSprites.clear();g.authoredBoxProp.Reset();
     g.styleBlendFrom.Reset(); g.styleBlendTo.Reset();
     for (auto& art : g.characters) { art.jointWalking.reset(); art.walking.reset(); art.base.Reset(); art.actions.Reset(); }
@@ -1217,6 +1225,7 @@ void ResetMovement() {
     g.physicsReady = true;
     g.gait.Reset();
     g.poseTransition.Reset();
+    ResetPrimaryCarePresentation();
     g.jumpPending = g.jumpLaunched = false;
     g.waitingForStop = false;
     g.landedAt = 0;
@@ -1282,9 +1291,15 @@ double Random(double low, double high) { return std::uniform_real_distribution<d
 void SetMotion(Motion motion, ULONGLONG duration) {
     ++g.motionSerial;
     g.wakingFromSleep=g.motion==Motion::Sleep && motion==Motion::Stretch;
+    if(g.wakingFromSleep && cat::sprite_assets::Find(cat::sprite_sequence::Clip::Sleep,
+            static_cast<unsigned>(g.preferences.character),cat::sprite_assets::kCareSprites))
+        duration=std::max<ULONGLONG>(duration,cat::sprite_sequence::kSleepWakeMs+500);
+    g.autonomousResting=false;g.companionReaction=false;
+    if(g.autonomousDispatching)g.autonomousClaimedAt=g.autonomousTick;
     if(motion==Motion::Sleep)g.sleepVariant=cat::sprite_sequence::SelectSleepVariant(Random(0,1),
         cat::sprite_assets::Find(cat::sprite_sequence::Clip::Sleep,static_cast<unsigned>(g.preferences.character),
             cat::sprite_assets::kCareSprites)!=nullptr);
+    if(motion==Motion::Groom)g.groomVariant=static_cast<unsigned>(g.random()%3);
     g.fishMeal = false;
     if (!g.lifeDispatching) {
         g.lifeSequenceCount = 0; g.smallBoxEvent = false; g.lifeCrossing = {};
@@ -1311,6 +1326,32 @@ void SetMotion(Motion motion, ULONGLONG duration) {
     g.approachingToy = false; g.toyContact = false;
     g.approachingUser = false; g.memorySequenceCount = 0;
     RefreshAnimationTimer();
+}
+
+// Only a completed quiet interval opens a new unrelated autonomous story.
+// Explicit care, an existing story's next phase and physical safety use their
+// own paths; no random owner may replace a half-played authored action.
+bool PrimaryAutonomousBoundary(ULONGLONG ticks) {
+    return g.autonomousResting && ticks>=g.nextDecision && g.autonomousClaimedAt!=ticks &&
+        g.physicsReady && g.physics.CurrentPose().grounded && !g.waitingForStop &&
+        !g.perch.transitioning && !g.jumpPending && !g.lifeSequenceCount && !g.memorySequenceCount &&
+        !g.lifeCrossing.Active() && !g.physics.Hanging() && !EnvironmentBusy() &&
+        !g.toyEngaged && !g.approachingToy && !g.approachingUser && g.pendingCare<0;
+}
+bool CanStartAutonomousStory(ULONGLONG ticks) {
+    return PrimaryAutonomousBoundary(ticks) && !g.companionModel.Busy();
+}
+bool PrimarySocialBoundary(ULONGLONG ticks) {
+    // Two independent random clocks need an overlap, not one matching frame.
+    // A social proposal may use the latter part of an already quiet interval.
+    return g.autonomousResting && ticks>=g.motionStart &&
+        ticks-g.motionStart>=cat::behavior::Brain::NeutralRestMinMs && !g.waitingForStop &&
+        !g.lifeSequenceCount && !g.memorySequenceCount && !g.toyEngaged &&
+        !g.approachingToy && !g.approachingUser && g.pendingCare<0;
+}
+void BeginAutonomousRest() {
+    SetMotion(Motion::Idle,cat::behavior::Brain::NeutralRestDuration(g.random()));
+    g.autonomousResting=true;g.speed=0;
 }
 struct PerchCandidate { HWND hwnd = nullptr; RECT rect{}; double score = 0.0; };
 
@@ -1598,12 +1639,12 @@ void MaintainPerch(ULONGLONG ticks) {
     if (available && strength > .08 && ticks >= g.perch.nextBalance) {
         SetMotion(Motion::Balance, 1100);
         g.perch.nextBalance = ticks + 1500;
-    } else if (available && ticks >= g.perch.nextLookDown && strength < .02 &&
+    } else if (available && CanStartAutonomousStory(ticks) && ticks >= g.perch.nextLookDown && strength < .02 &&
             std::abs(WalkingVelocity(g.physics.CurrentPose())) < 2) {
         SetMotion(Motion::LookDown, 1900);
         g.perch.nextLookDown = ticks + static_cast<ULONGLONG>(Random(18000, 35000));
     }
-    if (!g.pet.roamingPaused && !g.waitingForStop && ticks >= g.perch.leaveAfter && g.physics.CurrentPose().grounded &&
+    if (CanStartAutonomousStory(ticks) && !g.pet.roamingPaused && !g.waitingForStop && ticks >= g.perch.leaveAfter && g.physics.CurrentPose().grounded &&
         !EnvironmentBusy() && !g.lifeSequenceCount && !g.lifeCrossing.Active() && !g.toyEngaged &&
         (g.motion == Motion::Idle || g.motion == Motion::Walk || g.motion == Motion::Watch || g.motion == Motion::Groom)) {
         PerchCandidate next;
@@ -1613,6 +1654,7 @@ void MaintainPerch(ULONGLONG ticks) {
 }
 
 void MaybeVisitWindow(ULONGLONG ticks) {
+    if(!CanStartAutonomousStory(ticks))return;
     if (EnvironmentBusy() || g.lifeSequenceCount || g.lifeCrossing.Active() || g.physics.Hanging() ||
         g.perch.transitioning || g.toyEngaged || g.approachingToy || g.approachingUser || g.memorySequenceCount || g.pet.roamingPaused || ticks < g.perch.nextTry ||
         ticks < g.bubbleUntil || g.menuOpen || g.dragging || !g.physics.CurrentPose().grounded) return;
@@ -1974,7 +2016,7 @@ bool DrawCareSprite(Graphics& graphics,const cat::animation::Pose& pose,REAL cen
     return status==Ok;
 }
 
-void DrawStyledAnimation(Graphics& graphics, cat::animation::Pose pose, REAL center, REAL bottom, REAL scale,
+void DrawStyledAnimationDirect(Graphics& graphics, cat::animation::Pose pose, REAL center, REAL bottom, REAL scale,
                          cat::Character character, cat::Outfit outfit, const cat::nutrition::Visual& body,
                          Surface& blendFrom, Surface& blendTo, int canvasWidth, int canvasHeight) {
     if(DrawCareSprite(graphics,pose,center,bottom,scale,character,body))return;
@@ -2022,20 +2064,102 @@ void DrawStyledAnimation(Graphics& graphics, cat::animation::Pose pose, REAL cen
     if (pose.bellyRig) DrawBellyHead(graphics, pose, center, bottom, scale, character, outfit, body);
 }
 
-void DrawAnimatedPet(Graphics& graphics, const cat::animation::Pose& pose, REAL center, REAL bottom, REAL scale) {
+struct CarePresentationRenderer {
+    cat::care_presentation::Transition transition;
+    Surface previous,from,target;
+    double center=0,bottom=0,scale=0,bodyWidth=0,bodyHeight=0;
+    bool geometry=false;
+    void Reset() {transition.Reset();geometry=false;}
+};
+CarePresentationRenderer& PrimaryCarePresentation() {static CarePresentationRenderer state;return state;}
+CarePresentationRenderer& CompanionCarePresentation() {static CarePresentationRenderer state;return state;}
+void PausePrimaryCarePresentation(std::uint64_t milliseconds) {PrimaryCarePresentation().transition.Pause(milliseconds);}
+void ResetPrimaryCarePresentation() {PrimaryCarePresentation().Reset();}
+void ReleaseCarePresentation() {
+    for(auto* state:{&PrimaryCarePresentation(),&CompanionCarePresentation()}) {
+        state->Reset();state->previous.Reset();state->from.Reset();state->target.Reset();
+    }
+}
+
+void DrawStyledAnimation(Graphics& graphics, cat::animation::Pose pose, REAL center, REAL bottom, REAL scale,
+                         cat::Character character, cat::Outfit outfit, const cat::nutrition::Visual& body,
+                         Surface& blendFrom, Surface& blendTo, int canvasWidth, int canvasHeight,
+                         CarePresentationRenderer* presentation=nullptr,std::uint64_t ticks=0,
+                         std::uint64_t generation=0,bool paused=false) {
+    const auto direct=[&](Graphics& target,const cat::animation::Pose& drawing) {
+        DrawStyledAnimationDirect(target,drawing,center,bottom,scale,character,outfit,body,
+            blendFrom,blendTo,canvasWidth,canvasHeight);
+    };
+    if(!presentation) {direct(graphics,pose);return;}
+    auto& state=*presentation;
+    const auto* authored=CareSpriteFor(pose,character);
+    using Clip=cat::sprite_sequence::Clip;
+    const auto calm=[](Clip clip) {return clip==Clip::Groom||clip==Clip::Sleep||clip==Clip::Eat||clip==Clip::Treat||clip==Clip::Fish;};
+    const bool hasCalm=std::any_of(g.careSprites.begin(),g.careSprites.end(),[&](const auto& sprite) {
+        return sprite->layout->character==static_cast<unsigned>(character)&&calm(sprite->layout->clip);
+    });
+    if(!hasCalm) {state.Reset();direct(graphics,pose);return;}
+    const bool fixed=pose.groundContact&&!pose.jointWalk&&!pose.walkingRig&&!pose.originalWalk&&
+        !pose.bellyRig&&!pose.centerPivot&&pose.x==0&&pose.lift==0&&pose.angle==0&&
+        pose.scaleX==1&&pose.scaleY==1&&pose.blendFrame<0;
+    // Large curled/supine silhouettes and all physical impacts must stay
+    // single drawings. The authored waking story reaches neutral on its own.
+    const bool curled=authored&&authored->layout->clip==Clip::Sleep&&SpriteFrameFor(pose,*authored->layout)>=3;
+    const bool eligible=fixed&&!curled&&(authored?calm(authored->layout->clip):pose.frame==4)&&
+        pose.joints.pawReachX==0&&pose.joints.pawReachY==0&&pose.joints.pawAnchorX==0;
+    if(!eligible) {state.Reset();direct(graphics,pose);return;}
+    const bool changed=!state.previous.image||!state.from.image||!state.target.image||
+        state.previous.width!=canvasWidth||state.previous.height!=canvasHeight;
+    if(changed && (!state.previous.Create(canvasWidth,canvasHeight)||!state.from.Create(canvasWidth,canvasHeight)||
+            !state.target.Create(canvasWidth,canvasHeight))) {state.Reset();direct(graphics,pose);return;}
+    if(changed || (state.geometry&&(std::abs(state.center-center)>.5||std::abs(state.bottom-bottom)>.5||
+            std::abs(state.scale-scale)>.01||std::abs(state.bodyWidth-body.bodyWidth)>.015||
+            std::abs(state.bodyHeight-body.bodyHeight)>.015)))state.transition.Reset();
+    state.center=center;state.bottom=bottom;state.scale=scale;state.bodyWidth=body.bodyWidth;state.bodyHeight=body.bodyHeight;state.geometry=true;
+    const bool neutral=cat::sprite_assets::Find(Clip::Sleep,static_cast<unsigned>(character),cat::sprite_assets::kCareSprites)!=nullptr;
+    cat::care_presentation::Tag tag;
+    tag.representation=authored?1+static_cast<unsigned>(authored->layout->clip):0;
+    tag.identity=static_cast<unsigned>(character);tag.generation=generation;tag.eligible=true;
+    tag.authored=authored!=nullptr;tag.flip=pose.flip;tag.neutralBridge=neutral;
+    const auto plan=state.transition.Update(tag,ticks,paused);
+    const std::size_t bytes=static_cast<std::size_t>(canvasWidth)*canvasHeight*4;
+    if(plan.capture)std::memcpy(state.from.pixels,state.previous.pixels,bytes);
+    auto drawing=pose;
+    if(plan.bridge) {
+        drawing.fishMeal=false;drawing.spriteClip=Clip::Sleep;drawing.spriteFrame=0;drawing.spriteTimed=false;
+        cat::animation::UseAuthoredSprite(drawing);
+    }
+    {
+        Graphics target(state.target.image.get());
+        target.SetCompositingMode(CompositingModeSourceCopy);target.Clear(Color(0,0,0,0));
+        target.SetCompositingMode(CompositingModeSourceOver);
+        target.SetInterpolationMode(InterpolationModeHighQualityBicubic);target.SetSmoothingMode(SmoothingModeAntiAlias);
+        target.SetPixelOffsetMode(PixelOffsetModeHighQuality);
+        direct(target,drawing);target.Flush(FlushIntentionSync);
+    }
+    if(plan.blend)cat::care_presentation::BlendPremultiplied(state.from.pixels,state.target.pixels,state.previous.pixels,bytes,plan.weight);
+    else std::memcpy(state.previous.pixels,state.target.pixels,bytes);
+    graphics.DrawImage(state.previous.image.get(),Rect(0,0,canvasWidth,canvasHeight),0,0,canvasWidth,canvasHeight,UnitPixel);
+}
+
+void DrawAnimatedPet(Graphics& graphics, const cat::animation::Pose& pose, REAL center, REAL bottom, REAL scale,
+                     CarePresentationRenderer* presentation=nullptr,std::uint64_t ticks=0) {
     DrawStyledAnimation(graphics, pose, center, bottom, scale, g.preferences.character, g.preferences.outfit,
-        cat::nutrition::VisualModifiers(g.nutrition), g.blendFrom, g.blendTo, g.surface.width, g.surface.height);
+        cat::nutrition::VisualModifiers(g.nutrition), g.blendFrom, g.blendTo, g.surface.width, g.surface.height,
+        presentation,ticks,0,g.menuOpen||g.dragging);
 }
 void DrawPetStyle(Graphics& graphics, cat::Character character, cat::Outfit outfit,
                   const cat::animation::Pose& pose, const cat::nutrition::Visual& body,
-                  REAL center, REAL bottom, REAL desiredHeight) {
+                  REAL center, REAL bottom, REAL desiredHeight,CarePresentationRenderer* presentation=nullptr,
+                  std::uint64_t ticks=0,std::uint64_t generation=0,bool paused=false) {
     auto& from=g.styleBlendFrom; auto& to=g.styleBlendTo;
     RectF bounds; graphics.GetVisibleClipBounds(&bounds);
     const int width=std::max(1,static_cast<int>(std::ceil(bounds.X+bounds.Width)));
     const int height=std::max(1,static_cast<int>(std::ceil(bounds.Y+bounds.Height)));
     if (from.width!=width || from.height!=height) { from.Create(width,height); to.Create(width,height); }
     const REAL scale=desiredHeight/std::max(1,CurrentArt(character).base.standingHeight);
-    DrawStyledAnimation(graphics,pose,center,bottom,scale,character,outfit,body,from,to,width,height);
+    DrawStyledAnimation(graphics,pose,center,bottom,scale,character,outfit,body,from,to,width,height,
+        presentation,ticks,generation,paused);
 }
 
 bool DrawAuthoredBoxProp(Graphics& graphics,REAL localX,REAL ground,bool foreground=false) {
@@ -2218,17 +2342,22 @@ void Render() {
     if(displayed==Motion::Groom && physical.grounded && !g.waitingForStop) {
         cat::sprite_sequence::Options sprite;
         sprite.durationMs=g.nextDecision>=g.motionStart?g.nextDecision-g.motionStart:0;
+        sprite.variant=g.groomVariant;
         cat::animation::AttachSprite(pose,cat::sprite_sequence::Clip::Groom,actionElapsed,sprite);
     }
     const bool cursorAttack = ApplyCursorAttackPose(pose,ticks,physical);
     if(displayed==Motion::Stretch && g.wakingFromSleep && g.sleepVariant==0 && physical.grounded &&
             !physical.onPlatform && !g.waitingForStop &&
-            actionElapsed<cat::sprite_sequence::kSleepWakeMs && !cursorAttack) {
+            !cursorAttack) {
         cat::sprite_sequence::Options sprite;sprite.sleep=cat::sprite_sequence::SleepStage::Waking;
         cat::animation::AttachSprite(pose,cat::sprite_sequence::Clip::Sleep,actionElapsed,sprite);
     }
     pose.fishMeal=displayed==Motion::Eat && g.fishMeal && physical.grounded && !cursorAttack;
-    if(pose.fishMeal)cat::animation::AttachSprite(pose,cat::sprite_sequence::Clip::Fish,actionElapsed);
+    if(pose.fishMeal) {
+        cat::sprite_sequence::Options sprite;
+        sprite.durationMs=g.nextDecision>=g.motionStart?g.nextDecision-g.motionStart:0;
+        cat::animation::AttachSprite(pose,cat::sprite_sequence::Clip::Fish,actionElapsed,sprite);
+    }
     if(g.toy==ToyKind::Box && g.toyEngaged && physical.grounded && !physical.onPlatform &&
             !g.waitingForStop && !cursorAttack && std::abs(WalkingVelocity(physical))<=2 &&
             std::abs(g.centerX-g.toyX)<=4*g.dpiScale) {
@@ -2243,7 +2372,7 @@ void Render() {
     g.authoredBoxVisible=authored && authored->layout->clip==cat::sprite_sequence::Clip::Box;
     if(authored)cat::animation::UseAuthoredSprite(pose);
     pose = g.poseTransition.Apply(pose,ticks,g.motionSerial,
-        static_cast<unsigned>(g.preferences.character), !cursorAttack);
+        static_cast<unsigned>(g.preferences.character), !cursorAttack,g.motionStart);
     Graphics graphics(g.surface.image.get());
     graphics.SetCompositingMode(CompositingModeSourceCopy); graphics.Clear(Color(0, 0, 0, 0));
     graphics.SetCompositingMode(CompositingModeSourceOver); graphics.SetCompositingQuality(CompositingQualityHighQuality);
@@ -2265,7 +2394,8 @@ void Render() {
     }
     const REAL toyLocalX = static_cast<REAL>(g.toyX - windowLeft);
     RenderToy();
-    DrawAnimatedPet(graphics, pose, static_cast<REAL>(center + pose.x * bodyScale), bottom, scale);
+    DrawAnimatedPet(graphics, pose, static_cast<REAL>(center + pose.x * bodyScale), bottom, scale,
+        &PrimaryCarePresentation(),ticks);
     DrawToyForeground(graphics, toyLocalX, static_cast<REAL>(g.surface.height - 1));
     if (g.motion == Motion::Sleep) {
         Font font(L"Segoe UI", static_cast<REAL>(13 * g.dpiScale), FontStyleRegular, UnitPixel);
@@ -2369,16 +2499,18 @@ void CareFood(cat::feeding::FoodKind kind) {
     // Keep the established lifetime counts/affection, with nutrition as the
     // sole owner of fullness and elapsed-time body changes.
     cat::Feed(g.pet, g.nutrition.updatedUtc, snack);
-    NotifyCompanionFood();
     Remember(cat::feeding::MemoryEvent(kind));
     g.pet.hunger = g.nutrition.fullness;
     g.nextCareReply = ticks + 6500;
-    const bool authoredMeal=kind==cat::feeding::FoodKind::Meal &&
-        cat::sprite_assets::Find(cat::sprite_sequence::Clip::Eat,
-            static_cast<unsigned>(g.preferences.character),cat::sprite_assets::kCareSprites);
+    const auto foodClip=snack?cat::sprite_sequence::Clip::Treat:
+        kind==cat::feeding::FoodKind::Fish?cat::sprite_sequence::Clip::Fish:cat::sprite_sequence::Clip::Eat;
+    const bool authoredFood=cat::sprite_assets::Find(foodClip,
+        static_cast<unsigned>(g.preferences.character),cat::sprite_assets::kCareSprites)!=nullptr;
     SetMotion(snack ? Motion::Treat : Motion::Eat,
-        snack ? cat::animation::kTreatDurationMs : authoredMeal ? 5000 : 3300);
+        authoredFood?cat::sprite_sequence::CareDuration(foodClip,0):
+            snack?cat::animation::kTreatDurationMs:3300);
     g.fishMeal = kind == cat::feeding::FoodKind::Fish;
+    NotifyCompanionFood();
     Speak(snack ? L"츄르다! 할짝할짝 ♡" : g.fishMeal ? L"생선이다! 냠냠 ♡" : L"냠냠, 잘 먹을게 ♡", 3000);
     SavePet(); Render();
 }
@@ -2538,7 +2670,7 @@ void UpdateCursorReactionSample(ULONGLONG ticks, ULONGLONG elapsedMs, POINT curs
         !g.memorySequenceCount && g.pendingCare < 0;
     input.canStart = input.canContinue && !g.waitingForStop && !g.companionModel.Busy() &&
         (g.motion == Motion::Idle || g.motion == Motion::Watch || g.motion == Motion::Walk ||
-         g.motion == Motion::Stalk || g.motion == Motion::Loaf);
+         g.motion == Motion::Stalk || (g.motion == Motion::Loaf && ticks>=g.nextDecision));
     input.available = available;
     input.cursorX = (cursor.x - g.work.left) / g.dpiScale;
     interaction.cursorWorldHeight = (g.work.bottom-cursor.y)/g.dpiScale;
@@ -2552,9 +2684,11 @@ void UpdateCursorReactionSample(ULONGLONG ticks, ULONGLONG elapsedMs, POINT curs
     input.interest = (g.brain ? g.brain->GetPersonality().curiosity : .5) *
         cat::species::ProfileFor(g.preferences.character).cursorInterest;
     input.roll = Random(0, 1);
+    const bool wasActive=interaction.session.Active();
     const auto output = interaction.session.Step(input, elapsedMs,
         {g.motion == interaction.motion, g.waitingForStop, g.motionStart, g.motionSerial});
     if (output.changed) {
+        if(!wasActive && g.brain)g.brain->Interrupt(ticks);
         using Action = cat::environment::CursorAction;
         switch (output.action) {
         case Action::Hunt: case Action::Sneak: case Action::ApproachSit: interaction.motion = Motion::Stalk; break;
@@ -2845,7 +2979,7 @@ void AdvanceAutomaticToy(double elapsed) {
         std::abs(g.toyBall.verticalVelocity)<.5;
     input.protectedUse=g.smallBoxEvent;
     const bool calm=g.motion==Motion::Idle || g.motion==Motion::Watch || g.motion==Motion::Loaf;
-    input.eligible=calm && ToyInteractionAvailable() && std::abs(WalkingVelocity(physical))<=2 &&
+    input.eligible=calm && CanStartAutonomousStory(GetTickCount64()) && ToyInteractionAvailable() && std::abs(WalkingVelocity(physical))<=2 &&
         !g.toyEngaged && !g.approachingUser && !g.memorySequenceCount && !EnvironmentBusy() &&
         !g.companionModel.Busy() && g.pendingCare<0 && !g.jumpPending && !g.jumpLaunched;
     const auto decision=g.automaticToy.Advance(elapsed,input,static_cast<std::uint32_t>(g.random()));
@@ -2888,7 +3022,7 @@ void ApplyToyPhase(ULONGLONG ticks) {
     if(phase==cat::toy::Phase::Interact && g.toy==ToyKind::Box &&
             cat::sprite_assets::Find(cat::sprite_sequence::Clip::Box,
                 static_cast<unsigned>(g.preferences.character),cat::sprite_assets::kCareSprites))
-        g.toySession.boxVisitMs=3350;
+        g.toySession.boxVisitMs=cat::sprite_sequence::kBoxDurationMs;
     if (phase==cat::toy::Phase::Wait) {
         g.toyEngaged=false; g.approachingToy=false;
         g.nextToyAction=ticks+static_cast<ULONGLONG>(cat::toy::Duration(g.toy,phase));
@@ -2914,6 +3048,7 @@ bool MaybePlayWithToy(ULONGLONG ticks) {
     if (g.automaticToy.ActiveKind()==g.toy &&
             (g.automaticToy.WaitingToRetire() || g.toySession.phase==cat::toy::Phase::Wait)) return false;
     if (g.toyEngaged) return true;
+    if (!CanStartAutonomousStory(ticks)) return false;
     if (EnvironmentBusy() || g.memorySequenceCount || g.companionModel.Busy() ||
             g.approachingUser || g.pendingCare>=0) return false;
     if (ticks<g.nextToyAction) return false;
@@ -2989,8 +3124,9 @@ bool ContinueMemorySequence() {
     g.memorySequence = remainder; g.memorySequenceCount = count;
     return true;
 }
-void MaybeMemoryRoutine(ULONGLONG ticks) {
-    if (!g.memory.enabled() || ticks < g.nextMemoryRoutineAttempt) return;
+bool MaybeMemoryRoutine(ULONGLONG ticks) {
+    if(!CanStartAutonomousStory(ticks))return false;
+    if (!g.memory.enabled() || ticks < g.nextMemoryRoutineAttempt) return false;
     const auto now = UtcNow();
     cat::routine::Context context;
     context.nowUtc = now;
@@ -3004,7 +3140,7 @@ void MaybeMemoryRoutine(ULONGLONG ticks) {
         g.lifeSequenceCount || g.lifeCrossing.Active() || g.physics.Hanging() ||
         g.pendingCare >= 0 || ticks < g.bubbleUntil || g.prank.Active() || !g.physics.CurrentPose().grounded ||
         (g.motion != Motion::Idle && g.motion != Motion::Watch && g.motion != Motion::Walk);
-    if (context.busy) return;
+    if (context.busy) return false;
     auto nutrition = g.nutrition;
     cat::nutrition::Advance(nutrition, now);
     context.canRequestFood = ticks >= g.foodRequestAfter && cat::routine::CanRequestFood(g.nutrition, now);
@@ -3018,21 +3154,21 @@ void MaybeMemoryRoutine(ULONGLONG ticks) {
     context.cursorReachable = WorkInterferenceEnabled() && !g.companionModel.Busy() && nearby && target.has_value();
     const auto decision = cat::routine::Peek(g.memory.state, context, Random(0, 1));
     using Decision = cat::routine::Decision;
-    if (decision == Decision::None) return;
+    if (decision == Decision::None) return false;
     // Persist the accepted schedule before showing it: restart cannot replay a
     // rare event. Failure leaves both the opportunity and UI state unchanged.
     const auto prior = g.memory.state;
-    if (!cat::routine::Commit(g.memory.state, context, decision)) return;
-    if (!SaveMemory()) { g.memory.state = prior; g.nextMemoryRoutineAttempt = ticks + 30000; return; }
+    if (!cat::routine::Commit(g.memory.state, context, decision)) return false;
+    if (!SaveMemory()) { g.memory.state = prior; g.nextMemoryRoutineAttempt = ticks + 30000; return false; }
     if (decision == Decision::LunchRequest || decision == Decision::TreatRequest) {
-        if (!cat::routine::AcceptRequest(g.nutrition, decision, now)) return;
+        if (!cat::routine::AcceptRequest(g.nutrition, decision, now)) return false;
         if (decision == Decision::LunchRequest) {
             Speak(L"점심시간이네…\n나도 밥 먹을래", 4200);
         } else {
             Speak(L"그때 그 츄르…\n조금만 줄래?", 4200);
         }
         SavePet(false);
-        return;
+        return true;
     }
     if (g.brain) g.brain->Interrupt(ticks);
     switch (decision) {
@@ -3063,6 +3199,7 @@ void MaybeMemoryRoutine(ULONGLONG ticks) {
         break;
     default: break;
     }
+    return true;
 }
 
 cat::life::EventContext LifeEventContext(ULONGLONG ticks, bool decisionBoundary = false) {
@@ -3189,8 +3326,13 @@ bool DispatchLifeEvent(cat::life::Event event, ULONGLONG ticks) {
 bool MaybeLifeEvent(ULONGLONG ticks, bool decisionBoundary) {
     if(!g.life.enabled() || ticks<g.nextLifeEventAttempt)return false;
     const auto context=LifeEventContext(ticks,decisionBoundary);
+    const bool open=CanStartAutonomousStory(ticks);
+    if(!open && (!decisionBoundary || ticks<g.nextDecision ||
+            (context.trigger==cat::life::Trigger::None && !context.sleeping)))return false;
     const auto event=cat::life::PeekEvent(g.life.state,context);
     if(event==cat::life::Event::None)return false;
+    if(!open && event!=cat::life::Event::SleepTalk && event!=cat::life::Event::PunchStartle &&
+            event!=cat::life::Event::TailStartle && event!=cat::life::Event::SneezeStartle)return false;
     const auto prior=g.life.state;
     if(!cat::life::CommitEvent(g.life.state,context,event))return false;
     if(!SaveLife()) {g.life.state=prior;g.nextLifeEventAttempt=ticks+30000;return false;}
@@ -3216,6 +3358,35 @@ void UpdateLifeEvent(ULONGLONG ticks, double elapsed) {
     if(!g.lifeCrossing.Active()) {g.speed=45*g.dpiScale;SetMotion(Motion::Walk,2400);}
 }
 
+void DispatchAutonomousMotion(ULONGLONG ticks) {
+    if(EnvironmentBusy() || g.lifeCrossing.Active() || g.waitingForStop || g.approachingToy ||
+            g.approachingUser || g.toyEngaged || g.pendingCare>=0 || g.perch.transitioning ||
+            g.physics.Hanging() || ticks<g.nextDecision || !g.physics.CurrentPose().grounded ||
+            g.autonomousClaimedAt==ticks || (g.companionReaction && g.companionModel.Busy()))return;
+    g.autonomousDispatching=true;g.autonomousTick=ticks;
+    const auto choose=[&] {
+        if(!g.autonomousResting) {
+            if(ContinueLifeSequence() || ContinueMemorySequence())return;
+            if(MaybeLifeEvent(ticks,true))return; // Matching completed-act reactions only.
+            if(g.brain && g.brain->HasContinuation()) {DecideMotion();return;}
+            if(g.motion==Motion::Sleep) {SetMotion(Motion::Stretch,3500);return;}
+            BeginAutonomousRest();return;
+        }
+        if(!CanStartAutonomousStory(ticks))return;
+        const auto before=g.motionSerial;
+        MaybeVisitWindow(ticks);
+        if(g.motionSerial!=before)return;
+        if(MaybeLifeEvent(ticks,true))return;
+        if(MaybeMemoryRoutine(ticks)) {
+            if(g.motionSerial==before)BeginAutonomousRest();
+            return;
+        }
+        if(MaybePlayWithToy(ticks))return;
+        DecideMotion();
+    };
+    choose();g.autonomousDispatching=false;
+}
+
 void Tick() {
     PollUpdates();
     if (g.closing) return;
@@ -3237,6 +3408,7 @@ void Tick() {
         g.physics.Update(0, true);
         PauseCursorReaction(clockDelta);
         g.poseTransition.Pause(clockDelta);
+        PausePrimaryCarePresentation(clockDelta);
         elapsed = 0;
         // A paused body resumes the same stride. Actual drag/teleport paths
         // already reset gait through ResetMovement().
@@ -3267,12 +3439,9 @@ void Tick() {
             Render();
             return;
         }
-        if (!g.waitingForStop) MaybeVisitWindow(ticks);
+        if(elapsed>0)UpdateCursorReaction(ticks, clockDelta);
+        if(elapsed>0)DispatchAutonomousMotion(ticks);
         if (g.perch.transitioning) { UpdatePerchTransition(ticks, elapsed); Render(); return; }
-        UpdateCursorReaction(ticks, clockDelta);
-        if (!EnvironmentBusy() && !g.lifeCrossing.Active() && !g.waitingForStop && !g.approachingToy && !g.approachingUser && ticks >= g.nextDecision && g.physics.CurrentPose().grounded) {
-            if (!ContinueLifeSequence() && !ContinueMemorySequence() && !MaybeLifeEvent(ticks,true) && !MaybePlayWithToy(ticks)) DecideMotion();
-        }
         cat::motion::AdvanceStopGate(g.waitingForStop, g.physics.CurrentPose().grounded,
             WalkingVelocity(g.physics.CurrentPose()), ticks, g.motionStart, g.nextDecision);
         const auto actionElapsed = ticks >= g.motionStart ? ticks - g.motionStart : 0;
@@ -3407,8 +3576,6 @@ void Tick() {
         if (g.pendingCare >= 0 && physical.grounded) ResumePendingCare();
         MaybeAnnounceUpdate(ticks);
         if (!g.waitingForStop && !EnvironmentBusy()) {
-            MaybeLifeEvent(ticks);
-            MaybeMemoryRoutine(ticks);
             MaybeAskForFood(ticks);
         }
         Render();
@@ -3564,6 +3731,7 @@ int NativePerchHitTest() {
 
 #include "native_expanded_tests.hpp"
 #include "native_care_sprite_tests.hpp"
+#include "native_care_presentation_tests.hpp"
 
 int RenderSelfTest() {
     // Native GDI+ regression path: resources and offscreen DIBs only. This
@@ -3589,6 +3757,7 @@ int RenderSelfTest() {
             g.dpiScale = 1;
             if(const int spriteTest=NativeCareSpriteRenderTest(context))return spriteTest;
             if(const int actualSpriteTest=NativeActualCareSpriteRenderTest(context))return actualSpriteTest;
+            if(const int presentationTest=NativeCarePresentationRenderTest(context))return presentationTest;
             DisabledCareSpriteScope canonicalArtwork;
             constexpr REAL center = 210, floor = 280;
             constexpr std::uint64_t fixedTicks = 500000;
@@ -3914,6 +4083,12 @@ int NativeToyHostTest() {
             for (unsigned step=0;step<1000;++step) AdvanceAutomaticToy(.25);
             if (g.toy!=ToyKind::None || g.automaticToy.RemainingSeconds()!=0) return 206;
             g.memorySequenceCount=0;
+            // The item countdown is due, but an uncompleted quiet action must
+            // still keep this independent owner from replacing its pose.
+            AdvanceAutomaticToy(.25);
+            if(g.toy!=ToyKind::None)return 216;
+            g.autonomousResting=true;g.nextDecision=GetTickCount64();
+            g.autonomousClaimedAt=std::numeric_limits<ULONGLONG>::max();
             AdvanceAutomaticToy(.25);
             if (g.toy==ToyKind::None || g.automaticToy.ActiveKind()!=g.toy || !g.toyEngaged ||
                     g.toyRewardPending || g.physics.CurrentPose().x!=positionBefore) return 207;
@@ -3933,6 +4108,8 @@ int NativeToyHostTest() {
 
             // A paused item must yield on resumption as well as first placement.
             PlaceToy(ToyKind::Box); SetMotion(Motion::Watch,5000); g.nextToyAction=0;
+            g.autonomousResting=true;g.nextDecision=GetTickCount64();
+            g.autonomousClaimedAt=std::numeric_limits<ULONGLONG>::max();
             const auto ownerStart=g.motionStart;
             const auto resumeBlocked=[&] {
                 return !MaybePlayWithToy(GetTickCount64()) && !g.toyEngaged && g.motionStart==ownerStart;
@@ -3963,6 +4140,29 @@ int NativeToyHostTest() {
                     !g.companionModel.Busy() || !resumeBlocked()) return 214;
             g.companionStore.state.enabled=false;
             if (!MaybePlayWithToy(GetTickCount64()) || !g.toyEngaged) return 215;
+            // An unrelated autonomous story may start only after a complete
+            // neutral interval; repeated polling cannot shorten it. Explicit
+            // care can still replace that interval immediately.
+            PlaceToy(ToyKind::None);
+            SetMotion(Motion::Groom,6000);
+            g.waitingForStop=false;
+            const auto pacedStart=g.motionStart,pacedSerial=g.motionSerial;
+            for(const auto offset:{0ULL,1000ULL,5999ULL}) {
+                MaybeVisitWindow(pacedStart+offset);
+                MaybeMemoryRoutine(pacedStart+offset);
+                MaybePlayWithToy(pacedStart+offset);
+                if(g.motionSerial!=pacedSerial || g.motion!=Motion::Groom)return 217;
+            }
+            const auto finished=GetTickCount64();
+            g.motionStart=finished>=6000?finished-6000:0;g.nextDecision=finished;
+            DispatchAutonomousMotion(finished);
+            if(g.motion!=Motion::Idle || !g.autonomousResting ||
+                    g.nextDecision-g.motionStart<18000 || g.nextDecision-g.motionStart>45000)return 218;
+            const auto restSerial=g.motionSerial,restDeadline=g.nextDecision;
+            DispatchAutonomousMotion(finished);DispatchAutonomousMotion(finished+1);
+            if(g.motionSerial!=restSerial || g.nextDecision!=restDeadline)return 219;
+            SetMotion(Motion::Eat,3300);
+            if(g.motion!=Motion::Eat || g.autonomousResting || g.motionSerial==restSerial)return 219;
             return 0;
         }();
     }

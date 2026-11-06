@@ -168,19 +168,19 @@ public:
             return false;
         }
         cycle_.Advance(std::abs(signedDistanceBodyPx),deltaSeconds,Walking(motion),motion==Motion::Stalk);
-        if(motion==Motion::Walk || motion==Motion::Zoomies) {
+        if(Walking(motion)) {
             // Keep the running gait while the physical body is still braking.
             // Requested action changes must not stand the torso upright over
             // a paw that is still supporting a fast running stride.
-            if(Speed()>35)jointMode_=cat::walk_dynamics::Mode::Gallop;
-            else if(Speed()<30)jointMode_=cat::walk_dynamics::Mode::Walk;
+            jointMode_=cat::walk_dynamics::SelectMode(jointMode_,Speed());
             const auto mode=jointMode_;
             std::array<double,4> bias{};
             for(unsigned leg=0;leg<4;++leg)bias[leg]=cat::walk_dynamics::PawBias(mode,leg);
-            jointCycle_.Configure(cat::walk_dynamics::ParametersFor(mode),bias);
+            jointCycle_.Configure(motion==Motion::Stalk && mode==cat::walk_dynamics::Mode::Walk?cat::walk_dynamics::ParametersForStalk():
+                cat::walk_dynamics::ParametersFor(mode),bias);
         }
         jointCycle_.Advance(std::abs(signedDistanceBodyPx),deltaSeconds,
-            motion==Motion::Walk || motion==Motion::Zoomies,false);
+            Walking(motion),false);
         if (motion==Motion::Walk)
             originalWalkPhase_=std::fmod(originalWalkPhase_+std::abs(signedDistanceBodyPx)/kOriginalWalkStride,1.0);
         return true;
@@ -508,6 +508,11 @@ inline Pose Evaluate(Motion motion, std::uint64_t elapsed, std::uint64_t ticks,
         p.jointWalk=true;
         p.jointFeet=locomotion.GallopFeet();
         p.jointPhase=locomotion.GallopPhase();
+        p.jointDynamics=cat::walk_dynamics::Evaluate(p.jointPhase,locomotion.Speed(),locomotion.JointMode(),&p.jointFeet);
+    }
+    if(motion==Motion::Stalk) {
+        p.jointWalk=true;
+        p.jointFeet=locomotion.JointFeet();p.jointPhase=locomotion.JointPhase();
         p.jointDynamics=cat::walk_dynamics::Evaluate(p.jointPhase,locomotion.Speed(),locomotion.JointMode(),&p.jointFeet);
     }
     return p;
