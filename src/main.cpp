@@ -30,6 +30,7 @@
 #include "app_version.h"
 #include "pet_state.hpp"
 #include "cat_nutrition.hpp"
+#include "cat_fish.hpp"
 #include "cat_behavior.hpp"
 #include "cat_memory.hpp"
 #include "cat_memory_motion.hpp"
@@ -63,6 +64,7 @@
 #include "cat_life_storage.hpp"
 #include "cat_species.hpp"
 #include "cat_companion.hpp"
+#include "care_sprites.generated.hpp"
 
 using namespace Gdiplus;
 constexpr wchar_t kClass[] = L"YeopjariCat.Native.v1";
@@ -73,6 +75,7 @@ constexpr UINT_PTR kTickTimer = 1;
 constexpr int kFeedHotkey = 1, kSnackHotkey = 2, kHideHotkey = 3;
 constexpr UINT kCharacterCommandBase = 2500, kOutfitCommandBase = 2520;
 constexpr UINT kWorkInterferenceCommand = 2300, kSeasonalEventsCommand = 2301;
+constexpr UINT kFishCommand = 2302;
 // Keep the original IDs: retired action, toy and sound IDs are never reused.
 enum Command {
     FeedCommand = 1010, SnackCommand = 1011, StatusCommand = 1012,
@@ -165,6 +168,12 @@ struct SpriteAtlas {
         standingHeight = 1;
     }
 };
+struct CareSpriteAtlas {
+    const cat::sprite_assets::Descriptor* layout=nullptr;
+    IStream* stream=nullptr;
+    std::unique_ptr<Bitmap> image;
+    ~CareSpriteAtlas() { image.reset();if(stream)stream->Release(); }
+};
 struct WalkingSkin {
     cat::walk::Rig rig;
     std::unique_ptr<Bitmap> image;
@@ -211,6 +220,7 @@ struct App {
     ULONG_PTR gdiplusToken = 0;
     std::array<CharacterArt, cat::kCharacterCount> characters;
     Surface styleBlendFrom, styleBlendTo;
+    std::vector<std::unique_ptr<CareSpriteAtlas>> careSprites;
     SpriteAtlas jumpTreat;
     SpriteAtlas gestures;
     SpriteAtlas recline;
@@ -226,6 +236,9 @@ struct App {
     double toyX = 0.0;
     bool approachingToy = false, toyContact = false;
     int pendingCare = -1;
+    bool fishMeal = false; // Transient presentation; fish remains a meal in every saved record.
+    bool wakingFromSleep = false;
+    bool authoredBoxVisible = false;
     cat::toy::PhysicsBall toyBall;
     cat::toy::Lure toyLure;
     cat::toy::Session toySession;
@@ -1079,7 +1092,33 @@ bool LoadAtlasResource(int resourceId, SpriteAtlas& sheet, int columns = 4, int 
     }
     atlas->UnlockBits(&data); return true;
 }
+bool LoadCareSprites() {
+    g.careSprites.clear();
+    for(const auto& layout:cat::sprite_assets::kCareSprites) {
+        if(!cat::sprite_assets::Valid(layout))return false;
+        const auto resource=FindResourceW(g.instance,MAKEINTRESOURCEW(layout.resourceId),RT_RCDATA);
+        if(!resource)return false;
+        const auto loaded=LoadResource(g.instance,resource);
+        const auto count=SizeofResource(g.instance,resource);
+        const auto bytes=LockResource(loaded);
+        if(!bytes || !count)return false;
+        const auto memory=GlobalAlloc(GMEM_MOVEABLE,count);
+        if(!memory)return false;
+        const auto target=GlobalLock(memory);
+        if(!target){GlobalFree(memory);return false;}
+        std::memcpy(target,bytes,count);GlobalUnlock(memory);
+        auto sprite=std::make_unique<CareSpriteAtlas>();sprite->layout=&layout;
+        if(FAILED(CreateStreamOnHGlobal(memory,TRUE,&sprite->stream))){GlobalFree(memory);return false;}
+        sprite->image.reset(Bitmap::FromStream(sprite->stream,FALSE));
+        if(!sprite->image || sprite->image->GetLastStatus()!=Ok ||
+                sprite->image->GetWidth()!=layout.imageWidth || sprite->image->GetHeight()!=layout.imageHeight)return false;
+        g.careSprites.push_back(std::move(sprite));
+    }
+    return true;
+}
+
 bool LoadAtlas() {
+    if(!LoadCareSprites())return false;
     for (int i = 0; i < 2; ++i) {
         auto& art = g.characters[i];
         if (!LoadAtlasResource(101 + i * 2, art.base) || !LoadAtlasResource(102 + i * 2, art.actions)) return false;
@@ -1101,6 +1140,7 @@ bool LoadAtlas() {
     return true;
 }
 void ReleaseAtlases() {
+    g.careSprites.clear();
     g.styleBlendFrom.Reset(); g.styleBlendTo.Reset();
     for (auto& art : g.characters) { art.jointWalking.reset(); art.walking.reset(); art.base.Reset(); art.actions.Reset(); }
     g.jumpTreat.Reset(); g.gestures.Reset(); g.recline.Reset(); g.hanging.Reset(); g.companionBack.Reset(); g.sleepStyles.Reset();
@@ -1210,6 +1250,8 @@ void KeepOnWorkArea(bool reposition = false) {
 double Random(double low, double high) { return std::uniform_real_distribution<double>(low, high)(g.random); }
 void SetMotion(Motion motion, ULONGLONG duration) {
     ++g.motionSerial;
+    g.wakingFromSleep=g.motion==Motion::Sleep && motion==Motion::Stretch;
+    g.fishMeal = false;
     if (!g.lifeDispatching) {
         g.lifeSequenceCount = 0; g.smallBoxEvent = false; g.lifeCrossing = {};
     }
@@ -1861,9 +1903,39 @@ bool DrawRegisteredReclineLayers(const cat::animation::Pose& pose, REAL center, 
                width,height,second.size,mesh,true,{center,bottom},pose.flip);
 }
 
+const CareSpriteAtlas* CareSpriteFor(const cat::animation::Pose& pose,cat::Character character) {
+    using Clip=cat::sprite_sequence::Clip;
+    const auto clip=pose.fishMeal?Clip::Fish:pose.spriteClip;
+    if(clip==Clip::None || (clip!=Clip::Jump && !pose.groundContact))return nullptr;
+    for(const auto& sprite:g.careSprites)
+        if(sprite->layout->character==static_cast<unsigned>(character) && sprite->layout->clip==clip &&
+                pose.spriteFrame<sprite->layout->frameCount && sprite->image)return sprite.get();
+    return nullptr;
+}
+bool DrawCareSprite(Graphics& graphics,const cat::animation::Pose& pose,REAL center,REAL bottom,REAL scale,
+                    cat::Character character,const cat::nutrition::Visual& body) {
+    const auto* sprite=CareSpriteFor(pose,character);
+    if(!sprite)return false;
+    const auto& frame=sprite->layout->frames[pose.spriteFrame];
+    const double reference=scale*CurrentArt(character).base.standingHeight/sprite->layout->referenceHeight;
+    const REAL sx=static_cast<REAL>(reference*body.bodyWidth),sy=static_cast<REAL>(reference*body.bodyHeight);
+    // Source rectangles retain their offsets and artist-authored support/root
+    // anchors. Never resize an individual frame to its own tight alpha bounds.
+    const auto saved=graphics.Save();graphics.TranslateTransform(center,bottom);
+    graphics.ScaleTransform(pose.flip?-1.0f:1.0f,1);
+    ImageAttributes attributes;attributes.SetWrapMode(WrapModeClamp);
+    const auto status=graphics.DrawImage(sprite->image.get(),
+        RectF(static_cast<REAL>(-frame.anchor.x*sx),static_cast<REAL>(-frame.anchor.y*sy),
+            frame.rect.width*sx,frame.rect.height*sy),
+        frame.rect.x,frame.rect.y,frame.rect.width,frame.rect.height,UnitPixel,&attributes);
+    graphics.Restore(saved);
+    return status==Ok;
+}
+
 void DrawStyledAnimation(Graphics& graphics, cat::animation::Pose pose, REAL center, REAL bottom, REAL scale,
                          cat::Character character, cat::Outfit outfit, const cat::nutrition::Visual& body,
                          Surface& blendFrom, Surface& blendTo, int canvasWidth, int canvasHeight) {
+    if(DrawCareSprite(graphics,pose,center,bottom,scale,character,body))return;
     if(pose.jointWalk && !cat::species::UsesNewArt(character) &&
             DrawJointWalkingPet(graphics,pose,center,bottom,scale,character,body))return;
     const bool useWalkingRig=pose.walkingRig || (pose.originalWalk && cat::species::UsesNewArt(character));
@@ -1991,6 +2063,7 @@ void DrawToyBackground(Graphics& graphics, REAL localX, REAL ground, ULONGLONG t
 }
 
 void DrawToyForeground(Graphics& graphics, REAL localX, REAL ground) {
+    if(g.authoredBoxVisible && g.toy==ToyKind::Box)return;
     const bool smallBox=g.smallBoxEvent && g.toy==ToyKind::Box && g.motion==Motion::BoxSit;
     if ((!g.toyEngaged && !smallBox) || g.perch.active || g.perch.transitioning || !g.physics.CurrentPose().grounded) return;
     const auto phase=g.toySession.phase;
@@ -2023,7 +2096,7 @@ void DrawToyForeground(Graphics& graphics, REAL localX, REAL ground) {
 // Toys have their own click-through desktop layer, so walking away cannot
 // clip them to the pet's 320-pixel drawing surface. They remain on the floor.
 void RenderToy() {
-    if (g.hidden || g.toy == ToyKind::None) {
+    if (g.hidden || g.toy == ToyKind::None || (g.authoredBoxVisible && g.toy==ToyKind::Box)) {
         if (g.toyWindow) ShowWindow(g.toyWindow, SW_HIDE);
         return;
     }
@@ -2082,7 +2155,32 @@ void Render() {
         pose.joints.crouch=std::max(pose.joints.crouch,
             cat::animation::LandingPose(ticks-g.landedAt,g.landingStrength,g.facing).joints.crouch);
     }
+    if(displayed==Motion::Groom && physical.grounded && !g.waitingForStop) {
+        cat::sprite_sequence::Options sprite;
+        sprite.durationMs=g.nextDecision>=g.motionStart?g.nextDecision-g.motionStart:0;
+        cat::animation::AttachSprite(pose,cat::sprite_sequence::Clip::Groom,actionElapsed,sprite);
+    }
     const bool cursorAttack = ApplyCursorAttackPose(pose,ticks,physical);
+    if(displayed==Motion::Stretch && g.wakingFromSleep && physical.grounded && !g.waitingForStop &&
+            actionElapsed<cat::sprite_sequence::kSleepWakeMs && !cursorAttack) {
+        cat::sprite_sequence::Options sprite;sprite.sleep=cat::sprite_sequence::SleepStage::Waking;
+        cat::animation::AttachSprite(pose,cat::sprite_sequence::Clip::Sleep,actionElapsed,sprite);
+    }
+    pose.fishMeal=displayed==Motion::Eat && g.fishMeal && physical.grounded && !cursorAttack;
+    if(pose.fishMeal)cat::animation::AttachSprite(pose,cat::sprite_sequence::Clip::Fish,actionElapsed);
+    if(g.toy==ToyKind::Box && g.toyEngaged && physical.grounded && !physical.onPlatform &&
+            !g.waitingForStop && !cursorAttack && std::abs(WalkingVelocity(physical))<=2 &&
+            std::abs(g.centerX-g.toyX)<=4*g.dpiScale) {
+        const auto phase=g.toySession.phase;
+        if(phase==cat::toy::Phase::Interact || phase==cat::toy::Phase::Sleep) {
+            cat::animation::AttachSprite(pose,cat::sprite_sequence::Clip::Box,
+                static_cast<std::uint64_t>(std::max(0.0,g.toySession.elapsedMs)));
+            if(phase==cat::toy::Phase::Sleep)pose.spriteFrame=7;
+        }
+    }
+    const auto* authored=CareSpriteFor(pose,g.preferences.character);
+    g.authoredBoxVisible=authored && authored->layout->clip==cat::sprite_sequence::Clip::Box;
+    if(authored)cat::animation::UseAuthoredSprite(pose);
     pose = g.poseTransition.Apply(pose,ticks,g.motionSerial,
         static_cast<unsigned>(g.preferences.character), !cursorAttack);
     Graphics graphics(g.surface.image.get());
@@ -2180,16 +2278,19 @@ void MaybeAnnounceUpdate(ULONGLONG ticks) {
         !MoveFileExW(temporary.c_str(), path.c_str(), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH))
         DeleteFileW(temporary.c_str());
 }
-void Care(bool snack) {
+void CareFood(cat::feeding::FoodKind kind) {
+    if (!cat::feeding::IsValid(kind) ||
+        (kind == cat::feeding::FoodKind::Fish && !cat::feeding::CanOfferFish(g.preferences.character))) return;
     if (!g.initialized || g.closing || updates.applying || g.menuOpen || g.dragging) return;
+    const bool snack = cat::feeding::IsTreat(kind);
     const auto ticks = GetTickCount64();
     if (g.perch.transitioning || !g.physics.CurrentPose().grounded) {
-        g.pendingCare = snack ? 1 : 0;
+        g.pendingCare = static_cast<int>(kind);
         return;
     }
     g.pendingCare = -1;
     SyncNutrition(UtcNow());
-    const auto result = cat::nutrition::TryFeed(g.nutrition, g.nutrition.updatedUtc, snack, Random(0, 1));
+    const auto result = cat::feeding::TryFeed(g.nutrition, g.nutrition.updatedUtc, kind, Random(0, 1));
     g.pet.hunger = g.nutrition.fullness;
     if (result != cat::nutrition::FeedResult::Accepted) {
         // Repeated hotkeys neither add food/care counts nor restart the reply.
@@ -2208,12 +2309,26 @@ void Care(bool snack) {
     // sole owner of fullness and elapsed-time body changes.
     cat::Feed(g.pet, g.nutrition.updatedUtc, snack);
     NotifyCompanionFood();
-    Remember(snack ? cat::memory::Event::Treat : cat::memory::Event::Meal);
+    Remember(cat::feeding::MemoryEvent(kind));
     g.pet.hunger = g.nutrition.fullness;
     g.nextCareReply = ticks + 6500;
-    SetMotion(snack ? Motion::Treat : Motion::Eat, snack ? cat::animation::kTreatDurationMs : 3300);
-    Speak(snack ? L"츄르다! 할짝할짝 ♡" : L"냠냠, 잘 먹을게 ♡", 3000);
+    const bool authoredMeal=kind==cat::feeding::FoodKind::Meal &&
+        cat::sprite_assets::Find(cat::sprite_sequence::Clip::Eat,
+            static_cast<unsigned>(g.preferences.character),cat::sprite_assets::kCareSprites);
+    SetMotion(snack ? Motion::Treat : Motion::Eat,
+        snack ? cat::animation::kTreatDurationMs : authoredMeal ? 5000 : 3300);
+    g.fishMeal = kind == cat::feeding::FoodKind::Fish;
+    Speak(snack ? L"츄르다! 할짝할짝 ♡" : g.fishMeal ? L"생선이다! 냠냠 ♡" : L"냠냠, 잘 먹을게 ♡", 3000);
     SavePet(); Render();
+}
+void Care(bool snack) {
+    CareFood(snack ? cat::feeding::FoodKind::Treat : cat::feeding::FoodKind::Meal);
+}
+void ResumePendingCare() {
+    if (g.pendingCare < 0) return;
+    const auto kind = static_cast<cat::feeding::FoodKind>(g.pendingCare);
+    g.pendingCare = -1;
+    CareFood(kind);
 }
 void MaybeAskForFood(ULONGLONG ticks) {
     if (g.hidden || g.menuOpen || g.dragging || g.closing || updates.applying || g.prank.Active() ||
@@ -2557,9 +2672,11 @@ void RunCommand(UINT command) {
     case kCompanionToggle: ToggleCompanion(); break;
     case kCompanionFeed: FeedCompanion(false); break;
     case kCompanionTreat: FeedCompanion(true); break;
+    case kCompanionFish: FeedCompanionFood(cat::feeding::FoodKind::Fish); break;
     case kCompanionStatus: ShowCompanionStatus(); break;
     case FeedCommand: Care(false); break;
     case SnackCommand: Care(true); break;
+    case kFishCommand: CareFood(cat::feeding::FoodKind::Fish); break;
     case StatusCommand: ShowPetStatus(); break;
     case PauseCommand: if (g.brain) g.brain->Interrupt(GetTickCount64()); g.pet.roamingPaused = !g.pet.roamingPaused; g.prank.Clear(); SetMotion(Motion::Idle, 5000); SavePet(); break;
     case HideCommand: ToggleHidden(); break;
@@ -2581,6 +2698,8 @@ HMENU BuildPetMenu() {
     AppendMenuW(menu, MF_STRING | MF_GRAYED, 0, title.c_str()); AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
     AppendMenuW(menu, MF_STRING, FeedCommand, L"밥 주기\tCtrl+Alt+F");
     AppendMenuW(menu, MF_STRING, SnackCommand, L"츄르 주기\tCtrl+Alt+T");
+    AppendMenuW(menu, MF_STRING | (cat::feeding::CanOfferFish(g.preferences.character) ? MF_ENABLED : MF_GRAYED),
+        kFishCommand, L"생선 주기");
     HMENU companionMenu = CreatePopupMenu();
     AppendMenuW(companionMenu, MF_STRING | (g.companionStore.enabled() ? MF_CHECKED : MF_UNCHECKED),
         kCompanionToggle, g.companionStore.available() ? L"두 번째 동물 함께 지내기" : L"두 번째 동물 만나기");
@@ -2588,6 +2707,9 @@ HMENU BuildPetMenu() {
         const UINT enabled = g.companionStore.enabled() ? MF_ENABLED : MF_GRAYED;
         AppendMenuW(companionMenu, MF_STRING | enabled, kCompanionFeed, L"두 번째 동물에게 밥 주기");
         AppendMenuW(companionMenu, MF_STRING | enabled, kCompanionTreat, L"두 번째 동물에게 간식 주기");
+        AppendMenuW(companionMenu, MF_STRING | enabled |
+            (cat::feeding::CanOfferFish(g.companionStore.state.preferences.character) ? MF_ENABLED : MF_GRAYED),
+            kCompanionFish, L"두 번째 고양이에게 생선 주기");
         AppendMenuW(companionMenu, MF_STRING, kCompanionStatus, L"두 번째 동물의 성장 기록");
     }
     AppendMenuW(menu, MF_POPUP, reinterpret_cast<UINT_PTR>(companionMenu), L"두 마리 함께 키우기");
@@ -2701,6 +2823,10 @@ void ApplyToyPhase(ULONGLONG ticks) {
     if (g.toyAppliedRevision==g.toySession.revision) return;
     g.toyAppliedRevision=g.toySession.revision;
     const auto phase=g.toySession.phase;
+    if(phase==cat::toy::Phase::Interact && g.toy==ToyKind::Box &&
+            cat::sprite_assets::Find(cat::sprite_sequence::Clip::Box,
+                static_cast<unsigned>(g.preferences.character),cat::sprite_assets::kCareSprites))
+        g.toySession.boxVisitMs=3350;
     if (phase==cat::toy::Phase::Wait) {
         g.toyEngaged=false; g.approachingToy=false;
         g.nextToyAction=ticks+static_cast<ULONGLONG>(cat::toy::Duration(g.toy,phase));
@@ -2713,7 +2839,7 @@ void ApplyToyPhase(ULONGLONG ticks) {
         g.direction=target<g.centerX ? -1 : 1; g.facing=g.direction;
     }
     const auto duration=cat::toy::Travels(phase) ? 30000ULL :
-        static_cast<ULONGLONG>(cat::toy::Duration(g.toy,phase)+100);
+        static_cast<ULONGLONG>(g.toySession.PhaseDuration()+100);
     g.toyDispatching=true; SetMotion(g.toyMotion,duration); g.toyDispatching=false;
     g.speed=38*g.dpiScale;
     g.approachingToy=cat::toy::Travels(phase);
@@ -3216,7 +3342,7 @@ void Tick() {
             }
             if (actionElapsed >= 1000 && g.bubbleUntil < g.motionStart) Speak(L"…나 아니야", 1300);
         }
-        if (g.pendingCare >= 0 && physical.grounded) Care(g.pendingCare != 0);
+        if (g.pendingCare >= 0 && physical.grounded) ResumePendingCare();
         MaybeAnnounceUpdate(ticks);
         if (!g.waitingForStop && !EnvironmentBusy()) {
             MaybeLifeEvent(ticks);
@@ -3375,6 +3501,7 @@ int NativePerchHitTest() {
 }
 
 #include "native_expanded_tests.hpp"
+#include "native_care_sprite_tests.hpp"
 
 int RenderSelfTest() {
     // Native GDI+ regression path: resources and offscreen DIBs only. This
@@ -3398,6 +3525,7 @@ int RenderSelfTest() {
             g.pet = cat::NewPet(birthday);
             g.nutrition = cat::nutrition::NewState(birthday, birthday);
             g.dpiScale = 1;
+            if(const int spriteTest=NativeCareSpriteRenderTest(context))return spriteTest;
             constexpr REAL center = 210, floor = 280;
             constexpr std::uint64_t fixedTicks = 500000;
             const auto draw = [&](const cat::animation::Pose& pose, REAL scale) {
@@ -3793,6 +3921,11 @@ int NativeMenuContractTest() {
         UpdateAutomaticCommand == 1026 && OutfitNoneCommand == 1032 &&
         OutfitBowCommand == 1033 && OutfitScarfCommand == 1034 && OutfitCrownCommand == 1035,
         "Retired command IDs must not renumber the remaining commands");
+    static_assert(kFishCommand==2302 && kCompanionFish==2405 &&
+        static_cast<int>(cat::feeding::FoodKind::Meal)==0 &&
+        static_cast<int>(cat::feeding::FoodKind::Treat)==1 &&
+        static_cast<int>(cat::feeding::FoodKind::Fish)==2,
+        "Deferred food kinds and new IDs must not reuse retired commands");
     // Old installed versions used these IDs for manual motions, sound and toys.
     constexpr UINT retired[]{1018, 1019, 1022, 1023, 1027, 1028, 1029, 1030, 1031,
         1032, 1033, 1034, 1035, 1036, 1037, 1038, 1039, 1040, 1041, 1042, 1043, 1044, 1045};
@@ -3838,9 +3971,9 @@ int NativeMenuContractTest() {
         DestroyMenu(menu);
         if (!read) return 221;
         std::vector<UINT> actual, expected{1010, 1011, 1012, 1013, 1014, 1015, 1016, 1017,
-            1024, 1026, 2300, 2301, 2400};
+            1024, 1026, 2300, 2301, 2302, 2400};
         if (enabled) expected.push_back(1025);
-        if (variant != 2) for (UINT id : {2401u, 2402u, 2403u}) expected.push_back(id);
+        if (variant != 2) for (UINT id : {2401u, 2402u, 2403u, 2405u}) expected.push_back(id);
         for (int i = 0; i < cat::kCharacterCount; ++i) expected.push_back(2500 + i);
         for (const auto& item : items) actual.push_back(item.id);
         std::sort(actual.begin(), actual.end()); std::sort(expected.begin(), expected.end());
@@ -3858,18 +3991,34 @@ int NativeMenuContractTest() {
 
         for (UINT id : {1024u, 1026u})
             if (((state(id) & MFS_DISABLED) != 0) == enabled) return 226;
-        if (variant != 2) for (UINT id : {2401u, 2402u})
+        if (variant != 2) for (UINT id : {2401u, 2402u, 2405u})
             if (((state(id) & MFS_DISABLED) != 0) == enabled) return 226;
-        for (UINT id : {1010u, 1011u, 1012u, 1013u, 1014u, 1015u, 1016u, 1017u, 2400u})
+        for (UINT id : {1010u, 1011u, 1012u, 1013u, 1014u, 1015u, 1016u, 1017u, 2302u, 2400u})
             if (state(id) & MFS_DISABLED) return 226;
     }
+    // Both menu locations offer fish to cats only, independently of the
+    // other pet's character. Meals and treats remain enabled for all animals.
+    g.companionStore.outcome=cat::companion::Outcome::Adopted;
+    g.companionStore.state.enabled=true;
+    for(int index=0;index<cat::kCharacterCount;++index) {
+        g.preferences.character=static_cast<cat::Character>(index);
+        g.companionStore.state.preferences.character=static_cast<cat::Character>((index+1)%cat::kCharacterCount);
+        HMENU menu=BuildPetMenu();if(!menu)return 229;
+        std::vector<Item> items;const bool read=collect(collect,menu,items);DestroyMenu(menu);
+        if(!read)return 229;
+        for(const auto& item:items) {
+            if(item.id==kFishCommand && (((item.state&MFS_DISABLED)==0)!=cat::feeding::CanOfferFish(g.preferences.character)))return 229;
+            if(item.id==kCompanionFish && (((item.state&MFS_DISABLED)==0)!=cat::feeding::CanOfferFish(g.companionStore.state.preferences.character)))return 229;
+        }
+    }
+    g.preferences.character=cat::Character::SilverTabby;
     // Exercise the real dispatcher with all normal dispatch preconditions met.
     // No retained command is invoked: those may open dialogs or persist care.
     updates.operation = UpdateState::Operation::None;
     g.pet.roamingPaused = false; g.brain.reset(); g.perch = {};
     g.work = {0, 0, 1200, 900}; g.dpiScale = 1; g.centerX = 600;
     g.physics.Reset(600, 50, 1150); g.physicsReady = true;
-    g.motion = Motion::Watch; g.motionStart = 1234; g.nextDecision = 5678;
+    g.motion = Motion::Watch; g.motionStart = 1234; g.nextDecision = 5678; g.fishMeal=false;
     g.pendingCare = -1; g.bubble = L"menu fixture"; g.bubbleUntil = 8765;
     g.toy = ToyKind::Ball; g.toySession.Start(ToyKind::Ball);
     g.approachingToy = false; g.toyEngaged = false;
@@ -3882,7 +4031,7 @@ int NativeMenuContractTest() {
             << static_cast<int>(g.motion) << L'|' << g.motionStart << L'|' << g.nextDecision
             << L'|' << g.hidden << L'|' << g.initialized << L'|' << g.closing << L'|' << g.menuOpen
             << L'|' << g.direction << L'|' << g.facing << L'|' << g.speed << L'|' << g.centerX
-            << L'|' << g.bubble << L'|' << g.bubbleUntil << L'|' << g.pendingCare
+            << L'|' << g.bubble << L'|' << g.bubbleUntil << L'|' << g.pendingCare << L'|' << g.fishMeal
             << L'|' << static_cast<int>(g.toy) << L'|' << g.toyX << L'|' << g.toyEngaged
             << L'|' << g.approachingToy << L'|' << g.toyContact << L'|' << g.nextToyAction
             << L'|' << static_cast<int>(g.toySession.kind) << L'|' << static_cast<int>(g.toySession.phase)
@@ -3901,6 +4050,30 @@ int NativeMenuContractTest() {
     // A stale Ctrl+Alt+B WM_HOTKEY notification must also have no effect.
     WindowProc(nullptr, WM_HOTKEY, 4, 0);
     if (snapshot() != unchanged) return 228;
+    // Exercise the real deferred-care host without writing application files:
+    // full cats refuse on landing, so only the queued kind and natural time
+    // may change. Fish must stay kind2 rather than being converted to Treat.
+    g.nutritionReady=true;g.nutrition.fullness=g.pet.hunger=100;
+    g.nextCareReply=std::numeric_limits<ULONGLONG>::max();
+    for(const auto kind:{cat::feeding::FoodKind::Meal,cat::feeding::FoodKind::Treat,cat::feeding::FoodKind::Fish}) {
+        g.pendingCare=-1;g.perch.transitioning=true;
+        const auto petBefore=cat::Serialize(g.pet);
+        CareFood(kind);
+        if(g.pendingCare!=static_cast<int>(kind) || cat::Serialize(g.pet)!=petBefore)return 230;
+        g.perch.transitioning=false;ResumePendingCare();
+        if(g.pendingCare!=-1 || g.pet.feedCount || g.pet.snackCount || g.fishMeal)return 230;
+    }
+    // A character switch while food is queued cannot leave the care gate
+    // blocked forever or serve a fish to a dog/rabbit.
+    g.pendingCare=static_cast<int>(cat::feeding::FoodKind::Fish);
+    g.preferences.character=cat::Character::Rabbit;
+    const auto petBefore=cat::Serialize(g.pet);ResumePendingCare();
+    if(g.pendingCare!=-1 || cat::Serialize(g.pet)!=petBefore)return 230;
+    g.preferences.character=cat::Character::SilverTabby;
+    SetMotion(Motion::Eat,3300);g.fishMeal=true;
+    CareFood(cat::feeding::FoodKind::Fish);
+    if(!g.fishMeal)return 230; // A refusal must not replace an accepted meal.
+    SetMotion(Motion::Watch,1000);if(g.fishMeal)return 230;
     g.initialized = false; g.toy = ToyKind::None; g.toySession.Cancel();
     return 0;
 }

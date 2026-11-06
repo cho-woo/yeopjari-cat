@@ -6,6 +6,7 @@
 #include "cat_memory.hpp"
 #include "cat_life.hpp"
 #include "cat_nutrition.hpp"
+#include "cat_fish.hpp"
 #include "cat_physics.hpp"
 #include "cat_motion_gate.hpp"
 #include "cat_pose_transition.hpp"
@@ -264,6 +265,7 @@ public:
         rng_=static_cast<std::uint64_t>(state.pet.bornUtc)^0x1a7e24977a4eab43ULL;
         ready_=false; nextDecision_=0; interaction_=event_=Interaction::None; socialUntil_=0; supportId_=0;
         motion_=cat::animation::Motion::Idle; walkingMotion_=cat::animation::Motion::Walk;
+        feedingKind_=cat::feeding::FoodKind::Meal;
         motionStart_=lastTicks_=careUntil_=landedAt_=0; direction_=facing_=1; speed_=0; support_={}; gait_.Reset();
         poseTransition_.Reset(); motionSerial_=0;
         waitingForStop_=jumpPending_=false;
@@ -402,14 +404,22 @@ public:
     }
     bool FoodOffered(const Context& c) { return TrySocial(Interaction::FoodCompetition,c); }
     cat::nutrition::FeedResult Feed(std::int64_t now,std::uint64_t ticks,bool treat,double random01=.9) {
+        return FeedFood(now,ticks,treat?cat::feeding::FoodKind::Treat:cat::feeding::FoodKind::Meal,random01);
+    }
+    cat::nutrition::FeedResult FeedFood(std::int64_t now,std::uint64_t ticks,cat::feeding::FoodKind kind,double random01=.9) {
+        if(!cat::feeding::IsValid(kind) || (kind==cat::feeding::FoodKind::Fish &&
+            (!Bound() || !cat::feeding::CanOfferFish(state_->preferences.character)))) return cat::nutrition::FeedResult::TooSoon;
         if(!Bound() || !ready_ || !state_->enabled || !physics_.CurrentPose().grounded) return cat::nutrition::FeedResult::TooSoon;
         Advance(now);
-        const auto result=cat::nutrition::TryFeed(state_->nutrition,state_->pet.updatedUtc,treat,random01);
+        const bool treat=cat::feeding::IsTreat(kind);
+        const auto result=cat::feeding::TryFeed(state_->pet,state_->nutrition,state_->memory,state_->pet.updatedUtc,kind,random01);
         if(result!=cat::nutrition::FeedResult::Accepted) return result;
-        cat::Feed(state_->pet,state_->pet.updatedUtc,treat); state_->pet.hunger=state_->nutrition.fullness;
-        cat::memory::Record(state_->memory,treat?cat::memory::Event::Treat:cat::memory::Event::Meal,state_->pet.updatedUtc);
         brain_->Fed(ticks,treat); interaction_=Interaction::None;
-        SetMotion(treat?cat::animation::Motion::Treat:cat::animation::Motion::Eat,ticks,4200,0);
+        const bool authoredMeal=kind==cat::feeding::FoodKind::Meal &&
+            cat::sprite_assets::Find(cat::sprite_sequence::Clip::Eat,
+                static_cast<unsigned>(state_->preferences.character),cat::sprite_assets::kCareSprites);
+        SetMotion(treat?cat::animation::Motion::Treat:cat::animation::Motion::Eat,ticks,authoredMeal?5000:4200,0);
+        feedingKind_=kind;
         careUntil_=nextDecision_;
         return result;
     }
@@ -465,8 +475,23 @@ public:
             s.animation.joints.crouch=std::max(s.animation.joints.crouch,
                 std::min(std::abs(s.physical.supportVelocityX)/500.0,.16));
         }
+        if(displayed==cat::animation::Motion::Groom && s.physical.grounded && !waitingForStop_) {
+            cat::sprite_sequence::Options sprite;
+            sprite.durationMs=nextDecision_>=motionStart_?nextDecision_-motionStart_:0;
+            cat::animation::AttachSprite(s.animation,cat::sprite_sequence::Clip::Groom,elapsed,sprite);
+        }
+        if(displayed==cat::animation::Motion::Stretch && wakingFromSleep_ && s.physical.grounded &&
+                !waitingForStop_ && elapsed<cat::sprite_sequence::kSleepWakeMs) {
+            cat::sprite_sequence::Options sprite;sprite.sleep=cat::sprite_sequence::SleepStage::Waking;
+            cat::animation::AttachSprite(s.animation,cat::sprite_sequence::Clip::Sleep,elapsed,sprite);
+        }
         s.animation=poseTransition_.Apply(s.animation,ticks,motionSerial_,
             static_cast<unsigned>(s.preferences.character),s.enabled);
+        s.animation.fishMeal=displayed==cat::animation::Motion::Eat && s.physical.grounded &&
+            feedingKind_==cat::feeding::FoodKind::Fish && cat::feeding::CanOfferFish(s.preferences.character);
+        if(s.animation.fishMeal)cat::animation::AttachSprite(s.animation,cat::sprite_sequence::Clip::Fish,elapsed);
+        if(cat::sprite_assets::Find(s.animation.spriteClip,static_cast<unsigned>(s.preferences.character),
+                cat::sprite_assets::kCareSprites))cat::animation::UseAuthoredSprite(s.animation);
         return s;
     }
 private:
@@ -476,6 +501,7 @@ private:
     cat::animation::Locomotion gait_;
     mutable cat::animation::PoseTransition poseTransition_;
     bool ready_=false,contactRecorded_=false,waitingForStop_=false,jumpPending_=false;
+    bool wakingFromSleep_=false;
     double minX_=40,maxX_=1000,maxLift_=700,speed_=0,landingStrength_=1;
     int direction_=1,facing_=1;
     unsigned sleepVariant_=0;
@@ -486,6 +512,7 @@ private:
     Context lastContext_;
     cat::animation::Motion motion_=cat::animation::Motion::Idle;
     cat::animation::Motion walkingMotion_=cat::animation::Motion::Walk;
+    cat::feeding::FoodKind feedingKind_=cat::feeding::FoodKind::Meal;
     Interaction interaction_=Interaction::None,event_=Interaction::None;
     double Random() { rng_^=rng_>>12; rng_^=rng_<<25; rng_^=rng_>>27; return ((rng_*2685821657736338717ULL)>>11)*(1.0/9007199254740992.0); }
     bool Feeding(std::uint64_t ticks) const {
@@ -503,7 +530,12 @@ private:
     }
     void SetMotion(cat::animation::Motion m,std::uint64_t ticks,std::uint64_t duration,double speed,bool alreadyAirborne=false) {
         const bool jumping=m==cat::animation::Motion::Jump || m==cat::animation::Motion::Pounce;
-        if(motion_!=m || jumping) {
+        const bool authoredGroom=m==cat::animation::Motion::Groom &&
+            cat::sprite_assets::Find(cat::sprite_sequence::Clip::Groom,
+                static_cast<unsigned>(state_->preferences.character),cat::sprite_assets::kCareSprites);
+        if(motion_!=m || jumping || authoredGroom) {
+            wakingFromSleep_=motion_==cat::animation::Motion::Sleep && m==cat::animation::Motion::Stretch;
+            feedingKind_=cat::feeding::FoodKind::Meal;
             ++motionSerial_;
             motionStart_=ticks; motion_=m;
             if(m==cat::animation::Motion::Sleep) sleepVariant_=static_cast<unsigned>(Random()*6);

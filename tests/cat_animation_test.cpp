@@ -620,6 +620,34 @@ void PhysicalBrakingKeepsRunningPosture() {
     CHECK(gait.JointMode()==cat::walk_dynamics::Mode::Walk);
 }
 
+void AuthoredClipsFollowHostPhysicsAndPreserveFallbacks() {
+    using namespace cat::animation;
+    using Clip=cat::sprite_sequence::Clip;
+    for(const auto& pair:{std::pair{Motion::Groom,Clip::Groom},std::pair{Motion::Eat,Clip::Eat},
+            std::pair{Motion::Treat,Clip::Treat},std::pair{Motion::Punch,Clip::Punch}}) {
+        const auto pose=Evaluate(pair.first,600,600,1);
+        CHECK(pose.spriteClip==pair.second && !pose.fishMeal);
+        CHECK(pose.spriteFrame<cat::sprite_sequence::GridFor(pair.second).count);
+        CHECK(pose.lift==0);
+        auto registered=pose;UseAuthoredSprite(registered);
+        CHECK(registered.x==0 && registered.lift==0 && registered.angle==0);
+        CHECK(registered.spriteClip==pose.spriteClip && registered.spriteFrame==pose.spriteFrame);
+        CHECK(registered.frame==pose.frame);
+    }
+    CHECK(EvaluateSleep(0,3000,3000,1).spriteClip==Clip::Sleep);
+    for(unsigned variant=1;variant<6;++variant)
+        CHECK(EvaluateSleep(variant,3000,3000,1).spriteClip==Clip::None);
+    CHECK(EvaluateSleep(0,3000,3000,1,true).spriteClip==Clip::None);
+    for(double velocity:{-250.,-80.,0.,80.,250.}) {
+        const auto pose=AirbornePose(velocity,1);
+        CHECK(pose.spriteClip==Clip::Jump && pose.spriteFrame>=4 && pose.spriteFrame<=11);
+        CHECK(!pose.groundContact && pose.lift==0 && pose.x==0);
+    }
+    CHECK(LandingPose(70,1,1).spriteClip==Clip::Jump);
+    CHECK(LandingPose(280,1,1).spriteClip==Clip::None);
+    CHECK(Evaluate(Motion::Walk,3000,3000,1).spriteClip==Clip::None);
+}
+
 void RealSpeedsChooseAReachableCadence() {
     using namespace cat::animation;
     for(double fps:{30.,60.,120.})for(const auto& scenario:{
@@ -737,10 +765,11 @@ int main() {
         DistanceDrivenFrameTransitionsRemainContinuous();
         WalkingPoseCarriesIndependentJointContacts();
         PhysicalBrakingKeepsRunningPosture();
+        AuthoredClipsFollowHostPhysicsAndPreserveFallbacks();
         RealSpeedsChooseAReachableCadence();
         ContactsStayPlantedWhileGaitAndSpeedChange();
         GaitDiscontinuityGuardsAndLegacyPoseCompatibility();
-        std::cout << "21 animation groups; " << checks << " checks passed\n";
+        std::cout << "22 animation groups; " << checks << " checks passed\n";
         return EXIT_SUCCESS;
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';

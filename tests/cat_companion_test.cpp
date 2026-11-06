@@ -163,6 +163,53 @@ void IndependentCareAndAge() {
     const auto after=second.pet.updatedUtc;c.nowUtc=born-3600;model.Tick(c);CHECK(second.pet.updatedUtc==after);
     CHECK(Valid(second));
 }
+void FishCareKeepsTheExistingMealAndBusyContracts() {
+    using cat::feeding::FoodKind;
+    using cat::nutrition::FeedResult;
+    for(int index=0;index<cat::kCharacterCount;++index) {
+        State state=NewState(born);state.preferences.character=static_cast<cat::Character>(index);
+        state.nutrition.fullness=state.pet.hunger=45;
+        Model model;model.Bind(state);model.Reset(40,1000,700);
+        const auto before=Serialize(state);
+        if(!cat::feeding::CanOfferFish(state.preferences.character)) {
+            CHECK(model.FeedFood(born,100,FoodKind::Fish)==FeedResult::TooSoon);
+            CHECK(Serialize(state)==before && !model.View(100).animation.fishMeal);
+            CHECK(model.Feed(born,100,false)==FeedResult::Accepted);
+            CHECK(!model.View(100).animation.fishMeal && state.pet.feedCount==1);
+            continue;
+        }
+        CHECK(model.FeedFood(born,100,FoodKind::Fish)==FeedResult::Accepted);
+        CHECK(model.Busy() && model.View(100).motion==cat::animation::Motion::Eat);
+        CHECK(model.View(100).animation.fishMeal);
+        CHECK(state.pet.feedCount==1 && state.memory.meals==1);
+        CHECK(state.pet.snackCount==0 && state.memory.treats==0 && state.nutrition.lastTreatUtc==0);
+        CHECK(state.nutrition.lastMealUtc==born && state.nutrition.fullness==80);
+        const auto fed=Serialize(state);
+        CHECK(model.Feed(born+1,1100,true)==FeedResult::TooSoon);
+        CHECK(state.pet.feedCount==1 && state.pet.snackCount==0 && model.View(1100).animation.fishMeal);
+        // Same Eat action kind can be fed again after the shared cooldown:
+        // an ordinary meal must clear the transient fish presentation.
+        CHECK(model.Feed(born+300,200,false)==FeedResult::Accepted);
+        CHECK(!model.View(200).animation.fishMeal && state.pet.feedCount==2 && state.memory.meals==2);
+        CHECK(model.FeedFood(born+600,300,FoodKind::Fish,0)==FeedResult::Full);
+        CHECK(!model.View(300).animation.fishMeal && state.pet.feedCount==2 && state.memory.meals==2);
+        CHECK(Valid(state));
+        State restored;std::string error;
+        CHECK(Parse(fed,restored,error));
+        CHECK(restored.pet.feedCount==1 && restored.memory.meals==1);
+        Model restarted;restarted.Bind(restored);restarted.Reset(40,1000,700);
+        CHECK(!restarted.View(100).animation.fishMeal); // No presentation in schema1.
+    }
+    State state=NewState(born);state.nutrition.fullness=state.pet.hunger=45;
+    Model model;model.Bind(state);model.Reset(40,1000,700);
+    CHECK(model.FeedFood(born,100,FoodKind::Fish)==FeedResult::Accepted);
+    auto c=Frame(100,model.Physical().x+60);
+    CHECK(!model.FoodOffered(c) && !model.Pet(born,200));
+    c.paused=true;Step(model,c,600);CHECK(model.View(c.ticks).animation.fishMeal);
+    c.paused=false;Step(model,c,600);
+    CHECK(model.View(c.ticks).motion!=cat::animation::Motion::Eat);
+    CHECK(!model.View(c.ticks).animation.fishMeal && state.pet.feedCount==1 && state.memory.meals==1);
+}
 void SocialContactAndCompetition() {
     for(const auto kind:{Interaction::Sniff,Interaction::Paw,Interaction::SharedSleep,Interaction::RunTogether,Interaction::FoodCompetition}) {
         State s=NewState(born);s.nutrition.fullness=60;s.pet.hunger=60;
@@ -434,7 +481,7 @@ void HighRefreshGaitFollowsRenderedTravel() {
 }
 }
 int main() {
-    try { SeparateAdoptionAndRestart();IndividualStableTemperaments();StrictBundleParsing();RecoveryAndFaults();IndependentCareAndAge();SocialContactAndCompetition();RealWindowFollowingAndClosure();SpeciesLimitsAndBraking();ManualCareIsNotInterrupted();NaturalTakeoffAndLandingUsePhysicalMotion();SocialGesturesWaitForPlantedFeet();BrakingPreservesTheCompleteMeal();PairedRunningUsesOneSupportAndBodyMultiplier();HighWindowFollowingRespectsTheRealCeiling();
+    try { SeparateAdoptionAndRestart();IndividualStableTemperaments();StrictBundleParsing();RecoveryAndFaults();IndependentCareAndAge();FishCareKeepsTheExistingMealAndBusyContracts();SocialContactAndCompetition();RealWindowFollowingAndClosure();SpeciesLimitsAndBraking();ManualCareIsNotInterrupted();NaturalTakeoffAndLandingUsePhysicalMotion();SocialGesturesWaitForPlantedFeet();BrakingPreservesTheCompleteMeal();PairedRunningUsesOneSupportAndBodyMultiplier();HighWindowFollowingRespectsTheRealCeiling();
         HighRefreshGaitFollowsRenderedTravel();CanonicalPoseTransitionUsesHostActionAndPause();
         std::cout<<"companion checks passed: "<<checks<<'\n';return 0;
     } catch(const std::exception& e) { std::cerr<<e.what()<<'\n';return 1; }

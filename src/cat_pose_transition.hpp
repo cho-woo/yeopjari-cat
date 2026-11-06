@@ -1,6 +1,7 @@
 #pragma once
 
 #include "cat_animation.hpp"
+#include "care_sprites.generated.hpp"
 #include <array>
 #include <limits>
 
@@ -18,8 +19,8 @@ public:
     }
     Pose Apply(Pose target, std::uint64_t ticks, std::uint64_t actionSerial,
                unsigned identity = 0, bool enabled = true) {
-        const bool compatible = enabled && Canonical(target) && valid_ &&
-            Canonical(previous_) && previous_.flip == target.flip && identity_ == identity;
+        const bool compatible = enabled && Canonical(target,identity) && valid_ &&
+            Canonical(previous_,identity_) && previous_.flip == target.flip && identity_ == identity;
         if (!compatible) active_ = false;
         else if (serial_ != actionSerial) {
             // Interrupted transitions continue from what was actually drawn.
@@ -40,7 +41,7 @@ public:
         previous_ = target;
         serial_ = actionSerial;
         identity_ = identity;
-        valid_ = enabled && Canonical(target);
+        valid_ = enabled && Canonical(target,identity);
         return target;
     }
 
@@ -52,7 +53,9 @@ private:
             &cat::deform::Joints::frontRight, &cat::deform::Joints::tailRaise,
             &cat::deform::Joints::breath, &cat::deform::Joints::crouch}};
     }
-    static bool Canonical(const Pose& pose) {
+    static bool Canonical(const Pose& pose,unsigned identity) {
+        const auto clip=pose.fishMeal?cat::sprite_sequence::Clip::Fish:pose.spriteClip;
+        if(cat::sprite_assets::Find(clip,identity,cat::sprite_assets::kCareSprites))return false;
         return pose.frame == 4 && pose.blendFrame == -1 && !pose.bellyRig &&
             pose.groundContact && !pose.centerPivot && pose.x == 0 && pose.lift == 0 &&
             pose.angle == 0 && pose.scaleX == 1 && pose.scaleY == 1 &&
