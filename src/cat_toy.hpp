@@ -1,5 +1,6 @@
 #pragma once
 
+#include "cat_sprite_sequence.hpp"
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
@@ -139,9 +140,10 @@ struct Session {
     void Set(Phase next) { phase = next; elapsedMs = 0; ++revision; }
     double PhaseDuration() const {
         if (kind==Kind::Box && phase==Phase::BoxExit && std::isfinite(boxExitMs) && boxExitMs>0)
-            return std::clamp(boxExitMs,1.0,10000.0);
+            return std::clamp(boxExitMs,1.0,static_cast<double>(cat::sprite_sequence::kMaxProgramMs));
         return kind==Kind::Box && phase==Phase::Interact && std::isfinite(boxVisitMs) && boxVisitMs>0 ?
-            std::clamp(boxVisitMs,Duration(kind,phase),10000.0):Duration(kind,phase);
+            std::clamp(boxVisitMs,Duration(kind,phase),static_cast<double>(cat::sprite_sequence::kMaxProgramMs)):
+            Duration(kind,phase);
     }
     bool Advance(double seconds, bool enabled, bool arrived) {
         if (!enabled || kind == Kind::None || phase == Phase::None || !std::isfinite(seconds) ||

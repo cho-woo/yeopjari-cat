@@ -324,6 +324,27 @@ void AuthoredBoxExitHoldsBeforeTravel() {
     CHECK(session.boxExitMs==0 && session.phase==Phase::None);
 }
 
+void LongAuthoredBoxProgramsKeepTheirCompleteDuration() {
+    using namespace cat::toy;
+    // A 128-frame program at 100ms per frame must finish its last 28 frames,
+    // rather than advance to sleeping/travel when the former 10s cap expires.
+    for(Phase phase:{Phase::Interact,Phase::BoxExit}) {
+        Session session;session.Start(Kind::Box);
+        session.boxVisitMs=session.boxExitMs=12800;session.Set(phase);
+        CHECK(session.PhaseDuration()==12800);
+        for(int step=0;step<40;++step)CHECK(!session.Advance(.25,true,false));
+        CHECK(session.phase==phase && session.elapsedMs==10000);
+        for(int step=0;step<11;++step)CHECK(!session.Advance(.25,true,false));
+        CHECK(!session.Advance(.049,true,false));
+        CHECK(session.phase==phase && Near(session.elapsedMs,12799));
+        CHECK(session.Advance(.001,true,false));
+        CHECK(session.phase==(phase==Phase::Interact?Phase::Sleep:Phase::Exit));
+        session.Set(phase);
+        session.boxVisitMs=session.boxExitMs=static_cast<double>(cat::sprite_sequence::kMaxProgramMs)+1;
+        CHECK(session.PhaseDuration()==cat::sprite_sequence::kMaxProgramMs);
+    }
+}
+
 void AutomaticWatchdog() {
     using namespace cat::toy;
     Automatic automatic; AutoInput input; input.eligible=true;
@@ -345,6 +366,7 @@ int main() {
         ReachableTargets(); ContactAndContinuousRoll(); EdgesRemainReachable(); FrameRateAndPause();
         RealContactGate(); DistinctActivitiesAndInterruptions(); ContainerPathsAndFeather();
         AuthoredBoxVisitCompletesBeforeSleep(); AuthoredBoxExitHoldsBeforeTravel();
+        LongAuthoredBoxProgramsKeepTheirCompleteDuration();
         AutomaticTimingAndArbitration(); AutomaticCompletionAndTeardown(); AutomaticWatchdog();
         std::cout << "Toy interaction: " << checks << " checks passed\n";
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
