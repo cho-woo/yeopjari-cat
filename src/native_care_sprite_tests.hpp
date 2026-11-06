@@ -231,6 +231,44 @@ int NativeActualCareSpriteRenderTest(std::string& context) {
             if(std::abs(static_cast<int>(a[i])-static_cast<int>(b[i]))>(i%4==3?1:2))return false;
         return true;
     };
+    const auto decodeReference=[](const CareSpriteAtlas& asset,unsigned index,std::vector<std::uint32_t>& pixels) {
+        const auto& rect=asset.layout->frames[index].rect;
+        pixels.resize(static_cast<std::size_t>(rect.width)*rect.height);
+        // GetPixel is independent of the production LockBits frame cache.
+        for(int y=0;y<rect.height;++y)for(int x=0;x<rect.width;++x) {
+            Color color;
+            if(asset.image->GetPixel(rect.x+x,rect.y+y,&color)!=Ok)return false;
+            const unsigned alpha=color.GetA();
+            pixels[static_cast<std::size_t>(y)*rect.width+x]=(alpha<<24)|
+                (((color.GetR()*alpha+127)/255)<<16)|(((color.GetG()*alpha+127)/255)<<8)|
+                ((color.GetB()*alpha+127)/255);
+        }
+        return true;
+    };
+    const auto drawReference=[&](const cat::sprite_assets::Descriptor& layout,unsigned index,
+            const std::vector<std::uint32_t>& pixels,const cat::nutrition::Visual& body,REAL desiredHeight,bool flip) {
+        const auto& f=layout.frames[index];
+        Bitmap crop(f.rect.width,f.rect.height,f.rect.width*4,PixelFormat32bppPARGB,
+            reinterpret_cast<BYTE*>(const_cast<std::uint32_t*>(pixels.data())));
+        if(crop.GetLastStatus()!=Ok)return false;
+        Graphics graphics(canvas.image.get());configure(graphics);
+        // Match the physical transform exactly. An absolute RectF rounds its
+        // origin differently from a translated local RectF (Groom14 differs
+        // by1/65536px), changing GDI+'s bicubic alpha weights.
+        const int standingHeight=CurrentArt(cat::Character::Cream).base.standingHeight;
+        const REAL callerScale=desiredHeight/std::max(1,standingHeight);
+        const double referenceScale=callerScale*standingHeight/layout.referenceHeight;
+        const REAL sx=static_cast<REAL>(referenceScale*body.bodyWidth);
+        const REAL sy=static_cast<REAL>(referenceScale*body.bodyHeight);
+        graphics.TranslateTransform(center,bottom);
+        graphics.ScaleTransform(flip&&layout.clip!=Clip::Box?-1.0f:1.0f,1);
+        ImageAttributes attributes;attributes.SetWrapMode(WrapModeClamp,Color(0,0,0,0));
+        const auto status=graphics.DrawImage(&crop,RectF(static_cast<REAL>(-f.anchor.x*sx),
+            static_cast<REAL>(-f.anchor.y*sy),f.rect.width*sx,f.rect.height*sy),
+            0,0,f.rect.width,f.rect.height,UnitPixel,&attributes);
+        graphics.Flush(FlushIntentionSync);
+        return status==Ok&&graphics.GetLastStatus()==Ok;
+    };
     for(const auto& asset:g.careSprites) {
         const auto& layout=*asset->layout;
         std::array<std::array<int,4>,cat::sprite_assets::kMaxFrames> sourceBounds{};
@@ -268,43 +306,11 @@ int NativeActualCareSpriteRenderTest(std::string& context) {
             if(CareSpriteFor(pose,cat::Character::Cream)!=asset.get()||!draw(pose,cat::Character::Cream,normal,110,true))return 299;
             const auto direct=copy();
             const auto& f=layout.frames[frame];
-            // Read the original source independently through GDI+ GetPixel.
-            // This also avoids relying on the renderer's cached pixel buffers
-            // when checking source alpha and frame ownership.
-            std::vector<std::uint32_t> reference(static_cast<std::size_t>(f.rect.width)*f.rect.height);
-            for(int y=0;y<f.rect.height;++y)for(int x=0;x<f.rect.width;++x) {
-                Color color;
-                if(asset->image->GetPixel(f.rect.x+x,f.rect.y+y,&color)!=Ok)return 300;
-                const unsigned alpha=color.GetA();
-                reference[static_cast<std::size_t>(y)*f.rect.width+x]=(alpha<<24)|
-                    (((color.GetR()*alpha+127)/255)<<16)|(((color.GetG()*alpha+127)/255)<<8)|
-                    ((color.GetB()*alpha+127)/255);
-            }
-            // Compare equal premultiplied sampling formats. GDI+ interpolates
-            // straight ARGB edges differently; that is not a frame-selection
-            // or registration error in the PARGB renderer.
-            auto crop=std::make_unique<Bitmap>(f.rect.width,f.rect.height,f.rect.width*4,
-                PixelFormat32bppPARGB,reinterpret_cast<BYTE*>(reference.data()));
-            if(crop->GetLastStatus()!=Ok)return 300;
-            {
-                Graphics graphics(canvas.image.get());configure(graphics);
-                // Compare the independent decoded source at the SAME device
-                // transform, not an approximately equivalent absolute RectF.
-                // For Groom14, adding bottom before storing the REAL origin
-                // rounds its y by1/65536px. GDI+ can then choose a different
-                // bicubic alpha weight even though the source is identical.
-                const int standingHeight=CurrentArt(cat::Character::Cream).base.standingHeight;
-                const REAL callerScale=110.0f/std::max(1,standingHeight);
-                const double referenceScale=callerScale*standingHeight/layout.referenceHeight;
-                const REAL sx=static_cast<REAL>(referenceScale),sy=static_cast<REAL>(referenceScale);
-                graphics.TranslateTransform(center,bottom);graphics.ScaleTransform(1,1);
-                ImageAttributes attributes;attributes.SetWrapMode(WrapModeClamp,Color(0,0,0,0));
-                const auto status=graphics.DrawImage(crop.get(),RectF(static_cast<REAL>(-f.anchor.x*sx),
-                    static_cast<REAL>(-f.anchor.y*sy),f.rect.width*sx,f.rect.height*sy),
-                    0,0,f.rect.width,f.rect.height,UnitPixel,&attributes);
-                graphics.Flush(FlushIntentionSync);
-                if(status!=Ok||graphics.GetLastStatus()!=Ok)return 300;
-            }
+            // Independently decoded PARGB input verifies selected source
+            // ownership without straight-alpha interpolation differences.
+            std::vector<std::uint32_t> reference;
+            if(!decodeReference(*asset,frame,reference)||
+                    !drawReference(layout,frame,reference,normal,110,false))return 300;
             if(!nearPixels(copy(),direct)){
                 const auto expected=copy();unsigned maxRgb=0,maxAlpha=0;std::size_t firstBad=expected.size(),changed=0;
                 for(std::size_t i=0;i<expected.size();++i) {
@@ -333,11 +339,14 @@ int NativeActualCareSpriteRenderTest(std::string& context) {
                         std::to_string(src[2])+","+std::to_string(src[3]);return 304;
             }
         }
-        // Independently change nutrition dimensions and DPI/age scale. The
-        // source alpha bounds must follow one common source scale and anchor,
-        // rather than a pose's individual opaque height or whole-body tilt.
+        // Independently change nutrition dimensions and DPI/age scale.
+        // Thresholding alpha and bicubic resampling do not commute: scaling
+        // bbox(source alpha>=128) cannot predict bbox(filtered alpha>=128).
+        // Compare the complete independently decoded target raster instead,
+        // retaining strict per-pixel coverage, canvas and support checks.
         const unsigned frame=layout.frameCount/2;
-        const auto& f=layout.frames[frame];const auto& src=sourceBounds[frame];
+        std::vector<std::uint32_t> reference;
+        if(!decodeReference(*asset,frame,reference))return 300;
         for(const auto dimensions:{std::pair<double,double>{1,1},{.78,.96},{1.26,.98}})
         for(int facing:{-1,1})for(REAL desiredHeight:{80.0f,165.0f}) {
             auto body=normal;body.bodyWidth=dimensions.first;body.bodyHeight=dimensions.second;
@@ -351,17 +360,22 @@ int NativeActualCareSpriteRenderTest(std::string& context) {
             if(!draw(pose,cat::Character::Cream,body,desiredHeight,false)||copy()!=direct)return 302;
             std::array<int,4> actual{};
             if(!inspect(direct,actual))return 303;
-            const double sx=desiredHeight/layout.referenceHeight*body.bodyWidth;
-            const double sy=desiredHeight/layout.referenceHeight*body.bodyHeight;
-            const double left=(src[0]-f.anchor.x)*sx,right=(src[2]-f.anchor.x)*sx;
-            const bool mirrored=pose.flip && layout.clip!=Clip::Box;
-            const std::array<double,4> expected{{center+(mirrored?-right:left),bottom+(src[1]-f.anchor.y)*sy,
-                center+(mirrored?-left:right),bottom+(src[3]-f.anchor.y)*sy}};
-            for(unsigned edge=0;edge<4;++edge)
-                if(!std::isfinite(expected[edge])||std::abs(actual[edge]-expected[edge])>2.1) {
-                    context+=" unexpected anchored bounds edge="+std::to_string(edge)+
-                        " actual="+std::to_string(actual[edge])+" expected="+std::to_string(expected[edge]);return 305;
+            if(!drawReference(layout,frame,reference,body,desiredHeight,pose.flip))return 300;
+            const auto expected=copy();
+            if(!nearPixels(expected,direct)) {
+                unsigned maxRgb=0,maxAlpha=0;std::size_t firstBad=expected.size(),changed=0;
+                for(std::size_t i=0;i<expected.size();++i) {
+                    const auto delta=static_cast<unsigned>(std::abs(static_cast<int>(expected[i])-direct[i]));
+                    if(i%4==3)maxAlpha=std::max(maxAlpha,delta);else maxRgb=std::max(maxRgb,delta);
+                    if(delta>(i%4==3?1u:2u)){if(firstBad==expected.size())firstBad=i;++changed;}
                 }
+                context+=" unexpected anchored raster maxRgb="+std::to_string(maxRgb)+
+                    " maxAlpha="+std::to_string(maxAlpha)+" channels="+std::to_string(changed);
+                if(firstBad<expected.size())context+=" first=("+std::to_string(firstBad/4%width)+","+
+                    std::to_string(firstBad/4/width)+",channel"+std::to_string(firstBad%4)+") expected="+
+                    std::to_string(expected[firstBad])+" actual="+std::to_string(direct[firstBad]);
+                return 305;
+            }
             if(pose.groundContact&&actual[3]>bottom+2)return 304;
         }
         if(layout.clip!=Clip::Jump) {
