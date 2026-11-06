@@ -1,0 +1,807 @@
+{
+  "version": "2.0.13",
+  "status": "published_verified",
+  "verified_at_utc": "2026-11-06T10:15:53+00:00",
+  "release": {
+    "id": 436347778,
+    "tag_name": "v2.0.13",
+    "html_url": "https://github.com/cho-woo/yeopjari-cat/releases/tag/v2.0.13",
+    "published_at": "2026-11-06T10:15:25Z",
+    "draft": false,
+    "prerelease": false
+  },
+  "source_commit": "aaecad010455c2cca8d30dc52f615378a1b48268",
+  "tag_resolves_to_tested_source": true,
+  "workflow": {
+    "id": 42198806113,
+    "url": "https://github.com/cho-woo/yeopjari-cat/actions/runs/42198806113",
+    "head_sha": "aaecad010455c2cca8d30dc52f615378a1b48268",
+    "status": "completed",
+    "conclusion": "success",
+    "jobs": [
+      {
+        "name": "windows-smoke",
+        "conclusion": "success",
+        "url": "https://github.com/cho-woo/yeopjari-cat/actions/runs/42198806113/job/127832071785",
+        "completed_at": "2026-11-06T10:08:34Z",
+        "steps": [
+          {
+            "name": "Set up job",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/setup-python@v5",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/download-artifact@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify downloaded package on Windows",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify no audio resources or playback imports in the packaged EXE",
+            "conclusion": "success"
+          },
+          {
+            "name": "Fetch the exact published v2.0.12 benchmark baseline",
+            "conclusion": "success"
+          },
+          {
+            "name": "Measure both actual applications on the same disposable Windows runner",
+            "conclusion": "success"
+          },
+          {
+            "name": "Execute the Windows x64 binary self-test",
+            "conclusion": "success"
+          },
+          {
+            "name": "Render real Windows GDI+ motion, retired-wardrobe and contact regressions",
+            "conclusion": "success"
+          },
+          {
+            "name": "Collect complete native review and measured performance evidence",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/upload-artifact@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/setup-python@v5",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success"
+          }
+        ]
+      },
+      {
+        "name": "build",
+        "conclusion": "success",
+        "url": "https://github.com/cho-woo/yeopjari-cat/actions/runs/42198806113/job/127832073263",
+        "completed_at": "2026-11-06T09:58:47Z",
+        "steps": [
+          {
+            "name": "Set up job",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Require the requested source version",
+            "conclusion": "success"
+          },
+          {
+            "name": "Install pinned dependencies",
+            "conclusion": "success"
+          },
+          {
+            "name": "Test, build Windows x64 and verify ZIP and update feed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Select exactly one verified package",
+            "conclusion": "success"
+          },
+          {
+            "name": "Test publisher permissions and failure safeguards without network",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/upload-artifact@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success"
+          }
+        ]
+      },
+      {
+        "name": "publish",
+        "conclusion": "success",
+        "url": "https://github.com/cho-woo/yeopjari-cat/actions/runs/42198806113/job/127833851134",
+        "completed_at": "2026-11-06T10:09:34Z",
+        "steps": [
+          {
+            "name": "Set up job",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/download-artifact@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/download-artifact@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Reverify the exact tested package",
+            "conclusion": "success"
+          },
+          {
+            "name": "Validate native review and measured performance, then bind draft assets",
+            "conclusion": "success"
+          },
+          {
+            "name": "Bind the draft to this tested source commit",
+            "conclusion": "success"
+          },
+          {
+            "name": "Upload and hash-check the package, native images and performance evidence as a draft",
+            "conclusion": "success"
+          },
+          {
+            "name": "Confirm the exact tested draft remains unpublished",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success"
+          }
+        ]
+      }
+    ]
+  },
+  "observed_official_latest": {
+    "url": "https://github.com/cho-woo/yeopjari-cat/releases/latest/download/latest.txt",
+    "download_completed_at_utc": "2026-11-06T10:15:52+00:00",
+    "version": "2.0.13",
+    "sha256": "79dc03c8860e2262c97318c6b62e55fb39baa08ebfdb243208da0648703a13db",
+    "equals_tagged_feed": true,
+    "note": "Point-in-time observation; a later stable release can replace latest."
+  },
+  "assets": {
+    "candidate-samples.csv": {
+      "size_bytes": 31773,
+      "sha256": "c99313ff2ad28f4f9ab064c5bcf5bcc07984ce064c6be5d957c54270f6cc2a24",
+      "github_api_digest": "sha256:c99313ff2ad28f4f9ab064c5bcf5bcc07984ce064c6be5d957c54270f6cc2a24",
+      "url": "https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.13/candidate-samples.csv"
+    },
+    "care-cache-stress.json": {
+      "size_bytes": 1559,
+      "sha256": "eb1b97102c14469e11eede451c3e88ba660468cf17298322563cd56e811a2791",
+      "github_api_digest": "sha256:eb1b97102c14469e11eede451c3e88ba660468cf17298322563cd56e811a2791",
+      "url": "https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.13/care-cache-stress.json"
+    },
+    "care-sprites-gdi.png": {
+      "size_bytes": 2736240,
+      "sha256": "a9b857a6594bccaa5e2e8f737c8b8f552ae47d92a5d21de56fc3912ac435b96e",
+      "github_api_digest": "sha256:a9b857a6594bccaa5e2e8f737c8b8f552ae47d92a5d21de56fc3912ac435b96e",
+      "url": "https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.13/care-sprites-gdi.png"
+    },
+    "latest.txt": {
+      "size_bytes": 2548,
+      "sha256": "79dc03c8860e2262c97318c6b62e55fb39baa08ebfdb243208da0648703a13db",
+      "github_api_digest": "sha256:79dc03c8860e2262c97318c6b62e55fb39baa08ebfdb243208da0648703a13db",
+      "url": "https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.13/latest.txt"
+    },
+    "performance-summary.png": {
+      "size_bytes": 29277,
+      "sha256": "fa66f0418e3563e60a54f4664bc3616d767d6e36fe8d377a14f8e5ccc0f39aa2",
+      "github_api_digest": "sha256:fa66f0418e3563e60a54f4664bc3616d767d6e36fe8d377a14f8e5ccc0f39aa2",
+      "url": "https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.13/performance-summary.png"
+    },
+    "performance-v2.0.13.json": {
+      "size_bytes": 496635,
+      "sha256": "fce08371010da256d07d34f45fdc89ec3dff350f39bca87e63532e864711e5df",
+      "github_api_digest": "sha256:fce08371010da256d07d34f45fdc89ec3dff350f39bca87e63532e864711e5df",
+      "url": "https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.13/performance-v2.0.13.json"
+    },
+    "RELEASE_NOTES_KO.txt": {
+      "size_bytes": 1712,
+      "sha256": "a51300f4789f6b052afc0575c08b4b8563c096f10da49882ab83bc0b403d88b3",
+      "github_api_digest": "sha256:a51300f4789f6b052afc0575c08b4b8563c096f10da49882ab83bc0b403d88b3",
+      "url": "https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.13/RELEASE_NOTES_KO.txt"
+    },
+    "SHA256SUMS.txt": {
+      "size_bytes": 350,
+      "sha256": "fef947dce45c3afe61016d904b6081be6dfaea124525c6e64d8da014c30286b1",
+      "github_api_digest": "sha256:fef947dce45c3afe61016d904b6081be6dfaea124525c6e64d8da014c30286b1",
+      "url": "https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.13/SHA256SUMS.txt"
+    },
+    "v2.0.12-samples.csv": {
+      "size_bytes": 31638,
+      "sha256": "f7463e6e5a998764c5157d45724f94d4833082531eebec5fa610058dbb790343",
+      "github_api_digest": "sha256:f7463e6e5a998764c5157d45724f94d4833082531eebec5fa610058dbb790343",
+      "url": "https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.13/v2.0.12-samples.csv"
+    },
+    "walk-cream-gdi.png": {
+      "size_bytes": 2813566,
+      "sha256": "34985a7904864b0c5be9ca8c1394949cfceae0daf666592b7a2558a9ae038fd7",
+      "github_api_digest": "sha256:34985a7904864b0c5be9ca8c1394949cfceae0daf666592b7a2558a9ae038fd7",
+      "url": "https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.13/walk-cream-gdi.png"
+    },
+    "walk-silver-gdi.png": {
+      "size_bytes": 779873,
+      "sha256": "66cc9762a0c81aad5c74e21d0322171c07400151224df327231d2ff3294a3ecd",
+      "github_api_digest": "sha256:66cc9762a0c81aad5c74e21d0322171c07400151224df327231d2ff3294a3ecd",
+      "url": "https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.13/walk-silver-gdi.png"
+    },
+    "YeopjariCat-2.0.13.exe": {
+      "size_bytes": 39664640,
+      "sha256": "783c305ade9d60bb904c3a29b2579b7f786131a7fb05832ffdf0a430df5b7025",
+      "github_api_digest": "sha256:783c305ade9d60bb904c3a29b2579b7f786131a7fb05832ffdf0a430df5b7025",
+      "url": "https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.13/YeopjariCat-2.0.13.exe"
+    },
+    "YeopjariCat-Windows-2.0.13.zip": {
+      "size_bytes": 34973609,
+      "sha256": "19a2e82703137ff49eee58db21be7ddabaa887aa01550e021d9e3abde5bb4754",
+      "github_api_digest": "sha256:19a2e82703137ff49eee58db21be7ddabaa887aa01550e021d9e3abde5bb4754",
+      "url": "https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.13/YeopjariCat-Windows-2.0.13.zip"
+    }
+  },
+  "checks": {
+    "all_downloaded_sizes_match_github_api": true,
+    "all_downloaded_sha256_match_github_api_asset_digests": true,
+    "sha256sums_matches_all_four_declared_files": true,
+    "tools_release_verify": true,
+    "actual_pe_x64_version_and_korean_dialog": true,
+    "zip_crc_and_expected_six_entries": true,
+    "zip_exe_equals_standalone_exe": true,
+    "zip_feed_equals_official_url": true,
+    "zip_notes_equal_feed_and_release_notes": true,
+    "windows_self_test_and_render_steps_succeeded": true,
+    "windows_silent_exe_step_succeeded": true,
+    "all_jobs_bound_to_same_source_run_and_attempt": true,
+    "feed_download_url_is_exact_tagged_exe_asset": true,
+    "actual_pe_normal_and_delay_imports_and_all_resource_leaves_checked_for_audio": true
+  },
+  "exe_version_info": {
+    "FileDescription": "Yeopjari Cat - a quiet desktop companion",
+    "FileVersion": "2.0.13",
+    "InternalName": "YeopjariCat",
+    "OriginalFilename": "YeopjariCat.exe",
+    "ProductName": "Yeopjari Cat",
+    "ProductVersion": "2.0.13"
+  },
+  "zip_entries": [
+    "YeopjariCat.exe",
+    "update-feed.txt",
+    "README_KO.txt",
+    "CHANGELOG_KO.txt",
+    "THIRD_PARTY_NOTICES.txt",
+    "DISTRIBUTION_KO.txt"
+  ],
+  "verification_code": {
+    "expected_resources_sha256": "a0c5aa1ce07133dee49001915e84accb003e39bebbcb13b58f044a611beb5440",
+    "public_verifier_sha256": "02e3cf8214b912cf9e0900b7eeba603d7c29c43d9571fcd3b9455fd6ea1afded",
+    "frozen_release_verifiers": {
+      "tools/release.py": "0c89fd6d88af079d26173dc814537690d1ed23c6e387d260caa88770a5e7ed16",
+      "tools/verify_resources.py": "97172f99b86a5319bc732aa523e0913c5ca6225b2016ed414ee0ef1505b90d36",
+      "tools/verify_silent_exe.py": "0ccd0c0c1a8894ceaccd65b9250571e642ac89ec1851fd796e9ada1b7833fbde"
+    }
+  },
+  "silent_executable": {
+    "passed": true,
+    "audio_resource_count": 0,
+    "playback_import_count": 0,
+    "resource_leaves_checked": 24,
+    "import_dlls_checked": 25,
+    "delay_import_dlls_checked": 0
+  },
+  "embedded_artwork": {
+    "all_expected_png_resources_match_snapshotted_pins_and_tagged_source": true,
+    "resources": [
+      {
+        "resource_id": 101,
+        "source_path": "assets/cat.png",
+        "sha256": "f92c5b30167b8978252c812af65ac99ec5be1e7c79fffa1bf3d94810b25d9803",
+        "size_bytes": 1495395,
+        "width": 1774,
+        "height": 887
+      },
+      {
+        "resource_id": 102,
+        "source_path": "assets/cat-actions.png",
+        "sha256": "01d3cb47c255b2e6394c154419c1a18719815135856eb7585e60153aab437bc5",
+        "size_bytes": 1191305,
+        "width": 1774,
+        "height": 887
+      },
+      {
+        "resource_id": 103,
+        "source_path": "assets/cat-silver.png",
+        "sha256": "dda2643da439a790ee820c6a4b764eb56807a76f8c59292cc613342a80fd7db0",
+        "size_bytes": 1260946,
+        "width": 1774,
+        "height": 887
+      },
+      {
+        "resource_id": 104,
+        "source_path": "assets/cat-silver-actions.png",
+        "sha256": "23b7932ab631a278fb0fc708d19f49256934d34015a2e91f20498dc2d6f8ceaf",
+        "size_bytes": 1262958,
+        "width": 1774,
+        "height": 887
+      },
+      {
+        "resource_id": 105,
+        "source_path": "assets/cat-jump-churu.png",
+        "sha256": "ce44c6f4bc0e39c8c9f48e835d36537a2f097c1642df5f40e4edbf8c2f484507",
+        "size_bytes": 1524464,
+        "width": 887,
+        "height": 1774
+      },
+      {
+        "resource_id": 106,
+        "source_path": "assets/cat-gestures.png",
+        "sha256": "70dd2d5bbeb8d9163dbf5b73563011646a655ab2f22a7df08a0b8f60f92332c6",
+        "size_bytes": 1643520,
+        "width": 887,
+        "height": 1774
+      },
+      {
+        "resource_id": 107,
+        "source_path": "assets/cat-recline.png",
+        "sha256": "dfa0d8b2d3ef2635c08dd48a8e5cb7b2a636f679db9798e8d9ff3399ae48c201",
+        "size_bytes": 1988183,
+        "width": 1536,
+        "height": 1024
+      },
+      {
+        "resource_id": 109,
+        "source_path": "assets/companion-poses.png",
+        "sha256": "218e6986ed1f4e79c36eec45cde5f0f95eedf9a062865596ee765b596e819494",
+        "size_bytes": 2434959,
+        "width": 1254,
+        "height": 1254
+      },
+      {
+        "resource_id": 110,
+        "source_path": "assets/companions-hang.png",
+        "sha256": "493b5dba3b21280101770020ae8181bb11c60ec2e343442773c463ce39a45711",
+        "size_bytes": 2358813,
+        "width": 1536,
+        "height": 1024
+      },
+      {
+        "resource_id": 111,
+        "source_path": "assets/companions-back.png",
+        "sha256": "f2feedc70a3870b4c4c28c348bc0fd436c3c405283471305d3d41b383fe6f2ac",
+        "size_bytes": 1662682,
+        "width": 1536,
+        "height": 1024
+      },
+      {
+        "resource_id": 112,
+        "source_path": "assets/companions-sleep.png",
+        "sha256": "53ef4bb232993ce72b5cc9deba5b2492469308eb38258da8b52766706596e2a1",
+        "size_bytes": 3104062,
+        "width": 1254,
+        "height": 1254
+      },
+      {
+        "resource_id": 113,
+        "source_path": "assets/care-sprites/c0-groom.png",
+        "sha256": "d26e8495f42da710c4f9a0b9488ecc4666513146dcc5268ef5311e253cd654f4",
+        "size_bytes": 1668347,
+        "width": 1254,
+        "height": 1254
+      },
+      {
+        "resource_id": 114,
+        "source_path": "assets/care-sprites/c0-sleep.png",
+        "sha256": "76560182751c11b45ff87cea4f30904a48a014c0000f2fffef4d883b2aaeab7a",
+        "size_bytes": 1531477,
+        "width": 1774,
+        "height": 887
+      },
+      {
+        "resource_id": 115,
+        "source_path": "assets/care-sprites/c0-box.png",
+        "sha256": "129a0451eb05935f180ba230df3e8b071412a5df202c730f8f0cf7550f79fe15",
+        "size_bytes": 1662151,
+        "width": 1774,
+        "height": 887
+      },
+      {
+        "resource_id": 116,
+        "source_path": "assets/care-sprites/c0-fish.png",
+        "sha256": "5577d90a87569acab3a20046e34df40651dca4172092a29c81c2f7e95b2f3697",
+        "size_bytes": 1895867,
+        "width": 1774,
+        "height": 887
+      },
+      {
+        "resource_id": 117,
+        "source_path": "assets/care-sprites/c0-punch.png",
+        "sha256": "580e91c043ace82a4f04ba8de95b2511b3a6fe764e5def82b91b3da95b9b00c0",
+        "size_bytes": 1641880,
+        "width": 1448,
+        "height": 1086
+      },
+      {
+        "resource_id": 118,
+        "source_path": "assets/care-sprites/c0-eat.png",
+        "sha256": "225ef4fc0253da354fc1d186de3394390aa68b78be5d14d80e3653581f85bd09",
+        "size_bytes": 1780028,
+        "width": 1086,
+        "height": 1448
+      },
+      {
+        "resource_id": 119,
+        "source_path": "assets/care-sprites/c0-jump.png",
+        "sha256": "8d1f2bf8e3502381061df15a28f0fca85ee2db57ef963cf72554ec44ff6b4fd7",
+        "size_bytes": 1938989,
+        "width": 1254,
+        "height": 1254
+      },
+      {
+        "resource_id": 120,
+        "source_path": "assets/care-sprites/c0-treat.png",
+        "sha256": "1cc0d92d56fc3b55b85a2ed1d90a29b4e00a3d1c9a8695a7e3af4be1d3044e8e",
+        "size_bytes": 2241953,
+        "width": 1536,
+        "height": 1024
+      },
+      {
+        "resource_id": 193,
+        "source_path": "assets/care-sprites/box-prop.png",
+        "sha256": "63341a74fd39c414480add605370e7ee3f57063ca74da8ec7d56e02c70931ac1",
+        "size_bytes": 692179,
+        "width": 1659,
+        "height": 948
+      },
+      {
+        "resource_id": 400,
+        "source_path": "assets/care-sprites/c0-walk.png",
+        "sha256": "fdb52258ede319c7f23ffa0af019b8d3fa677bf180caa1e9a89e1b37db0e9e78",
+        "size_bytes": 1629569,
+        "width": 1254,
+        "height": 1254
+      }
+    ]
+  },
+  "native_review_assets": {
+    "walk-cream-gdi.png": {
+      "size_bytes": 2813566,
+      "sha256": "34985a7904864b0c5be9ca8c1394949cfceae0daf666592b7a2558a9ae038fd7",
+      "github_api_digest": "sha256:34985a7904864b0c5be9ca8c1394949cfceae0daf666592b7a2558a9ae038fd7",
+      "url": "https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.13/walk-cream-gdi.png"
+    },
+    "walk-silver-gdi.png": {
+      "size_bytes": 779873,
+      "sha256": "66cc9762a0c81aad5c74e21d0322171c07400151224df327231d2ff3294a3ecd",
+      "github_api_digest": "sha256:66cc9762a0c81aad5c74e21d0322171c07400151224df327231d2ff3294a3ecd",
+      "url": "https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.13/walk-silver-gdi.png"
+    },
+    "care-sprites-gdi.png": {
+      "size_bytes": 2736240,
+      "sha256": "a9b857a6594bccaa5e2e8f737c8b8f552ae47d92a5d21de56fc3912ac435b96e",
+      "github_api_digest": "sha256:a9b857a6594bccaa5e2e8f737c8b8f552ae47d92a5d21de56fc3912ac435b96e",
+      "url": "https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.13/care-sprites-gdi.png"
+    },
+    "care-cache-stress.json": {
+      "size_bytes": 1559,
+      "sha256": "eb1b97102c14469e11eede451c3e88ba660468cf17298322563cd56e811a2791",
+      "github_api_digest": "sha256:eb1b97102c14469e11eede451c3e88ba660468cf17298322563cd56e811a2791",
+      "url": "https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.13/care-cache-stress.json"
+    },
+    "performance-v2.0.13.json": {
+      "size_bytes": 496635,
+      "sha256": "fce08371010da256d07d34f45fdc89ec3dff350f39bca87e63532e864711e5df",
+      "github_api_digest": "sha256:fce08371010da256d07d34f45fdc89ec3dff350f39bca87e63532e864711e5df",
+      "url": "https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.13/performance-v2.0.13.json"
+    },
+    "v2.0.12-samples.csv": {
+      "size_bytes": 31638,
+      "sha256": "f7463e6e5a998764c5157d45724f94d4833082531eebec5fa610058dbb790343",
+      "github_api_digest": "sha256:f7463e6e5a998764c5157d45724f94d4833082531eebec5fa610058dbb790343",
+      "url": "https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.13/v2.0.12-samples.csv"
+    },
+    "candidate-samples.csv": {
+      "size_bytes": 31773,
+      "sha256": "c99313ff2ad28f4f9ab064c5bcf5bcc07984ce064c6be5d957c54270f6cc2a24",
+      "github_api_digest": "sha256:c99313ff2ad28f4f9ab064c5bcf5bcc07984ce064c6be5d957c54270f6cc2a24",
+      "url": "https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.13/candidate-samples.csv"
+    },
+    "performance-summary.png": {
+      "size_bytes": 29277,
+      "sha256": "fa66f0418e3563e60a54f4664bc3616d767d6e36fe8d377a14f8e5ccc0f39aa2",
+      "github_api_digest": "sha256:fa66f0418e3563e60a54f4664bc3616d767d6e36fe8d377a14f8e5ccc0f39aa2",
+      "url": "https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.13/performance-summary.png"
+    }
+  },
+  "performance_evidence": {
+    "measured_application_comparison": {
+      "conditions": {
+        "disposable_profile": true,
+        "logical_processors": 4,
+        "windows": "Microsoft Windows NT 10.0.20348.0",
+        "system_dpi": 96,
+        "screen_width": 1024,
+        "screen_height": 768,
+        "sample_interval_ms": 250,
+        "idle_seconds": 20,
+        "active_seconds": 30,
+        "switch_cycles": 20,
+        "switch_interval_ms": 1000,
+        "settle_seconds": 10,
+        "cpu_normalization": "process kernel+user CPU / measured wall / logical processors",
+        "executable_file_cache": "each executable stream read immediately before launch; warm filesystem cache",
+        "autonomy": "same saved state and wall schedule; random action mix is not deterministic",
+        "repetition": "real UI menu character changes, confirmed in private fixture files; deterministic frame-cache stress is separate",
+        "peak_private": "maximum sampled PrivateUsage; OS peak commit is reported separately",
+        "leakage": "observed growth/slope and post-loop settling only; a short run cannot prove absence of leaks"
+      },
+      "runs": [
+        {
+          "label": "v2.0.12",
+          "exe_sha256": "64a324cc776c97e4bd61c254f960769ebb3df56968d56987cae33f8484892cb8",
+          "file_version": "2.0.12",
+          "exe_bytes": 35133952,
+          "startup_ms": 1125.4678000000001,
+          "startup_cpu_seconds": 1.109375,
+          "startup_private_bytes": 521342976,
+          "scenarios": [
+            {
+              "name": "paused_idle",
+              "wall_seconds": 20.068903000000002,
+              "cpu_seconds": 0,
+              "cpu_one_core_percent": 0,
+              "cpu_machine_percent": 0,
+              "private_bytes_start": 521564160,
+              "private_bytes_end": 521572352,
+              "private_bytes_peak_sampled": 521572352,
+              "working_set_peak_sampled": 517369856,
+              "os_peak_working_set_bytes": 517763072,
+              "os_peak_commit_bytes": 521572352,
+              "observed_private_growth_bytes": 8192,
+              "private_growth_slope_bytes_per_second": 29.560343428847503,
+              "action_count": 0
+            },
+            {
+              "name": "ordinary_autonomous_activity",
+              "wall_seconds": 30.06724,
+              "cpu_seconds": 0,
+              "cpu_one_core_percent": 0,
+              "cpu_machine_percent": 0,
+              "private_bytes_start": 521572352,
+              "private_bytes_end": 521555968,
+              "private_bytes_peak_sampled": 521584640,
+              "working_set_peak_sampled": 517259264,
+              "os_peak_working_set_bytes": 517763072,
+              "os_peak_commit_bytes": 521584640,
+              "observed_private_growth_bytes": -16384,
+              "private_growth_slope_bytes_per_second": -602.4077729469083,
+              "action_count": 0
+            },
+            {
+              "name": "repeated_character_switch",
+              "wall_seconds": 19.670223099999998,
+              "cpu_seconds": 0.453125,
+              "cpu_one_core_percent": 2.303608849256011,
+              "cpu_machine_percent": 0.5759022123140027,
+              "private_bytes_start": 521555968,
+              "private_bytes_end": 521773056,
+              "private_bytes_peak_sampled": 521838592,
+              "working_set_peak_sampled": 517275648,
+              "os_peak_working_set_bytes": 517865472,
+              "os_peak_commit_bytes": 521842688,
+              "observed_private_growth_bytes": 217088,
+              "private_growth_slope_bytes_per_second": -1171.6232644844133,
+              "action_count": 20
+            },
+            {
+              "name": "post_repeat_idle_settle",
+              "wall_seconds": 10.0268487,
+              "cpu_seconds": 0,
+              "cpu_one_core_percent": 0,
+              "cpu_machine_percent": 0,
+              "private_bytes_start": 521752576,
+              "private_bytes_end": 521773056,
+              "private_bytes_peak_sampled": 521773056,
+              "working_set_peak_sampled": 517042176,
+              "os_peak_working_set_bytes": 517865472,
+              "os_peak_commit_bytes": 521842688,
+              "observed_private_growth_bytes": 20480,
+              "private_growth_slope_bytes_per_second": 284.5844395397211,
+              "action_count": 0
+            }
+          ]
+        },
+        {
+          "label": "candidate",
+          "exe_sha256": "783c305ade9d60bb904c3a29b2579b7f786131a7fb05832ffdf0a430df5b7025",
+          "file_version": "2.0.13",
+          "exe_bytes": 39664640,
+          "startup_ms": 1324.4873,
+          "startup_cpu_seconds": 1.25,
+          "startup_private_bytes": 432861184,
+          "scenarios": [
+            {
+              "name": "paused_idle",
+              "wall_seconds": 20.0932131,
+              "cpu_seconds": 0.046875,
+              "cpu_one_core_percent": 0.23328772639155457,
+              "cpu_machine_percent": 0.05832193159788864,
+              "private_bytes_start": 433074176,
+              "private_bytes_end": 433119232,
+              "private_bytes_peak_sampled": 433119232,
+              "working_set_peak_sampled": 444780544,
+              "os_peak_working_set_bytes": 445186048,
+              "os_peak_commit_bytes": 433119232,
+              "observed_private_growth_bytes": 45056,
+              "private_growth_slope_bytes_per_second": 917.0798961187487,
+              "action_count": 0
+            },
+            {
+              "name": "ordinary_autonomous_activity",
+              "wall_seconds": 30.186036200000004,
+              "cpu_seconds": 0.0625,
+              "cpu_one_core_percent": 0.20704937735415554,
+              "cpu_machine_percent": 0.051762344338538886,
+              "private_bytes_start": 433119232,
+              "private_bytes_end": 433102848,
+              "private_bytes_peak_sampled": 433119232,
+              "working_set_peak_sampled": 444743680,
+              "os_peak_working_set_bytes": 445186048,
+              "os_peak_commit_bytes": 433119232,
+              "observed_private_growth_bytes": -16384,
+              "private_growth_slope_bytes_per_second": -919.3679949231333,
+              "action_count": 0
+            },
+            {
+              "name": "repeated_character_switch",
+              "wall_seconds": 19.8201584,
+              "cpu_seconds": 0.25,
+              "cpu_one_core_percent": 1.261342088971398,
+              "cpu_machine_percent": 0.3153355222428495,
+              "private_bytes_start": 433102848,
+              "private_bytes_end": 433049600,
+              "private_bytes_peak_sampled": 433111040,
+              "working_set_peak_sampled": 444583936,
+              "os_peak_working_set_bytes": 445186048,
+              "os_peak_commit_bytes": 433119232,
+              "observed_private_growth_bytes": -53248,
+              "private_growth_slope_bytes_per_second": -4248.531590543263,
+              "action_count": 20
+            },
+            {
+              "name": "post_repeat_idle_settle",
+              "wall_seconds": 10.0883989,
+              "cpu_seconds": 0,
+              "cpu_one_core_percent": 0,
+              "cpu_machine_percent": 0,
+              "private_bytes_start": 433049600,
+              "private_bytes_end": 433049600,
+              "private_bytes_peak_sampled": 433049600,
+              "working_set_peak_sampled": 444379136,
+              "os_peak_working_set_bytes": 445186048,
+              "os_peak_commit_bytes": 433119232,
+              "observed_private_growth_bytes": 0,
+              "private_growth_slope_bytes_per_second": 0,
+              "action_count": 0
+            }
+          ]
+        }
+      ]
+    },
+    "synthetic_cache_capacity": {
+      "schema": 1,
+      "status": "passed",
+      "test": "native_frame_cache_capacity",
+      "scope": "tiny synthetic PNG decode/cache/render regression; not real-app old/new performance",
+      "per_atlas_pixel_budget": 33554432,
+      "resident_pixel_budget": 50331648,
+      "cases": [
+        {
+          "frame_count": 64,
+          "resident_pixels": 49152,
+          "resident_bytes": 196608,
+          "render_calls": 192,
+          "repeats": 3,
+          "pointer_reuse": true,
+          "budget_rejection_atomic": true,
+          "source_pixels_unchanged": true,
+          "decode_prepare_wall_ms": 0,
+          "decode_prepare_cpu_seconds": 0,
+          "playback_wall_ms": 0,
+          "playback_cpu_seconds": 0,
+          "private_bytes_before_playback": 433836032,
+          "private_bytes_after_playback": 433836032,
+          "os_peak_working_set_bytes": 437460992,
+          "os_peak_commit_bytes": 434032640
+        },
+        {
+          "frame_count": 128,
+          "resident_pixels": 98304,
+          "resident_bytes": 393216,
+          "render_calls": 384,
+          "repeats": 3,
+          "pointer_reuse": true,
+          "budget_rejection_atomic": true,
+          "source_pixels_unchanged": true,
+          "decode_prepare_wall_ms": 0,
+          "decode_prepare_cpu_seconds": 0,
+          "playback_wall_ms": 0,
+          "playback_cpu_seconds": 0,
+          "private_bytes_before_playback": 433836032,
+          "private_bytes_after_playback": 433836032,
+          "os_peak_working_set_bytes": 438284288,
+          "os_peak_commit_bytes": 434229248
+        },
+        {
+          "frame_count": 256,
+          "resident_pixels": 196608,
+          "resident_bytes": 786432,
+          "render_calls": 768,
+          "repeats": 3,
+          "pointer_reuse": true,
+          "budget_rejection_atomic": true,
+          "source_pixels_unchanged": true,
+          "decode_prepare_wall_ms": 0,
+          "decode_prepare_cpu_seconds": 0,
+          "playback_wall_ms": 0,
+          "playback_cpu_seconds": 0,
+          "private_bytes_before_playback": 434774016,
+          "private_bytes_after_playback": 434774016,
+          "os_peak_working_set_bytes": 439656448,
+          "os_peak_commit_bytes": 435560448
+        }
+      ]
+    },
+    "checks": {
+      "candidate_sha256_matches_published_exe": true,
+      "baseline_is_pinned_public_v2_0_12": true,
+      "cpu_ratios_recomputed_from_samples": true,
+      "sampled_memory_peaks_recomputed": true,
+      "csv_samples_match_json": true,
+      "native_cache_64_128_256_completed": true
+    },
+    "scope": "No numerical superiority threshold is asserted; randomized autonomous activity is not an identical action replay and short runs cannot prove the absence of leaks."
+  },
+  "publication_gate": "The workflow creates a tested draft only. Stable publication is a separate action after native-image review; this verifier checks the public result and successful bound preparation workflow.",
+  "verification_inputs": "Direct public v2.0.13 asset URLs, official latest URL and GitHub REST release/tag/workflow/job metadata. Local release-info.json reconstructed from public API digests solely for tools/release.py verification. All 21 PNG resources are compared with snapshotted hashes and actual tagged source. Frozen PE verification rejects audio payloads, retired cue IDs, playback functions in normal and delay imports; animation-only timer imports are permitted.",
+  "limitations": [
+    "Windows CI self-test and GDI+ render results are checked through successful job/step metadata; this independent verification does not execute the EXE locally.",
+    "No executable is run locally. Silent verification statically checks PE imports and resources; manual Windows user-session validation is separate."
+  ]
+}
