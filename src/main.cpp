@@ -2556,10 +2556,11 @@ void Render() {
     auto placement = cat::render::BuildPlacement(g.work.bottom, g.surface.height,
         g.dpiScale, physical.lift, pose.lift, bodyScale);
     // The fish is drawn in front of the feet in the supplied art. Reserve
-    // transparent room below the registered root rather than crop the fish
-    // or lift/resize the entire cat to fit the prop's bounding box.
+    // transparent room below the registered root for props and airborne legs,
+    // without lifting/resizing the cat to fit the image's bounding box.
     int bottomInset=0;
-    if(authored && authored->layout->clip==cat::sprite_sequence::Clip::Fish) {
+    if(authored && (authored->layout->clip==cat::sprite_sequence::Clip::Fish ||
+            authored->layout->clip==cat::sprite_sequence::Clip::Jump)) {
         bottomInset=cat::render::SpriteBottomSafetyInset(*authored->layout,110*bodyScale,
             cat::nutrition::VisualModifiers(g.nutrition).bodyHeight);
         placement=cat::render::WithBottomSafetyInset(placement,bottomInset);
