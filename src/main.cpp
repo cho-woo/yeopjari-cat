@@ -3435,7 +3435,15 @@ cat::life::EventContext LifeEventContext(ULONGLONG ticks, bool decisionBoundary 
     context.crownWorn=false; // Legacy wardrobe values are retained only in storage.
     context.boxAvailable=g.toy==ToyKind::Box && std::abs(g.toyX-g.centerX)<42*g.dpiScale;
     const auto elapsed=ticks>=g.motionStart ? ticks-g.motionStart : 0;
-    if(g.motion==Motion::Punch && elapsed>=650 && g.punchHits>=2 && g.prank.Active()) context.trigger=cat::life::Trigger::Punch;
+    unsigned requiredHits=2;
+    if(const auto* punch=LoadedCareSprite(cat::sprite_sequence::Clip::Punch,g.preferences.character);
+            punch && punch->layout->program.stepCount) {
+        requiredHits=0;
+        for(unsigned i=0;i<punch->layout->program.cueCount;++i)
+            if(punch->layout->program.cues[i].events&cat::sprite_sequence::Contact)++requiredHits;
+    }
+    if(g.motion==Motion::Punch && elapsed>=650 && requiredHits &&
+            g.punchHits>=static_cast<int>(requiredHits) && g.prank.Active()) context.trigger=cat::life::Trigger::Punch;
     else if(g.motion==Motion::TailChase && elapsed>=1600) context.trigger=cat::life::Trigger::TailChase;
     else if(g.motion==Motion::Sneeze && elapsed>=1200) context.trigger=cat::life::Trigger::Sneeze;
     const auto physical=g.physics.CurrentPose();
