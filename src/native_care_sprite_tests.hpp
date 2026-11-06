@@ -271,10 +271,16 @@ int NativeActualCareSpriteRenderTest(std::string& context) {
             for(int y=0;y<f.rect.height;++y)for(int x=0;x<f.rect.width;++x) {
                 Color color;
                 if(asset->image->GetPixel(f.rect.x+x,f.rect.y+y,&color)!=Ok)return 300;
-                reference[static_cast<std::size_t>(y)*f.rect.width+x]=color.GetValue();
+                const unsigned alpha=color.GetA();
+                reference[static_cast<std::size_t>(y)*f.rect.width+x]=(alpha<<24)|
+                    (((color.GetR()*alpha+127)/255)<<16)|(((color.GetG()*alpha+127)/255)<<8)|
+                    ((color.GetB()*alpha+127)/255);
             }
+            // Compare equal premultiplied sampling formats. GDI+ interpolates
+            // straight ARGB edges differently; that is not a frame-selection
+            // or registration error in the PARGB renderer.
             auto crop=std::make_unique<Bitmap>(f.rect.width,f.rect.height,f.rect.width*4,
-                PixelFormat32bppARGB,reinterpret_cast<BYTE*>(reference.data()));
+                PixelFormat32bppPARGB,reinterpret_cast<BYTE*>(reference.data()));
             if(crop->GetLastStatus()!=Ok)return 300;
             {
                 Graphics graphics(canvas.image.get());configure(graphics);
@@ -286,7 +292,13 @@ int NativeActualCareSpriteRenderTest(std::string& context) {
                 graphics.Flush(FlushIntentionSync);
                 if(status!=Ok||graphics.GetLastStatus()!=Ok)return 300;
             }
-            if(!nearPixels(copy(),direct)){context+=" wrong source rectangle/anchor";return 301;}
+            if(!nearPixels(copy(),direct)){
+                const auto expected=copy();unsigned maxDifference=0;std::size_t changed=0;
+                for(std::size_t i=0;i<expected.size();++i){const auto delta=static_cast<unsigned>(std::abs(static_cast<int>(expected[i])-direct[i]));
+                    maxDifference=std::max(maxDifference,delta);changed+=delta>1;}
+                context+=" wrong source rectangle/anchor maxDifference="+std::to_string(maxDifference)+
+                    " channels="+std::to_string(changed);return 301;
+            }
             pose.angle=4;pose.scaleX=.8;pose.scaleY=1.2;pose.joints.headNod=.7;
             pose.joints.crouch=.8;pose.joints.frontLeft=.6;pose.face.blink=.9;
             if(!draw(pose,cat::Character::Cream,normal,110,false)||copy()!=direct)return 302;
