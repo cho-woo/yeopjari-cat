@@ -492,3 +492,90 @@ int NativeActualCareSpriteRenderTest(std::string& context) {
     context="all actual authored care resources, source ROIs, anchors, shapes and dispatcher checks passed";
     return 0;
 }
+
+// Invoke from the initialized in-memory NativeToyHostTest fixture, never from
+// an application session. Metadata-only assets exercise the real host boundary
+// without opening files, decoding artwork or requiring an application window.
+int NativeAuthoredHoldHostTest() {
+    using namespace cat::sprite_sequence;
+    const auto before=g.physics.CurrentPose();
+    if(g.window||g.initialized||g.brain||!g.physicsReady||!before.grounded||before.onPlatform||
+            before.hanging||std::abs(before.velocityX)>.5||g.toy!=ToyKind::None||EnvironmentBusy())return 490;
+    const auto birthday=cat::Serialize(g.pet);
+    const auto limits=MovementBoundsLogical();
+    struct RestoreHost {
+        cat::Preferences preferences=g.preferences;
+        decltype(g.life.outcome) life=g.life.outcome;
+        decltype(g.memory.outcome) memory=g.memory.outcome;
+        Motion motion=g.motion,walking=g.walkingMotion;
+        ULONGLONG start=g.motionStart,decision=g.nextDecision,serial=g.motionSerial,
+            claimed=g.autonomousClaimedAt,tick=g.autonomousTick;
+        bool fish=g.fishMeal,rest=g.autonomousResting,dispatch=g.autonomousDispatching,
+            reaction=g.companionReaction,waiting=g.waitingForStop,pending=g.jumpPending,
+            launched=g.jumpLaunched,waking=g.wakingFromSleep;
+        unsigned groom=g.groomVariant,sleep=g.sleepVariant;
+        int punch=g.punchHits;
+        decltype(g.punchCues) cues=g.punchCues;
+        decltype(g.random) random=g.random;
+        double x=0,low=0,high=0,speed=g.speed;
+        ~RestoreHost() {
+            g.preferences=preferences;g.life.outcome=life;g.memory.outcome=memory;
+            g.motion=motion;g.walkingMotion=walking;g.motionStart=start;g.nextDecision=decision;g.motionSerial=serial;
+            g.autonomousClaimedAt=claimed;g.autonomousTick=tick;g.fishMeal=fish;g.autonomousResting=rest;
+            g.autonomousDispatching=dispatch;g.companionReaction=reaction;g.waitingForStop=waiting;
+            g.jumpPending=pending;g.jumpLaunched=launched;g.wakingFromSleep=waking;
+            g.groomVariant=groom;g.sleepVariant=sleep;g.punchHits=punch;g.punchCues=cues;g.random=random;
+            g.speed=speed;
+            g.physics.Reset(x,low,high);
+        }
+    } restoreHost;
+    restoreHost.x=before.x;restoreHost.low=limits.first;restoreHost.high=limits.second;
+    // Declare metadata before the scope: a dummy asset's layout remains alive
+    // until the scope clears it and restores the actual loaded resources.
+    auto layout=std::make_unique<cat::sprite_assets::Descriptor>();
+    DisabledCareSpriteScope restoreAssets;
+    layout->character=0;layout->columns=2;layout->rows=1;layout->frameCount=2;
+    layout->imageWidth=48;layout->imageHeight=32;layout->referenceHeight=32;
+    layout->frames[0]={{0,0,24,32},{12,30}};layout->frames[1]={{24,0,24,32},{12,30}};
+    layout->program.stepCount=2;layout->program.steps[0]={0,30};layout->program.steps[1]={1,30};
+    layout->program.intro={0,1};layout->program.loop={1,0};layout->program.outro={1,1};
+    auto dummy=std::make_unique<CareSpriteAtlas>();dummy->layout=layout.get();g.careSprites.push_back(std::move(dummy));
+    g.preferences.character=cat::Character::Cream;
+    g.life.outcome=cat::life::storage::Outcome::Blocked;g.memory.outcome=cat::memory::storage::Outcome::Blocked;
+    g.physics.SetTargetVelocity(0);
+    const auto begin=[&](Clip clip,Finish finish) {
+        layout->clip=clip;layout->resourceId=cat::sprite_assets::ResourceId(clip,0);layout->program.finish=finish;
+        const auto motion=clip==Clip::Groom?Motion::Groom:clip==Clip::Treat?Motion::Treat:
+            clip==Clip::Punch?Motion::Punch:Motion::Eat;
+        g.autonomousDispatching=false;g.autonomousClaimedAt=std::numeric_limits<ULONGLONG>::max();
+        SetMotion(motion,60);g.fishMeal=clip==Clip::Fish;g.waitingForStop=false;
+    };
+    for(const auto clip:{Clip::Groom,Clip::Eat,Clip::Fish,Clip::Treat,Clip::Punch}) {
+        begin(clip,Finish::Hold);
+        if(!cat::sprite_assets::Valid(*layout))return 491;
+        const auto serial=g.motionSerial,start=g.motionStart,end=g.nextDecision;
+        const auto held=g.motion;
+        if(PrimaryAuthoredCareHolding(start+20)||!PrimaryAuthoredCareHolding(end))return 491;
+        for(const auto offset:{0ULL,16ULL,1000ULL,60000ULL}) {
+            DispatchAutonomousMotion(end+offset);
+            if(g.motion!=held||g.motionSerial!=serial||g.motionStart!=start||g.nextDecision!=end||g.autonomousResting)return 492;
+        }
+        if(clip==Clip::Groom) {
+            // Holding the final picture is not a physics pause or an airborne
+            // lock. An external loss of support still follows Box2D gravity.
+            if(!g.physics.Jump(25))return 493;
+            g.physics.Update(1./60);
+            if(g.physics.CurrentPose().lift<=.1||PrimaryAuthoredCareHolding(end+1000))return 493;
+            for(unsigned frame=0;frame<240&&!g.physics.CurrentPose().grounded;++frame)g.physics.Update(1./60);
+            if(!g.physics.CurrentPose().grounded||g.physics.CurrentPose().lift>.2||g.motionSerial!=serial)return 493;
+        }
+        SetMotion(Motion::Watch,5000);
+        if(g.motion!=Motion::Watch||g.motionSerial==serial||PrimaryAuthoredCareHolding(GetTickCount64()+60000))return 494;
+        begin(clip,Finish::Complete);
+        const auto completeEnd=g.nextDecision;
+        if(PrimaryAuthoredCareHolding(completeEnd+1))return 495;
+        DispatchAutonomousMotion(completeEnd+1);
+        if(g.motion!=Motion::Idle||!g.autonomousResting)return 495;
+    }
+    return cat::Serialize(g.pet)==birthday?0:496;
+}
