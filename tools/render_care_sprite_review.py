@@ -20,7 +20,7 @@ import subprocess
 import tempfile
 
 import numpy as np
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageChops
 from scipy.ndimage import label
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -193,32 +193,73 @@ def register(source_dir, manifest):
 
 
 def sampled_frames(entries, output):
-    """Compile the real header: no Python reimplementation of sequence timings."""
-    cpp=['#include "cat_sprite_sequence.hpp"','#include <iostream>','int main(){',
+    """Compile the current sampler and its duration constants; never guess timing."""
+    limits={'groom':'kGroomDefaultMs+640','sleep':'kSleepStoryIntroMs+6000',
+            'box':'kBoxDurationMs+700','fish':'kFishDurationMs+600',
+            'punch':'cat::animation::kPunchDurationMs+620','eat':'kEatDurationMs+600',
+            'jump':'cat::animation::kJumpDurationMs+470','treat':'kTreatDurationMs+600'}
+    cases=[{'key':entry['clip'],'clip':entry['clip'],'sheet_frames':len(entry['frames']),
+            'limit':limits[entry['clip']],'step':80,'variant':0,'sleep':'Entering'} for entry in entries]
+    names={entry['clip']:entry for entry in entries}
+    if 'groom' in names:
+        for variant in (1,2):
+            cases.append({'key':f'groom-v{variant}','clip':'groom','sheet_frames':len(names['groom']['frames']),
+                          'limit':'kGroomDefaultMs+640','step':80,'variant':variant,'sleep':'Entering'})
+    if 'sleep' in names:
+        for key,stage,limit,step in (('sleep-wake','Waking','kSleepWakeMs+600',80),
+                                   ('sleep-rest','Resting','kSleepStoryRestMs',1000)):
+            cases.append({'key':key,'clip':'sleep','sheet_frames':len(names['sleep']['frames']),
+                          'limit':limit,'step':step,'variant':0,'sleep':stage})
+    constants=('kGroomDefaultMs','kGroomMinMs','kGroomMaxMs','kSleepStoryIntroMs','kSleepStoryRestMs',
+               'kSleepWakeMs','kBoxDurationMs','kEatDurationMs','kFishDurationMs','kTreatDurationMs',
+               'kCareMinDurationMs','kCareMaxDurationMs','kCareOutroMs','kPunchImpactMs','kPunchSecondImpactMs','kLandingMs')
+    cpp=['#include "cat_sprite_sequence.hpp"','#include "cat_animation.hpp"','#include <iostream>','int main(){',
          'using namespace cat::sprite_sequence; Options o;']
-    for entry in entries:
-        clip=entry['clip'];count=len(entry['frames'])
-        limit={'groom':6000,'sleep':5000,'box':3350,'fish':1800,'punch':1500,
-               'eat':5000,'jump':1200,'treat':4200}[clip]
-        cpp+=['o=Options{};',f'o.sheetFrames={count};']
-        cpp += [f'for(unsigned ms=0;ms<={limit};ms+=80){{']
+    for constant in constants:cpp.append(f'std::cout<<"C {constant} "<<{constant}<<"\\n";')
+    cpp.append('std::cout<<"C kPunchHostDurationMs "<<cat::animation::kPunchDurationMs<<"\\n";')
+    cpp.append('std::cout<<"C kJumpHostDurationMs "<<cat::animation::kJumpDurationMs<<"\\n";')
+    for case in cases:
+        key,clip=case['key'],case['clip'];step=case['step']
+        cpp += ['o=Options{};',f'o.sheetFrames={case["sheet_frames"]}; o.variant={case["variant"]};',
+                f'o.sleep=SleepStage::{case["sleep"]};',
+                '{',f'const auto limit=(({case["limit"]})+{step}-1)/{step}*{step};',
+                f'std::cout<<"M {key} "<<limit<<" {step}\\n";',
+                f'for(unsigned ms=0;ms<=limit;ms+={step}){{']
         if clip=='jump':
-            cpp+=['o.grounded=ms<160||ms>=920; o.jump=ms<160?JumpPhase::Crouch:JumpPhase::Landing;',
-                  'o.contactElapsedMs=ms>=920?ms-920:0; o.velocityY=320.-(static_cast<double>(ms)-160.)*.84;']
+            cpp+=['o.grounded=ms<220||ms>=1000; o.jump=ms<220?JumpPhase::Crouch:JumpPhase::Landing;',
+                  'o.contactElapsedMs=ms>=1000?ms-1000:0; o.velocityY=320.-(static_cast<double>(ms)-220.)*.84;']
         cpp += [f'auto f=Sample(Clip::{ENUMS[clip]},ms,o);',
-                f'std::cout<<"{clip} "<<ms<<" "<<f.frame<<" "<<f.groundContact<<"\\n";', '}']
+                f'std::cout<<"S {key} "<<ms<<" "<<f.frame<<" "<<f.groundContact<<" "<<f.localMs<<" "<<f.holdMs<<" "<<f.looping<<" "<<f.holding<<" "<<f.finished<<"\\n";',
+                '}','}']
     cpp+=['}']
     output.mkdir(parents=True,exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='care-review-',dir=output) as temporary:
         folder=Path(temporary);source=folder/'sample.cpp';exe=folder/'sample'
         source.write_text('\n'.join(cpp)+'\n')
-        subprocess.run(['c++','-std=c++17','-O2','-I',str(ROOT/'src'),str(source),'-o',str(exe)],check=True)
+        subprocess.run(['c++','-std=c++17','-O2','-Wall','-Wextra','-Werror','-I',str(ROOT/'src'),str(source),'-o',str(exe)],check=True)
         result=subprocess.run([str(exe)],check=True,capture_output=True,text=True).stdout
     (output/'actual-cpp-samples.txt').write_text(result)
-    frames={entry['clip']:[] for entry in entries}
+    frames={case['key']:[] for case in cases}
+    metadata={'constants':{},'sequences':{case['key']:{'clip':case['clip'],'groom_variant':case['variant'],
+        'sleep_stage':case['sleep'],'sheet_frames':case['sheet_frames'],'samples':[]} for case in cases}}
     for line in result.splitlines():
-        clip,ms,frame,ground=line.split();frames[clip].append((int(ms),int(frame),bool(int(ground))))
-    return frames
+        fields=line.split();kind,key=fields[:2]
+        if kind=='C':metadata['constants'][key]=int(fields[2]);continue
+        if kind=='M':
+            metadata['sequences'][key].update({'limit_ms':int(fields[2]),'sample_step_ms':int(fields[3])});continue
+        if kind!='S':raise ValueError(f'Unexpected C++ sampler output: {line}')
+        ms,frame,ground,local,hold,looping,holding,finished=map(int,fields[2:])
+        frames[key].append((ms,frame,bool(ground)))
+        metadata['sequences'][key]['samples'].append({'ms':ms,'frame':frame,'grounded':bool(ground),
+            'local_ms':local,'hold_ms':hold,'looping':bool(looping),'holding':bool(holding),'finished':bool(finished)})
+    for sequence in metadata['sequences'].values():
+        samples=sequence['samples'];sequence['frame_order']=[]
+        for sample in samples:
+            if not sequence['frame_order'] or sequence['frame_order'][-1]!=sample['frame']:
+                sequence['frame_order'].append(sample['frame'])
+        holds=[sample['hold_ms'] for sample in samples if sample['hold_ms'] and not sample['finished']]
+        sequence['minimum_authored_hold_ms']=min(holds) if holds else 0
+    return frames,metadata
 
 
 def runtime_image(path):
@@ -270,12 +311,82 @@ def place(canvas, image, entry, index, center, bottom, markers=True, naive=False
     return [px,py,size[0],size[1]]
 
 
+def sequence_panel(image, entry, key, sample, size=(440,290)):
+    ms,index,ground=sample
+    canvas=Image.new('RGBA',size,BACKGROUND);draw=ImageDraw.Draw(canvas)
+    floor=size[1]-30;center=size[0]/2
+    draw.line((0,floor,size[0],floor),fill=(125,135,145,255))
+    draw.text((8,6),f'{key}  t={ms/1000:.2f}s  source frame{index}',fill='white')
+    bottom=floor
+    if entry['clip']=='jump' and not ground:
+        # Preview-only ballistic root, explicitly separate from live Box2D.
+        t=(ms-220)/1000;bottom-=max(0,320*t-420*t*t)
+    place(canvas,image,entry,index,center,bottom)
+    return canvas
+
+
+def export_summary(manifest, output, report, prefix):
+    """Export a real-time timeline board with a reproducible source manifest."""
+    entries={entry['clip']:entry for entry in json.loads(manifest.read_text())['clips']}
+    sequences=report['timelines']['sequences']
+    order=[key for key in ('groom','groom-v1','groom-v2','sleep','sleep-wake','sleep-rest',
+                           'box','fish','punch','eat','treat','jump') if key in sequences]
+    images={clip:runtime_image((manifest.parent/entry['source']).resolve()) for clip,entry in entries.items()}
+    panel_width,panel_height=260,270;columns=4;header=36
+    rows=(len(order)+columns-1)//columns
+    # The compact board covers the full entry/care/box events. The separate
+    # sleep-rest GIF retains the complete120s cycle without speeding it up.
+    limit=max(sequence['limit_ms'] for key,sequence in sequences.items() if key!='sleep-rest')
+    step=80;frames=[]
+    for ms in range(0,limit+1,step):
+        board=Image.new('RGB',(columns*panel_width,rows*panel_height+header),BACKGROUND[:3]);draw=ImageDraw.Draw(board)
+        draw.text((8,4),'DEVELOPER PREVIEW - compiled C++ timing, Pillow drawing; not a Windows capture',fill='white')
+        draw.text((8,19),f'Independent examples at real speed; host event scheduling is not shown. t={ms/1000:.2f}s',fill='#dadde2')
+        for position,key in enumerate(order):
+            sequence=sequences[key];samples=sequence['samples'];index=min(ms//sequence['sample_step_ms'],len(samples)-1)
+            sample=samples[index];entry=entries[sequence['clip']]
+            panel=sequence_panel(images[sequence['clip']],entry,key,
+                (sample['ms'],sample['frame'],sample['grounded']),(panel_width,panel_height))
+            label='finished: quiet hold' if sample['finished'] else 'rest loop' if sample['looping'] else 'one event'
+            if key=='sleep-rest':label='full120s cycle in separate sleep-rest GIF'
+            ImageDraw.Draw(panel).text((8,21),label,fill='#dadde2')
+            board.paste(panel.convert('RGB'),((position%columns)*panel_width,(position//columns)*panel_height+header))
+        frames.append(board)
+    prefix=prefix.resolve();prefix.parent.mkdir(parents=True,exist_ok=True)
+    gif=Path(str(prefix)+'.gif');png=Path(str(prefix)+'.png');proof=Path(str(prefix)+'.json')
+    snapshot=min(30,len(frames)-1);frames[snapshot].save(png)
+    # One palette keeps the preview from flashing as a different pose appears.
+    palette=frames[snapshot].quantize(colors=256)
+    quantized=[frame.quantize(palette=palette,dither=Image.Dither.NONE) for frame in frames]
+    quantized[0].save(gif,save_all=True,append_images=quantized[1:],duration=step,loop=0,disposal=1,optimize=True)
+    # A retained-frame GIF is smaller, but must decode without fur trails
+    # or stale poses. Check EVERY exported frame against its fixed palette.
+    with Image.open(gif) as decoded:
+        if decoded.n_frames!=len(quantized):raise ValueError('Summary GIF lost timeline frames')
+        for index,expected in enumerate(quantized):
+            decoded.seek(index)
+            if ImageChops.difference(decoded.convert('RGB'),expected.convert('RGB')).getbbox():
+                raise ValueError(f'Summary GIF composition drift at frame{index}')
+    exported=dict(report)
+    exported['summary_artifacts']={'gif':str(gif.relative_to(ROOT)),'png':str(png.relative_to(ROOT)),
+        'gif_sha256':digest(gif),'png_sha256':digest(png),'frame_count':len(frames),'step_ms':step,
+        'duration_ms':len(frames)*step,'png_clock_ms':snapshot*step,'panel_order':order,
+        'long_sleep_rest_preview':str((output/'sleep-rest-registered.gif').relative_to(ROOT))}
+    proof.write_text(json.dumps(exported,indent=2)+'\n')
+    print(json.dumps({'summary':str(prefix),'frames':len(frames),'duration_ms':len(frames)*step}))
+
+
 def review(manifest, output):
-    data=json.loads(manifest.read_text());entries=data['clips'];samples=sampled_frames(entries,output)
+    data=json.loads(manifest.read_text());entries=data['clips'];samples,timeline=sampled_frames(entries,output)
     report={'manifest_sha256':digest(manifest),'sampler_sha256':digest(ROOT/'src/cat_sprite_sequence.hpp'),
             'placement':'DrawCare reference=110/referenceHeight; rect drawn at center-anchor*reference',
             'sample_source':'actual compiled C++ cat::sprite_sequence::Sample with sheetFrames=descriptor count',
-            'scope':'Cream character0 at 110 logical pixels, body/growth/DPI scale1; GDI interpolation differs slightly from Pillow',
+            'scope':'DEVELOPER PREVIEW: compiled C++ timelines, Pillow drawing; not a Windows capture or live Box2D simulation. Cream character0 at110 logical pixels, body/growth/DPI scale1.',
+            'preview_tool_sha256':digest(Path(__file__)),
+            'animation_header_sha256':digest(ROOT/'src/cat_animation.hpp'),
+            'presentation_limits':'Raw authored keyframes; application pose crossfades, scheduler, cursor input and window/Box2D behavior are outside this developer preview.',
+            'source_commit':subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),
+            'timelines':timeline,
             'clips':{}}
     neutral=Image.new('RGBA',((len(entries)+1)*190,170),BACKGROUND)
     old_image,old_entry=legacy_reference()
@@ -311,7 +422,7 @@ def review(manifest, output):
             if clip=='jump' and not ground:
                 # Explicit preview-only trajectory. This tests registration;
                 # the Windows application uses actual Box2D root positions.
-                t=(ms-160)/1000;bottom-=max(0,320*t-420*t*t)
+                t=(ms-220)/1000;bottom-=max(0,320*t-420*t*t)
             place(canvas,image,entry,index,220,bottom)
             frames.append(canvas.convert('RGB'))
             if clip in ('groom','eat','treat'):
@@ -327,6 +438,16 @@ def review(manifest, output):
         report['clips'][clip]={'sha256':digest(path),'size':list(image.size),'frames':len(entry['frames']),
                                'reference_height':entry['reference_height'],'sample_count':len(frames),
                                'adjacent_major_silhouette_pixels':0,'destination_rects':cells}
+    # Alternate grooming families and a full two-minute resting cycle use
+    # the same compiled sampler. Their GIF delays retain real elapsed time.
+    by_clip={entry['clip']:entry for entry in entries}
+    for key in ('groom-v1','groom-v2','sleep-wake','sleep-rest'):
+        if key not in samples:continue
+        clip=timeline['sequences'][key]['clip'];entry=by_clip[clip]
+        image=runtime_image((manifest.parent/entry['source']).resolve())
+        frames=[sequence_panel(image,entry,key,sample).convert('RGB') for sample in samples[key]]
+        frames[0].save(output/(key+'-registered.gif'),save_all=True,append_images=frames[1:],
+            duration=timeline['sequences'][key]['sample_step_ms'],loop=0,disposal=2)
     neutral.convert('RGB').save(output/'neutral-size-comparison.png')
     combined=Image.new('RGB',(2000,1900),BACKGROUND[:3]);draw=ImageDraw.Draw(combined)
     for index,entry in enumerate(entries):
@@ -336,6 +457,7 @@ def review(manifest, output):
     (output/'review.json').write_text(json.dumps(report,indent=2)+'\n')
     print(json.dumps({'manifest':str(manifest),'output':str(output),'clips':len(entries),
                       'sampler_sha256':report['sampler_sha256']}))
+    return report
 
 
 def main():
@@ -344,10 +466,12 @@ def main():
     parser.add_argument('--manifest',type=Path,default=ROOT/'build/processed-care/manifest.json')
     parser.add_argument('--out',type=Path,default=ROOT/'build/previews/care-sprites')
     parser.add_argument('--register',action='store_true')
+    parser.add_argument('--preview-prefix',type=Path,help='Optional GIF/PNG/JSON developer-preview export prefix')
     args=parser.parse_args()
     args.source_dir=args.source_dir.resolve();args.manifest=args.manifest.resolve();args.out=args.out.resolve()
     if args.register:register(args.source_dir,args.manifest)
-    review(args.manifest,args.out)
+    report=review(args.manifest,args.out)
+    if args.preview_prefix:export_summary(args.manifest,args.out,report,args.preview_prefix)
 
 
 if __name__=='__main__':main()
