@@ -442,6 +442,20 @@ void AuthoredSectionsPreserveExposureAndPersistentRest() {
     Options entering;entering.stage=Stage::Entering;
     CHECK(SampleProgram(Clip::Groom,program,100000,entering).frame==1);
     CHECK(!SampleProgram(Clip::Groom,program,100000,entering).finished);
+    auto held=program;held.finish=Finish::Hold;
+    for(const auto clip:{Clip::Groom,Clip::Eat,Clip::Fish,Clip::Treat,Clip::Punch}) {
+        CHECK(!HoldsFinalCarePose(clip,held,999));CHECK(HoldsFinalCarePose(clip,held,1000));
+        CHECK(HoldsFinalCarePose(clip,held,100000));CHECK(!HoldsFinalCarePose(clip,program,100000));
+        Options airborne;airborne.grounded=false;CHECK(!HoldsFinalCarePose(clip,held,100000,airborne));
+    }
+    for(const auto clip:{Clip::Sleep,Clip::Box,Clip::Jump,Clip::Walk,Clip::Run})
+        CHECK(!HoldsFinalCarePose(clip,held,100000));
+    noLoop.finish=Finish::Hold;
+    CHECK(!HoldsFinalCarePose(Clip::Eat,noLoop,700)); // Mid-action wait is not the final hold.
+    CHECK(HoldsFinalCarePose(Clip::Eat,noLoop,1000));
+    Options extended;extended.durationMs=3000;
+    CHECK(!HoldsFinalCarePose(Clip::Eat,noLoop,2000,extended));
+    CHECK(HoldsFinalCarePose(Clip::Eat,noLoop,3000,extended));
 }
 void AuthoredCuesAreSimulationEventsOncePerAction() {
     auto program=ThreeSectionProgram();program.cueCount=4;
@@ -489,6 +503,29 @@ void AuthoredCuesAreSimulationEventsOncePerAction() {
     repeatedDrawing.cueCount=1;repeatedDrawing.cues[0]={5,0,Contact};
     CHECK(ProgramContactActive(Clip::Punch,repeatedDrawing,900));
     CHECK(!ProgramContactActive(Clip::Punch,repeatedDrawing,100000));
+}
+void SameStepContactsUseTheLatestVisibleOffset() {
+    auto program=LinearProgram(2,1000);program.finish=Finish::Hold;program.cueCount=4;
+    // Deliberately unsorted. Equal offsets select the first registered cue,
+    // while independent simulation-event consumption still sees both cues.
+    program.cues[0]={0,800,Contact};program.cues[1]={0,200,Contact};
+    program.cues[2]={0,800,Contact|Marker};program.cues[3]={1,100,Contact};
+    CHECK(ValidProgram(program,2));
+    for(const auto& point:{std::pair<std::uint64_t,unsigned>{0,0},{199,0},{200,2},{799,2},
+            {800,1},{999,1},{1000,0},{1099,0},{1100,4},{2000,4},{2001,0},{100000,0}})
+        CHECK(ProgramContactIndex(Clip::Punch,program,point.first)==point.second);
+    ProgramPlayer player;player.Start(Clip::Punch,program);
+    CHECK(player.Advance(850).contactCount==3);
+    CHECK(ProgramContactIndex(Clip::Punch,program,player.Elapsed())==1);
+    player.Pause(true);CHECK(player.Advance(10000).contactCount==0&&player.Elapsed()==850);
+    CHECK(ProgramContactIndex(Clip::Punch,program,player.Elapsed())==1);
+    player.Pause(false);CHECK(player.Advance(10000).contactCount==1);
+    CHECK(!ProgramContactActive(Clip::Punch,program,player.Elapsed()));
+    CHECK(player.Advance(10000).contactCount==0);
+    // A skipped earlier pose does not remain eligible during the next step.
+    ProgramCueCursor cursor;
+    CHECK(cursor.Consume(Clip::Punch,program,1000).contactCount==3);
+    CHECK(!ProgramContactActive(Clip::Punch,program,1000));
 }
 void ExpandedJumpAndLocomotionFollowPhysics() {
     auto jump=LinearProgram(128,100);
@@ -585,5 +622,5 @@ void ProgramAndAtlasValidationRejectUnsafeInputs() {
 }
 
 }
-int main(){try{SheetMetadataAndEveryFrame();SleepDoesNotRestartYawnOrWake();AuthoredSheetGridsPreserveTheLegacyLayout();EightFrameSleepUsesStoryPosesWithoutWakingInItsRestLoop();EightFrameSleepWakePauseAndInterruptionRemainBounded();SleepVariantSelectionPreservesLegacyAndKeepsAlternatesRare();PunchCuesDoNotRepeatOrReplay();JumpTracksPhysicalState();JumpFlightNeverReusesThePlantedPrelaunchFrame();GroundedVisitsHoldAndGroomBounds();MealsHaveOneEntranceAndOneEnding();ExpandedProgramsVisitEveryDistinctDrawing();AuthoredSectionsPreserveExposureAndPersistentRest();AuthoredCuesAreSimulationEventsOncePerAction();ExpandedJumpAndLocomotionFollowPhysics();ProgramAndAtlasValidationRejectUnsafeInputs();
+int main(){try{SheetMetadataAndEveryFrame();SleepDoesNotRestartYawnOrWake();AuthoredSheetGridsPreserveTheLegacyLayout();EightFrameSleepUsesStoryPosesWithoutWakingInItsRestLoop();EightFrameSleepWakePauseAndInterruptionRemainBounded();SleepVariantSelectionPreservesLegacyAndKeepsAlternatesRare();PunchCuesDoNotRepeatOrReplay();JumpTracksPhysicalState();JumpFlightNeverReusesThePlantedPrelaunchFrame();GroundedVisitsHoldAndGroomBounds();MealsHaveOneEntranceAndOneEnding();ExpandedProgramsVisitEveryDistinctDrawing();AuthoredSectionsPreserveExposureAndPersistentRest();AuthoredCuesAreSimulationEventsOncePerAction();SameStepContactsUseTheLatestVisibleOffset();ExpandedJumpAndLocomotionFollowPhysics();ProgramAndAtlasValidationRejectUnsafeInputs();
 std::cout<<"Sprite sequences: "<<checks<<" checks passed\n";return EXIT_SUCCESS;}catch(const std::exception& error){std::cerr<<error.what()<<'\n';return EXIT_FAILURE;}}

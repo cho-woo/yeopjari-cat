@@ -219,18 +219,38 @@ inline unsigned ProgramContactIndex(Clip clip,const Program& program,std::uint64
                                     const Options& options={}) {
     const auto pose=SampleProgram(clip,program,elapsed,options);
     if(pose.step==kMaxProgramSteps || pose.holding || pose.finished)return 0;
-    unsigned index=0;
+    unsigned index=0,selected=0;
+    std::uint32_t latestOffset=0;
     for(unsigned i=0;i<program.cueCount;++i) {
         const auto& cue=program.cues[i];
         if((cue.events&Contact)==0)continue;
         ++index;
-        if(pose.step==cue.step && pose.localMs>=cue.offsetMs)return index;
+        // A step may contain several contacts. Select the latest elapsed
+        // offset, independent of cue registration order; equal offsets keep
+        // the first registered contact as the stable visible ordinal.
+        if(pose.step==cue.step && pose.localMs>=cue.offsetMs &&
+                (selected==0 || cue.offsetMs>latestOffset)) {
+            selected=index;latestOffset=cue.offsetMs;
+        }
     }
-    return 0;
+    return selected;
 }
 inline bool ProgramContactActive(Clip clip,const Program& program,std::uint64_t elapsed,
                                  const Options& options={}) {
     return ProgramContactIndex(clip,program,elapsed,options)!=0;
+}
+
+// Automatic care completion honors the authored final-pose policy. This is
+// deliberately not a motion/physics lock: explicit commands can replace the
+// action, and sleep, box visits and airborne phases keep their own host clocks.
+inline bool HoldsFinalCarePose(Clip clip,const Program& program,std::uint64_t elapsed,
+                               const Options& options={}) {
+    if((clip!=Clip::Groom && clip!=Clip::Eat && clip!=Clip::Fish &&
+        clip!=Clip::Treat && clip!=Clip::Punch) || program.finish!=Finish::Hold ||
+       !options.grounded || options.stage!=Stage::Automatic ||
+       elapsed<ProgramDuration(program,options))return false;
+    const auto pose=SampleProgram(clip,program,elapsed,options);
+    return pose.holding && !pose.finished;
 }
 
 struct ProgramEvents { std::uint32_t events=0;unsigned eventCount=0,contactCount=0; };

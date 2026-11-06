@@ -1,3 +1,9 @@
+// Give this test a mutable registration table without changing generated
+// production art. The real Model still resolves its usual descriptor API.
+#define kCareSprites kOriginalCareSprites
+#include "../src/care_sprites.generated.hpp"
+#undef kCareSprites
+namespace cat::sprite_assets { auto kCareSprites=kOriginalCareSprites; }
 #include "../src/cat_companion.hpp"
 #include <cstdlib>
 #include <iostream>
@@ -90,6 +96,39 @@ void AcceptedMealKeepsItsCompleteGroomFollowUp() {
     const auto restedAt=c.ticks;
     while(c.ticks-restedAt<17900) {Step(model,c);CHECK(model.View(c.ticks).motion==M::Idle);}
     CHECK(state.pet.feedCount==1&&state.memory.meals==1);
+}
+void HeldCareSurvivesAutomaticExpiryButExplicitFoodStillWins() {
+    using namespace cat::sprite_sequence;
+    auto found=std::find_if(cat::sprite_assets::kCareSprites.begin(),cat::sprite_assets::kCareSprites.end(),
+        [](const auto& asset){return asset.character==0&&asset.clip==Clip::Eat;});
+    CHECK(found!=cat::sprite_assets::kCareSprites.end());
+    struct RestoreFinish {Program& program;Finish original;~RestoreFinish(){program.finish=original;}} restore{found->program,found->program.finish};
+    found->program.finish=Finish::Hold;
+    auto state=NewState(born);state.preferences.character=cat::Character::Cream;
+    state.nutrition.fullness=state.pet.hunger=45;
+    Model model;model.Bind(state);model.Reset(0,1600,700);
+    auto c=Frame(100,model.Physical().x+60);c.primaryVisible=false;
+    CHECK(model.Feed(c.nowUtc,c.ticks,false)==cat::nutrition::FeedResult::Accepted);
+    const auto duration=ProgramDuration(found->program),deadline=100+duration;
+    model.Tick(c);
+    // Honor the same nutrition cooldown as production; the held pose survives
+    // many ordinary decisions before a valid explicit feeding overrides it.
+    while(c.ticks<deadline+cat::nutrition::FeedingCooldown*1000) {
+        Step(model,c);const auto view=model.View(c.ticks);
+        CHECK(view.motion==M::Eat&&view.physical.grounded&&std::abs(view.physical.velocityX)<.1);
+        CHECK(model.HoldingFinalCarePose(c.ticks)==(c.ticks>=deadline));
+        if(c.ticks>=deadline) {
+            const auto pose=SampleProgram(Clip::Eat,found->program,view.animation.spriteElapsedMs,view.animation.spriteOptions);
+            CHECK(pose.holding&&!pose.finished&&pose.frame==found->program.steps[found->program.stepCount-1].frame);
+        }
+    }
+    CHECK(state.pet.feedCount==1&&state.memory.meals==1);
+    state.nutrition.fullness=state.pet.hunger=45;
+    CHECK(model.Feed(c.nowUtc,c.ticks,true)==cat::nutrition::FeedResult::Accepted);
+    CHECK(model.View(c.ticks).motion==M::Treat);
+    CHECK(!model.HoldingFinalCarePose(c.ticks));
+    Step(model,c);CHECK(model.View(c.ticks).motion==M::Treat);
+    CHECK(state.pet.feedCount==1&&state.pet.snackCount==1);
 }
 void LongZeroPhysicsStallFreezesActionAndPresentation() {
     auto state=NewState(born);state.preferences.character=cat::Character::Cream;
@@ -201,6 +240,7 @@ int main() {
     try {StartupHasAQuietInterval();CompletedSocialActionCannotImmediatelyStartAnother();
         ExplicitFoodCanInviteARaceAfterTheMinimumRest();
         AcceptedMealKeepsItsCompleteGroomFollowUp();LongZeroPhysicsStallFreezesActionAndPresentation();
+        HeldCareSurvivesAutomaticExpiryButExplicitFoodStillWins();
         SocialSleepWakesBeforeItsNeutralRest();SocialGesturesFinishBeforeFollowingTheNextPosition();
         RenderingGenerationChangesAcrossResetsAndIdentity();
         AutonomousPairRunningRemainsReachableAfterQuietRest();

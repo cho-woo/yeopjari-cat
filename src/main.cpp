@@ -344,6 +344,7 @@ double MotionClock() {
 }
 void ResetMovement();
 void RefreshAnimationTimer();
+bool PrimaryAuthoredCareHolding(ULONGLONG ticks);
 LONG CurrentGroundY(ULONGLONG ticks);
 void CancelPerch();
 bool WorkInterferenceEnabled();
@@ -1332,17 +1333,19 @@ ULONGLONG PrimaryTakeoffMs(bool pounce=false) {
 
 void RefreshAnimationTimer() {
     if (!g.window) return;
+    const auto ticks=GetTickCount64();
     bool companionResting = true;
     if (g.companionStore.enabled() && g.companionModel.Bound()) {
-        const auto second = g.companionModel.View(GetTickCount64());
-        companionResting = (second.motion == Motion::Sleep || second.motion == Motion::Idle || second.motion == Motion::Watch) && second.physical.grounded &&
+        const auto second = g.companionModel.View(ticks);
+        companionResting = (second.motion == Motion::Sleep || second.motion == Motion::Idle || second.motion == Motion::Watch ||
+            g.companionModel.HoldingFinalCarePose(ticks)) && second.physical.grounded &&
             std::abs(second.physical.velocityX) < .5;
     }
     const bool toysResting = (g.toy != ToyKind::Ball ||
         (std::abs(g.toyBall.velocity) < .5 && std::abs(g.toyBall.verticalVelocity) < .5 && g.toyBall.lift < .2)) &&
         !(g.toy == ToyKind::FishingRod && g.toyEngaged);
     const bool resting = (g.motion == Motion::Sleep || g.motion == Motion::Loaf || g.motion == Motion::BoxSit ||
-        g.motion == Motion::Idle || g.motion == Motion::Watch) &&
+        g.motion == Motion::Idle || g.motion == Motion::Watch || PrimaryAuthoredCareHolding(ticks)) &&
         companionResting && toysResting &&
         (!g.physicsReady || (g.physics.CurrentPose().grounded && std::abs(WalkingVelocity(g.physics.CurrentPose())) < .5));
     const UINT interval = g.hidden ? 250 : (g.menuOpen || g.dragging || resting ? 40 : 16);
@@ -1439,6 +1442,17 @@ void SetMotion(Motion motion, ULONGLONG duration) {
     RefreshAnimationTimer();
 }
 
+bool PrimaryAuthoredCareHolding(ULONGLONG ticks) {
+    using Clip=cat::sprite_sequence::Clip;
+    const auto clip=g.motion==Motion::Groom?Clip::Groom:g.motion==Motion::Eat?(g.fishMeal?Clip::Fish:Clip::Eat):
+        g.motion==Motion::Treat?Clip::Treat:g.motion==Motion::Punch?Clip::Punch:Clip::None;
+    const auto* asset=LoadedCareSprite(clip,g.preferences.character);
+    if(!asset || !asset->layout->program.stepCount || ticks<g.motionStart)return false;
+    cat::sprite_sequence::Options options;options.sheetFrames=asset->layout->frameCount;
+    options.durationMs=g.nextDecision>=g.motionStart?g.nextDecision-g.motionStart:0;
+    options.grounded=g.physicsReady&&g.physics.CurrentPose().grounded;
+    return cat::sprite_sequence::HoldsFinalCarePose(clip,asset->layout->program,ticks-g.motionStart,options);
+}
 // Only a completed quiet interval opens a new unrelated autonomous story.
 // Explicit care, an existing story's next phase and physical safety use their
 // own paths; no random owner may replace a half-played authored action.
@@ -2868,7 +2882,7 @@ void UpdateCursorReactionSample(ULONGLONG ticks, ULONGLONG elapsedMs, POINT curs
         !g.memorySequenceCount && g.pendingCare < 0;
     input.canStart = input.canContinue && !g.waitingForStop && !g.companionModel.Busy() &&
         (g.motion == Motion::Idle || g.motion == Motion::Watch || g.motion == Motion::Walk ||
-         g.motion == Motion::Stalk || (g.motion == Motion::Loaf && ticks>=g.nextDecision));
+         g.motion == Motion::Stalk || (g.motion == Motion::Loaf && ticks>=g.nextDecision) || PrimaryAuthoredCareHolding(ticks));
     input.available = available;
     input.cursorX = (cursor.x - g.work.left) / g.dpiScale;
     interaction.cursorWorldHeight = (g.work.bottom-cursor.y)/g.dpiScale;
@@ -3589,7 +3603,8 @@ void DispatchAutonomousMotion(ULONGLONG ticks) {
     if(EnvironmentBusy() || g.lifeCrossing.Active() || g.waitingForStop || g.approachingToy ||
             g.approachingUser || g.toyEngaged || g.pendingCare>=0 || g.perch.transitioning ||
             g.physics.Hanging() || ticks<g.nextDecision || !g.physics.CurrentPose().grounded ||
-            g.autonomousClaimedAt==ticks || (g.companionReaction && g.companionModel.Busy()))return;
+            g.autonomousClaimedAt==ticks || (g.companionReaction && g.companionModel.Busy()) ||
+            PrimaryAuthoredCareHolding(ticks))return;
     g.autonomousDispatching=true;g.autonomousTick=ticks;
     const auto choose=[&] {
         if(!g.autonomousResting) {
@@ -4412,6 +4427,7 @@ int NativeToyHostTest() {
             if(g.motionSerial!=restSerial || g.nextDecision!=restDeadline)return 219;
             SetMotion(Motion::Eat,3300);
             if(g.motion!=Motion::Eat || g.autonomousResting || g.motionSerial==restSerial)return 219;
+            if(const int heldCare=NativeAuthoredHoldHostTest())return heldCare;
 
             // Join a real running primary through the production host context.
             // Matching its story must not restart the primary's run or permit

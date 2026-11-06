@@ -53,8 +53,12 @@ silhouette. Coordinate adjustments belong in anchors, not rewritten pixels.
 The playlist concatenates `intro`, `loop`, and `outro`. Each step lasts 1–60000ms;
 at most 512 steps and 64 cues are allowed. `duration_ms: 0` uses their intrinsic
 duration. A nonzero duration may extend the looping/held middle but cannot shorten
-the entrance or ending. `finish` is `complete` or `hold`. Sleep and Box remain in
-their resting region until the host explicitly enters the exit region. Jump's
+the entrance or ending. `finish` is `complete` or `hold`. For finite care actions
+(Groom, Eat, Fish, Treat, Punch), `hold` retains the final pose after the deadline
+instead of starting an automatic follow-up. Explicit care/cursor interaction and
+physical safety can still interrupt it. Sleep and Box remain in their resting
+region until the host explicitly enters the exit region; their host phases,
+including departure, are independent of this finite-care hold policy. Jump's
 three regions are selected by physical takeoff/contact and velocity, not a timer
 that moves the cat independently of Box2D.
 
@@ -68,6 +72,13 @@ Supported event names are `contact`, `takeoff`, `landing`, and `marker`. Offsets
 must fit inside the addressed step. A cue is consumed at most once per action,
 including when rendering skips frames. Event registration does not enable audio;
 the application's sound policy still applies.
+
+Cursor contacts support all 64 cue ordinals. A hit also requires the contact
+step to be currently visible and the pointer to be within the paw's radius;
+skipped contact poses and indefinitely held final poses cannot cause late hits.
+For several contact offsets on one step, the latest elapsed offset is active;
+equal offsets use the first registered contact. Cue consumption for nonvisual
+effects still handles every crossed cue once.
 
 Walk and Run also require positive `stride_pixels`, the logical travel distance
 per cycle. Their playlist phase follows measured travel. When they refer to the

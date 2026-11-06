@@ -341,6 +341,20 @@ void PounceRespectsLedgeRoofBodySizeAndNutrition() {
     CHECK(peak>411 && peak<415);
     CHECK(body.OnPlatform() && std::abs(body.CurrentPose().lift-400)<.6);
 }
+void AuthoredContactOrdinalsAboveTwoRemainOncePerAction() {
+    cat::cursor::PawContact contacts;
+    CHECK(!contacts.Observe(0,true,0,0,0,0,7));
+    CHECK(!contacts.Observe(65,true,0,0,0,0,7));
+    for(unsigned index=1;index<=cat::sprite_sequence::kMaxProgramCues;++index) {
+        CHECK(!contacts.Observe(index,false,0,0,0,0,7));
+        CHECK(!contacts.Observe(index,true,0,0,100,100,7));
+        CHECK(contacts.Observe(index,true,0,0,0,0,7));
+        CHECK(!contacts.Observe(index,true,0,0,0,0,7));
+    }
+    contacts.Reset();CHECK(contacts.Observe(64,true,0,0,0,0,7));
+    CHECK(!contacts.Observe(64,true,0,0,0,0,7));
+    CHECK(contacts.Observe(1,true,0,0,0,0,7)); // High bit cannot alias legacy first contact.
+}
 
 std::uint64_t FirstAuthoredContact(const cat::sprite_assets::Descriptor& asset) {
     for(unsigned i=0;i<asset.program.cueCount;++i) {
@@ -431,6 +445,7 @@ int main() {
         MovingTeaseBuildsFromTapToRealFrozenTargetPounce();
         PounceOffDepartureAndInterruptionPreserveExistingImpulse();
         ContactRequiresActualPawAndOwnedUnpausedAction(); PounceRespectsLedgeRoofBodySizeAndNutrition();
+        AuthoredContactOrdinalsAboveTwoRemainOncePerAction();
         RareSlowStalkActuallyReachesAndTapsAtEveryFrameRate();
         AuthoredPawUsesItsPaintedEndpointFullClockAndPause();AuthoredPounceWaitsForEveryPreparationDrawing();
         std::cout << "Cursor host and Box2D: " << checks << " checks passed\n";

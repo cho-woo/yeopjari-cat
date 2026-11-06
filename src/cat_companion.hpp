@@ -350,7 +350,8 @@ public:
         if(interaction_!=Interaction::None && (!c.primaryVisible || Busy(c,interaction_) || state_->pet.roamingPaused)) {
             FinishSocial(c);
         }
-        if(!landingRecovery && before.grounded && !waitingForStop_ && !jumpPending_ && interaction_==Interaction::None && c.ticks>=nextDecision_) {
+        if(!landingRecovery && before.grounded && !waitingForStop_ && !jumpPending_ && interaction_==Interaction::None &&
+                c.ticks>=nextDecision_ && !AuthoredCareHolding(c.ticks)) {
             const bool continuation=storyActive_ && !quietActive_ && brain_->HasContinuation();
             if(!quietActive_ && !continuation) BeginQuiet(c.ticks);
             else {
@@ -509,6 +510,9 @@ public:
         brain_->Interrupt(lastTicks_);
         ++presentationGeneration_;
     }
+    bool HoldingFinalCarePose(std::uint64_t ticks) const {
+        return Bound() && ready_ && !waitingForStop_ && AuthoredCareHolding(ticks);
+    }
     Snapshot View(std::uint64_t ticks) const {
         Snapshot s;
         if(!Bound() || !ready_) return s;
@@ -621,6 +625,18 @@ private:
     std::uint64_t RegisteredDuration(cat::sprite_sequence::Clip clip,std::uint64_t fallback) const {
         const auto* asset=Registered(clip);
         return asset && asset->program.stepCount?cat::sprite_sequence::ProgramDuration(asset->program):fallback;
+    }
+    bool AuthoredCareHolding(std::uint64_t ticks) const {
+        using Clip=cat::sprite_sequence::Clip;using Motion=cat::animation::Motion;
+        const auto clip=motion_==Motion::Groom?Clip::Groom:motion_==Motion::Eat?
+            (feedingKind_==cat::feeding::FoodKind::Fish?Clip::Fish:Clip::Eat):
+            motion_==Motion::Treat?Clip::Treat:motion_==Motion::Punch?Clip::Punch:Clip::None;
+        const auto* asset=Registered(clip);
+        if(!asset || !asset->program.stepCount || ticks<motionStart_)return false;
+        cat::sprite_sequence::Options options;options.sheetFrames=asset->frameCount;
+        options.durationMs=nextDecision_>=motionStart_?nextDecision_-motionStart_:0;
+        options.grounded=physics_.CurrentPose().grounded;
+        return cat::sprite_sequence::HoldsFinalCarePose(clip,asset->program,ticks-motionStart_,options);
     }
     bool StationaryLanding(std::uint64_t ticks,const cat::physics::Pose& physical) const {
         const auto* asset=Registered(cat::sprite_sequence::Clip::Jump);
