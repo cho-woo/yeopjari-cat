@@ -37,7 +37,8 @@ cat::companion::Context CompanionContext(ULONGLONG ticks, double elapsed) {
 }
 int CompanionSpriteBottomInset(const cat::companion::Snapshot& s,double dpi) {
     const auto* sprite=CareSpriteFor(s.animation,s.preferences.character);
-    if(!sprite || sprite->layout->clip!=cat::sprite_sequence::Clip::Fish)return 0;
+    if(!sprite || (sprite->layout->clip!=cat::sprite_sequence::Clip::Fish &&
+            sprite->layout->clip!=cat::sprite_sequence::Clip::Jump))return 0;
     return cat::render::SpriteBottomSafetyInset(*sprite->layout,110*dpi*s.growthScale,s.body.bodyHeight);
 }
 void PaintCompanion(HDC, unsigned char* pixels, int width, int height,
