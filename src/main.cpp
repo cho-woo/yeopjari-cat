@@ -1323,6 +1323,12 @@ void ConfigurePrimaryAuthoredStride() {
             run->layout->stridePixels*body.bodyWidth);
     }
 }
+ULONGLONG PrimaryTakeoffMs(bool pounce=false) {
+    if(const auto* jump=LoadedCareSprite(cat::sprite_sequence::Clip::Jump,g.preferences.character);
+            jump && jump->layout->program.stepCount)
+        return cat::sprite_sequence::Duration(jump->layout->program,jump->layout->program.intro);
+    return pounce?240:220;
+}
 
 void RefreshAnimationTimer() {
     if (!g.window) return;
@@ -1384,10 +1390,21 @@ void SetMotion(Motion motion, ULONGLONG duration) {
         motion==Motion::Treat?Clip::Treat:motion==Motion::Punch?Clip::Punch:Clip::None;
     if(const auto* asset=LoadedCareSprite(clip,g.preferences.character);asset && asset->layout->program.stepCount)
         duration=std::max<ULONGLONG>(duration,cat::sprite_sequence::ProgramDuration(asset->layout->program));
+    if(motion==Motion::Jump || motion==Motion::Pounce) {
+        if(const auto* jump=LoadedCareSprite(Clip::Jump,g.preferences.character);jump && jump->layout->program.stepCount)
+            duration=std::max<ULONGLONG>(duration,
+                cat::sprite_sequence::Duration(jump->layout->program,jump->layout->program.intro)+
+                cat::sprite_sequence::Duration(jump->layout->program,jump->layout->program.outro)+1500);
+    }
     g.wakingFromSleep=g.motion==Motion::Sleep && motion==Motion::Stretch;
-    if(g.wakingFromSleep && cat::sprite_assets::Find(cat::sprite_sequence::Clip::Sleep,
-            static_cast<unsigned>(g.preferences.character),cat::sprite_assets::kCareSprites))
-        duration=std::max<ULONGLONG>(duration,cat::sprite_sequence::kSleepWakeMs+500);
+    if(g.wakingFromSleep) {
+        if(const auto* sleep=LoadedCareSprite(Clip::Sleep,g.preferences.character)) {
+            const auto wake=sleep->layout->program.stepCount?
+                cat::sprite_sequence::Duration(sleep->layout->program,sleep->layout->program.outro):
+                cat::sprite_sequence::kSleepWakeMs;
+            duration=std::max<ULONGLONG>(duration,wake+500);
+        }
+    }
     g.autonomousResting=false;g.companionReaction=false;
     if(g.autonomousDispatching)g.autonomousClaimedAt=g.autonomousTick;
     if(motion==Motion::Sleep)g.sleepVariant=LoadedCareSprite(Clip::Sleep,g.preferences.character)?0:
@@ -1674,7 +1691,7 @@ void UpdatePerchTransition(ULONGLONG ticks, double elapsed) {
         const auto physical = g.physics.CurrentPose();
         g.waitingForStop = !physical.grounded || std::abs(WalkingVelocity(physical)) > 2;
         if (g.waitingForStop) g.motionStart = ticks;
-        else if (ticks >= g.motionStart + 220) {
+        else if (ticks >= g.motionStart + PrimaryTakeoffMs()) {
             if (g.physics.LaunchToPlatform(
                     (std::max(g.perch.rect.left, g.work.left) - g.work.left) / g.dpiScale,
                     (std::min(g.perch.rect.right, g.work.right) - g.work.left) / g.dpiScale,
@@ -2446,7 +2463,8 @@ void Render() {
     auto pose = cat::animation::Evaluate(displayed, actionElapsed, ticks, g.facing, g.gait);
     if(pose.spriteTimed && (displayed==Motion::Eat || displayed==Motion::Treat || displayed==Motion::Punch))
         pose.spriteOptions.durationMs=g.nextDecision>=g.motionStart?g.nextDecision-g.motionStart:0;
-    if(displayed==Motion::Sleep) pose=cat::animation::EvaluateSleep(g.sleepVariant,actionElapsed,ticks,g.facing,g.perch.active);
+    const bool authoredSleep=LoadedCareSprite(cat::sprite_sequence::Clip::Sleep,g.preferences.character)!=nullptr;
+    if(displayed==Motion::Sleep) pose=cat::animation::EvaluateSleep(g.sleepVariant,actionElapsed,ticks,g.facing,g.perch.active&&!authoredSleep);
     if (displayed == Motion::Jump || displayed == Motion::Pounce) pose.lift = 0;
     if (physical.hanging) {
         pose=cat::animation::Evaluate(Motion::Hang,actionElapsed,ticks,g.facing,g.gait);
@@ -2486,7 +2504,7 @@ void Render() {
     }
     const bool cursorAttack = ApplyCursorAttackPose(pose,ticks,physical);
     if(displayed==Motion::Stretch && g.wakingFromSleep && g.sleepVariant==0 && physical.grounded &&
-            !physical.onPlatform && !g.waitingForStop &&
+            (!physical.onPlatform || authoredSleep) && !g.waitingForStop &&
             !cursorAttack) {
         cat::sprite_sequence::Options sprite;sprite.sleep=cat::sprite_sequence::SleepStage::Waking;
         cat::animation::AttachSprite(pose,cat::sprite_sequence::Clip::Sleep,actionElapsed,sprite);
@@ -2828,6 +2846,7 @@ void UpdateCursorReactionSample(ULONGLONG ticks, ULONGLONG elapsedMs, POINT curs
     auto& interaction = cursorInteraction;
     cat::environment::CursorInput input;
     input.nowMs = ticks;
+    input.pouncePreparationMs=PrimaryTakeoffMs(true);
     input.enabled = WorkInterferenceEnabled();
     const auto physical = g.physics.CurrentPose();
     input.grounded = physical.grounded;
@@ -2902,7 +2921,7 @@ bool TryCursorPounce(ULONGLONG ticks) {
     if (interaction.session.Action() != cat::environment::CursorAction::Pounce ||
             interaction.session.InFlight() || !CursorPlaybackAllowed() || !interaction.available ||
             !interaction.session.OwnsSerial(g.motionSerial) || g.motion != Motion::Pounce ||
-            g.waitingForStop || ticks < g.motionStart+240)
+            g.waitingForStop || ticks < g.motionStart+PrimaryTakeoffMs(true))
         return false;
     const auto bounds = MovementBoundsLogical();
     const double growth = cat::GrowthScale(g.pet.bornUtc, UtcNow());
@@ -3712,7 +3731,7 @@ void Tick() {
         if (g.waitingForStop) targetSpeed = 0;
         g.physics.SetTargetVelocity(targetSpeed);
         if (!g.waitingForStop && g.jumpPending) {
-            const ULONGLONG takeoff = g.motion == Motion::Jump ? 220 : 240;
+            const ULONGLONG takeoff = PrimaryTakeoffMs(g.motion==Motion::Pounce);
             if (actionElapsed >= takeoff) {
                 g.jumpPending = false;
                 const double speciesJump = cat::species::ProfileFor(g.preferences.character).jumpHeightMultiplier;
