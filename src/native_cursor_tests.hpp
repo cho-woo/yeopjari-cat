@@ -124,6 +124,24 @@ struct Host {
 
 int Run() {
     Host host;
+    // Acquiring a cursor story cancels the brain's old follow-up exactly at
+    // acquisition. Internal cursor phases then retain their own session.
+    host.Reset();
+    g.brain=std::make_unique<cat::behavior::Brain>(g.pet.bornUtc,13);
+    g.brain->Fed(host.now,false);
+    if(!g.brain->HasContinuation())return 262;
+    for(unsigned frame=0;frame<100 && !EnvironmentBusy();++frame)
+        host.Sample(host.PawX(),host.PawHeight());
+    if(!EnvironmentBusy() || g.brain->HasContinuation())return 262;
+    // A planted loaf completes before reactive play may acquire it, while
+    // ordinary Idle/Watch remains immediately available to nearby pointers.
+    host.Reset();SetMotion(Motion::Loaf,10000);host.RebaseMotion();
+    for(unsigned frame=0;frame<40;++frame)host.Sample(host.PawX(),host.PawHeight());
+    if(EnvironmentBusy() || g.motion!=Motion::Loaf)return 263;
+    host.now=g.nextDecision;
+    for(unsigned frame=0;frame<100 && !EnvironmentBusy();++frame)
+        host.Sample(host.PawX(),host.PawHeight());
+    if(!EnvironmentBusy())return 263;
     // Real legacy and new-art atlas dimensions drive the native paw geometry.
     for (const auto character : {cat::Character::Cream, cat::Character::Rabbit}) {
         host.Reset(character);

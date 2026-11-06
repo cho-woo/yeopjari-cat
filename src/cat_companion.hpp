@@ -253,6 +253,8 @@ struct Snapshot {
     cat::behavior::Archetype archetype = cat::behavior::Archetype::Cool;
     double growthScale = 1, bond = 0;
     Interaction interaction = Interaction::None;
+    std::uint64_t presentationTicks=0,presentationGeneration=0;
+    bool presentationPaused=false;
 };
 
 // Owns one independent Box2D world/body and one birthday-derived Brain. The
@@ -266,9 +268,13 @@ public:
         ready_=false; nextDecision_=0; interaction_=event_=Interaction::None; socialUntil_=0; supportId_=0;
         motion_=cat::animation::Motion::Idle; walkingMotion_=cat::animation::Motion::Walk;
         feedingKind_=cat::feeding::FoodKind::Meal;
+        groomVariant_=0;
         motionStart_=lastTicks_=careUntil_=landedAt_=0; direction_=facing_=1; speed_=0; support_={}; gait_.Reset();
         poseTransition_.Reset(); motionSerial_=0;
-        waitingForStop_=jumpPending_=false;
+        waitingForStop_=jumpPending_=wakingFromSleep_=false;
+        storyActive_=quietActive_=false;
+        presentationTicks_=0;presentationPaused_=false;++presentationGeneration_;
+        presentationIdentity_=state.preferences.character;
     }
     bool Bound() const { return state_ && brain_; }
     bool Busy() const {
@@ -283,11 +289,13 @@ public:
         physics_.Reset(minX_+std::clamp(state_->pet.position,0.0,1.0)*(maxX_-minX_),minX_,maxX_);
         maxLift_=std::isfinite(maxLift)?std::max(1.0,maxLift):1;
         physics_.SetCeiling(maxLift_); gait_.Reset(); poseTransition_.Reset(); ready_=true; supportId_=0;
+        ++presentationGeneration_;
     }
     void Relocate(double minX,double maxX,double maxLift,double deltaX=0) {
         if(!ready_) { Reset(minX,maxX,maxLift); return; }
         minX_=minX; maxX_=std::max(minX+1,maxX); maxLift_=std::isfinite(maxLift)?std::max(1.0,maxLift):1;
         physics_.RelocateBounds(minX_,maxX_,deltaX); physics_.SetCeiling(maxLift_); gait_.Reset(); poseTransition_.Reset();
+        ++presentationGeneration_;
     }
     std::uintptr_t SupportId() const { return supportId_; }
     cat::physics::Pose Physical() const { return physics_.CurrentPose(); }
@@ -303,32 +311,50 @@ public:
         const auto life=cat::life::Summarize(state_->life,profile.bond);
         const auto species=cat::species::ProfileFor(state_->preferences.character);
         brain_->SetDisposition(life.activityScale,life.restScale,life.socialScale,life.curiosityScale*species.cursorInterest,life.foodScale*species.foodInterest);
-        if(c.paused || !std::isfinite(c.elapsedSeconds) || c.elapsedSeconds<0 || c.elapsedSeconds>.25) {
-            const auto frozen=lastTicks_ && c.ticks>=lastTicks_?c.ticks-lastTicks_:0;
+        const auto clockBefore=lastTicks_?lastTicks_:motionStart_;
+        const auto wallDelta=c.ticks>=clockBefore?c.ticks-clockBefore:0;
+        if(presentationIdentity_!=state_->preferences.character) {
+            presentationIdentity_=state_->preferences.character;++presentationGeneration_;
+        }
+        // The main loop already converts a long physics stall to zero seconds.
+        // Its wall-clock interval must not finish a companion action either.
+        if(c.paused || !std::isfinite(c.elapsedSeconds) || c.elapsedSeconds<0 || c.elapsedSeconds>.25 ||
+                (c.elapsedSeconds==0 && wallDelta>250)) {
+            const auto frozen=wallDelta;
+            presentationPaused_=true;
             motionStart_+=frozen; nextDecision_+=frozen; socialUntil_+=frozen; careUntil_+=frozen; lastTicks_=c.ticks;
             if(landedAt_) landedAt_+=frozen;
             poseTransition_.Pause(frozen);
             physics_.Update(0,true); return;
         }
+        presentationPaused_=false;
+        presentationTicks_+=wallDelta;
         UpdateSupport(c);
         const auto before=physics_.CurrentPose();
-        if(c.ticks < lastTicks_) { nextDecision_=0; socialUntil_=0; interaction_=Interaction::None; poseTransition_.Reset(); }
+        if(c.ticks < lastTicks_) {
+            interaction_=Interaction::None; socialUntil_=0; poseTransition_.Reset();
+            brain_->Interrupt(c.ticks); BeginQuiet(c.ticks);
+        }
         lastTicks_=c.ticks;
-        if(interaction_!=Interaction::None && c.ticks >= socialUntil_) { interaction_=Interaction::None; nextDecision_=0; }
+        if(interaction_!=Interaction::None && c.ticks >= socialUntil_) FinishSocial(c);
         if(interaction_!=Interaction::None && (!c.primaryVisible || Busy(c,interaction_) || state_->pet.roamingPaused)) {
-            interaction_=Interaction::None; nextDecision_=0;
+            FinishSocial(c);
         }
         if(before.grounded && !waitingForStop_ && !jumpPending_ && interaction_==Interaction::None && c.ticks>=nextDecision_) {
-            bool social=false;
-            if(c.primaryVisible && !c.primaryBusy && !state_->pet.roamingPaused &&
-                (!state_->lastSocialUtc || state_->pet.updatedUtc-state_->lastSocialUtc>=45) && Random()<.55) {
-                const auto kind = c.primary.onPlatform && (!before.onPlatform || supportId_!=c.primaryPlatform.id) ? Interaction::WindowFollow :
-                    c.primaryMotion==cat::animation::Motion::Sleep ? Interaction::SharedSleep :
-                    c.primaryMotion==cat::animation::Motion::Zoomies ? Interaction::RunTogether :
-                    Random()<.30 ? Interaction::Paw : Random()<.5 ? Interaction::Sniff : Interaction::Follow;
-                social=TrySocial(kind,c);
+            const bool continuation=storyActive_ && !quietActive_ && brain_->HasContinuation();
+            if(!quietActive_ && !continuation) BeginQuiet(c.ticks);
+            else {
+                bool social=false;
+                if(!continuation && c.primaryVisible && !c.primaryBusy && !state_->pet.roamingPaused &&
+                    (!state_->lastSocialUtc || state_->pet.updatedUtc-state_->lastSocialUtc>=45) && Random()<.55) {
+                    const auto kind = c.primary.onPlatform && (!before.onPlatform || supportId_!=c.primaryPlatform.id) ? Interaction::WindowFollow :
+                        c.primaryMotion==cat::animation::Motion::Sleep ? Interaction::SharedSleep :
+                        c.primaryMotion==cat::animation::Motion::Zoomies ? Interaction::RunTogether :
+                        Random()<.30 ? Interaction::Paw : Random()<.5 ? Interaction::Sniff : Interaction::Follow;
+                    social=TrySocial(kind,c);
+                }
+                if(!social) Choose(c);
             }
-            if(!social) Choose(c);
         }
         double velocity=0;
         if(interaction_!=Interaction::None) velocity=SocialVelocity(c);
@@ -391,6 +417,7 @@ public:
             const double target=std::clamp(c.primary.x+(own.x<c.primary.x?-65:65),p.left+35,p.right-35);
             if(!physics_.LaunchToPlatform(p.left,p.right,p.height,target,45*jump)) return false;
             supportId_=p.id; support_=p; interaction_=kind; socialUntil_=c.ticks+6000;
+            storyActive_=true;quietActive_=false;
             contactRecorded_=false;
             SetMotion(cat::animation::Motion::Jump,c.ticks,6000,0,true); event_=kind; return true;
         }
@@ -399,10 +426,19 @@ public:
         if(own.onPlatform!=c.primary.onPlatform || (own.onPlatform && supportId_!=c.primaryPlatform.id)) return false;
         if(kind==Interaction::FoodCompetition && state_->nutrition.fullness>85) return false;
         interaction_=kind; socialUntil_=c.ticks+(kind==Interaction::SharedSleep?30000:kind==Interaction::RunTogether?10000:12000);
+        storyActive_=true;quietActive_=false;
         contactRecorded_=false; brain_->Interrupt(c.ticks); nextDecision_=socialUntil_;
         return true;
     }
-    bool FoodOffered(const Context& c) { return TrySocial(Interaction::FoodCompetition,c); }
+    bool FoodOffered(const Context& c) {
+        // A food race is autonomous play, not acceptance of food by this cat.
+        // Explicit feeding can invite a race after the minimum quiet rest,
+        // while unfinished grooming/sleep and the first18s stay protected.
+        const bool rested=quietActive_ && !waitingForStop_ && c.ticks>=motionStart_ &&
+            c.ticks-motionStart_>=cat::behavior::Brain::NeutralRestMinMs;
+        if(!rested && (c.ticks<nextDecision_ || quietActive_))return false;
+        return TrySocial(Interaction::FoodCompetition,c);
+    }
     cat::nutrition::FeedResult Feed(std::int64_t now,std::uint64_t ticks,bool treat,double random01=.9) {
         return FeedFood(now,ticks,treat?cat::feeding::FoodKind::Treat:cat::feeding::FoodKind::Meal,random01);
     }
@@ -414,18 +450,20 @@ public:
         const bool treat=cat::feeding::IsTreat(kind);
         const auto result=cat::feeding::TryFeed(state_->pet,state_->nutrition,state_->memory,state_->pet.updatedUtc,kind,random01);
         if(result!=cat::nutrition::FeedResult::Accepted) return result;
-        brain_->Fed(ticks,treat); interaction_=Interaction::None;
-        const bool authoredMeal=kind==cat::feeding::FoodKind::Meal &&
-            cat::sprite_assets::Find(cat::sprite_sequence::Clip::Eat,
+        brain_->Fed(ticks,treat); interaction_=Interaction::None;storyActive_=true;quietActive_=false;
+        const auto clip=kind==cat::feeding::FoodKind::Fish?cat::sprite_sequence::Clip::Fish:
+            treat?cat::sprite_sequence::Clip::Treat:cat::sprite_sequence::Clip::Eat;
+        const bool authored=cat::sprite_assets::Find(clip,
                 static_cast<unsigned>(state_->preferences.character),cat::sprite_assets::kCareSprites);
-        SetMotion(treat?cat::animation::Motion::Treat:cat::animation::Motion::Eat,ticks,authoredMeal?5000:4200,0);
+        const auto duration=authored?cat::sprite_sequence::CareDuration(clip,0):4200;
+        SetMotion(treat?cat::animation::Motion::Treat:cat::animation::Motion::Eat,ticks,duration,0);
         feedingKind_=kind;
         careUntil_=nextDecision_;
         return result;
     }
     bool Pet(std::int64_t now,std::uint64_t ticks) {
         if(!Bound() || !ready_ || !state_->enabled || Feeding(ticks) || !physics_.CurrentPose().grounded) return false;
-        Advance(now); brain_->Pet(ticks); interaction_=Interaction::None;
+        Advance(now); brain_->Pet(ticks); interaction_=Interaction::None;storyActive_=true;quietActive_=false;
         SetMotion(cat::animation::Motion::TailRaise,ticks,3400,0);
         careUntil_=nextDecision_;
         state_->pet.affection=std::min(100.0,state_->pet.affection+1);
@@ -433,7 +471,7 @@ public:
     }
     bool Play(std::int64_t now,std::uint64_t ticks) {
         if(!Bound() || !ready_ || !state_->enabled || Feeding(ticks) || !physics_.CurrentPose().grounded) return false;
-        Advance(now); brain_->Interrupt(ticks); interaction_=Interaction::None;
+        Advance(now); brain_->Interrupt(ticks); interaction_=Interaction::None;storyActive_=true;quietActive_=false;
         SetMotion(cat::animation::Motion::ToyPaw,ticks,3000,0);
         careUntil_=nextDecision_;
         return cat::memory::Record(state_->memory,cat::memory::Event::Play,state_->pet.updatedUtc);
@@ -445,6 +483,9 @@ public:
         state_->pet.position=std::clamp((physics_.CurrentPose().x-minX_)/(maxX_-minX_),0.0,1.0);
         interaction_=Interaction::None; nextDecision_=careUntil_=landedAt_=0;
         waitingForStop_=jumpPending_=false;
+        storyActive_=quietActive_=false;
+        brain_->Interrupt(lastTicks_);
+        ++presentationGeneration_;
     }
     Snapshot View(std::uint64_t ticks) const {
         Snapshot s;
@@ -453,6 +494,9 @@ public:
         s.body=cat::nutrition::VisualModifiers(state_->nutrition); s.growthScale=cat::GrowthScale(state_->pet.bornUtc,state_->pet.updatedUtc);
         s.life=cat::life::Summarize(state_->life,state_->memory.bond); s.temperament=state_->life.temperament;
         s.bond=state_->memory.bond; s.archetype=brain_->GetArchetype(); s.motion=motion_; s.interaction=interaction_;
+        s.presentationTicks=presentationTicks_;
+        s.presentationGeneration=presentationGeneration_+(presentationIdentity_!=state_->preferences.character?1:0);
+        s.presentationPaused=presentationPaused_;
         const double relativeVelocity=s.physical.velocityX-s.physical.supportVelocityX;
         const auto displayed=cat::motion::DisplayedMotion(motion_,walkingMotion_,s.physical.grounded,waitingForStop_,relativeVelocity);
         const int displayedFacing=s.physical.grounded && std::abs(relativeVelocity)>2?(relativeVelocity<0?-1:1):facing_;
@@ -478,16 +522,17 @@ public:
         if(displayed==cat::animation::Motion::Groom && s.physical.grounded && !waitingForStop_) {
             cat::sprite_sequence::Options sprite;
             sprite.durationMs=nextDecision_>=motionStart_?nextDecision_-motionStart_:0;
+            sprite.variant=groomVariant_;
             cat::animation::AttachSprite(s.animation,cat::sprite_sequence::Clip::Groom,elapsed,sprite);
         }
         if(displayed==cat::animation::Motion::Stretch && wakingFromSleep_ && sleepVariant_==0 &&
                 s.physical.grounded && !s.physical.onPlatform &&
-                !waitingForStop_ && elapsed<cat::sprite_sequence::kSleepWakeMs) {
+                !waitingForStop_) {
             cat::sprite_sequence::Options sprite;sprite.sleep=cat::sprite_sequence::SleepStage::Waking;
             cat::animation::AttachSprite(s.animation,cat::sprite_sequence::Clip::Sleep,elapsed,sprite);
         }
         s.animation=poseTransition_.Apply(s.animation,ticks,motionSerial_,
-            static_cast<unsigned>(s.preferences.character),s.enabled);
+            static_cast<unsigned>(s.preferences.character),s.enabled,motionStart_);
         s.animation.fishMeal=displayed==cat::animation::Motion::Eat && s.physical.grounded &&
             feedingKind_==cat::feeding::FoodKind::Fish && cat::feeding::CanOfferFish(s.preferences.character);
         if(s.animation.fishMeal)cat::animation::AttachSprite(s.animation,cat::sprite_sequence::Clip::Fish,elapsed);
@@ -502,10 +547,13 @@ private:
     cat::animation::Locomotion gait_;
     mutable cat::animation::PoseTransition poseTransition_;
     bool ready_=false,contactRecorded_=false,waitingForStop_=false,jumpPending_=false;
-    bool wakingFromSleep_=false;
+    bool wakingFromSleep_=false,storyActive_=false,quietActive_=false;
+    bool presentationPaused_=false;
+    std::uint64_t presentationTicks_=0,presentationGeneration_=0;
+    cat::Character presentationIdentity_=cat::Character::Cream;
     double minX_=40,maxX_=1000,maxLift_=700,speed_=0,landingStrength_=1;
     int direction_=1,facing_=1;
-    unsigned sleepVariant_=0;
+    unsigned sleepVariant_=0,groomVariant_=0;
     std::uint64_t rng_=1,nextDecision_=0,motionStart_=0,socialUntil_=0,lastTicks_=0,careUntil_=0,landedAt_=0;
     std::uint64_t motionSerial_=0;
     std::uintptr_t supportId_=0;
@@ -516,6 +564,30 @@ private:
     cat::feeding::FoodKind feedingKind_=cat::feeding::FoodKind::Meal;
     Interaction interaction_=Interaction::None,event_=Interaction::None;
     double Random() { rng_^=rng_>>12; rng_^=rng_<<25; rng_^=rng_>>27; return ((rng_*2685821657736338717ULL)>>11)*(1.0/9007199254740992.0); }
+    void BeginQuiet(std::uint64_t ticks) {
+        storyActive_=false;quietActive_=true;
+        SetMotion(cat::animation::Motion::Idle,ticks,
+            cat::behavior::Brain::NeutralRestDuration(static_cast<std::uint32_t>(Random()*4294967295.0)),0);
+        // A second Idle can keep the same drawing; this rest still has a new
+        // start for minimum-rest checks and for freezing its braking interval.
+        motionStart_=ticks;
+    }
+    void FinishSocial(const Context& c) {
+        interaction_=Interaction::None;brain_->Interrupt(c.ticks);
+        if(!physics_.CurrentPose().grounded) {
+            // Let the current real trajectory finish before a neutral rest.
+            storyActive_=true;quietActive_=false;
+            nextDecision_=std::max(nextDecision_,c.ticks+280);
+        } else if(motion_==cat::animation::Motion::Sleep) {
+            storyActive_=true;quietActive_=false;
+            SetMotion(cat::animation::Motion::Stretch,c.ticks,3200,0);
+        } else BeginQuiet(c.ticks);
+    }
+    void SetSocialMotion(cat::animation::Motion motion,const Context& c,std::uint64_t duration,double speed) {
+        // Steering is sampled every tick; one phase is still one action.
+        if(motion_!=motion)SetMotion(motion,c.ticks,duration,speed);
+        else speed_=speed;
+    }
     bool Feeding(std::uint64_t ticks) const {
         return ticks<careUntil_ && (motion_==cat::animation::Motion::Eat || motion_==cat::animation::Motion::Treat);
     }
@@ -530,6 +602,10 @@ private:
         state_->pet.hunger=state_->nutrition.fullness;
     }
     void SetMotion(cat::animation::Motion m,std::uint64_t ticks,std::uint64_t duration,double speed,bool alreadyAirborne=false) {
+        if(motion_==cat::animation::Motion::Sleep && m==cat::animation::Motion::Stretch &&
+                cat::sprite_assets::Find(cat::sprite_sequence::Clip::Sleep,
+                    static_cast<unsigned>(state_->preferences.character),cat::sprite_assets::kCareSprites))
+            duration=std::max(duration,cat::sprite_sequence::kSleepWakeMs+500);
         const bool jumping=m==cat::animation::Motion::Jump || m==cat::animation::Motion::Pounce;
         const bool authoredGroom=m==cat::animation::Motion::Groom &&
             cat::sprite_assets::Find(cat::sprite_sequence::Clip::Groom,
@@ -543,6 +619,7 @@ private:
             feedingKind_=cat::feeding::FoodKind::Meal;
             ++motionSerial_;
             motionStart_=ticks; motion_=m;
+            if(authoredGroom)groomVariant_=std::min(2u,static_cast<unsigned>(Random()*3));
             if(m==cat::animation::Motion::Sleep) sleepVariant_=cat::sprite_sequence::SelectSleepVariant(Random(),
                 cat::sprite_assets::Find(cat::sprite_sequence::Clip::Sleep,
                     static_cast<unsigned>(state_->preferences.character),cat::sprite_assets::kCareSprites)!=nullptr);
@@ -567,6 +644,7 @@ private:
         cat::behavior::Context context; context.ticks=c.ticks; context.ageYears=cat::Age(state_->pet.bornUtc,state_->pet.updatedUtc).years;
         context.hunger=state_->nutrition.fullness; context.affection=state_->pet.affection; context.localHour=c.localHour; context.roamingPaused=state_->pet.roamingPaused;
         const auto plan=brain_->Next(context); auto motion=MotionFor(plan.action);
+        storyActive_=true;quietActive_=false;
         if(Random()<.3) direction_=-direction_;
         SetMotion(motion,c.ticks,plan.durationMs,plan.speed);
     }
@@ -577,6 +655,7 @@ private:
         if(candidate.valid) { support_=candidate; physics_.SetPlatform(candidate.left,candidate.right,candidate.height); }
         else {
             physics_.RemovePlatform(); supportId_=0; support_={}; interaction_=Interaction::None; event_=Interaction::Startled;
+            brain_->Interrupt(c.ticks);storyActive_=true;quietActive_=false;
             SetMotion(cat::animation::Motion::Jump,c.ticks,2500,0,true);
         }
     }
@@ -593,21 +672,27 @@ private:
     double SocialVelocity(const Context& c) {
         const auto own=physics_.CurrentPose();
         if(interaction_==Interaction::WindowFollow) {
-            if(own.onPlatform) { RecordContact(c); interaction_=Interaction::None; SetMotion(cat::animation::Motion::Watch,c.ticks,2500,0); }
+            if(own.onPlatform) { RecordContact(c); interaction_=Interaction::None; BeginQuiet(c.ticks); }
             return 0;
         }
         const double delta=c.primary.x-own.x;
         const double spacing=interaction_==Interaction::Paw?48:interaction_==Interaction::SharedSleep?65:60;
-        if(std::abs(own.lift-c.primary.lift)>8 || !c.primary.grounded) { interaction_=Interaction::None; SetMotion(cat::animation::Motion::Watch,c.ticks,1500,0); return 0; }
+        if(std::abs(own.lift-c.primary.lift)>8 || !c.primary.grounded) { FinishSocial(c); return 0; }
+        const bool gesture=motion_==cat::animation::Motion::ToyPaw || motion_==cat::animation::Motion::Sniff ||
+            motion_==cat::animation::Motion::Knead || motion_==cat::animation::Motion::Sleep;
+        if(gesture && (waitingForStop_ || c.ticks<nextDecision_)) {
+            if(cat::motion::ReadyToStart(own.grounded,own.velocityX-own.supportVelocityX))RecordContact(c);
+            return 0;
+        }
         if(std::abs(delta)>spacing+5) {
             direction_=delta<0?-1:1;
             const bool running=interaction_==Interaction::RunTogether || interaction_==Interaction::FoodCompetition;
-            SetMotion(running?cat::animation::Motion::Zoomies:cat::animation::Motion::Walk,c.ticks,2000,running?80:28);
+            SetSocialMotion(running?cat::animation::Motion::Zoomies:cat::animation::Motion::Walk,c,2000,running?80:28);
             return direction_*speed_;
         }
         if(std::abs(delta)<30) {
             direction_=delta<0?1:-1;
-            SetMotion(cat::animation::Motion::Walk,c.ticks,1500,18);
+            SetSocialMotion(cat::animation::Motion::Walk,c,1500,18);
             return direction_*speed_;
         }
         facing_=delta<0?-1:1;
@@ -620,14 +705,15 @@ private:
             const double multiplier=cat::nutrition::VisualModifiers(state_->nutrition).speed*
                 cat::species::ProfileFor(state_->preferences.character).movementSpeedMultiplier;
             const double target=std::clamp(primarySpeed,-140.0,140.0)/std::max(.1,multiplier);
-            SetMotion(cat::animation::Motion::Zoomies,c.ticks,2000,std::abs(target));
+            SetSocialMotion(cat::animation::Motion::Zoomies,c,2000,std::abs(target));
             return target;
         }
         const auto motion=interaction_==Interaction::Paw?cat::animation::Motion::ToyPaw:
             interaction_==Interaction::SharedSleep?cat::animation::Motion::Sleep:
             interaction_==Interaction::Sniff?cat::animation::Motion::Sniff:
             interaction_==Interaction::FoodCompetition?cat::animation::Motion::Knead:cat::animation::Motion::Watch;
-        SetMotion(motion,c.ticks,2000,0);
+        SetSocialMotion(motion,c,motion==cat::animation::Motion::Sleep?
+            std::max<std::uint64_t>(1,socialUntil_>c.ticks?socialUntil_-c.ticks:0):2000,0);
         if(cat::motion::ReadyToStart(own.grounded,own.velocityX-own.supportVelocityX)) RecordContact(c);
         return 0;
     }
