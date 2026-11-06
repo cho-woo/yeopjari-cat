@@ -574,7 +574,13 @@ void ProgramAndAtlasValidationRejectUnsafeInputs() {
     asset.clip=Clip::Run;CHECK(Valid(asset)); // Shared combined atlas uses Walk's resource.
     asset.resourceId=ResourceId(Clip::Run,0);CHECK(Valid(asset));
     CHECK(ResourceId(Clip::Box,0)==115&&ResourceId(Clip::Treat,9)==192);
-    CHECK(ResourceId(Clip::Walk,0)==300&&ResourceId(Clip::Run,0)==301);
+    CHECK(ResourceId(Clip::Walk,0)==400&&ResourceId(Clip::Run,0)==401);
+    for(unsigned character=0;character<cat::sprite_assets::kCharacters;++character) {
+        const auto walkId=ResourceId(Clip::Walk,character),runId=ResourceId(Clip::Run,character);
+        CHECK(walkId==400+static_cast<int>(2*character));CHECK(runId==walkId+1);
+        CHECK(!(walkId>=301&&walkId<=314));CHECK(!(runId>=301&&runId<=314));
+        CHECK(walkId!=193&&runId!=193); // Existing empty-box prop remains separate.
+    }
     CHECK(ResourceId(Clip::None,0)==0&&ResourceId(Clip::Walk,10)==0);
 }
 

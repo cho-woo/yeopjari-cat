@@ -32,8 +32,10 @@ struct Descriptor {
 constexpr int ResourceId(cat::sprite_sequence::Clip clip,unsigned character) {
     if(character>=kCharacters)return 0;
     if(static_cast<unsigned>(clip)<8)return 113+static_cast<int>(character*8+static_cast<unsigned>(clip));
-    if(clip==cat::sprite_sequence::Clip::Walk)return 300+static_cast<int>(character*2);
-    if(clip==cat::sprite_sequence::Clip::Run)return 301+static_cast<int>(character*2);
+    // 301..314 remain reserved for retired audio and are checked absent by
+    // the silent-build verification. Locomotion must never reuse those IDs.
+    if(clip==cat::sprite_sequence::Clip::Walk)return 400+static_cast<int>(character*2);
+    if(clip==cat::sprite_sequence::Clip::Run)return 401+static_cast<int>(character*2);
     return 0;
 }
 constexpr bool Valid(const Descriptor& asset) {
