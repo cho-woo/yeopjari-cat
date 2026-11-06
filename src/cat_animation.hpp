@@ -8,6 +8,7 @@
 #include "cat_gait.hpp"
 #include "cat_walk_dynamics.hpp"
 #include "cat_sprite_sequence.hpp"
+#include "cat_authored_locomotion.hpp"
 
 namespace cat::animation {
 
@@ -79,6 +80,20 @@ inline void UseAuthoredSprite(Pose& pose) {
 inline double SmoothStep(double fraction) {
     const double t = std::clamp(fraction, 0.0, 1.0);
     return t * t * (3 - 2 * t);
+}
+
+// Hosts use this while Box2D still reports support, including a window jump
+// whose target is being prepared after the preview takeoff deadline. The
+// action clock alone must never select flight art before actual takeoff.
+inline Pose JumpPreparationPose(std::uint64_t elapsed,int direction,bool pounce=false) {
+    Pose p;
+    p.flip=direction<0;
+    p.joints.crouch=.65*SmoothStep(static_cast<double>(elapsed)/(pounce?240.0:220.0));
+    cat::sprite_sequence::Options sprite;
+    sprite.jump=cat::sprite_sequence::JumpPhase::Crouch;
+    sprite.grounded=true;
+    AttachSprite(p,cat::sprite_sequence::Clip::Jump,elapsed,sprite);
+    return p;
 }
 
 // Use one registered airborne drawing throughout flight. The old16/17 blend
@@ -153,12 +168,13 @@ public:
         cycle_.Reset();
         jointCycle_.Configure(cat::walk_dynamics::ParametersFor(cat::walk_dynamics::Mode::Walk));
         jointCycle_.Reset();jointCycle_.Prime();originalWalkPhase_=0;
+        authoredCycle_.Reset();
         jointMode_=cat::walk_dynamics::Mode::Walk;
     }
 
     // Returns false for a discontinuous or invalid sample. The allowance grows
     // with dt so a normal run during a delayed 120 ms tick is not a teleport.
-    bool Advance(Motion motion, double signedDistanceBodyPx, double deltaSeconds) {
+    bool Advance(Motion motion, double signedDistanceBodyPx, double deltaSeconds, bool grounded=true) {
         if (!std::isfinite(signedDistanceBodyPx) || !std::isfinite(deltaSeconds) ||
                 deltaSeconds < 0 || deltaSeconds > .25 ||
                 std::abs(signedDistanceBodyPx) > std::max(12.0, 500.0 * deltaSeconds)) {
@@ -190,11 +206,24 @@ public:
             originalWalkPhase_=std::fmod(originalWalkPhase_+std::min(distancePhase,cadenceLimit),1.0);
             if(originalWalkPhase_>1-1e-12)originalWalkPhase_=0;
         }
+        if(!authoredCycle_.Advance(signedDistanceBodyPx,deltaSeconds,Walking(motion),grounded)) {
+            Reset();
+            return false;
+        }
         return true;
     }
 
     double Phase() const { return cycle_.Phase(); }
     double OriginalWalkPhase() const { return originalWalkPhase_; }
+    // Register once when art/body width changes. Reconfiguration preserves the
+    // step fraction; changing an action name never restarts an authored cycle.
+    bool ConfigureAuthoredStrides(double walkStride,double runStride) {
+        return authoredCycle_.Configure(walkStride,runStride);
+    }
+    bool AuthoredConfigured() const { return authoredCycle_.Configured(); }
+    double AuthoredPhase() const { return authoredCycle_.Phase(); }
+    cat::authored_locomotion::Mode AuthoredMode() const { return authoredCycle_.CurrentMode(); }
+    double AuthoredStride() const { return authoredCycle_.Stride(); }
     double Speed() const { return cycle_.Speed(); } // Observed body pixels per second.
     cat::gait::Parameters Settings(Motion motion) const { return cycle_.Settings(motion==Motion::Stalk); }
     cat::gait::Feet Feet(Motion motion) const { return cycle_.Targets(motion==Motion::Stalk); }
@@ -208,8 +237,33 @@ private:
     cat::gait::Cycle cycle_;
     cat::gait::Cycle jointCycle_{cat::walk_dynamics::ParametersFor(cat::walk_dynamics::Mode::Walk),false,0};
     double originalWalkPhase_=0;
+    cat::authored_locomotion::Cycle authoredCycle_;
     cat::walk_dynamics::Mode jointMode_=cat::walk_dynamics::Mode::Walk;
 };
+
+inline cat::sprite_sequence::Clip AuthoredLocomotionClip(const Locomotion& locomotion) {
+    return locomotion.AuthoredMode()==cat::authored_locomotion::Mode::Run?
+        cat::sprite_sequence::Clip::Run:cat::sprite_sequence::Clip::Walk;
+}
+
+// Call after actual support, landing, cursor contact and toy overrides. The
+// host proves that the selected character owns the requested registered clip;
+// absent art keeps its complete original drawings and fallback behavior.
+inline bool ApplyAuthoredLocomotion(Pose& pose,Motion displayed,const Locomotion& locomotion,
+                                   bool resourceAvailable) {
+    if(!resourceAvailable || !locomotion.AuthoredConfigured() || !Walking(displayed) ||
+            !pose.groundContact || !pose.originalWalk ||
+            pose.spriteClip!=cat::sprite_sequence::Clip::None)return false;
+    cat::sprite_sequence::Options options;
+    options.cyclePhase=locomotion.AuthoredPhase();
+    // The registered program maps this fraction to its actual source playlist
+    // (currently eight Walk and eight Run drawings). Elapsed time never steps
+    // a blocked cat, and extra frames are never invented by interpolation.
+    AttachSprite(pose,AuthoredLocomotionClip(locomotion),0,options);
+    UseAuthoredSprite(pose);
+    pose.originalWalk=pose.jointWalk=pose.walkingRig=false;
+    return true;
+}
 
 inline Pose Evaluate(Motion motion, std::uint64_t elapsed, std::uint64_t ticks, int direction) {
     Pose p;

@@ -68,7 +68,12 @@ void AcceptedMealKeepsItsCompleteGroomFollowUp() {
     auto c=Frame(100,model.Physical().x+60);c.primaryVisible=false;
     CHECK(model.Feed(c.nowUtc,c.ticks,false)==cat::nutrition::FeedResult::Accepted);
     model.Tick(c);
-    while(c.ticks<5100) {
+    const auto* meal=cat::sprite_assets::Find(cat::sprite_sequence::Clip::Eat,0,cat::sprite_assets::kCareSprites);
+    const auto* groom=cat::sprite_assets::Find(cat::sprite_sequence::Clip::Groom,0,cat::sprite_assets::kCareSprites);
+    CHECK(meal && groom && meal->program.stepCount && groom->program.stepCount);
+    const auto mealEnd=100+cat::sprite_sequence::ProgramDuration(meal->program);
+    const auto groomDuration=cat::sprite_sequence::ProgramDuration(groom->program);
+    while(c.ticks<mealEnd) {
         const auto view=model.View(c.ticks);
         CHECK(view.motion==M::Eat);Step(model,c);
     }
@@ -76,11 +81,11 @@ void AcceptedMealKeepsItsCompleteGroomFollowUp() {
     const auto groomAt=c.ticks;
     const auto groomFamily=model.View(c.ticks).animation.spriteOptions.variant;
     CHECK(groomFamily<3);
-    while(model.View(c.ticks).motion==M::Groom&&c.ticks-groomAt<8500) {
+    while(model.View(c.ticks).motion==M::Groom&&c.ticks-groomAt<groomDuration+34) {
         CHECK(model.View(c.ticks).animation.spriteOptions.variant==groomFamily);
         CHECK(!model.FoodOffered(c));Step(model,c);
     }
-    CHECK(c.ticks-groomAt>=3983&&c.ticks-groomAt<=8017);
+    CHECK(c.ticks-groomAt>=groomDuration&&c.ticks-groomAt<=groomDuration+17);
     CHECK(model.View(c.ticks).motion==M::Idle);
     const auto restedAt=c.ticks;
     while(c.ticks-restedAt<17900) {Step(model,c);CHECK(model.View(c.ticks).motion==M::Idle);}

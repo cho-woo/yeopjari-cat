@@ -525,10 +525,171 @@ void HighRefreshGaitFollowsRenderedTravel() {
     }
     CHECK(renderedBetweenSteps>100);CHECK(Valid(s));
 }
+
+void AuthoredCompanionWalkRunUsesItsRealRegisteredTravel() {
+    using Clip=cat::sprite_sequence::Clip;
+    const auto* walk=cat::sprite_assets::Find(Clip::Walk,0,cat::sprite_assets::kCareSprites);
+    const auto* run=cat::sprite_assets::Find(Clip::Run,0,cat::sprite_assets::kCareSprites);
+    CHECK(walk && run && walk->stridePixels>0 && run->stridePixels>walk->stridePixels);
+    for(const auto character:{cat::Character::Cream,cat::Character::SilverTabby})
+        for(const double pace:{12.,90.}) {
+            State state=NewState(born);state.preferences.character=character;state.pet.position=.2;
+            Model model;model.Bind(state);model.Reset(0,10000,700);
+            auto c=Frame(100,model.Physical().x+60);c.elapsedSeconds=1./120;
+            c.primaryMotion=cat::animation::Motion::Zoomies;c.primary.velocityX=pace;
+            CHECK(model.TrySocial(Interaction::RunTogether,c));
+            double previousTravel=model.View(c.ticks).physical.relativeTravelX,expectedPhase=0;
+            unsigned authored=0;
+            for(unsigned frame=1;frame<=300;++frame) {
+                c.ticks=100+frame*1000/120;c.nowUtc=born+static_cast<std::int64_t>(c.ticks/1000);
+                c.primary.x=model.Physical().x+60;model.Tick(c);
+                const auto view=model.View(c.ticks);
+                const double travel=view.physical.relativeTravelX-previousTravel;
+                previousTravel=view.physical.relativeTravelX;
+                if(character==cat::Character::Cream) {
+                    CHECK(view.animation.spriteClip==Clip::Walk || view.animation.spriteClip==Clip::Run);
+                    const auto* layout=view.animation.spriteClip==Clip::Run?run:walk;
+                    expectedPhase=std::fmod(expectedPhase+std::abs(travel)/
+                        (view.growthScale*layout->stridePixels*view.body.bodyWidth),1.0);
+                    CHECK(std::abs(view.animation.spriteOptions.cyclePhase-expectedPhase)<1e-10);
+                    CHECK(!view.animation.originalWalk && !view.animation.jointWalk && !view.animation.walkingRig);
+                    CHECK(view.animation.x==0 && view.animation.lift==0 && view.animation.angle==0);
+                    CHECK(view.animation.scaleX==1 && view.animation.scaleY==1 && view.animation.blendFrame==-1);
+                    if(frame>120)CHECK(view.animation.spriteClip==(pace<20?Clip::Walk:Clip::Run));
+                    ++authored;
+                } else {
+                    CHECK(view.animation.spriteClip==Clip::None && view.animation.originalWalk);
+                    CHECK(view.animation.frame>=0 && view.animation.frame<4);
+                }
+            }
+            if(character==cat::Character::Cream) {
+                CHECK(authored==300);
+                const auto before=model.View(c.ticks);
+                c.paused=true;c.ticks+=60000;c.nowUtc+=60;model.Tick(c);
+                const auto paused=model.View(c.ticks);
+                CHECK(paused.animation.spriteClip==before.animation.spriteClip);
+                CHECK(paused.animation.spriteOptions.cyclePhase==before.animation.spriteOptions.cyclePhase);
+                CHECK(paused.physical.x==before.physical.x);
+            }
+            CHECK(Valid(state));
+        }
+}
+
+void RegisteredCompanionCareFinishesItsWholeProgram() {
+    using Clip=cat::sprite_sequence::Clip;
+    using Food=cat::feeding::FoodKind;
+    for(const auto food:{Food::Meal,Food::Treat,Food::Fish}) {
+        State state=NewState(born);state.preferences.character=cat::Character::Cream;
+        state.nutrition.fullness=state.pet.hunger=45;
+        Model model;model.Bind(state);model.Reset(0,1600,700);
+        auto c=Frame(100,model.Physical().x+60);c.primaryVisible=false;
+        const auto clip=food==Food::Treat?Clip::Treat:food==Food::Fish?Clip::Fish:Clip::Eat;
+        const auto* asset=cat::sprite_assets::Find(clip,0,cat::sprite_assets::kCareSprites);
+        CHECK(asset && asset->program.stepCount);
+        const auto duration=cat::sprite_sequence::ProgramDuration(asset->program);
+        CHECK(duration>=5000);
+        CHECK(model.FeedFood(born,c.ticks,food,1)==cat::nutrition::FeedResult::Accepted);
+        model.Tick(c);
+        const auto end=c.ticks+duration;
+        while(c.ticks+17<end) {
+            const auto view=model.View(c.ticks);
+            CHECK(view.animation.spriteClip==clip && view.animation.spriteOptions.durationMs==duration);
+            CHECK(view.motion==(food==Food::Treat?cat::animation::Motion::Treat:cat::animation::Motion::Eat));
+            Step(model,c,1);
+        }
+        const auto last=model.View(end-1);
+        CHECK(last.animation.spriteClip==clip && last.animation.spriteElapsedMs==duration-1);
+        auto options=last.animation.spriteOptions;options.sheetFrames=asset->frameCount;
+        const auto source=cat::sprite_sequence::SampleProgram(clip,asset->program,last.animation.spriteElapsedMs,options);
+        CHECK(source.frame==asset->program.steps[asset->program.stepCount-1].frame);
+        c.ticks=end;c.nowUtc=born+static_cast<std::int64_t>(end/1000);model.Tick(c);
+        const auto grooming=model.View(c.ticks);
+        CHECK(grooming.motion==cat::animation::Motion::Groom);
+        const auto* groom=cat::sprite_assets::Find(Clip::Groom,0,cat::sprite_assets::kCareSprites);
+        const auto groomDuration=cat::sprite_sequence::ProgramDuration(groom->program);
+        CHECK(grooming.animation.spriteOptions.durationMs==groomDuration);
+        c.ticks+=groomDuration;c.nowUtc=born+static_cast<std::int64_t>(c.ticks/1000);model.Tick(c);
+        const auto neutral=model.View(c.ticks);
+        CHECK(neutral.motion==cat::animation::Motion::Idle);
+        CHECK(neutral.animation.spriteClip==Clip::Sleep && neutral.animation.spriteFrame==0 && !neutral.animation.spriteTimed);
+        CHECK(Valid(state));
+    }
+}
+
+void ContactRecoveryFinishesBeforeAcceptedFishStarts() {
+    using Clip=cat::sprite_sequence::Clip;
+    const auto* jump=cat::sprite_assets::Find(Clip::Jump,0,cat::sprite_assets::kCareSprites);
+    CHECK(jump && jump->program.stepCount);
+    const auto recovery=cat::sprite_sequence::Duration(jump->program,jump->program.outro);
+    CHECK(recovery>280);
+    State state=NewState(born);state.preferences.character=cat::Character::Cream;state.pet.position=.2;
+    state.nutrition.fullness=state.pet.hunger=45;
+    Model model;model.Bind(state);model.Reset(0,2400,700);
+    auto c=Frame(100,700,120);c.primary.onPlatform=true;
+    c.primaryPlatform={912,400,2100,120,true};c.supportPlatform=c.primaryPlatform;
+    CHECK(model.TrySocial(Interaction::WindowFollow,c));
+    bool foundRecovery=false;
+    for(unsigned frame=0;frame<300;++frame) {
+        Step(model,c,1);const auto view=model.View(c.ticks);
+        if(view.animation.spriteClip==Clip::Jump && view.animation.spriteOptions.grounded &&
+                view.animation.spriteOptions.jump==cat::sprite_sequence::JumpPhase::Landing &&
+                view.animation.spriteOptions.contactElapsedMs>300) {
+            CHECK(view.animation.spriteOptions.contactElapsedMs<recovery);
+            foundRecovery=true;break;
+        }
+    }
+    CHECK(foundRecovery && model.Physical().grounded && model.Physical().onPlatform);
+    CHECK(model.FeedFood(c.nowUtc,c.ticks,cat::feeding::FoodKind::Fish,1)==cat::nutrition::FeedResult::Accepted);
+    auto landing=model.View(c.ticks);
+    CHECK(landing.animation.spriteClip==Clip::Jump && !landing.animation.fishMeal);
+    for(unsigned frame=0;frame<100 && model.View(c.ticks).animation.spriteClip==Clip::Jump;++frame)Step(model,c,1);
+    const auto meal=model.View(c.ticks);
+    CHECK(meal.animation.spriteClip==Clip::Fish && meal.animation.fishMeal);
+    CHECK(meal.animation.spriteElapsedMs<=34);
+    CHECK(state.pet.feedCount==1 && state.memory.meals==1 && Valid(state));
+}
+
+void AuthoredSleepKeepsItsIdentityIncludingWindowRestAndWake() {
+    using Clip=cat::sprite_sequence::Clip;
+    for(unsigned seed=0;seed<20;++seed) {
+        State state=NewState(born+seed);state.preferences.character=cat::Character::Cream;
+        Model model;model.Bind(state);model.Reset(0,1600,700);
+        auto c=Frame(100,model.Physical().x+65);c.nowUtc=born+seed;
+        c.primaryMotion=cat::animation::Motion::Sleep;
+        CHECK(model.TrySocial(Interaction::SharedSleep,c));model.Tick(c);
+        for(unsigned seconds:{0u,2u,5u,15u}) {
+            c.ticks=100+seconds*1000;c.nowUtc=born+seed+seconds;model.Tick(c);
+            const auto view=model.View(c.ticks);
+            CHECK(view.motion==cat::animation::Motion::Sleep);
+            CHECK(view.animation.spriteClip==Clip::Sleep && view.animation.spriteTimed);
+        }
+    }
+    State state=NewState(born);state.preferences.character=cat::Character::Cream;state.pet.position=.2;
+    Model model;model.Bind(state);model.Reset(0,2400,700);
+    auto c=Frame(100,700,120);c.primary.onPlatform=true;
+    c.primaryPlatform={912,400,2100,120,true};c.supportPlatform=c.primaryPlatform;
+    CHECK(model.TrySocial(Interaction::WindowFollow,c));
+    for(unsigned frame=0;frame<240 && !model.Physical().onPlatform;++frame)Step(model,c,1);
+    CHECK(model.Physical().onPlatform);Step(model,c,70);
+    c.primary.x=model.Physical().x+65;c.primaryMotion=cat::animation::Motion::Sleep;
+    CHECK(model.TrySocial(Interaction::SharedSleep,c));model.Tick(c);
+    CHECK(model.View(c.ticks).physical.onPlatform);
+    CHECK(model.View(c.ticks).animation.spriteClip==Clip::Sleep);
+    const auto started=c.ticks;
+    while(c.ticks-started<30000)Step(model,c,1);
+    const auto waking=model.View(c.ticks);
+    CHECK(waking.motion==cat::animation::Motion::Stretch && waking.physical.onPlatform);
+    CHECK(waking.animation.spriteClip==Clip::Sleep);
+    CHECK(waking.animation.spriteOptions.sleep==cat::sprite_sequence::SleepStage::Waking);
+    CHECK(Valid(state));
+}
 }
 int main() {
     try { SeparateAdoptionAndRestart();IndividualStableTemperaments();StrictBundleParsing();RecoveryAndFaults();IndependentCareAndAge();FishCareKeepsTheExistingMealAndBusyContracts();AcceptedFoodRestartsItsClockAfterLongMenuPauses();SocialContactAndCompetition();RealWindowFollowingAndClosure();SpeciesLimitsAndBraking();ManualCareIsNotInterrupted();NaturalTakeoffAndLandingUsePhysicalMotion();SocialGesturesWaitForPlantedFeet();BrakingPreservesTheCompleteMeal();PairedRunningUsesOneSupportAndBodyMultiplier();HighWindowFollowingRespectsTheRealCeiling();
         HighRefreshGaitFollowsRenderedTravel();CanonicalPoseTransitionUsesHostActionAndPause();
+        AuthoredCompanionWalkRunUsesItsRealRegisteredTravel();RegisteredCompanionCareFinishesItsWholeProgram();
+        ContactRecoveryFinishesBeforeAcceptedFishStarts();
+        AuthoredSleepKeepsItsIdentityIncludingWindowRestAndWake();
         std::cout<<"companion checks passed: "<<checks<<'\n';return 0;
     } catch(const std::exception& e) { std::cerr<<e.what()<<'\n';return 1; }
 }
