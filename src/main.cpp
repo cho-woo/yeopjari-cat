@@ -156,16 +156,16 @@ struct SpriteAtlas {
     std::array<Rect, 32> frames{};
     int standingHeight = 1;
     struct Skin {
-        int width = 0, height = 0;
+        int width = 0, height = 0, groundInset = 0;
         std::vector<std::uint32_t> source, deformed, body, head, expression;
-        std::unique_ptr<Bitmap> image, bodyImage, headImage, expressionImage;
+        std::unique_ptr<Bitmap> sourceImage, image, bodyImage, headImage, expressionImage;
         std::array<int, 11> controls{};
         bool valid = false, partsValid = false;
     };
     std::array<Skin, 32> skins;
     void Reset() {
         for (auto& skin : skins) {
-            skin.image.reset(); skin.bodyImage.reset(); skin.headImage.reset(); skin.expressionImage.reset();
+            skin.sourceImage.reset(); skin.image.reset(); skin.bodyImage.reset(); skin.headImage.reset(); skin.expressionImage.reset();
             skin.source.clear(); skin.deformed.clear(); skin.body.clear(); skin.head.clear(); skin.expression.clear(); skin.valid = skin.partsValid = false;
         }
         image.reset();
@@ -1074,13 +1074,12 @@ bool LoadAtlasResource(int resourceId, SpriteAtlas& sheet, int columns = 4, int 
             (resourceId == 105 && (index == 0 || index == 2 || index == 4 || index == 6)) ||
             ((resourceId == 101 || resourceId == 103) && (index == 1 || index >= 4)) ||
             ((resourceId == 102 || resourceId == 104) && (index == 0 || index == 1 || index == 2 || index == 7));
-        if (!needsSkin) continue;
+        const bool originalWalk = (resourceId == 101 || resourceId == 103) && index < 4;
+        if (!needsSkin && !originalWalk) continue;
         const auto& source = frames[index];
         auto& skin = sheet.skins[index];
         skin.width = source.Width; skin.height = source.Height;
         skin.source.resize(static_cast<std::size_t>(skin.width) * skin.height);
-        skin.deformed.resize(skin.source.size());
-        skin.body.resize(skin.source.size()); skin.head.resize(skin.source.size()); skin.expression.resize(skin.source.size());
         for (int y = 0; y < skin.height; ++y) {
             const auto* row = static_cast<const BYTE*>(data.Scan0) +
                 static_cast<ptrdiff_t>(y + source.Y) * data.Stride + source.X * 4;
@@ -1092,6 +1091,24 @@ bool LoadAtlasResource(int resourceId, SpriteAtlas& sheet, int columns = 4, int 
                     ((pixel[1] * a + 127) / 255 << 8) | ((pixel[0] * a + 127) / 255);
             }
         }
+        if (originalWalk) {
+            // The two-pixel crop padding and faint fur fringe are not feet.
+            // Register the last solid sole row, without rescaling each pose.
+            int sole = skin.height - 1;
+            for (; sole > 0; --sole) {
+                const auto begin = skin.source.begin() + static_cast<std::size_t>(sole) * skin.width;
+                if (std::any_of(begin, begin + skin.width, [](std::uint32_t pixel) {
+                    return (pixel >> 24) > 153;
+                })) break;
+            }
+            skin.groundInset = skin.height - 1 - sole;
+            skin.sourceImage = std::make_unique<Bitmap>(skin.width, skin.height, skin.width * 4,
+                PixelFormat32bppPARGB, reinterpret_cast<BYTE*>(skin.source.data()));
+            if (skin.sourceImage->GetLastStatus() != Ok) { atlas->UnlockBits(&data); return false; }
+        }
+        if (!needsSkin) continue;
+        skin.deformed.resize(skin.source.size());
+        skin.body.resize(skin.source.size()); skin.head.resize(skin.source.size()); skin.expression.resize(skin.source.size());
         skin.expressionImage = std::make_unique<Bitmap>(skin.width, skin.height, skin.width * 4,
             PixelFormat32bppPARGB, reinterpret_cast<BYTE*>(skin.expression.data()));
         skin.image = std::make_unique<Bitmap>(skin.width, skin.height, skin.width * 4,
@@ -1849,6 +1866,28 @@ void DrawBellyHead(Graphics& graphics, const cat::animation::Pose& pose, REAL ce
     graphics.TranslateTransform(static_cast<REAL>((.5-headU)*width),static_cast<REAL>((1-headV)*height));
     graphics.Restore(saved);
 }
+bool DrawOriginalWalkingPet(Graphics& graphics,const cat::animation::Pose& pose,
+                           REAL center,REAL bottom,REAL scale,cat::Character character,
+                           const cat::nutrition::Visual& body) {
+    if (cat::species::UsesNewArt(character) || pose.frame < 0 || pose.frame >= 4) return false;
+    const auto& source=CurrentArt(character).base.skins[pose.frame];
+    if (!source.sourceImage) return false;
+    // These are complete painted poses. Do not cut the shoulder into a second
+    // layer or skin it with joints: the source has no hidden limb/torso artwork.
+    // One common scale preserves the artist's proportions; the registered
+    // solid sole is the support, with Box2D supplying all root translation.
+    const REAL width=static_cast<REAL>(source.width*scale*body.bodyWidth);
+    const REAL height=static_cast<REAL>(source.height*scale*body.bodyHeight);
+    const auto saved=graphics.Save();
+    graphics.TranslateTransform(center,bottom+source.groundInset*scale*static_cast<REAL>(body.bodyHeight));
+    graphics.ScaleTransform(pose.flip?-1.0f:1.0f,1.0f);
+    ImageAttributes attributes;attributes.SetWrapMode(WrapModeClamp,Color(0,0,0,0));
+    const auto status=graphics.DrawImage(source.sourceImage.get(),RectF(-width/2,-height,width,height),
+        0,0,static_cast<REAL>(source.width),static_cast<REAL>(source.height),UnitPixel,&attributes);
+    graphics.Restore(saved);
+    return status==Ok;
+}
+
 bool DrawJointWalkingPet(Graphics& graphics,const cat::animation::Pose& pose,
                          REAL center,REAL bottom,REAL scale,cat::Character character,
                          const cat::nutrition::Visual& body) {
@@ -2020,6 +2059,8 @@ void DrawStyledAnimationDirect(Graphics& graphics, cat::animation::Pose pose, RE
                          cat::Character character, cat::Outfit outfit, const cat::nutrition::Visual& body,
                          Surface& blendFrom, Surface& blendTo, int canvasWidth, int canvasHeight) {
     if(DrawCareSprite(graphics,pose,center,bottom,scale,character,body))return;
+    if(pose.originalWalk && !cat::species::UsesNewArt(character) &&
+            DrawOriginalWalkingPet(graphics,pose,center,bottom,scale,character,body))return;
     if(pose.jointWalk && !cat::species::UsesNewArt(character) &&
             DrawJointWalkingPet(graphics,pose,center,bottom,scale,character,body))return;
     const bool useWalkingRig=pose.walkingRig || (pose.originalWalk && cat::species::UsesNewArt(character));
