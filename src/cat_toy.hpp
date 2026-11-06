@@ -83,7 +83,7 @@ inline bool PawContactAt(std::uint64_t elapsed, bool& consumed, double distance,
 // cooldown. Time advances only while the cat can interact on the taskbar floor.
 // Phases needing travel finish on real position AND low-speed arrival supplied
 // by the caller. No phase sets a cat position or resets a physics world.
-enum class Phase { None, Discover, Approach, Inspect, Enter, Interact, Rest, Sleep, Exit, Wait };
+enum class Phase { None, Discover, Approach, Inspect, Enter, Interact, Rest, Sleep, Exit, Wait, BoxExit };
 
 inline bool Travels(Phase phase) {
     return phase == Phase::Approach || phase == Phase::Enter || phase == Phase::Exit;
@@ -125,18 +125,21 @@ struct Session {
     Phase phase = Phase::None;
     double elapsedMs = 0, activeMs = 0;
     double boxVisitMs = 0; // Optional authored visit; zero retains the legacy timing.
+    double boxExitMs = 0; // Optional stationary authored outro before ordinary exit travel.
     unsigned rounds = 0, revision = 0;
     int entryDirection = 1;
 
     void Start(Kind selected, int direction = 1) {
         kind = selected; entryDirection = direction < 0 ? -1 : 1;
-        rounds = 0; elapsedMs = activeMs = boxVisitMs = 0;
+        rounds = 0; elapsedMs = activeMs = boxVisitMs = boxExitMs = 0;
         phase = selected == Kind::None ? Phase::None : Phase::Discover;
         ++revision;
     }
     void Cancel() { Start(Kind::None); }
     void Set(Phase next) { phase = next; elapsedMs = 0; ++revision; }
     double PhaseDuration() const {
+        if (kind==Kind::Box && phase==Phase::BoxExit && std::isfinite(boxExitMs) && boxExitMs>0)
+            return std::clamp(boxExitMs,1.0,10000.0);
         return kind==Kind::Box && phase==Phase::Interact && std::isfinite(boxVisitMs) && boxVisitMs>0 ?
             std::clamp(boxVisitMs,Duration(kind,phase),10000.0):Duration(kind,phase);
     }
@@ -159,7 +162,10 @@ struct Session {
             } else if (kind == Kind::Box || kind == Kind::Cushion) Set(Phase::Sleep);
             else Set(Phase::Rest);
             break;
-        case Phase::Rest: case Phase::Sleep: Set(Phase::Exit); break;
+        case Phase::Rest: case Phase::Sleep:
+            Set(kind==Kind::Box && std::isfinite(boxExitMs) && boxExitMs>0 ? Phase::BoxExit : Phase::Exit);
+            break;
+        case Phase::BoxExit: Set(Phase::Exit); break;
         case Phase::Exit: Set(Phase::Wait); break;
         case Phase::Wait: rounds = 0; Set(Phase::Discover); break;
         default: return false;
@@ -253,6 +259,7 @@ private:
 inline double SessionTarget(const Session& session, double toyX, double catX, double growth,
                             double low, double high) {
     growth = std::max(.1, growth);
+    if (session.phase == Phase::BoxExit) return ClampCenter(toyX, low, high);
     if (session.phase == Phase::Exit) {
         const double preferred = toyX - session.entryDirection * 100 * growth;
         const double alternate = toyX + session.entryDirection * 100 * growth;
