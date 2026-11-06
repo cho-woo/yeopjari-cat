@@ -288,20 +288,36 @@ int NativeActualCareSpriteRenderTest(std::string& context) {
             if(crop->GetLastStatus()!=Ok)return 300;
             {
                 Graphics graphics(canvas.image.get());configure(graphics);
-                const REAL scale=static_cast<REAL>(110/layout.referenceHeight);
+                // Compare the independent decoded source at the SAME device
+                // transform, not an approximately equivalent absolute RectF.
+                // For Groom14, adding bottom before storing the REAL origin
+                // rounds its y by1/65536px. GDI+ can then choose a different
+                // bicubic alpha weight even though the source is identical.
+                const int standingHeight=CurrentArt(cat::Character::Cream).base.standingHeight;
+                const REAL callerScale=110.0f/std::max(1,standingHeight);
+                const double referenceScale=callerScale*standingHeight/layout.referenceHeight;
+                const REAL sx=static_cast<REAL>(referenceScale),sy=static_cast<REAL>(referenceScale);
+                graphics.TranslateTransform(center,bottom);graphics.ScaleTransform(1,1);
                 ImageAttributes attributes;attributes.SetWrapMode(WrapModeClamp,Color(0,0,0,0));
-                const auto status=graphics.DrawImage(crop.get(),RectF(center-static_cast<REAL>(f.anchor.x)*scale,
-                    bottom-static_cast<REAL>(f.anchor.y)*scale,f.rect.width*scale,f.rect.height*scale),
+                const auto status=graphics.DrawImage(crop.get(),RectF(static_cast<REAL>(-f.anchor.x*sx),
+                    static_cast<REAL>(-f.anchor.y*sy),f.rect.width*sx,f.rect.height*sy),
                     0,0,f.rect.width,f.rect.height,UnitPixel,&attributes);
                 graphics.Flush(FlushIntentionSync);
                 if(status!=Ok||graphics.GetLastStatus()!=Ok)return 300;
             }
             if(!nearPixels(copy(),direct)){
-                const auto expected=copy();unsigned maxDifference=0;std::size_t changed=0;
-                for(std::size_t i=0;i<expected.size();++i){const auto delta=static_cast<unsigned>(std::abs(static_cast<int>(expected[i])-direct[i]));
-                    maxDifference=std::max(maxDifference,delta);changed+=delta>1;}
-                context+=" wrong source rectangle/anchor maxDifference="+std::to_string(maxDifference)+
-                    " channels="+std::to_string(changed);return 301;
+                const auto expected=copy();unsigned maxRgb=0,maxAlpha=0;std::size_t firstBad=expected.size(),changed=0;
+                for(std::size_t i=0;i<expected.size();++i) {
+                    const auto delta=static_cast<unsigned>(std::abs(static_cast<int>(expected[i])-direct[i]));
+                    if(i%4==3)maxAlpha=std::max(maxAlpha,delta);else maxRgb=std::max(maxRgb,delta);
+                    if(delta>(i%4==3?1u:2u)){if(firstBad==expected.size())firstBad=i;++changed;}
+                }
+                context+=" wrong source rectangle/anchor maxRgb="+std::to_string(maxRgb)+
+                    " maxAlpha="+std::to_string(maxAlpha)+" channels="+std::to_string(changed);
+                if(firstBad<expected.size())context+=" first=("+std::to_string(firstBad/4%width)+","+
+                    std::to_string(firstBad/4/width)+",channel"+std::to_string(firstBad%4)+") expected="+
+                    std::to_string(expected[firstBad])+" actual="+std::to_string(direct[firstBad]);
+                return 301;
             }
             pose.angle=4;pose.scaleX=.8;pose.scaleY=1.2;pose.joints.headNod=.7;
             pose.joints.crouch=.8;pose.joints.frontLeft=.6;pose.face.blink=.9;
