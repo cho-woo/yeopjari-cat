@@ -126,22 +126,18 @@ struct Session {
     double elapsedMs = 0, activeMs = 0;
     double boxVisitMs = 0; // Optional authored visit; zero retains the legacy timing.
     double boxExitMs = 0; // Optional stationary authored outro before ordinary exit travel.
-    double pawVisitMs = 0; // Optional authored ball/lure contact story; zero keeps legacy timing.
     unsigned rounds = 0, revision = 0;
     int entryDirection = 1;
 
     void Start(Kind selected, int direction = 1) {
         kind = selected; entryDirection = direction < 0 ? -1 : 1;
-        rounds = 0; elapsedMs = activeMs = boxVisitMs = boxExitMs = pawVisitMs = 0;
+        rounds = 0; elapsedMs = activeMs = boxVisitMs = boxExitMs = 0;
         phase = selected == Kind::None ? Phase::None : Phase::Discover;
         ++revision;
     }
     void Cancel() { Start(Kind::None); }
     void Set(Phase next) { phase = next; elapsedMs = 0; ++revision; }
     double PhaseDuration() const {
-        if ((kind==Kind::Ball || kind==Kind::FishingRod) && phase==Phase::Interact &&
-                std::isfinite(pawVisitMs) && pawVisitMs>0)
-            return std::clamp(pawVisitMs,1.0,10000.0);
         if (kind==Kind::Box && phase==Phase::BoxExit && std::isfinite(boxExitMs) && boxExitMs>0)
             return std::clamp(boxExitMs,1.0,10000.0);
         return kind==Kind::Box && phase==Phase::Interact && std::isfinite(boxVisitMs) && boxVisitMs>0 ?
