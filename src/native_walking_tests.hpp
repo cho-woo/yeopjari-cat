@@ -198,6 +198,10 @@ int NativeWalkingRenderTest(std::string& context) {
         const auto& source=art.base.skins[cat::species::UsesNewArt(character)?2:1];
         const double reference=110.0/std::max(1,art.base.standingHeight);
         auto pose=poseFor(cat::species::UsesNewArt(character)?Motion::Walk:Motion::Stalk,1);pose.walkPhase=.375;
+        // This block intentionally exercises the retained inverse-warp
+        // fallback. Cream stalking now dispatches to the joint rig normally;
+        // do not compare its output with an unrelated stale legacy cache.
+        pose.jointWalk=false;
         for(const auto dimensions:{std::pair<double,double>{1,1},{.82,1.04},{1.25,.96},{1,1}}) {
             auto body=normalBody;body.bodyWidth=dimensions.first;body.bodyHeight=dimensions.second;
             context="walking nutrition c="+std::to_string(static_cast<int>(character))+" width="+std::to_string(body.bodyWidth);
@@ -209,6 +213,33 @@ int NativeWalkingRenderTest(std::string& context) {
                         pose.walkFeetValid?&pose.walkFeet:nullptr) ||
                     expected.Width()!=art.walking->rig.Width() || expected.Height()!=art.walking->rig.Height() ||
                     std::memcmp(expected.Pixels(),art.walking->rig.Pixels(),static_cast<std::size_t>(expected.Width())*expected.Height()*4)!=0)return 159;
+        }
+    }
+    // Independently verify the production joint path's nutrition cache too.
+    // Feet and dynamics stay fixed: only width/height change, then return to
+    // the first shape, so a missing dimension in the cache key is observable.
+    for(const auto character:{cat::Character::Cream,cat::Character::SilverTabby}) {
+        auto& art=CurrentArt(character);const auto& source=art.base.skins[1];
+        const double reference=110.0/std::max(1,art.base.standingHeight);
+        const auto pose=poseFor(Motion::Stalk,1);
+        cat::articulated::Rig expected;
+        if(!pose.jointWalk || !expected.Prepare(source.source.data(),source.width,source.height,source.width*4)) {
+            context="joint nutrition independent rig preparation";return 159;
+        }
+        for(const auto dimensions:{std::pair<double,double>{1,1},{.82,1.04},{1.25,.96},{1,1}}) {
+            auto body=normalBody;body.bodyWidth=dimensions.first;body.bodyHeight=dimensions.second;
+            context="joint walking nutrition c="+std::to_string(static_cast<int>(character))+
+                " width="+std::to_string(body.bodyWidth)+" height="+std::to_string(body.bodyHeight);
+            if(!draw(character,cat::Outfit::Scarf,pose,body,true) || !art.jointWalking) {
+                context+=" production joint cache unavailable";return 159;
+            }
+            const auto& cached=art.jointWalking->rig;
+            if(!expected.Raster(pose.jointFeet,source.width*reference*body.bodyWidth,
+                    source.height*reference*body.bodyHeight,pose.jointDynamics) ||
+                    expected.Width()!=cached.Width() || expected.Height()!=cached.Height() ||
+                    std::memcmp(expected.Pixels(),cached.Pixels(),static_cast<std::size_t>(expected.Width())*expected.Height()*4)!=0) {
+                context+=" cached joint raster differs from independent rig";return 159;
+            }
         }
     }
     // Drive the same persistent controller used by both pets through real
