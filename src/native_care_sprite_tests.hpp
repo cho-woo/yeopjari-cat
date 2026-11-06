@@ -282,7 +282,14 @@ int NativeActualCareSpriteRenderTest(std::string& context) {
             if(!draw(pose,cat::Character::Cream,normal,110,false)||copy()!=direct)return 302;
             std::array<int,4> bounds{};
             if(!inspect(direct,bounds)){context+=" invalid alpha, missing body or canvas clipping";return 303;}
-            if(pose.groundContact&&bounds[3]>bottom+2){context+=" below registered support";return 304;}
+            if(pose.groundContact&&bounds[3]>bottom+2){
+                const auto& src=sourceBounds[frame];
+                context+=" below registered support actualBottom="+std::to_string(bounds[3])+
+                    " ground="+std::to_string(bottom)+" anchorY="+std::to_string(f.anchor.y)+
+                    " reference="+std::to_string(layout.referenceHeight)+
+                    " sourceBounds="+std::to_string(src[0])+","+std::to_string(src[1])+","+
+                        std::to_string(src[2])+","+std::to_string(src[3]);return 304;
+            }
         }
         // Independently change nutrition dimensions and DPI/age scale. The
         // source alpha bounds must follow one common source scale and anchor,
