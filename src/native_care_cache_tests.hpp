@@ -1,4 +1,5 @@
 #pragma once
+#include "native_care_fixture.hpp"
 
 // Tiny synthetic PNGs exercise capacity and ownership, not the visual quality
 // or performance of real artwork. Ordinary-app old/new metrics are separate.
@@ -39,18 +40,12 @@ int NativeCareCacheCapacityTest(std::string& context) {
     bool comma=false;
     for(unsigned count:{64u,128u,256u}) {
         context="native prewarmed PNG frame cache count="+std::to_string(count);
-        auto layout=std::make_unique<cat::sprite_assets::Descriptor>();
-        constexpr int cellWidth=24,cellHeight=32;
-        layout->clip=Clip::Groom;layout->character=0;layout->resourceId=cat::sprite_assets::ResourceId(Clip::Groom,0);
-        layout->columns=8;layout->rows=count/8;layout->frameCount=count;
-        layout->imageWidth=8*cellWidth;layout->imageHeight=layout->rows*cellHeight;layout->referenceHeight=cellHeight;
-        layout->program.stepCount=count;layout->program.loop={0,count};layout->program.finish=Finish::Hold;
+        auto layout=std::make_unique<cat::sprite_assets::Descriptor>(cat::native_care_test::CapacityLayout(count));
+        constexpr int cellWidth=cat::native_care_test::CellWidth,cellHeight=cat::native_care_test::CellHeight;
         std::vector<std::uint32_t> source(layout->imageWidth*layout->imageHeight,0);
-        const auto color=[](unsigned frame){return 0xff000000u|(((frame*73+41)&255)<<16)|(((frame*31+109)&255)<<8)|((frame*17+67)&255);};
+        const auto color=cat::native_care_test::FrameColor;
         for(unsigned frame=0;frame<count;++frame) {
             const int x=static_cast<int>(frame%8)*cellWidth,y=static_cast<int>(frame/8)*cellHeight;
-            layout->frames[frame]={{x,y,cellWidth,cellHeight},{12,30}};
-            layout->program.steps[frame]={frame,37};
             for(int sy=4;sy<30;++sy)for(int sx=6;sx<20;++sx)
                 source[static_cast<std::size_t>(y+sy)*layout->imageWidth+x+sx]=color(frame);
         }
