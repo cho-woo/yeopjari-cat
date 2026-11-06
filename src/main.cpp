@@ -4005,6 +4005,7 @@ int RenderSelfTest() {
             if(const int cacheTest=NativeCareCacheCapacityTest(context))return cacheTest;
             if(const int actualSpriteTest=NativeActualCareSpriteRenderTest(context))return actualSpriteTest;
             if(const int presentationTest=NativeCarePresentationRenderTest(context))return presentationTest;
+            if(const int walkingTest=NativeAuthoredWalkingRenderTest(context))return walkingTest;
             DisabledCareSpriteScope canonicalArtwork;
             constexpr REAL center = 210, floor = 280;
             constexpr std::uint64_t fixedTicks = 500000;
