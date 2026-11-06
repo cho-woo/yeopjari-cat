@@ -90,6 +90,7 @@ jobs:
             throw "Silent executable verification failed with exit code $LASTEXITCODE."
           }
       - name: Execute the Windows x64 binary self-test
+        id: selftest
         timeout-minutes: 2
         shell: pwsh
         run: |
@@ -97,10 +98,12 @@ jobs:
           $exe = (Resolve-Path "package/YeopjariCat-$env:VERSION.exe").Path
           $process = Start-Process -FilePath $exe -ArgumentList '--self-test' -PassThru -Wait
           if ($process.ExitCode -ne 0) {
+            Write-Host "::error::Windows self-test failed: $($process.ExitCode)"
             throw "Windows self-test failed with exit code $($process.ExitCode)."
           }
           Write-Host 'Windows x64 save-state, life/toy and cursor host self-tests passed.'
       - name: Render real Windows GDI+ motion, retired-wardrobe and contact regressions
+        if: ${{ !cancelled() && (steps.selftest.outcome == 'success' || steps.selftest.outcome == 'failure') }}
         timeout-minutes: 8
         shell: pwsh
         run: |
