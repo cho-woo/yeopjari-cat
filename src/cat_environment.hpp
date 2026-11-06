@@ -25,12 +25,20 @@ struct CursorInput {
     // The host supplies the authored playlist length when this character has
     // one. Legacy pointer animations keep their original timings by default.
     std::uint64_t pawDurationMs = 850, punchDurationMs = 650;
+    std::uint64_t pouncePreparationMs = 240;
 };
 
 inline std::uint64_t CursorAttackDuration(CursorAction action,const CursorInput& input) {
     const auto duration=action==CursorAction::Paw?input.pawDurationMs:input.punchDurationMs;
     return duration?std::min<std::uint64_t>(duration,86400000):
         action==CursorAction::Paw?850:650;
+}
+inline std::uint64_t CursorPounceTimeout(const CursorInput& input) {
+    // Retain the legacy1160ms grace after expected takeoff, but do not time
+    // out an expanded anticipation strip before Box2D receives its impulse.
+    const auto preparation=input.pouncePreparationMs?
+        std::min<std::uint64_t>(input.pouncePreparationMs,86400000):240;
+    return preparation+1160;
 }
 
 struct CursorOutput {
@@ -135,8 +143,9 @@ public:
             // An episode budget cannot cut off an authored paw stroke before
             // its retraction/settling poses. Pointer departure and OFF still
             // cancel immediately through the checks above.
-            else if (!((action_==CursorAction::Paw || action_==CursorAction::Punch) &&
-                       input.nowMs-changedAt_<CursorAttackDuration(action_,input)) &&
+            else if (!(((action_==CursorAction::Paw || action_==CursorAction::Punch) &&
+                        input.nowMs-changedAt_<CursorAttackDuration(action_,input)) ||
+                       (action_==CursorAction::Pounce && input.nowMs-changedAt_<CursorPounceTimeout(input))) &&
                     input.nowMs - began_ >= std::max(episodeBudget_,
                     (action_ == CursorAction::ApproachSit || action_ == CursorAction::Sit) ? std::uint64_t{9000} :
                      excitement_ > .5 ? std::uint64_t{12000} : std::uint64_t{7000}))
@@ -229,7 +238,7 @@ public:
                 break;
             case CursorAction::Pounce:
                 if ((launchAnswered_ && !launched_) || !reachable ||
-                        std::abs(input.cursorX-pounceX_) > 75*scale || elapsed >= 1400)
+                        std::abs(input.cursorX-pounceX_) > 75*scale || elapsed >= CursorPounceTimeout(input))
                     Change(CursorAction::Abandon, input.nowMs);
                 break;
             case CursorAction::Abandon:
