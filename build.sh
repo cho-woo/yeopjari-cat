@@ -2,6 +2,16 @@
 set -euo pipefail
 DESKCAT_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 python3 "$DESKCAT_ROOT/tools/import_care_sprites.py" --check
+# The review resource is optional, but a partially registered or stale bake
+# must never silently compile. Its canonical inputs live beside the copied PNG.
+if [[ -f "$DESKCAT_ROOT/src/cream_mesh_walk.generated.hpp" ||
+      -f "$DESKCAT_ROOT/assets/review/cream-mesh-walk.manifest.json" ||
+      -f "$DESKCAT_ROOT/assets/review/cream-mesh-walk.contacts.json" ||
+      -f "$DESKCAT_ROOT/assets/review/cream-mesh-walk.png" ]]; then
+  python3 "$DESKCAT_ROOT/tools/import_mesh_walk_review.py" \
+    --manifest "$DESKCAT_ROOT/assets/review/cream-mesh-walk.manifest.json" \
+    --annotations "$DESKCAT_ROOT/assets/review/cream-mesh-walk.contacts.json" --check
+fi
 DESKCAT_TOOLCHAIN="${DESKCAT_TOOLCHAIN:-$DESKCAT_ROOT/toolchain/llvm-mingw-20261020-ucrt-ubuntu-22.04-x86_64}"
 DESKCAT_COMPILER="$DESKCAT_TOOLCHAIN/bin/x86_64-w64-mingw32-clang++"
 DESKCAT_C_COMPILER="$DESKCAT_TOOLCHAIN/bin/x86_64-w64-mingw32-clang"

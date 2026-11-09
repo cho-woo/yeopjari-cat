@@ -1,0 +1,224 @@
+{
+  "render_type": "Pillow/FFmpeg composition of unchanged baked poses; not GDI+ or desktop recording",
+  "source_pngs_modified": false,
+  "image_crossfades_or_invented_inbetweens": false,
+  "per_frame_bbox_scale": false,
+  "display_reference_height_logical_px": 110,
+  "speed_logical_px_per_second": 22,
+  "normal_output_fps": 60,
+  "application_active_target_hz": "approximately60; separate from source pose count and review encoding",
+  "numerical_quality_status": "read separate rig/contact reports",
+  "visual_quality_status": "not_assessed_by_renderer",
+  "production_approved": false,
+  "visible_video_status": "UNAPPROVED / DIAGNOSTIC + HANDOFF",
+  "invocation_mode": "all",
+  "movies": [
+    {
+      "file": "short-footlock.mp4",
+      "sha256": "3b90c95c373b72a87d9f3f2a3777cc93d81d2f1b3c6be2984105d894c53c93c5",
+      "frames": 104,
+      "output_fps": 60,
+      "duration_seconds": 1.733333,
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "width": 900,
+            "height": 480,
+            "pix_fmt": "yuv420p",
+            "r_frame_rate": "60/1",
+            "nb_frames": "104"
+          }
+        ],
+        "format": {
+          "duration": "1.733333"
+        }
+      }
+    },
+    {
+      "file": "walk-comparison.mp4",
+      "sha256": "6fff3cfd85d9cbb479c49974f3597488e2ff52fa4327af4a4c18d6192a21d0ce",
+      "frames": 525,
+      "output_fps": 60,
+      "duration_seconds": 8.75,
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "width": 900,
+            "height": 520,
+            "pix_fmt": "yuv420p",
+            "r_frame_rate": "60/1",
+            "nb_frames": "525"
+          }
+        ],
+        "format": {
+          "duration": "8.750000"
+        }
+      }
+    },
+    {
+      "file": "contact-slow.mp4",
+      "sha256": "963bce820461cfd73888a9a463cb50491d574e9a499f826c28f9cbdd8d744a1f",
+      "frames": 308,
+      "output_fps": 60,
+      "duration_seconds": 5.133333,
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "width": 1200,
+            "height": 760,
+            "pix_fmt": "yuv420p",
+            "r_frame_rate": "60/1",
+            "nb_frames": "308"
+          }
+        ],
+        "format": {
+          "duration": "5.133333"
+        }
+      }
+    }
+  ],
+  "sources": {
+    "short": {
+      "source_kind": "final_full_loop_resampled_for_display_no_new_poses",
+      "manifest": "build/cream-mesh-rig/review-manifest.json",
+      "manifest_sha256": "7fe86247bcf64f4fee4547d2cf96ced5234610b5327104a0435fc119224839d8",
+      "annotations": "build/cream-mesh-rig/annotations.json",
+      "annotations_sha256": "30ef61774151a5abaef32ed4993726df3bbfe292d6c91d12d90729c2b9b30634",
+      "phase_start": 0.25,
+      "phase_end": 1.508888927519599,
+      "loop_pose_count": 82,
+      "stride_logical_px": 29.99999907940941,
+      "actual_root_distance_logical_px": 37.766666666666666,
+      "source_pngs": [
+        {
+          "path": "build/cream-mesh-rig/atlas.png",
+          "sha256": "1d49bb068e3a4571d2c9dee0c4e6b276a4e61807f1712c9a49db79b725621c70"
+        }
+      ]
+    },
+    "full": {
+      "manifest": "build/cream-mesh-rig/review-manifest.json",
+      "manifest_sha256": "7fe86247bcf64f4fee4547d2cf96ced5234610b5327104a0435fc119224839d8",
+      "annotations": "build/cream-mesh-rig/annotations.json",
+      "annotations_sha256": "30ef61774151a5abaef32ed4993726df3bbfe292d6c91d12d90729c2b9b30634",
+      "stride_logical_px": 29.99999907940941,
+      "loop_pose_count": 82,
+      "baseline_cycles_displayed": 3.002083333333333,
+      "mesh_cycles_displayed": 6.404444640973494,
+      "actual_root_distance_logical_px": 192.13333333333333,
+      "source_pngs": [
+        {
+          "path": "build/cream-mesh-rig/atlas.png",
+          "sha256": "1d49bb068e3a4571d2c9dee0c4e6b276a4e61807f1712c9a49db79b725621c70"
+        }
+      ]
+    }
+  },
+  "observed_displayed_control_stances": [
+    {
+      "scene": "short-footlock",
+      "foot": "near_front",
+      "samples": 52,
+      "from_seconds": 0.016666666666666666,
+      "to_seconds": 0.8666666666666667,
+      "displayed_control_world_span_logical_px": 0.041471952550551805,
+      "max_control_floor_residual_logical_px": 1.5189744768099548e-05
+    },
+    {
+      "scene": "short-footlock",
+      "foot": "near_front",
+      "samples": 21,
+      "from_seconds": 1.3833333333333333,
+      "to_seconds": 1.7166666666666666,
+      "displayed_control_world_span_logical_px": 0.016266191347327208,
+      "max_control_floor_residual_logical_px": 1.5189744768099548e-05
+    },
+    {
+      "scene": "contact-slow",
+      "foot": "near_front",
+      "samples": 156,
+      "from_seconds": 0.011111111111111112,
+      "to_seconds": 0.8722222222222222,
+      "displayed_control_world_span_logical_px": 0.28591639699499893,
+      "max_control_floor_residual_logical_px": 1.5189744768099548e-05
+    },
+    {
+      "scene": "contact-slow",
+      "foot": "near_front",
+      "samples": 61,
+      "from_seconds": 1.372222222222222,
+      "to_seconds": 1.7055555555555555,
+      "displayed_control_world_span_logical_px": 0.25989656673716865,
+      "max_control_floor_residual_logical_px": 1.5189744768099548e-05
+    },
+    {
+      "scene": "contact-slow",
+      "foot": "far_front",
+      "samples": 35,
+      "from_seconds": 0.0,
+      "to_seconds": 0.18888888888888888,
+      "displayed_control_world_span_logical_px": 0.2525623503733403,
+      "max_control_floor_residual_logical_px": 1.5189744768099548e-05
+    },
+    {
+      "scene": "contact-slow",
+      "foot": "far_front",
+      "samples": 155,
+      "from_seconds": 0.6944444444444445,
+      "to_seconds": 1.55,
+      "displayed_control_world_span_logical_px": 0.3650461234298348,
+      "max_control_floor_residual_logical_px": 1.5189744768099548e-05
+    },
+    {
+      "scene": "contact-slow",
+      "foot": "near_rear",
+      "samples": 98,
+      "from_seconds": 0.0,
+      "to_seconds": 0.5388888888888889,
+      "displayed_control_world_span_logical_px": 0.26964450949337504,
+      "max_control_floor_residual_logical_px": 1.5189744768099548e-05
+    },
+    {
+      "scene": "contact-slow",
+      "foot": "near_rear",
+      "samples": 123,
+      "from_seconds": 1.027777777777778,
+      "to_seconds": 1.7055555555555555,
+      "displayed_control_world_span_logical_px": 0.3650385285574558,
+      "max_control_floor_residual_logical_px": 1.5189744768099548e-05
+    },
+    {
+      "scene": "contact-slow",
+      "foot": "far_rear",
+      "samples": 159,
+      "from_seconds": 0.3444444444444445,
+      "to_seconds": 1.222222222222222,
+      "displayed_control_world_span_logical_px": 0.28671527630482707,
+      "max_control_floor_residual_logical_px": 1.5189744768099548e-05
+    },
+    {
+      "scene": "contact-slow",
+      "foot": "far_rear",
+      "samples": 1,
+      "from_seconds": 1.7055555555555555,
+      "to_seconds": 1.7055555555555555,
+      "displayed_control_world_span_logical_px": 0.0,
+      "max_control_floor_residual_logical_px": 0.0
+    }
+  ],
+  "baseline_pngs": [
+    {
+      "path": "/workspace/yeopjari-cat/assets/care-sprites/c0-walk.png",
+      "sha256": "fdb52258ede319c7f23ffa0af019b8d3fa677bf180caa1e9a89e1b37db0e9e78"
+    }
+  ]
+}

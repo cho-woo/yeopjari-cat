@@ -1,0 +1,70 @@
+name: Publish exact Windows-validated editable mesh walking review
+on:
+  workflow_dispatch:
+    inputs:
+      validation_run:
+        description: Successful Validate run with the actual mesh-walk review output
+        required: true
+        type: string
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: yeopjari-cat-release-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.repository == 'cho-woo/yeopjari-cat' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      VALIDATION_RUN: ${{ inputs.validation_run }}
+    steps:
+      - name: Require successful native Windows validation and select its exact commit
+        id: validated
+        run: |
+          python3 - <<'PY'
+          import json, os, re, subprocess
+          run_id = os.environ['VALIDATION_RUN']
+          assert run_id.isdigit()
+          def api(path):
+              return json.loads(subprocess.check_output(['gh','api','repos/cho-woo/yeopjari-cat/'+path]))
+          run = api('actions/runs/'+run_id)
+          assert run['path'] == '.github/workflows/validate.yml'
+          assert run['status'] == 'completed' and run['conclusion'] == 'success'
+          assert run['head_repository']['full_name'] == 'cho-woo/yeopjari-cat'
+          assert run['head_branch'] == 'main'
+          assert re.fullmatch('[0-9a-f]{40}',run['head_sha'])
+          jobs = api('actions/runs/'+run_id+'/jobs')['jobs']
+          assert all(any(j['name']==name and j['conclusion']=='success' for j in jobs)
+                     for name in ['validate','windows-smoke'])
+          with open(os.environ['GITHUB_OUTPUT'],'a') as output:
+              output.write('sha='+run['head_sha']+'\n')
+          PY
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.validated.outputs.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Prepare native PNG video encoder dependencies
+        run: |
+          command -v ffmpeg
+          command -v ffprobe
+          python3 -m pip install --disable-pip-version-check Pillow==11.3.0
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-x64-validated-package
+          path: verified-package
+          run-id: ${{ inputs.validation_run }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-native-validation
+          path: native-review
+          run-id: ${{ inputs.validation_run }}
+          github-token: ${{ github.token }}
+      - name: Verify exact package, encode native evidence and publish unapproved prerelease
+        run: python3 tools/publish_mesh_review.py

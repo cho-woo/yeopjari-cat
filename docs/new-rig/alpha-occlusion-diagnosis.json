@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "frame": 2,
+  "sole_source_px": [
+    198.7490234375,
+    274.9999694824219
+  ],
+  "old_shared_material_use_transparency_overlap": false,
+  "fixed_shared_material_use_transparency_overlap": true,
+  "samples": {
+    "overlap-fixed-composite-frame2.png": {
+      "max_alpha_within_3_source_px": 251,
+      "solid_support": true,
+      "nearest_solid_distance_source_px": 1.0309840933299548,
+      "solid_bottom_y_source_px": 274
+    },
+    "old-composite-frame2.png": {
+      "max_alpha_within_3_source_px": 0,
+      "solid_support": false,
+      "nearest_solid_distance_source_px": null,
+      "solid_bottom_y_source_px": null
+    },
+    "isolated-far-front-frame2.png": {
+      "max_alpha_within_3_source_px": 251,
+      "solid_support": true,
+      "nearest_solid_distance_source_px": 1.0309840933299548,
+      "solid_bottom_y_source_px": 274
+    }
+  },
+  "conclusion": "Disabling shared transparent overlap discarded a correctly placed hidden toe; enabling overlap fixes alpha coverage. This does not fix inverted limb skin geometry."
+}

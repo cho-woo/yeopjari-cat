@@ -1,0 +1,4084 @@
+{
+  "source": "build/cream-mesh-rig/atlas.png",
+  "source_sha256": "1d49bb068e3a4571d2c9dee0c4e6b276a4e61807f1712c9a49db79b725621c70",
+  "measurement": "local solid alpha bottom near named rig sole controls; not optical foot tracking",
+  "alpha_threshold": 200,
+  "horizontal_sample_radius_source_px": 2,
+  "vertical_sample_radius_source_px": 8,
+  "review_offset_limit_source_px": 2,
+  "overlapping_paw_identity_resolved": false,
+  "visual_approved": false,
+  "production_approved": false,
+  "planted_control_samples": 214,
+  "samples_requiring_visual_review": 0,
+  "maximum_below_control_source_px": 0,
+  "maximum_above_control_source_px": 1.000030517578125,
+  "samples": [
+    {
+      "frame": 0,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        200.2190704345703,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        198,
+        267,
+        202,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 0,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        96.78728485107422,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        95,
+        267,
+        99,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 0,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        123.65090942382812,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        122,
+        267,
+        126,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 1,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        199.48402404785156,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        197,
+        267,
+        201,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 1,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        96.05224609375,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        94,
+        267,
+        98,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 1,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        122.91585540771484,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        121,
+        267,
+        125,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 2,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        198.7490234375,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        197,
+        267,
+        201,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 2,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        95.31719970703125,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        93,
+        267,
+        97,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 2,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        122.18083190917969,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        120,
+        267,
+        124,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 3,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        198.0139923095703,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        196,
+        267,
+        200,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 3,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        94.58216857910156,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        93,
+        267,
+        97,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 3,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        121.44579315185547,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        119,
+        267,
+        123,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 4,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        197.27896118164062,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        195,
+        267,
+        199,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 4,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        93.84713745117188,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        92,
+        267,
+        96,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 4,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        120.71076965332031,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        119,
+        267,
+        123,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 5,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        196.54393005371094,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        195,
+        267,
+        199,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 5,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        93.11212158203125,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        91,
+        267,
+        95,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 5,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        119.97573852539062,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        118,
+        267,
+        122,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 6,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        195.8088836669922,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        194,
+        267,
+        198,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 6,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        92.3770751953125,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        90,
+        267,
+        94,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 6,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        119.24068450927734,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        117,
+        267,
+        121,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 7,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        195.07383728027344,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        193,
+        267,
+        197,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 7,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        91.64205169677734,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        90,
+        267,
+        94,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 7,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        118.50565338134766,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        117,
+        267,
+        121,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 8,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        194.33880615234375,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        192,
+        267,
+        196,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 8,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        90.90699768066406,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        89,
+        267,
+        93,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 8,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        117.77064514160156,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        116,
+        267,
+        120,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 9,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        193.60379028320312,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        192,
+        267,
+        196,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 9,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        90.17198181152344,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        88,
+        267,
+        92,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 9,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        117.03559112548828,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        115,
+        267,
+        119,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 10,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        192.86875915527344,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        191,
+        267,
+        195,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 10,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        89.43695068359375,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        87,
+        267,
+        91,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 10,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        116.3005599975586,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        114,
+        267,
+        118,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 11,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        192.1337127685547,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        190,
+        267,
+        194,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 11,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        88.701904296875,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        87,
+        267,
+        91,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 11,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        115.56552124023438,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        114,
+        267,
+        118,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 12,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        191.398681640625,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        189,
+        267,
+        193,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 12,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        87.96687316894531,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        86,
+        267,
+        90,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 13,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        190.66363525390625,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        189,
+        267,
+        193,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 13,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        87.23185729980469,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        85,
+        267,
+        89,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 14,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        189.92861938476562,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        188,
+        267,
+        192,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 14,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        86.49679565429688,
+        275.0000305175781
+      ],
+      "sample_box_inclusive": [
+        84,
+        267,
+        88,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.000030517578125,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 15,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        189.19358825683594,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        187,
+        267,
+        191,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 15,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        85.76177215576172,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        84,
+        267,
+        88,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 16,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        188.4585418701172,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        186,
+        267,
+        190,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 16,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        85.0267333984375,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        83,
+        267,
+        87,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 17,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        187.72352600097656,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        186,
+        267,
+        190,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 17,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        84.29171752929688,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        82,
+        267,
+        86,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 18,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        186.98846435546875,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        185,
+        267,
+        189,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 18,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        83.55665588378906,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        82,
+        267,
+        86,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 19,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        186.25343322753906,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        184,
+        267,
+        188,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 19,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        82.82164001464844,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        81,
+        267,
+        85,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 20,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        185.5184326171875,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        184,
+        267,
+        188,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 20,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        82.08662414550781,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        80,
+        267,
+        84,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 21,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        241.9197540283203,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        240,
+        267,
+        244,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 21,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        184.7834014892578,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        183,
+        267,
+        187,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 21,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        81.35159301757812,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        79,
+        267,
+        83,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 22,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        241.18472290039062,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        239,
+        267,
+        243,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 22,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        184.04833984375,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        182,
+        267,
+        186,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 22,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        80.61653137207031,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        79,
+        267,
+        83,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 23,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        240.44969177246094,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        238,
+        267,
+        242,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 23,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        183.3133087158203,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        181,
+        267,
+        185,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 23,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        79.88150787353516,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        78,
+        267,
+        82,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 24,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        239.7146759033203,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        238,
+        267,
+        242,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 24,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        182.5782928466797,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        181,
+        267,
+        185,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 24,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        79.14647674560547,
+        275.0000305175781
+      ],
+      "sample_box_inclusive": [
+        77,
+        267,
+        81,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.000030517578125,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 25,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        238.97962951660156,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        237,
+        267,
+        241,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 25,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        181.84324645996094,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        180,
+        267,
+        184,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 25,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        78.41143798828125,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        76,
+        267,
+        80,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 26,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        238.2445831298828,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        236,
+        267,
+        240,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 26,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        181.1082305908203,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        179,
+        267,
+        183,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 26,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        77.67640686035156,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        76,
+        267,
+        80,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 27,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        237.50955200195312,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        236,
+        267,
+        240,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 27,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        180.37318420410156,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        178,
+        267,
+        182,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 27,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        76.94137573242188,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        75,
+        267,
+        79,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 28,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        236.7745361328125,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        235,
+        267,
+        239,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 28,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        179.6381378173828,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        178,
+        267,
+        182,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 28,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        76.20635986328125,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        74,
+        267,
+        78,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 29,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        236.0395050048828,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        234,
+        267,
+        238,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 29,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        178.9031219482422,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        177,
+        267,
+        181,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 29,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        75.47129821777344,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        73,
+        267,
+        77,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 30,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        235.30442810058594,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        233,
+        267,
+        237,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 30,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        178.1680908203125,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        176,
+        267,
+        180,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 30,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        74.73626708984375,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        73,
+        267,
+        77,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 31,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        234.56944274902344,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        233,
+        267,
+        237,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 31,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        177.43304443359375,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        175,
+        267,
+        179,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 31,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        74.00125122070312,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        72,
+        267,
+        76,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 32,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        233.8343963623047,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        232,
+        267,
+        236,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 32,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        73.26620483398438,
+        275.0000305175781
+      ],
+      "sample_box_inclusive": [
+        71,
+        267,
+        75,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.000030517578125,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 33,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        233.099365234375,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        231,
+        267,
+        235,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 33,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        72.53116607666016,
+        275.0000305175781
+      ],
+      "sample_box_inclusive": [
+        71,
+        267,
+        75,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.000030517578125,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 34,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        232.36431884765625,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        230,
+        267,
+        234,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 34,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        71.79615783691406,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        70,
+        267,
+        74,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 35,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        231.62930297851562,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        230,
+        267,
+        234,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 35,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        71.0611343383789,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        69,
+        267,
+        73,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 36,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        230.89427185058594,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        229,
+        267,
+        233,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 36,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        70.3260726928711,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        68,
+        267,
+        72,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 37,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        230.15924072265625,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        228,
+        267,
+        232,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 37,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        69.59104919433594,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        68,
+        267,
+        72,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 38,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        229.42417907714844,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        227,
+        267,
+        231,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 38,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        68.85601806640625,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        67,
+        267,
+        71,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 39,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        228.68914794921875,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        227,
+        267,
+        231,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 39,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        68.12098693847656,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        66,
+        267,
+        70,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 40,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        227.95413208007812,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        226,
+        267,
+        230,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 40,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        67.38594818115234,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        65,
+        267,
+        69,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 41,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        227.21910095214844,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        225,
+        267,
+        229,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 41,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        66.65091705322266,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        65,
+        267,
+        69,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 41,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        153.78726196289062,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        152,
+        267,
+        156,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 42,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        226.48403930664062,
+        275.0000305175781
+      ],
+      "sample_box_inclusive": [
+        224,
+        267,
+        228,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.000030517578125,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 42,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        65.9158935546875,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        64,
+        267,
+        68,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 42,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        153.05223083496094,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        151,
+        267,
+        155,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 43,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        225.74900817871094,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        224,
+        267,
+        228,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 43,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        65.18084716796875,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        63,
+        267,
+        67,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 43,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        152.3171844482422,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        150,
+        267,
+        154,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 44,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        225.01397705078125,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        223,
+        267,
+        227,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 44,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        64.44581604003906,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        62,
+        267,
+        66,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 44,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        151.5821533203125,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        150,
+        267,
+        154,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 45,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        224.27896118164062,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        222,
+        267,
+        226,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 45,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        63.71077346801758,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        62,
+        267,
+        66,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 45,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        150.84713745117188,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        149,
+        267,
+        153,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 46,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        223.5439453125,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        222,
+        267,
+        226,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 46,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        62.975746154785156,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        61,
+        267,
+        65,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 46,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        150.11209106445312,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        148,
+        267,
+        152,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 47,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        222.8089141845703,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        221,
+        267,
+        225,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 47,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        62.24070739746094,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        60,
+        267,
+        64,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 47,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        149.37705993652344,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        147,
+        267,
+        151,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 48,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        222.07388305664062,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        220,
+        267,
+        224,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 48,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        61.50568771362305,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        60,
+        267,
+        64,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 48,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        148.64202880859375,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        147,
+        267,
+        151,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 49,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        221.3388214111328,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        219,
+        267,
+        223,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 49,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        60.7706413269043,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        59,
+        267,
+        63,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 49,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        147.90699768066406,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        146,
+        267,
+        150,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 50,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        220.60377502441406,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        219,
+        267,
+        223,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 50,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        60.03561019897461,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        58,
+        267,
+        62,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 50,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        147.17196655273438,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        145,
+        267,
+        149,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 51,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        219.8687744140625,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        218,
+        267,
+        222,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 51,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        59.300575256347656,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        57,
+        267,
+        61,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 51,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        146.4369354248047,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        144,
+        267,
+        148,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 52,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        219.13372802734375,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        217,
+        267,
+        221,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 52,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        58.565555572509766,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        57,
+        267,
+        61,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 52,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        145.70187377929688,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        144,
+        267,
+        148,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 53,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        218.39871215820312,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        216,
+        267,
+        220,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 53,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        144.9668731689453,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        143,
+        267,
+        147,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 54,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        217.66366577148438,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        216,
+        267,
+        220,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 54,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        144.23182678222656,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        142,
+        267,
+        146,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 55,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        216.9286346435547,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        215,
+        267,
+        219,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 55,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        143.49679565429688,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        141,
+        267,
+        145,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 56,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        216.19358825683594,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        214,
+        267,
+        218,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 56,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        142.76174926757812,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        141,
+        267,
+        145,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 57,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        215.4585418701172,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        213,
+        267,
+        217,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 57,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        142.0267333984375,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        140,
+        267,
+        144,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 58,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        214.72354125976562,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        213,
+        267,
+        217,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 58,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        141.29168701171875,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        139,
+        267,
+        143,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 59,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        213.98849487304688,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        212,
+        267,
+        216,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 59,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        140.55665588378906,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        139,
+        267,
+        143,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 60,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        213.25344848632812,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        211,
+        267,
+        215,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 60,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        139.82164001464844,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        138,
+        267,
+        142,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 61,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        212.51840209960938,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        211,
+        267,
+        215,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 61,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        139.0865936279297,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        137,
+        267,
+        141,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 62,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        211.7833709716797,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        210,
+        267,
+        214,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 62,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        214.9197540283203,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        213,
+        267,
+        217,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 62,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        138.3515625,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        136,
+        267,
+        140,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 63,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        211.04835510253906,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        209,
+        267,
+        213,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 63,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        214.18470764160156,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        212,
+        267,
+        216,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 63,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        137.61654663085938,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        136,
+        267,
+        140,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 64,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        210.3133087158203,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        208,
+        267,
+        212,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 64,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        213.44967651367188,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        211,
+        267,
+        215,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 64,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        136.88148498535156,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        135,
+        267,
+        139,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 65,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        209.5783233642578,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        208,
+        267,
+        212,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 65,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        212.7146453857422,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        211,
+        267,
+        215,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 65,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        136.14645385742188,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        134,
+        267,
+        138,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 66,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        208.84324645996094,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        207,
+        267,
+        211,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 66,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        211.9796142578125,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        210,
+        267,
+        214,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 66,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        135.4114227294922,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        133,
+        267,
+        137,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 67,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        208.1082305908203,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        206,
+        267,
+        210,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 67,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        211.2445831298828,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        209,
+        267,
+        213,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 67,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        134.6763916015625,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        133,
+        267,
+        137,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 68,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        207.37319946289062,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        205,
+        267,
+        209,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 68,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        210.5095672607422,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        209,
+        267,
+        213,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 68,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        133.9413604736328,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        132,
+        267,
+        136,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 69,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        206.63816833496094,
+        275.0000305175781
+      ],
+      "sample_box_inclusive": [
+        205,
+        267,
+        209,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.000030517578125,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 69,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        209.77450561523438,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        208,
+        267,
+        212,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 69,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        133.20631408691406,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        131,
+        267,
+        135,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 70,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        205.9031219482422,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        204,
+        267,
+        208,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 70,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        209.03948974609375,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        207,
+        267,
+        211,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 70,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        132.47129821777344,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        130,
+        267,
+        134,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 71,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        205.1680908203125,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        203,
+        267,
+        207,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 71,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        208.304443359375,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        206,
+        267,
+        210,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 71,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        131.73626708984375,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        130,
+        267,
+        134,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 72,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        204.43307495117188,
+        275.0000305175781
+      ],
+      "sample_box_inclusive": [
+        202,
+        267,
+        206,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.000030517578125,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 72,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        207.5694122314453,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        206,
+        267,
+        210,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 72,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        131.00123596191406,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        129,
+        267,
+        133,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 73,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        206.83436584472656,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        205,
+        267,
+        209,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 73,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        130.26620483398438,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        128,
+        267,
+        132,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 74,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        206.09934997558594,
+        275.0000305175781
+      ],
+      "sample_box_inclusive": [
+        204,
+        267,
+        208,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.000030517578125,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 74,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        129.53115844726562,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        128,
+        267,
+        132,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 75,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        205.36431884765625,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        203,
+        267,
+        207,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 75,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        128.79612731933594,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        127,
+        267,
+        131,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 76,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        204.6292724609375,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        203,
+        267,
+        207,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 76,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        128.06109619140625,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        126,
+        267,
+        130,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 77,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        203.89422607421875,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        202,
+        267,
+        206,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 77,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        127.32603454589844,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        125,
+        267,
+        129,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 78,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        203.15921020507812,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        201,
+        267,
+        205,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 78,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        126.59103393554688,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        125,
+        267,
+        129,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 79,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        202.42417907714844,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        200,
+        267,
+        204,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 79,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        125.85600280761719,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        124,
+        267,
+        128,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 80,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        201.6891632080078,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        200,
+        267,
+        204,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 80,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        125.1209716796875,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        123,
+        267,
+        127,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 81,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        200.95408630371094,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        199,
+        267,
+        203,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 81,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        124.38592529296875,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        122,
+        267,
+        126,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 82,
+      "foot_control_id": "near_front",
+      "controller_source": [
+        223.00001525878906,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        221,
+        267,
+        225,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 82,
+      "foot_control_id": "far_front",
+      "controller_source": [
+        195.99998474121094,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        194,
+        267,
+        198,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 82,
+      "foot_control_id": "near_rear",
+      "controller_source": [
+        77.50001525878906,
+        275.0
+      ],
+      "sample_box_inclusive": [
+        76,
+        267,
+        80,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -1.0,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    },
+    {
+      "frame": 82,
+      "foot_control_id": "far_rear",
+      "controller_source": [
+        134.5,
+        274.9999694824219
+      ],
+      "sample_box_inclusive": [
+        132,
+        267,
+        136,
+        283
+      ],
+      "solid_bottom_y": 274,
+      "solid_bottom_minus_controller_source_px": -0.999969482421875,
+      "solid_bottom_minus_ground_logical_px": -0.497737556561086,
+      "sample_window_bottom_reached": false,
+      "requires_visual_review": false
+    }
+  ]
+}

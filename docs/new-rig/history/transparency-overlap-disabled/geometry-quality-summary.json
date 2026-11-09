@@ -1,0 +1,55 @@
+{
+  "overall_geometry_visual_approval": false,
+  "source": "rig-evaluation.json actual82-loop export",
+  "pose_count": 82,
+  "stride_logical_px": 30.0,
+  "max_ik_sole_error_source_px": 6.823937919616058e-05,
+  "clamped_leg_samples": 0,
+  "max_fixed_link_length_error_source_px": 5.340576171875e-05,
+  "minimum_cross_section_width_ratio": 0.9999981757084213,
+  "minimum_triangle_area_ratio": 0.001807177559251295,
+  "maximum_triangle_area_ratio": 17.567134229778656,
+  "inverted_triangle_samples_total": 371,
+  "leg_samples_with_inverted_triangles": 238,
+  "worst_area_leg": {
+    "foot": "near_front",
+    "ik_sole_error_source_px": 3.0517578125e-05,
+    "joints_source_px": {
+      "root": [
+        198.58901977539062,
+        185.52334594726562
+      ],
+      "knee": [
+        228.1272430419922,
+        218.2722930908203
+      ],
+      "ankle": [
+        227.99790954589844,
+        258.197021484375
+      ],
+      "sole": [
+        243.80369567871094,
+        274.388916015625
+      ]
+    },
+    "upper_length": 44.10215759277344,
+    "lower_length": 39.924922943115234,
+    "bind_upper_length": 44.10215377807617,
+    "bind_lower_length": 39.9249267578125,
+    "clamped": false,
+    "min_cross_section_width_ratio": 0.9999989693590955,
+    "min_triangle_area_ratio": 0.08687860460996108,
+    "min_triangle_index": 192,
+    "max_triangle_area_ratio": 17.567134229778656,
+    "max_triangle_index": 194,
+    "inverted_triangle_count": 3,
+    "inverted_triangle_indices": [
+      180,
+      194,
+      204
+    ],
+    "frame": 18,
+    "phase": 0.21951219512195122
+  },
+  "status": "IK/link-length diagnostics do not imply surface or visual quality pass; surface distortion/inversions remain failures"
+}

@@ -68,6 +68,12 @@
 #include "cat_companion.hpp"
 #include "care_sprites.generated.hpp"
 #include "cat_coat.hpp"
+#if __has_include("cream_mesh_walk.generated.hpp")
+#include "cream_mesh_walk.generated.hpp"
+#define YEOPJARI_HAS_MESH_WALK_REVIEW 1
+#else
+#define YEOPJARI_HAS_MESH_WALK_REVIEW 0
+#endif
 
 using namespace Gdiplus;
 void PausePrimaryCarePresentation(std::uint64_t milliseconds);
@@ -232,6 +238,7 @@ struct App {
     Surface tuxedoLayer;
     Surface styleBlendFrom, styleBlendTo;
     std::vector<std::unique_ptr<CareSpriteAtlas>> careSprites;
+    bool meshWalkReview = false; // Explicit authoring-review option; normal startup keeps approved art.
     SpriteAtlas authoredBoxProp;
     SpriteAtlas jumpTreat;
     SpriteAtlas gestures;
@@ -1172,8 +1179,64 @@ bool PrepareCareSpriteFrames(CareSpriteAtlas& sprite,Bitmap& atlas,std::size_t& 
     return true;
 }
 
+// The authored review uses exactly the ordinary isolated-frame/cache/coat path.
+// Only its startup resource selection differs; PNG decoding is never in Tick.
+std::unique_ptr<CareSpriteAtlas> LoadReviewCareSprite(const cat::sprite_assets::Descriptor& layout,
+                                                    int resourceId,std::size_t residentPrefix,
+                                                    std::size_t coatPrefix) {
+    if(!cat::sprite_assets::Valid(layout))return {};
+    const auto resource=FindResourceW(g.instance,MAKEINTRESOURCEW(resourceId),RT_RCDATA);
+    if(!resource)return {};
+    const auto loaded=LoadResource(g.instance,resource);const auto count=SizeofResource(g.instance,resource);
+    const auto* bytes=static_cast<const BYTE*>(LockResource(loaded));
+    if(!bytes||count<33||count>cat::sprite_assets::kMaxImageBytes||
+            std::memcmp(bytes,"\x89PNG\r\n\x1a\n",8)!=0||std::memcmp(bytes+12,"IHDR",4)!=0)return {};
+    const auto big=[](const BYTE* p){return static_cast<std::uint32_t>(p[0])<<24|
+        static_cast<std::uint32_t>(p[1])<<16|static_cast<std::uint32_t>(p[2])<<8|p[3];};
+    if(big(bytes+16)!=layout.imageWidth||big(bytes+20)!=layout.imageHeight||bytes[24]!=8||bytes[25]!=6)return {};
+    const auto memory=GlobalAlloc(GMEM_MOVEABLE,count);if(!memory)return {};
+    const auto target=GlobalLock(memory);if(!target){GlobalFree(memory);return {};}
+    std::memcpy(target,bytes,count);GlobalUnlock(memory);
+    CareSpriteAtlas source;
+    if(FAILED(CreateStreamOnHGlobal(memory,TRUE,&source.stream))){GlobalFree(memory);return {};}
+    source.image.reset(Bitmap::FromStream(source.stream,FALSE));
+    if(!source.image||source.image->GetLastStatus()!=Ok)return {};
+    auto sprite=std::make_unique<CareSpriteAtlas>();sprite->layout=&layout;
+    if(!PrepareCareSpriteFrames(*sprite,*source.image,residentPrefix))return {};
+    for(unsigned frame=0;frame<layout.frameCount;++frame) {
+        const auto& r=layout.frames[frame].rect;const auto needed=sprite->framePixels[frame].size();
+        if(residentPrefix+coatPrefix+needed>cat::sprite_assets::kMaxResidentPixels)return {};
+        auto& pixels=sprite->tuxedoPixels[frame];pixels=sprite->framePixels[frame];
+        cat::coat::Apply(pixels.data(),r.width,r.height,layout.clip,frame);
+        sprite->tuxedoFrames[frame]=std::make_unique<Bitmap>(r.width,r.height,r.width*4,
+            PixelFormat32bppPARGB,reinterpret_cast<BYTE*>(pixels.data()));
+        if(sprite->tuxedoFrames[frame]->GetLastStatus()!=Ok)return {};
+        coatPrefix+=needed;
+    }
+    return sprite;
+}
+
+bool SelectMeshWalkReview() {
+#if YEOPJARI_HAS_MESH_WALK_REVIEW
+    for(auto& sprite:g.careSprites)if(sprite->layout->clip==cat::sprite_sequence::Clip::Walk) {
+        std::size_t oldPixels=0;for(unsigned i=0;i<sprite->layout->frameCount;++i)oldPixels+=sprite->framePixels[i].size();
+        const auto resident=careSpriteMemory.residentPixels-oldPixels,coats=careSpriteMemory.tuxedoPixels-oldPixels;
+        auto review=LoadReviewCareSprite(cat::mesh_walk::kDescriptor,cat::mesh_walk::kResource,resident,coats);
+        if(!review)return false;
+        std::size_t pixels=0;for(unsigned i=0;i<review->layout->frameCount;++i)pixels+=review->framePixels[i].size();
+        careSpriteMemory.residentFrames=careSpriteMemory.residentFrames-sprite->layout->frameCount+review->layout->frameCount;
+        careSpriteMemory.residentPixels=resident+pixels;careSpriteMemory.tuxedoPixels=coats+pixels;
+        ++careSpriteMemory.decodedAtlases;sprite=std::move(review);
+        g.companionModel.SetWalkRegistration(&cat::mesh_walk::kDescriptor);
+        return true;
+    }
+#endif
+    return false;
+}
+
 bool LoadCareSprites() {
     g.careSprites.clear();careSpriteMemory={};
+    g.companionModel.SetWalkRegistration(nullptr);
     std::vector<int> decoded;
     for(const auto& layout:cat::sprite_assets::kCareSprites) {
         if(!cat::sprite_assets::Valid(layout))return false;
@@ -1222,7 +1285,7 @@ bool LoadCareSprites() {
         decoded.push_back(layout.resourceId);++careSpriteMemory.decodedAtlases;
         // Decoded PNG and stream die here. Only isolated, prewarmed frames remain.
     }
-    return true;
+    return !g.meshWalkReview || SelectMeshWalkReview();
 }
 
 bool LoadAtlas() {
@@ -1267,6 +1330,7 @@ bool LoadAtlas() {
 }
 void ReleaseAtlases() {
     ReleaseCarePresentation();g.tuxedoLayer.Reset();
+    g.companionModel.SetWalkRegistration(nullptr);
     g.careSprites.clear();careSpriteMemory={};g.authoredBoxProp.Reset();
     g.styleBlendFrom.Reset(); g.styleBlendTo.Reset();
     for (auto& art : g.characters) { art.jointWalking.reset(); art.walking.reset(); art.base.Reset(); art.actions.Reset(); }
@@ -3206,6 +3270,7 @@ HMENU BuildPetMenu() {
     AppendMenuW(menu, MF_STRING, FolderCommand, L"기록 폴더 열기");
     HMENU updateMenu = CreatePopupMenu();
     AppendMenuW(updateMenu, MF_STRING | MF_GRAYED, 0, L"현재 버전 " YEOPJARI_VERSION_WSTRING);
+    if(g.meshWalkReview)AppendMenuW(updateMenu,MF_STRING|MF_GRAYED,0,L"새 걷기 검토 모드 (미승인)");
     const bool updateBusy = updates.operation != UpdateState::Operation::None;
     const wchar_t* checkLabel = updates.operation == UpdateState::Operation::Downloading ? L"업데이트 다운로드 중…"
         : updates.operation == UpdateState::Operation::Checking ? L"새 버전 확인 중…" : L"업데이트 확인…";
@@ -4056,8 +4121,9 @@ int NativePerchHitTest() {
 #include "native_care_presentation_tests.hpp"
 #include "native_coat_tests.hpp"
 #include "native_ground_drive_tests.hpp"
+#include "native_mesh_walk_tests.hpp"
 
-int RenderSelfTest() {
+int RenderSelfTest(bool meshOnly=false) {
     // Native GDI+ regression path: resources and offscreen DIBs only. This
     // deliberately runs before LoadPet, instance windows, audio or updates.
     const HRESULT com = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
@@ -4079,6 +4145,7 @@ int RenderSelfTest() {
             g.pet = cat::NewPet(birthday);
             g.nutrition = cat::nutrition::NewState(birthday, birthday);
             g.dpiScale = 1;
+            if(meshOnly)return NativeMeshWalkReview(context,true);
             if(const int spriteTest=NativeCareSpriteRenderTest(context))return spriteTest;
             if(const int cacheTest=NativeCareCacheCapacityTest(context))return cacheTest;
             if(const int actualSpriteTest=NativeActualCareSpriteRenderTest(context))return actualSpriteTest;
@@ -4086,6 +4153,7 @@ int RenderSelfTest() {
             if(const int walkingTest=NativeAuthoredWalkingRenderTest(context))return walkingTest;
             if(const int coatTest=NativeCoatRenderTest(context))return coatTest;
             if(const int driveTest=NativeGroundDriveReview(context))return driveTest;
+            if(const int meshTest=NativeMeshWalkReview(context))return meshTest;
             DisabledCareSpriteScope canonicalArtwork;
             constexpr REAL center = 210, floor = 280;
             constexpr std::uint64_t fixedTicks = 500000;
@@ -4734,12 +4802,23 @@ int SelfTest(HINSTANCE instance) {
 }
 
 int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
+    if(commandLine && wcsstr(commandLine,L"--render-mesh-walk-review")) {
+        g.instance=instance;return RenderSelfTest(true);
+    }
     if (commandLine && wcsstr(commandLine, L"--render-self-test")) {
         g.instance = instance;
         return RenderSelfTest();
     }
     if (const auto helperResult = cat::update::HandleUpdateHelperCommandLine()) return *helperResult;
     if (commandLine && wcsstr(commandLine, L"--self-test")) return SelfTest(instance);
+    if(commandLine && wcsstr(commandLine,L"--mesh-walk-review")) {
+#if YEOPJARI_HAS_MESH_WALK_REVIEW
+        g.meshWalkReview=true;
+#else
+        MessageBoxW(nullptr,L"이 빌드에는 메시 보행 검토 원화가 등록되지 않았어요.",kTitle,MB_OK|MB_ICONINFORMATION);
+        return 3;
+#endif
+    }
     g.instance = instance;
     g.instanceMutex = CreateMutexW(nullptr, TRUE, L"Local\\YeopjariCat.OneInstance.v1");
     if (!g.instanceMutex || GetLastError() == ERROR_ALREADY_EXISTS) {

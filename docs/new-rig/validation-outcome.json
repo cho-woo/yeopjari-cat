@@ -1,0 +1,12 @@
+{
+  "contact_registration_numeric_passed": true,
+  "contact_registration_scope": "Annotated contact/registration geometry only; not proof of artwork identity or correctness of human foot labels",
+  "surface_numeric_passed": false,
+  "visual_quality_passed": false,
+  "production_approved": false,
+  "source_atlas_sha256": "1d49bb068e3a4571d2c9dee0c4e6b276a4e61807f1712c9a49db79b725621c70",
+  "contact_report": "calibration-report.json",
+  "surface_report": "geometry-quality-summary.json",
+  "historical_renderer_alpha_failure": "history/transparency-overlap-disabled/failed-sole-support-details.json",
+  "reason": "Correct planted-contact/periodic-registration geometry and material support do not repair skin triangle distortion/inversions or visual seams."
+}

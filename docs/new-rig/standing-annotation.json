@@ -1,0 +1,179 @@
+{
+  "annotation": {
+    "feet": {
+      "near_front": {
+        "x": 223.00001525878906,
+        "y": 275.0,
+        "planted": true
+      },
+      "far_front": {
+        "x": 195.99998474121094,
+        "y": 274.9999694824219,
+        "planted": true
+      },
+      "near_rear": {
+        "x": 77.50001525878906,
+        "y": 275.0,
+        "planted": true
+      },
+      "far_rear": {
+        "x": 134.5,
+        "y": 274.9999694824219,
+        "planted": true
+      }
+    },
+    "landmarks": {
+      "head": [
+        231.0,
+        127.0
+      ],
+      "body": [
+        140.0,
+        197.0
+      ]
+    },
+    "root_anchor": [
+      161.0,
+      275.0
+    ],
+    "frame": 82
+  },
+  "legs": [
+    {
+      "foot": "near_front",
+      "ik_sole_error_source_px": 1.52587890625e-05,
+      "joints_source_px": {
+        "root": [
+          198.0,
+          185.0
+        ],
+        "knee": [
+          222.00001525878906,
+          222.0
+        ],
+        "ankle": [
+          207.00001525878906,
+          259.0
+        ],
+        "sole": [
+          223.00001525878906,
+          275.0
+        ]
+      },
+      "upper_length": 44.1021614074707,
+      "lower_length": 39.92493438720703,
+      "bind_upper_length": 44.10215377807617,
+      "bind_lower_length": 39.9249267578125,
+      "clamped": false,
+      "min_cross_section_width_ratio": 0.9999998201976396,
+      "min_triangle_area_ratio": 0.999669388068921,
+      "min_triangle_index": 193,
+      "max_triangle_area_ratio": 1.0010997856663189,
+      "max_triangle_index": 194,
+      "inverted_triangle_count": 0,
+      "inverted_triangle_indices": []
+    },
+    {
+      "foot": "far_front",
+      "ik_sole_error_source_px": 3.411968959808029e-05,
+      "joints_source_px": {
+        "root": [
+          178.0,
+          185.0
+        ],
+        "knee": [
+          196.00001525878906,
+          224.0
+        ],
+        "ankle": [
+          179.99998474121094,
+          258.9999694824219
+        ],
+        "sole": [
+          195.99998474121094,
+          274.9999694824219
+        ]
+      },
+      "upper_length": 42.953468322753906,
+      "lower_length": 38.4837532043457,
+      "bind_upper_length": 42.95346450805664,
+      "bind_lower_length": 38.483760833740234,
+      "clamped": false,
+      "min_cross_section_width_ratio": 0.9999997088970027,
+      "min_triangle_area_ratio": 0.9996776942026394,
+      "min_triangle_index": 194,
+      "max_triangle_area_ratio": 1.0000763892642357,
+      "max_triangle_index": 180,
+      "inverted_triangle_count": 0,
+      "inverted_triangle_indices": []
+    },
+    {
+      "foot": "near_rear",
+      "ik_sole_error_source_px": 1.52587890625e-05,
+      "joints_source_px": {
+        "root": [
+          92.0,
+          182.0
+        ],
+        "knee": [
+          116.00000762939453,
+          220.0
+        ],
+        "ankle": [
+          77.00001525878906,
+          259.0
+        ],
+        "sole": [
+          77.50001525878906,
+          275.0
+        ]
+      },
+      "upper_length": 44.94441604614258,
+      "lower_length": 55.154327392578125,
+      "bind_upper_length": 44.94440841674805,
+      "bind_lower_length": 55.15432357788086,
+      "clamped": false,
+      "min_cross_section_width_ratio": 0.9999996008398692,
+      "min_triangle_area_ratio": 0.9999785899272869,
+      "min_triangle_index": 105,
+      "max_triangle_area_ratio": 1.000009806342469,
+      "max_triangle_index": 192,
+      "inverted_triangle_count": 0,
+      "inverted_triangle_indices": []
+    },
+    {
+      "foot": "far_rear",
+      "ik_sole_error_source_px": 3.0517578125e-05,
+      "joints_source_px": {
+        "root": [
+          115.0,
+          182.0
+        ],
+        "knee": [
+          147.00003051757812,
+          224.99998474121094
+        ],
+        "ankle": [
+          134.0,
+          258.9999694824219
+        ],
+        "sole": [
+          134.5,
+          274.9999694824219
+        ]
+      },
+      "upper_length": 53.60037612915039,
+      "lower_length": 36.40054702758789,
+      "bind_upper_length": 53.600372314453125,
+      "bind_lower_length": 36.40053939819336,
+      "clamped": false,
+      "min_cross_section_width_ratio": 0.9999997783351597,
+      "min_triangle_area_ratio": 0.9998577762066989,
+      "min_triangle_index": 107,
+      "max_triangle_area_ratio": 1.0000177572869384,
+      "max_triangle_index": 180,
+      "inverted_triangle_count": 0,
+      "inverted_triangle_indices": []
+    }
+  ]
+}

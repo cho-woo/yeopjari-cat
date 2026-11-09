@@ -1,0 +1,15 @@
+{
+  "fixed_links": true,
+  "reach_scan_samples": 1024,
+  "physical_stride_bound_logical_px": 39.88058179616928,
+  "safety_fraction_of_bound": 0.75,
+  "chosen_stride_logical_px": 30.0,
+  "selected_max_reach_ratio": 0.9626053895262774,
+  "worst": {
+    "foot": "far_rear",
+    "phase": 0.470703125,
+    "distance_source_px": 86.63537313729864,
+    "fixed_link_sum_source_px": 90.00092257943217
+  },
+  "old64_reach_ratio": 1.1092621116624326
+}

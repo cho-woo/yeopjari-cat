@@ -262,6 +262,13 @@ struct Snapshot {
 // returned to the existing main loop, never writes through a primary pointer.
 class Model {
 public:
+    // A review build may use a newly authored Walk through the same renderer.
+    // The caller owns this immutable registration for the model's lifetime.
+    // Other motions and normal startup retain the approved manifest.
+    void SetWalkRegistration(const cat::sprite_assets::Descriptor* registration) {
+        reviewWalk_ = registration && cat::sprite_assets::Valid(*registration) &&
+            registration->clip==cat::sprite_sequence::Clip::Walk && registration->character==0 ? registration:nullptr;
+    }
     void Bind(State& state) {
         state_=&state; brain_=std::make_unique<cat::behavior::Brain>(state.pet.bornUtc,static_cast<std::uint64_t>(state.pet.bornUtc)^0xb49a5a244cc13db7ULL);
         rng_=static_cast<std::uint64_t>(state.pet.bornUtc)^0x1a7e24977a4eab43ULL;
@@ -421,9 +428,8 @@ public:
         const auto walking=cat::motion::DisplayedMotion(motion_,walkingMotion_,rendered.grounded,waitingForStop_,
             rendered.velocityX-rendered.supportVelocityX);
         using Clip=cat::sprite_sequence::Clip;
-        const auto character=static_cast<unsigned>(state_->preferences.character);
-        const auto* walk=cat::sprite_assets::Find(Clip::Walk,character,cat::sprite_assets::kCareSprites);
-        const auto* run=cat::sprite_assets::Find(Clip::Run,character,cat::sprite_assets::kCareSprites);
+        const auto* walk=Registered(Clip::Walk);
+        const auto* run=Registered(Clip::Run);
         if(walk && run) {
             const double width=cat::nutrition::VisualModifiers(state_->nutrition).bodyWidth;
             gait_.ConfigureAuthoredStrides(walk->stridePixels*width,run->stridePixels*width,walk->standingFrame);
@@ -578,9 +584,7 @@ public:
                 s.animation.spriteClip==cat::sprite_sequence::Clip::Punch)
             s.animation.spriteOptions.durationMs=nextDecision_>=motionStart_?nextDecision_-motionStart_:0;
         const auto gaitClip=cat::animation::AuthoredLocomotionClip(gait_);
-        cat::animation::ApplyAuthoredLocomotion(s.animation,displayed,gait_,
-            cat::sprite_assets::Find(gaitClip,static_cast<unsigned>(s.preferences.character),
-                cat::sprite_assets::kCareSprites)!=nullptr);
+        cat::animation::ApplyAuthoredLocomotion(s.animation,displayed,gait_,Registered(gaitClip)!=nullptr);
         if((displayed==cat::animation::Motion::Idle || displayed==cat::animation::Motion::Watch) &&
                 s.physical.grounded && s.animation.spriteClip==cat::sprite_sequence::Clip::None &&
                 Registered(cat::sprite_sequence::Clip::Sleep)) {
@@ -594,12 +598,12 @@ public:
             cat::animation::AttachSprite(s.animation,cat::sprite_sequence::Clip::Jump,0,sprite);
             s.animation.fishMeal=false;
         }
-        if(cat::sprite_assets::Find(s.animation.spriteClip,static_cast<unsigned>(s.preferences.character),
-                cat::sprite_assets::kCareSprites))cat::animation::UseAuthoredSprite(s.animation);
+        if(Registered(s.animation.spriteClip))cat::animation::UseAuthoredSprite(s.animation);
         return s;
     }
 private:
     State* state_=nullptr;
+    const cat::sprite_assets::Descriptor* reviewWalk_=nullptr;
     std::unique_ptr<cat::behavior::Brain> brain_;
     cat::physics::Controller physics_;
     cat::animation::Locomotion gait_;
@@ -624,6 +628,8 @@ private:
     Interaction interaction_=Interaction::None,event_=Interaction::None;
     double Random() { rng_^=rng_>>12; rng_^=rng_<<25; rng_^=rng_>>27; return ((rng_*2685821657736338717ULL)>>11)*(1.0/9007199254740992.0); }
     const cat::sprite_assets::Descriptor* Registered(cat::sprite_sequence::Clip clip) const {
+        if(Bound() && reviewWalk_ && clip==cat::sprite_sequence::Clip::Walk &&
+                cat::sprite_assets::AuthoredCharacter(static_cast<unsigned>(state_->preferences.character))==0)return reviewWalk_;
         return Bound()?cat::sprite_assets::Find(clip,static_cast<unsigned>(state_->preferences.character),
             cat::sprite_assets::kCareSprites):nullptr;
     }

@@ -1,0 +1,58 @@
+{
+  "assessment": "visual_failed_numeric_registration_passed",
+  "visual_approval": false,
+  "production_approved": false,
+  "visible_video_status": "UNAPPROVED / DIAGNOSTIC + HANDOFF",
+  "video_scope": "Pillow technical composites; not Windows GDI+ output or desktop recording",
+  "same_final_source": {
+    "short_and_full_atlas_sha256": "1d49bb068e3a4571d2c9dee0c4e6b276a4e61807f1712c9a49db79b725621c70",
+    "short_source": "final_full_loop_resampled_for_display_no_new_poses",
+    "loop_baked_pose_count": 82,
+    "auxiliary_standing_count": 1,
+    "additional_short_artwork": 0,
+    "phase_selection": "Actual calibrated 82-entry playlist and per-frame rig annotations, sampled at phase0.25 onward; no invented45-pose phase sequence."
+  },
+  "actual_height_logical_px": 110,
+  "travel_speed_logical_px_per_second": 22,
+  "output_fps": 60,
+  "baseline_cycles_displayed": 3.002083333333333,
+  "mesh_cycles_displayed": 6.404444640973494,
+  "corrected_since_prior_candidate": [
+    "Material transparency overlap correction now preserves far-front painted sole alpha under other transparent layers.",
+    "Tail mask correction removes the conspicuous internal white L-shaped seam."
+  ],
+  "inspected_stills": [
+    "walk-comparison-00262.png at4.367s actual110logicalpx",
+    "contact-slow-00154.png atsource0.856s3xzoom"
+  ],
+  "remaining_visual_failures": [
+    {
+      "region": "shoulder/body",
+      "finding": "Large pale diagonal texture boundary and sharply cut shoulder layer are visible when the foreleg bends; fur and volume do not blend continuously into torso."
+    },
+    {
+      "region": "far and near legs",
+      "finding": "Restored far limbs expose thick independent leg layers; overlapping paws/limbs read as pasted separate pieces and change the original rounded silhouette."
+    },
+    {
+      "region": "hindquarters",
+      "finding": "Rear thigh patch and flat projecting rump flap remain. Thigh/lower-leg connection lacks natural anatomical continuity."
+    },
+    {
+      "region": "tail outline",
+      "finding": "Internal L seam is fixed, but the bend still has a step in its lower/inner outline in the enlarged view."
+    },
+    {
+      "region": "actual-size gait",
+      "finding": "At110logicalpx the revised body/leg silhouette is visibly different from the original and still does not pass natural walking quality."
+    }
+  ],
+  "calibration": {
+    "accepted": true,
+    "errors": [],
+    "scope": "Explicit contact/registration geometry and material-alpha support, separate from visual skin/anatomy acceptance.",
+    "source": "../calibration-stdout.json",
+    "sha256": "09c1e5f527acacd946fe27079ace087cbf166bc06303ba86e8b69ec6ed6f889c"
+  },
+  "disposition": "Unapproved editable diagnostic/handoff. Keep original8 production default. Corrective skin mesh, joint texture painting and silhouette work remain before natural-gait approval."
+}

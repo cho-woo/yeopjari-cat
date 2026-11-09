@@ -1,0 +1,18 @@
+{
+  "source": "build/cream-mesh-rig/authoring.blend",
+  "edited_blend": "build/cream-mesh-rig/manual-test-edited.blend",
+  "object": "Head_original_pixels",
+  "vertex": 920,
+  "before": [
+    148.0,
+    -0.4000000059604645,
+    -136.0
+  ],
+  "after": [
+    148.75,
+    -0.4000000059604645,
+    -136.0
+  ],
+  "manual_uv_delta": 0.0001,
+  "manual_weight": 0.9375
+}

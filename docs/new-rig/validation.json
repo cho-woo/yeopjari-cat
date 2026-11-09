@@ -1,0 +1,38 @@
+{
+  "local_unit_and_regression_suite": {
+    "command": "bash tools/test.sh",
+    "exit_code": 0,
+    "python_tests": 84,
+    "python_environment_skips": 1,
+    "cpp_box2d_motion_cursor_companion_regressions": "passed",
+    "log_sha256": "26aa01b098b49cd8aea44b076d8dfb0922ac4f2fed92fb1cd76d293fe10e3264"
+  },
+  "editable_source_manual_edit_rebake": "passed; see rebake-source-integrity.json",
+  "strict_actual_png_contact_registration": "passed; alpha>200, radius2 unchanged",
+  "skin_surface_numeric_quality": "FAILED",
+  "visual_quality": "FAILED",
+  "natural_walk_completed": false,
+  "production_approved": false,
+  "default_product_walk_changed": false,
+  "review_frames": {
+    "periodic_mesh_poses": 82,
+    "separate_neutral_pose": 1,
+    "independently_painted_new_walk_drawings": 0,
+    "purpose_generated_part_cells": 6,
+    "part_cells_used": 5
+  },
+  "windows_cross_build": "passed; see windows-cross-build.json",
+  "windows_native_execution": "pending GitHub Actions validation; no Windows available in local Linux environment",
+  "videos": {
+    "pillow_review": "60 FPS, 110 logical px, 22 logical px/s, old>=3cycles",
+    "native_review": "pending native GDI+ output; not desktop recording"
+  },
+  "source_atlas_sha256": "1d49bb068e3a4571d2c9dee0c4e6b276a4e61807f1712c9a49db79b725621c70",
+  "final_python_suite": {
+    "command": "python3 -m unittest discover -s tests -p '*_test.py'",
+    "tests": 87,
+    "environment_skips": 1,
+    "exit_code": 0,
+    "log_sha256": "edb5765497e1d6ce49d29098fe2a1e0d61be8a82b74356b30c7294f0265b6430"
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "browser": "Chromium, Linux, HTTP localhost",
+  "tests": [
+    {
+      "file": "short-footlock.mp4",
+      "width": 900,
+      "height": 480,
+      "duration": 1.733333,
+      "ended": true,
+      "error": null,
+      "currentTime": 1.733333,
+      "decoded": 108
+    },
+    {
+      "file": "walk-comparison.mp4",
+      "width": 900,
+      "height": 520,
+      "duration": 8.75,
+      "ended": true,
+      "error": null,
+      "currentTime": 8.75,
+      "decoded": 529
+    },
+    {
+      "file": "contact-slow.mp4",
+      "width": 1200,
+      "height": 760,
+      "duration": 5.133333,
+      "ended": true,
+      "error": null,
+      "currentTime": 5.133333,
+      "decoded": 312
+    }
+  ],
+  "all_played_to_end": true
+}

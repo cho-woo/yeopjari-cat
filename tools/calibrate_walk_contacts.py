@@ -14,6 +14,13 @@ determines the required forward root travel. Simultaneously planted paws must
 agree. Gaps, stationary/forward planted paws, bad floor contacts or head/body
 jitter reject the sheet. There is no fallback timing or guessed annotation.
 
+An optional motion_contract schema1 declares low-order Fourier head/body motion
+in root-relative LOGICAL pixels, sample_phases, stride, speed and exact rig
+start/end poses/velocities. This separates an authored periodic weight shift
+from unexplained jitter. The model must be authored with the rig, not fitted to
+per-frame noise. Four named foot tracks and all existing planted-contact checks
+remain mandatory. A numerical pass never sets visual or production approval.
+
 --output writes an importer-compatible schema-2 manifest fragment ONLY after
 all checks pass. Loop 'ms' values are high-resolution DISTANCE WEIGHTS for the
 existing distance-driven Walk sampler; they are not a requested FPS or action
@@ -41,6 +48,12 @@ DEFAULT_LIMITS = {
     'min_interval_root_logical_px': 0.0001,
     'alpha_support_radius_source_px': 2,
     'alpha_support_threshold': 200,
+    'landmark_velocity_residual_logical_px_per_cycle': 8.0,
+    'loop_position_tolerance_logical_px': 0.05,
+    'loop_velocity_tolerance_logical_px_per_cycle': 0.25,
+    'phase_distance_tolerance_logical_px': 0.02,
+    'stride_tolerance_logical_px': 0.05,
+    'max_paw_step_logical_px': 3.0,
 }
 WEIGHT_TOTAL = 60000
 
@@ -54,7 +67,159 @@ def point(value):
 
 
 def reject(errors, report=None):
-    return {'accepted': False, 'errors': errors, 'report': report or {}}
+    return {'accepted': False, 'numeric_passed': False, 'visual_quality_status': 'not_assessed',
+            'production_approved': False, 'errors': errors, 'report': report or {}}
+
+
+def periodic_value(model, phase, derivative=False):
+    """An explicitly authored, at most fourth-order periodic landmark curve."""
+    result = [0.0, 0.0] if derivative else list(model['base'])
+    for harmonic in model['harmonics']:
+        omega = 2 * math.pi * harmonic['order']
+        cosine, sine = math.cos(omega * phase), math.sin(omega * phase)
+        for axis in (0, 1):
+            if derivative:
+                result[axis] += omega * (-harmonic['cos'][axis] * sine + harmonic['sin'][axis] * cosine)
+            else:
+                result[axis] += harmonic['cos'][axis] * cosine + harmonic['sin'][axis] * sine
+    return result
+
+
+def parse_motion_contract(document, count):
+    contract = document.get('motion_contract')
+    if contract is None:
+        return None, []
+    errors = []
+    if not isinstance(contract, dict):
+        return None, ['motion_contract must be a schema-1 object']
+    required = {'schema', 'coordinate_space', 'foot_source', 'sample_phases', 'stride_logical_px',
+                'speed_logical_px_per_second', 'landmarks', 'loop_boundary'}
+    if set(contract) - required - {'source_pose_fps'} or required - set(contract):
+        return None, ['motion_contract has missing or unrecognized fields']
+    if (type(contract['schema']) is not int or contract['schema'] != 1 or
+            contract['coordinate_space'] != 'root_relative_logical_px' or contract['foot_source'] != 'rig_controls'):
+        errors.append('motion_contract needs schema1, root_relative_logical_px and rig_controls foot provenance')
+    phases = contract['sample_phases']
+    if (not isinstance(phases, list) or len(phases) != count or
+            any(not number(p) or not 0 <= p < 1 for p in phases) or
+            (phases and abs(phases[0]) > 1e-9) or
+            any(b <= a for a, b in zip(phases, phases[1:]))):
+        errors.append('motion_contract.sample_phases must start at0 and increase through one cycle without duplicating phase1')
+    for key, maximum in [('stride_logical_px', 4096), ('speed_logical_px_per_second', 4096)]:
+        if not number(contract[key]) or not 0 < contract[key] <= maximum:
+            errors.append(f'motion_contract.{key} must be positive and bounded')
+    if 'source_pose_fps' in contract and (not number(contract['source_pose_fps']) or not 0 < contract['source_pose_fps'] <= 240):
+        errors.append('motion_contract.source_pose_fps must be in (0,240] and is distinct from render FPS')
+    models = contract['landmarks']
+    if not isinstance(models, dict) or set(models) != {'head', 'body'}:
+        errors.append('motion_contract needs authored head and body landmark curves')
+    else:
+        for name, model in models.items():
+            if (not isinstance(model, dict) or set(model) != {'base', 'harmonics'} or not point(model['base']) or
+                    not isinstance(model['harmonics'], list) or len(model['harmonics']) > 4):
+                errors.append(f'{name}: use a base point and at most four authored harmonics'); continue
+            orders = []
+            for harmonic in model['harmonics']:
+                if (not isinstance(harmonic, dict) or set(harmonic) != {'order', 'cos', 'sin'} or
+                        type(harmonic.get('order')) is not int or not 1 <= harmonic['order'] <= 4 or
+                        not point(harmonic.get('cos')) or not point(harmonic.get('sin'))):
+                    errors.append(f'{name}: invalid authored harmonic'); continue
+                orders.append(harmonic['order'])
+            if len(set(orders)) != len(orders):
+                errors.append(f'{name}: duplicate harmonic order')
+    boundary = contract['loop_boundary']
+    if not isinstance(boundary, dict) or set(boundary) != {'start', 'end'}:
+        errors.append('motion_contract.loop_boundary needs exact start and end rig samples')
+    else:
+        for label, sample in boundary.items():
+            if not isinstance(sample, dict) or set(sample) != {'landmarks', 'feet'}:
+                errors.append(f'Loop {label}: landmarks and feet are required'); continue
+            for group, names in [('landmarks', ('head', 'body')), ('feet', FEET)]:
+                values = sample[group]
+                if not isinstance(values, dict) or set(values) != set(names):
+                    errors.append(f'Loop {label}: all named {group} are required'); continue
+                for name, value in values.items():
+                    keys = {'position', 'velocity'} | ({'planted'} if group == 'feet' else set())
+                    if (not isinstance(value, dict) or set(value) != keys or not point(value.get('position')) or
+                            not point(value.get('velocity')) or
+                            (group == 'feet' and type(value.get('planted')) is not bool)):
+                        errors.append(f'Loop {label} {name}: explicit position and per-cycle-phase velocity required')
+    return (None, errors) if errors else (contract, [])
+
+
+def inspect_motion_contract(contract, indexed, frames, scale, distances, limits):
+    """Check independent rig boundary samples and contact-derived sampling."""
+    errors, report = [], {}
+    phases = contract['sample_phases']
+    stride = contract['stride_logical_px']
+    position_limit = limits['loop_position_tolerance_logical_px']
+    velocity_limit = limits['loop_velocity_tolerance_logical_px_per_cycle']
+    start, end = (contract['loop_boundary'][key] for key in ('start', 'end'))
+    closures = {}
+    for group, names in [('landmarks', ('head', 'body')), ('feet', FEET)]:
+        for name in names:
+            first, last = start[group][name], end[group][name]
+            position_error = math.dist(first['position'], last['position'])
+            velocity_error = math.dist(first['velocity'], last['velocity'])
+            closures[name] = {'position_error_logical_px': position_error,
+                              'velocity_error_logical_px_per_cycle': velocity_error}
+            if position_error > position_limit:
+                errors.append(f'Loop {name}: position seam {position_error:.6f} logical px')
+            if velocity_error > velocity_limit:
+                errors.append(f'Loop {name}: velocity seam {velocity_error:.6f} logical px per cycle')
+            if group == 'landmarks':
+                actual = indexed[0]['landmarks'][name]
+                for endpoint, phase in [(first, 0), (last, 1)]:
+                    model = contract['landmarks'][name]
+                    if math.dist(endpoint['position'], periodic_value(model, phase)) > limits['landmark_jitter_logical_px']:
+                        errors.append(f'Loop {name}: boundary position differs from authored periodic curve')
+                    if math.dist(endpoint['velocity'], periodic_value(model, phase, True)) > velocity_limit:
+                        errors.append(f'Loop {name}: boundary velocity differs from authored periodic curve')
+            else:
+                actual = [indexed[0]['feet'][name][axis] for axis in ('x', 'y')]
+                if first['planted'] != last['planted'] or first['planted'] != indexed[0]['feet'][name]['planted']:
+                    errors.append(f'Loop {name}: contact state changes across the seam')
+                for endpoint in (first, last):
+                    if endpoint['planted']:
+                        if abs(endpoint['position'][1]) > limits['floor_tolerance_logical_px']:
+                            errors.append(f'Loop {name}: planted endpoint misses common floor')
+                        if math.dist(endpoint['velocity'], [-stride, 0]) > velocity_limit:
+                            errors.append(f'Loop {name}: planted endpoint has nonzero world velocity')
+            local_root = [(actual[axis]-frames[0]['anchor'][axis])*scale for axis in (0, 1)]
+            if math.dist(local_root, first['position']) > position_limit:
+                errors.append(f'Loop {name}: start rig sample disagrees with first baked frame annotation')
+    phase_intervals = [(phases[(i+1) % len(phases)]-phases[i]) % 1 for i in range(len(phases))]
+    phase_errors = [None if distance is None else abs(distance-stride*phase_intervals[i])
+                    for i, distance in enumerate(distances)]
+    for i, error in enumerate(phase_errors):
+        if error is not None and error > limits['phase_distance_tolerance_logical_px']:
+            errors.append(f'Interval {i}->{(i+1)%len(phases)}: contact travel disagrees with rig stride/phase by {error:.6f} logical px')
+    measured = sum(distances) if all(d is not None for d in distances) else None
+    if measured is not None and abs(measured-stride) > limits['stride_tolerance_logical_px']:
+        errors.append(f'Contact-derived stride {measured:.6f} differs from designed rig stride {stride:.6f}')
+    minimum_count = math.ceil(stride/limits['max_interval_root_logical_px']-1e-9)
+    if len(frames) < minimum_count:
+        errors.append(f'Frame count {len(frames)} cannot cover stride {stride:g} within maximum root gap; need at least {minimum_count} intervals')
+    minimum_pose_samples = None
+    if 'source_pose_fps' in contract:
+        minimum_pose_samples = math.ceil(stride/contract['speed_logical_px_per_second']*contract['source_pose_fps']-1e-9)
+        if len(frames) < minimum_pose_samples:
+            errors.append(f'Frame count {len(frames)} is below authored pose sampling target {minimum_pose_samples}')
+    paw_steps = {}
+    for name in FEET:
+        coordinates = [[(indexed[i]['feet'][name][axis]-frames[i]['anchor'][j])*scale
+                        for j, axis in enumerate(('x', 'y'))] for i in range(len(frames))]
+        maximum = max(math.dist(point, coordinates[(i+1) % len(coordinates)]) for i, point in enumerate(coordinates))
+        paw_steps[name] = maximum
+        if maximum > limits['max_paw_step_logical_px']:
+            errors.append(f'{name}: paw step {maximum:.6f} logical px needs more actual pose samples')
+    report.update({'foot_source': 'rig_controls (producer declaration; not a pixel-based foot-ID inference)',
+                   'declared_stride_logical_px': stride, 'contact_derived_stride_logical_px': measured,
+                   'minimum_intervals_for_root_gap': minimum_count,
+                   'minimum_samples_for_source_pose_fps': minimum_pose_samples,
+                   'sample_phases': phases, 'phase_distance_residuals_logical_px': phase_errors,
+                   'loop_closure': closures, 'max_paw_steps_logical_px': paw_steps})
+    return errors, report
 
 
 def distance_weights(distances):
@@ -158,6 +323,9 @@ def calibrate(document, base_dir=Path('.')):
                     errors.append(f'Frame {index}: invalid {name} landmark')
     if errors or len(indexed) != count:
         return reject(errors or ['Incomplete annotation frame indices'])
+    contract, contract_errors = parse_motion_contract(document, count)
+    if contract_errors:
+        return reject(contract_errors)
     scale = 110.0 / entry['reference_height']
     source = Path(entry['source'])
     if not source.is_absolute():
@@ -202,10 +370,27 @@ def calibrate(document, base_dir=Path('.')):
     for name in ('head', 'body'):
         coordinates = [[(indexed[i]['landmarks'][name][axis]-frames[i]['anchor'][axis])*scale
                         for axis in (0, 1)] for i in range(count)]
-        center = [statistics.median(p[axis] for p in coordinates) for axis in (0, 1)]
-        residuals = [math.dist(p, center) for p in coordinates]
-        landmark_report[name] = {'root_relative_median_logical_px': center,
-                                 'max_deviation_logical_px': max(residuals)}
+        if contract is None:
+            center = [statistics.median(p[axis] for p in coordinates) for axis in (0, 1)]
+            residuals = [math.dist(p, center) for p in coordinates]
+            landmark_report[name] = {'mode': 'static', 'root_relative_median_logical_px': center,
+                                     'max_deviation_logical_px': max(residuals)}
+        else:
+            expected = [periodic_value(contract['landmarks'][name], phase) for phase in contract['sample_phases']]
+            offsets = [[actual[axis]-designed[axis] for axis in (0, 1)]
+                       for actual, designed in zip(coordinates, expected)]
+            residuals = [math.hypot(*offset) for offset in offsets]
+            velocities = []
+            for index, offset in enumerate(offsets):
+                following = (index+1) % count
+                phase_delta = (contract['sample_phases'][following]-contract['sample_phases'][index]) % 1
+                velocities.append(math.dist(offset, offsets[following])/phase_delta)
+            landmark_report[name] = {'mode': 'authored_periodic', 'model': contract['landmarks'][name],
+                                     'max_deviation_logical_px': max(residuals),
+                                     'max_residual_velocity_logical_px_per_cycle': max(velocities),
+                                     'expected_root_relative_logical_px': expected}
+            if max(velocities) > limits['landmark_velocity_residual_logical_px_per_cycle']:
+                errors.append(f'{name} unplanned landmark velocity residual {max(velocities):.6f} logical px per cycle')
         if max(residuals) > limits['landmark_jitter_logical_px']:
             errors.append(f'{name} landmark jitter {max(residuals):.6f} logical px exceeds common registration tolerance')
     intervals, distances, uncovered = [], [], []
@@ -247,6 +432,12 @@ def calibrate(document, base_dir=Path('.')):
               'measured_stride_logical_px': sum(distances) if complete else None,
               'existing_sequence_or_stride_ignored': 'sequence' in entry or 'stride_pixels' in entry,
               'new_art_created': False, 'foot_identities_inferred': False}
+    if contract is not None:
+        motion_errors, motion_report = inspect_motion_contract(contract, indexed, frames, scale, distances, limits)
+        errors.extend(motion_errors)
+        report['motion_contract'] = motion_report
+    report['visual_quality_status'] = 'not_assessed'
+    report['production_approved'] = False
     if errors:
         return reject(errors, report)
     weights = distance_weights(distances)
@@ -263,7 +454,8 @@ def calibrate(document, base_dir=Path('.')):
                                   'outro': [], 'finish': 'complete', 'duration_ms': 0, 'events': []}})
     if source_sha is not None:
         exported['sha256'] = source_sha
-    return {'accepted': True, 'errors': [], 'report': report, 'entry': exported}
+    return {'accepted': True, 'numeric_passed': True, 'visual_quality_status': 'not_assessed',
+            'production_approved': False, 'errors': [], 'report': report, 'entry': exported}
 
 
 def main():

@@ -1,0 +1,47 @@
+{
+  "assessment": "visual_changes_required",
+  "visual_approval": false,
+  "source_frame_count": 45,
+  "dimensions": [
+    313,
+    313
+  ],
+  "review_video": "short-footlock.mp4",
+  "review_video_scope": "Pillow composite from source PNGs; not Windows GDI+ or desktop recording",
+  "actual_height_logical_px": 110,
+  "travel_speed_logical_px_per_second": 22,
+  "output_fps": 60,
+  "inspected_stills": [
+    "short-footlock-00000.png",
+    "short-footlock-00052.png",
+    "../short/frame-0030.png"
+  ],
+  "remaining_issues": [
+    {
+      "region": "belly and lower chest",
+      "finding": "Hard straight horizontal bottom edge and vertical stair steps replace natural rounded fur silhouette; visible at actual 110 px size."
+    },
+    {
+      "region": "limb/body overlaps",
+      "finding": "Exposed flat white rectangular caps above paws and body edge look detached; no continuous shoulder/thigh volume."
+    },
+    {
+      "region": "near rear leg",
+      "finding": "Thin vertical rear-leg strip and broad paw do not preserve original limb volume; lower legs visually merge or appear disconnected."
+    },
+    {
+      "region": "original appearance",
+      "finding": "Original face/ears/upper-back/tail remain recognizable, but original rounded torso and chest silhouette are not preserved enough."
+    }
+  ],
+  "contact_control_caveat": "Reported world stance spans are rig control coordinates with held-PNG sampling, not a visual painted-sole approval.",
+  "endpoint_comparison": {
+    "same_control_pose": true,
+    "png_bytes_identical": false,
+    "pixels_changed_rgba": 0,
+    "visible_union_pixels": 37198,
+    "max_visible_channel_delta": 0,
+    "mean_visible_channel_delta": 0.0,
+    "interpretation": "Decoded RGBA pixels are exactly identical at the two control endpoints. File-byte differences are PNG metadata/encoding only; the reviewed short loop has no endpoint pixel mismatch."
+  }
+}

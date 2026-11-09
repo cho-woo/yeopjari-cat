@@ -593,6 +593,40 @@ void AuthoredCompanionWalkRunUsesItsRealRegisteredTravel() {
         }
 }
 
+void OptionalWalkReviewKeepsBothCoatsOnTheRegisteredStride() {
+    using Clip=cat::sprite_sequence::Clip;
+    const auto* approved=cat::sprite_assets::Find(Clip::Walk,0,cat::sprite_assets::kCareSprites);
+    CHECK(approved);
+    auto authored=*approved;authored.stridePixels=30;
+    CHECK(cat::sprite_assets::Valid(authored));
+    for(auto character:{cat::Character::Cream,cat::Character::Tuxedo}) {
+        State state=NewState(born);state.preferences.character=character;state.pet.position=.2;
+        Model model;model.SetWalkRegistration(&authored);model.Bind(state);model.Reset(0,10000,700);
+        auto c=Frame(100,model.Physical().x+60);c.elapsedSeconds=1./120;
+        c.primaryMotion=cat::animation::Motion::Zoomies;c.primary.velocityX=12;
+        CHECK(model.TrySocial(Interaction::RunTogether,c));
+        double previousTravel=model.View(c.ticks).physical.relativeTravelX,expectedPhase=0;
+        for(unsigned frame=1;frame<=300;++frame) {
+            c.ticks=100+frame*1000/120;c.nowUtc=born+static_cast<std::int64_t>(c.ticks/1000);
+            c.primary.x=model.Physical().x+60;model.Tick(c);
+            const auto view=model.View(c.ticks);
+            const double travel=view.physical.relativeTravelX-previousTravel;
+            previousTravel=view.physical.relativeTravelX;
+            expectedPhase=std::fmod(expectedPhase+std::abs(travel)/
+                (view.growthScale*authored.stridePixels*view.body.bodyWidth),1.);
+            CHECK(view.animation.spriteClip==Clip::Walk);
+            CHECK(std::abs(view.animation.spriteOptions.cyclePhase-expectedPhase)<1e-10);
+        }
+        const double x=model.Physical().x;
+        model.SetWalkRegistration(nullptr);CHECK(model.Physical().x==x);
+        c.ticks+=9;c.primary.x=model.Physical().x+60;model.Tick(c);
+        const auto after=model.View(c.ticks);
+        expectedPhase=std::fmod(expectedPhase+std::abs(after.physical.relativeTravelX-previousTravel)/
+            (after.growthScale*approved->stridePixels*after.body.bodyWidth),1.);
+        CHECK(std::abs(after.animation.spriteOptions.cyclePhase-expectedPhase)<1e-10);
+    }
+}
+
 void RegisteredCompanionCareFinishesItsWholeProgram() {
     using Clip=cat::sprite_sequence::Clip;
     using Food=cat::feeding::FoodKind;
@@ -706,6 +740,7 @@ int main() {
     try { SeparateAdoptionAndRestart();IndividualStableTemperaments();StrictBundleParsing();RecoveryAndFaults();IndependentCareAndAge();FishCareKeepsTheExistingMealAndBusyContracts();AcceptedFoodRestartsItsClockAfterLongMenuPauses();SocialContactAndCompetition();RealWindowFollowingAndClosure();SpeciesLimitsAndBraking();ManualCareIsNotInterrupted();NaturalTakeoffAndLandingUsePhysicalMotion();SocialGesturesWaitForPlantedFeet();BrakingPreservesTheCompleteMeal();PairedRunningUsesOneSupportAndBodyMultiplier();HighWindowFollowingRespectsTheRealCeiling();
         HighRefreshGaitFollowsRenderedTravel();CanonicalPoseTransitionUsesHostActionAndPause();
         AuthoredCompanionWalkRunUsesItsRealRegisteredTravel();RegisteredCompanionCareFinishesItsWholeProgram();
+        OptionalWalkReviewKeepsBothCoatsOnTheRegisteredStride();
         ContactRecoveryFinishesBeforeAcceptedFishStarts();
         AuthoredSleepKeepsItsIdentityIncludingWindowRestAndWake();
         std::cout<<"companion checks passed: "<<checks<<'\n';return 0;

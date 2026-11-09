@@ -1,0 +1,40 @@
+{
+  "assessment": "visual_failed",
+  "visual_approval": false,
+  "production_approved": false,
+  "source_evaluation_completed_utc": "2026-11-09T07:04:09.057Z",
+  "source_frame_count": 45,
+  "video_scope": "Pillow technical composite of third mesh bake, not Windows output or desktop recording",
+  "visible_status": "UNAPPROVED / DIAGNOSTIC + HANDOFF",
+  "inspected": [
+    "short-footlock-00026.png at0.433s actual110logicalpx",
+    "../short/frame-0000.png source313px"
+  ],
+  "actual_height_logical_px": 110,
+  "travel_speed_logical_px_per_second": 22,
+  "output_fps": 60,
+  "remaining_issues": [
+    {
+      "region": "far-front leg attachment",
+      "source_example": "frame-0000.png, approximately x158..175 y251..268",
+      "finding": "Rigid pale rectangle remains exposed above far-front paw, with dark gap to torso; leg/paw appears disconnected."
+    },
+    {
+      "region": "near-front elbow",
+      "source_example": "frame-0000.png, approximately y225",
+      "finding": "Straight upper/lower leg texture boundary creates a visible joint cut; no natural fur continuation or volume change."
+    },
+    {
+      "region": "near-rear limb/rump",
+      "source_example": "frame-0000.png and actual-size0.433s still",
+      "finding": "Rear upper-limb oval and lower-limb strip read as pasted layers; flat flap near rump remains. Original rounded leg silhouette is not retained through stride."
+    },
+    {
+      "region": "tail/body attachment",
+      "source_example": "actual-size0.433s still",
+      "finding": "Near-vertical cut under tail remains visible against pale background."
+    }
+  ],
+  "contact_caveat": "Control coordinates and rigid link lengths can pass while textured limb anatomy fails. No numerical report can override this visual rejection.",
+  "disposition": "Do not change production baseline. Full bake may be rendered only as explicitly unapproved diagnostic/handoff for joint corrective mesh/paint work."
+}

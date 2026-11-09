@@ -2,6 +2,7 @@
 #include <windows.h>
 #include "app_version.h"
 #include "care_sprites.generated.rc"
+#include "cream_mesh_walk.generated.rc"
 101 RCDATA "../assets/cat.png"
 102 RCDATA "../assets/cat-actions.png"
 105 RCDATA "../assets/cream-extra.png"

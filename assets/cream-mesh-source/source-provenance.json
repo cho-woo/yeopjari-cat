@@ -1,0 +1,136 @@
+{
+  "schema": 1,
+  "source": "hidden-parts-generated.png",
+  "sha256": "cd14013978088be55d96ccd061b1c7b3006f827c6a2cec196a9a24d0f20678e1",
+  "purpose": "Purpose-drawn hidden belly, four independent complete limb/root fur and tail-root repairs; never a fullwalk sprite generator.",
+  "raw_source_preserved": true,
+  "registration": "Manual joint/UV registration into original313canvas. Do not stretch independentboundingboxes to squares.",
+  "parts": [
+    {
+      "name": "torso_fill",
+      "source_rect": [
+        0,
+        0,
+        512,
+        512
+      ],
+      "material_bbox_inclusive": [
+        56,
+        129,
+        478,
+        383
+      ],
+      "solid_sole_point": [
+        306.0,
+        384.0
+      ]
+    },
+    {
+      "name": "near_front",
+      "source_rect": [
+        512,
+        0,
+        512,
+        512
+      ],
+      "material_bbox_inclusive": [
+        128,
+        92,
+        384,
+        444
+      ],
+      "solid_sole_point": [
+        318.0,
+        445.0
+      ]
+    },
+    {
+      "name": "far_front",
+      "source_rect": [
+        1024,
+        0,
+        512,
+        512
+      ],
+      "material_bbox_inclusive": [
+        123,
+        81,
+        310,
+        442
+      ],
+      "solid_sole_point": [
+        245.5,
+        443.0
+      ]
+    },
+    {
+      "name": "near_rear",
+      "source_rect": [
+        0,
+        512,
+        512,
+        512
+      ],
+      "material_bbox_inclusive": [
+        101,
+        86,
+        381,
+        443
+      ],
+      "solid_sole_point": [
+        184.0,
+        444.0
+      ]
+    },
+    {
+      "name": "far_rear",
+      "source_rect": [
+        512,
+        512,
+        512,
+        512
+      ],
+      "material_bbox_inclusive": [
+        154,
+        87,
+        350,
+        443
+      ],
+      "solid_sole_point": [
+        235.0,
+        444.0
+      ]
+    },
+    {
+      "name": "tail_root_fill",
+      "source_rect": [
+        1024,
+        512,
+        512,
+        512
+      ],
+      "material_bbox_inclusive": [
+        153,
+        169,
+        309,
+        332
+      ],
+      "solid_sole_point": [
+        253.0,
+        333.0
+      ]
+    }
+  ],
+  "original": "original-walk-run.png",
+  "original_frame_rect": [
+    0,
+    0,
+    313,
+    313
+  ],
+  "common_anchor": [
+    161,
+    275
+  ],
+  "reference_height": 221
+}

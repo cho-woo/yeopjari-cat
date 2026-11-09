@@ -1,0 +1,236 @@
+{
+  "schema": 1,
+  "name": "Cream editable side-walk mesh review",
+  "visual_approval": "FAILED; not a completed natural gait",
+  "blend": "authoring.blend",
+  "existing_blend_bake_supported": true,
+  "canvas": [
+    313,
+    313
+  ],
+  "camera": "orthographic fixed side view",
+  "coordinate_axes": {
+    "x": "right",
+    "z": "up",
+    "y": "layer depth; negative in front"
+  },
+  "anchor_source_px": [
+    161.0,
+    275.0
+  ],
+  "reference_height": 221.0,
+  "source_pose_count": 82,
+  "neutral_keyframe": 0,
+  "loop_keyframes": [
+    1,
+    82
+  ],
+  "duplicate_endpoint_keyframe": 83,
+  "stride_logical_px": 30.0,
+  "speed_logical_px_per_second": 22.0,
+  "duty_factor": 0.64,
+  "phase_offsets": {
+    "near_rear": 0.0,
+    "near_front": 0.25,
+    "far_rear": 0.5,
+    "far_front": 0.75
+  },
+  "fixed_link_rest_joints_source_px": {
+    "near_front": [
+      [
+        198.0,
+        185.0
+      ],
+      [
+        222.0,
+        222.0
+      ],
+      [
+        207.0,
+        259.0
+      ],
+      [
+        223.0,
+        275.0
+      ]
+    ],
+    "near_rear": [
+      [
+        92.0,
+        182.0
+      ],
+      [
+        116.0,
+        220.0
+      ],
+      [
+        77.0,
+        259.0
+      ],
+      [
+        77.5,
+        275.0
+      ]
+    ],
+    "far_front": [
+      [
+        178.0,
+        185.0
+      ],
+      [
+        196.0,
+        224.0
+      ],
+      [
+        180.0,
+        259.0
+      ],
+      [
+        196.0,
+        275.0
+      ]
+    ],
+    "far_rear": [
+      [
+        115.0,
+        182.0
+      ],
+      [
+        147.0,
+        225.0
+      ],
+      [
+        134.0,
+        259.0
+      ],
+      [
+        134.5,
+        275.0
+      ]
+    ]
+  },
+  "source_uv_limb_paths": {
+    "near_front": [
+      [
+        213.5,
+        130
+      ],
+      [
+        232,
+        280
+      ],
+      [
+        310.5,
+        395
+      ],
+      [
+        318,
+        445
+      ]
+    ],
+    "far_front": [
+      [
+        219,
+        120
+      ],
+      [
+        205,
+        280
+      ],
+      [
+        243.5,
+        395
+      ],
+      [
+        245.5,
+        443
+      ]
+    ],
+    "near_rear": [
+      [
+        269,
+        120
+      ],
+      [
+        213.5,
+        290
+      ],
+      [
+        181.5,
+        395
+      ],
+      [
+        184,
+        444
+      ]
+    ],
+    "far_rear": [
+      [
+        250,
+        120
+      ],
+      [
+        262,
+        275
+      ],
+      [
+        237,
+        395
+      ],
+      [
+        235,
+        444
+      ]
+    ]
+  },
+  "source_uv_limb_cell_offsets": {
+    "near_front": [
+      512,
+      0
+    ],
+    "far_front": [
+      1024,
+      0
+    ],
+    "near_rear": [
+      0,
+      512
+    ],
+    "far_rear": [
+      512,
+      512
+    ]
+  },
+  "sole_controls": [
+    "FOOT_near_front",
+    "FOOT_far_front",
+    "FOOT_near_rear",
+    "FOOT_far_rear"
+  ],
+  "mesh_groups": {
+    "head": "Head_original_pixels",
+    "torso": "Torso_original_outer_fur",
+    "tail": "Tail_original_fur",
+    "limbs": [
+      "near_front.continuous_fur",
+      "far_front.continuous_fur",
+      "near_rear.continuous_fur",
+      "far_rear.continuous_fur"
+    ]
+  },
+  "packed_images": true,
+  "inputs": [
+    {
+      "path": "/workspace/yeopjari-cat/assets/cream-mesh-source/original-walk-run.png",
+      "sha256": "fdb52258ede319c7f23ffa0af019b8d3fa677bf180caa1e9a89e1b37db0e9e78"
+    },
+    {
+      "path": "/workspace/yeopjari-cat/assets/cream-mesh-source/hidden-parts-generated.png",
+      "sha256": "cd14013978088be55d96ccd061b1c7b3006f827c6a2cec196a9a24d0f20678e1"
+    }
+  ],
+  "original_art_kept": "head, outer torso, tail, near-side painted toes",
+  "new_purpose_art_used": "independent hidden four-limb fur, hidden belly/chest, complete far-side painted toes",
+  "rendered_pose_count_is_not_independent_painted_drawing_count": true,
+  "rebake_command": "blender -b --python tools/cream_mesh_rig/author.py -- --existing-blend EDITED.blend --mode bake --output build/cream-mesh-edited"
+}
