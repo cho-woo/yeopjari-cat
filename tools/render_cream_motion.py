@@ -55,7 +55,7 @@ for n in range(480):
     assert lib.cream_step(rig,1/60,speed,int(moving))
     if n%2==0:frames.append(drawing(f'{seconds:.2f}s  sit={lib.cream_sit(rig):.2f}',lib.cream_distance(rig)))
     if n in (90,108,126,144,162,180,198,216):samples.append(frames[-1])
-frames[0].save(OUT/'walk-stand-sit.gif',save_all=True,append_images=frames[1:],duration=33,loop=0)
+frames[0].save(OUT/'walk-stand-sit.gif',save_all=True,append_images=frames[1:],duration=[30,30,40]*(len(frames)//3),loop=0)
 sheet=Image.new('RGB',(560*4,380*2),'white')
 for n,img in enumerate(samples):sheet.paste(img,(n%4*560,n//4*380))
 sheet.save(OUT/'walking.png')
