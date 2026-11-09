@@ -66,17 +66,6 @@ public:
     Cycle(Parameters slow,bool adaptive,double neutralScale=1)
         :base_(slow),adaptive_(adaptive),neutralScale_(neutralScale){}
     void Prime(bool stalking=false) { if(!initialized_)Initialize(stalking); }
-    // Start a newly standing actor with all four existing support points.
-    // Its first step lifts from those points instead of teleporting to a
-    // pre-sampled mid-stride foot position.
-    void PlantNeutral() {
-        Initialize(false);
-        for(unsigned i=0;i<feet_.size();++i) {
-            feet_[i]={0,0,true};
-            legs_[i].phase=LegPhase(i,settings_.duty,settings_.sequence)*settings_.duty;
-            legs_[i].contactNeutral=legs_[i].targetNeutral=0;
-        }
-    }
     void Reset() {
         const auto profile=base_;const auto bias=bias_;
         const bool configured=configured_,adaptive=adaptive_;const double neutral=neutralScale_;

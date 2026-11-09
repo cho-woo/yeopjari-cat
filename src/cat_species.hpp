@@ -17,12 +17,12 @@ inline Profile ProfileFor(Character character) noexcept {
     case Character::Munchkin: return {.78,.90,1.04,1.0,1.05};
     case Character::Dog: return {.90,1.08,1.15,1.10,1.18};
     case Character::Rabbit: return {1.18,1.10,.95,.55,1.10};
-    case Character::Tuxedo: return {1.04,1.03,1.02,.95,1.12};
+    case Character::Tuxedo: return {}; // Same motion/physics profile as Cream.
     case Character::British: return {.88,.88,1.06,.75,.85};
     default: return {};
     }
 }
-inline bool UsesNewArt(Character character) noexcept { return IsValid(character) && static_cast<int>(character) >= 2; }
+inline bool UsesNewArt(Character character) noexcept { return character!=Character::Tuxedo && IsValid(character) && static_cast<int>(character) >= 2; }
 inline int ArtCell(Character character) noexcept { return UsesNewArt(character) ? static_cast<int>(character)-2 : 0; }
 // Measured against alpha-cropped canonical cells, including rabbit ears and
 // the puppy's shorter muzzle. Reusing cat eye coordinates would blink a nose.

@@ -74,13 +74,13 @@ void PetRecordRemainsIndependent() {
     CHECK(!cat::ParsePreferences(saved, destination, error));
 }
 void RetiredCharactersMigrateWithoutLosingOutfits() {
-    CHECK(cat::kAvailableCharacters.size()==1);
+    CHECK(cat::kAvailableCharacters.size()==2);
     for(int i=0;i<cat::kLegacyCharacterCount;++i) {
         cat::Preferences old{static_cast<cat::Character>(i),cat::Outfit::Scarf},migrated;
         CHECK(cat::ParsePreferences(cat::SerializePreferences(old),migrated));
-        CHECK(migrated.character==cat::Character::Cream);
+        CHECK(migrated.character==cat::AvailableCharacter(old.character));
         CHECK(migrated.outfit==cat::Outfit::Scarf);
-        CHECK(cat::CharacterAvailable(old.character)==(i==0));
+        CHECK(cat::CharacterAvailable(old.character)==(i==0 || i==8));
         CHECK(cat::ParsePreferences(cat::SerializePreferences(migrated),migrated));
     }
 }

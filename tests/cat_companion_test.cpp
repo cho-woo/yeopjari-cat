@@ -332,8 +332,7 @@ void SpeciesLimitsAndBraking() {
     Step(m,c,180);CHECK(m.Physical().onPlatform);
     m.DragTo(400);c=Frame(4000,600);s.nutrition.fullness=50;s.pet.hunger=50;
     CHECK(m.TrySocial(Interaction::Follow,c));Step(m,c,30);
-    CHECK(std::abs(m.Physical().velocityX)<2); // Stand up before moving.
-    Step(m,c,60);CHECK(m.Physical().velocityX>10);
+    CHECK(m.Physical().velocityX>10);
     CHECK(m.Feed(c.nowUtc,c.ticks,false)==cat::nutrition::FeedResult::Accepted);
     CHECK(cat::animation::Travels(m.View(c.ticks).motion)); // A seated eating frame cannot slide during braking.
     Step(m,c,30);CHECK(std::abs(m.Physical().velocityX)<2);CHECK(m.View(c.ticks).motion==cat::animation::Motion::Eat);
@@ -624,7 +623,7 @@ void RegisteredCompanionCareFinishesItsWholeProgram() {
         c.ticks+=groomDuration;c.nowUtc=born+static_cast<std::int64_t>(c.ticks/1000);model.Tick(c);
         const auto neutral=model.View(c.ticks);
         CHECK(neutral.motion==cat::animation::Motion::Idle);
-        CHECK(neutral.animation.creamRig && neutral.animation.spriteClip==Clip::None && !neutral.animation.spriteTimed);
+        CHECK(neutral.animation.spriteClip==Clip::Sleep && neutral.animation.spriteFrame==0 && !neutral.animation.spriteTimed);
         CHECK(Valid(state));
     }
 }

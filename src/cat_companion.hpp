@@ -26,7 +26,7 @@ struct State {
     cat::nutrition::State nutrition;
     cat::memory::State memory;
     cat::life::State life;
-    cat::Preferences preferences{cat::Character::Cream, cat::Outfit::None};
+    cat::Preferences preferences{cat::Character::Tuxedo, cat::Outfit::None};
     bool enabled = true;
     std::uint64_t sniffs = 0, mutualPlay = 0, sharedSleeps = 0, foodRaces = 0;
     std::int64_t lastSocialUtc = 0;
@@ -270,7 +270,7 @@ public:
         feedingKind_=cat::feeding::FoodKind::Meal;
         groomVariant_=0;
         motionStart_=lastTicks_=careUntil_=landedAt_=0; direction_=facing_=1; speed_=0; support_={}; gait_.Reset();
-        poseTransition_.Reset(); creamMotion_.Reset(); motionSerial_=0;
+        poseTransition_.Reset(); motionSerial_=0;
         waitingForStop_=jumpPending_=wakingFromSleep_=false;
         storyActive_=quietActive_=false;
         presentationTicks_=0;presentationPaused_=false;++presentationGeneration_;
@@ -289,18 +289,17 @@ public:
         minX_=std::isfinite(minX)?minX:40; maxX_=std::isfinite(maxX)?std::max(maxX,minX_+1):minX_+800;
         physics_.Reset(minX_+std::clamp(state_->pet.position,0.0,1.0)*(maxX_-minX_),minX_,maxX_);
         maxLift_=std::isfinite(maxLift)?std::max(1.0,maxLift):1;
-        physics_.SetCeiling(maxLift_); gait_.Reset(); creamMotion_.Reset(); poseTransition_.Reset(); ready_=true; supportId_=0;
+        physics_.SetCeiling(maxLift_); gait_.Reset(); poseTransition_.Reset(); ready_=true; supportId_=0;
         ++presentationGeneration_;
     }
     void Relocate(double minX,double maxX,double maxLift,double deltaX=0) {
         if(!ready_) { Reset(minX,maxX,maxLift); return; }
         minX_=minX; maxX_=std::max(minX+1,maxX); maxLift_=std::isfinite(maxLift)?std::max(1.0,maxLift):1;
-        physics_.RelocateBounds(minX_,maxX_,deltaX); physics_.SetCeiling(maxLift_); gait_.Reset(); creamMotion_.Reset(); poseTransition_.Reset();
+        physics_.RelocateBounds(minX_,maxX_,deltaX); physics_.SetCeiling(maxLift_); gait_.Reset(); poseTransition_.Reset();
         ++presentationGeneration_;
     }
     std::uintptr_t SupportId() const { return supportId_; }
     cat::physics::Pose Physical() const { return physics_.CurrentPose(); }
-    bool PostureActive()const{return Bound()&&creamMotion_.Active();}
     Interaction TakeEvent() { const auto value=event_; event_=Interaction::None; return value; }
 
     void Tick(const Context& c) {
@@ -390,15 +389,6 @@ public:
                     support_.left+30,support_.right-30)) velocity=0;
         }
         if(std::abs(velocity)>.1) facing_=velocity<0?-1:1;
-        const bool postureReady=creamMotion_.Prepare(c.elapsedSeconds,std::abs(velocity)>.1 ||
-            std::abs(before.velocityX-before.supportVelocityX)>2,
-            cat::animation::CreamLocomotion(cat::motion::DisplayedMotion(motion_,walkingMotion_,
-                before.grounded,waitingForStop_,before.velocityX-before.supportVelocityX)),before.grounded);
-        if(!postureReady && cat::animation::CreamLocomotion(motion_)) {
-            velocity=0;
-            const auto held=static_cast<std::uint64_t>(std::llround(c.elapsedSeconds*1000));
-            if(cat::animation::Walking(motion_)){motionStart_+=held;nextDecision_+=held;}
-        }
         if(before.grounded) physics_.SetTargetVelocity(velocity*cat::nutrition::VisualModifiers(state_->nutrition).speed*species.movementSpeedMultiplier);
         const auto* jumpArt=Registered(cat::sprite_sequence::Clip::Jump);
         const auto takeoff=jumpArt && jumpArt->program.stepCount?
@@ -436,8 +426,6 @@ public:
         }
         gait_.Advance(walking,stride/std::max(.1,cat::GrowthScale(state_->pet.bornUtc,state_->pet.updatedUtc)),
             c.elapsedSeconds,rendered.grounded);
-        creamMotion_.Travel(stride/std::max(.1,cat::GrowthScale(state_->pet.bornUtc,state_->pet.updatedUtc)*
-            cat::nutrition::VisualModifiers(state_->nutrition).bodyWidth),c.elapsedSeconds,rendered.grounded);
         state_->pet.position=std::clamp((after.x-minX_)/(maxX_-minX_),0.0,1.0);
     }
 
@@ -513,7 +501,7 @@ public:
     }
     void DragTo(double x) {
         if(!ready_) return;
-        physics_.Reset(std::clamp(x,minX_,maxX_),minX_,maxX_); supportId_=0; support_={}; gait_.Reset(); creamMotion_.Reset(); poseTransition_.Reset();
+        physics_.Reset(std::clamp(x,minX_,maxX_),minX_,maxX_); supportId_=0; support_={}; gait_.Reset(); poseTransition_.Reset();
         physics_.SetCeiling(maxLift_);
         state_->pet.position=std::clamp((physics_.CurrentPose().x-minX_)/(maxX_-minX_),0.0,1.0);
         interaction_=Interaction::None; nextDecision_=careUntil_=landedAt_=0;
@@ -602,7 +590,6 @@ public:
             cat::animation::AttachSprite(s.animation,cat::sprite_sequence::Clip::Jump,0,sprite);
             s.animation.fishMeal=false;
         }
-        cat::animation::ApplyCreamLocomotion(s.animation,displayed,creamMotion_);
         if(cat::sprite_assets::Find(s.animation.spriteClip,static_cast<unsigned>(s.preferences.character),
                 cat::sprite_assets::kCareSprites))cat::animation::UseAuthoredSprite(s.animation);
         return s;
@@ -612,7 +599,6 @@ private:
     std::unique_ptr<cat::behavior::Brain> brain_;
     cat::physics::Controller physics_;
     cat::animation::Locomotion gait_;
-    cat::cream::Motion creamMotion_;
     mutable cat::animation::PoseTransition poseTransition_;
     bool ready_=false,contactRecorded_=false,waitingForStop_=false,jumpPending_=false;
     bool wakingFromSleep_=false,storyActive_=false,quietActive_=false;

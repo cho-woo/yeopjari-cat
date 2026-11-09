@@ -42,7 +42,6 @@
 #include "cat_care_presentation.hpp"
 #include "cat_locomotion_rig.hpp"
 #include "cat_articulated_walk.hpp"
-#include "cat_cream_rig.hpp"
 #include "cat_motion_gate.hpp"
 #include "cat_physics.hpp"
 #include "cat_environment.hpp"
@@ -68,6 +67,7 @@
 #include "cat_species.hpp"
 #include "cat_companion.hpp"
 #include "care_sprites.generated.hpp"
+#include "cat_coat.hpp"
 
 using namespace Gdiplus;
 void PausePrimaryCarePresentation(std::uint64_t milliseconds);
@@ -178,6 +178,8 @@ struct CareSpriteAtlas {
     const cat::sprite_assets::Descriptor* layout=nullptr;
     std::array<std::vector<std::uint32_t>,cat::sprite_assets::kMaxFrames> framePixels;
     std::array<std::unique_ptr<Bitmap>,cat::sprite_assets::kMaxFrames> frames;
+    std::array<std::vector<std::uint32_t>,cat::sprite_assets::kMaxFrames> tuxedoPixels;
+    std::array<std::unique_ptr<Bitmap>,cat::sprite_assets::kMaxFrames> tuxedoFrames;
     IStream* stream=nullptr;
     std::unique_ptr<Bitmap> image;
     ~CareSpriteAtlas() { image.reset();if(stream)stream->Release(); }
@@ -222,16 +224,12 @@ struct WindowPerch {
 using ToyKind = cat::toy::Kind;
 
 struct App {
-    cat::cream::Motion creamMotion;
-    cat::cream::Rig creamRig;
-    std::unique_ptr<Bitmap> creamImage;
-    cat::gait::Feet creamCachedFeet{};
-    double creamCachedSit=-1;
     HINSTANCE instance = nullptr;
     HWND window = nullptr;
     HANDLE instanceMutex = nullptr;
     ULONG_PTR gdiplusToken = 0;
     std::array<CharacterArt, 1> characters;
+    Surface tuxedoLayer;
     Surface styleBlendFrom, styleBlendTo;
     std::vector<std::unique_ptr<CareSpriteAtlas>> careSprites;
     SpriteAtlas authoredBoxProp;
@@ -362,7 +360,7 @@ bool ContinueLifeSequence();
 void UpdateLifeEvent(ULONGLONG ticks, double elapsed);
 
 std::size_t CharacterIndex(cat::Character character = g.preferences.character) {
-    (void)character;return 0U;
+    (void)character;return 0U; // Both coats share exactly the same geometry.
 }
 CharacterArt& CurrentArt(cat::Character character = g.preferences.character) { return g.characters[CharacterIndex(character)]; }
 
@@ -1129,7 +1127,7 @@ bool LoadAtlasResource(int resourceId, SpriteAtlas& sheet, int columns = 4, int 
     atlas->UnlockBits(&data); return true;
 }
 struct CareSpriteMemoryStats {
-    std::size_t decodedAtlases=0,residentPixels=0,residentFrames=0;
+    std::size_t decodedAtlases=0,residentPixels=0,residentFrames=0,tuxedoPixels=0;
 };
 CareSpriteMemoryStats careSpriteMemory;
 
@@ -1204,6 +1202,20 @@ bool LoadCareSprites() {
             auto sprite=std::make_unique<CareSpriteAtlas>();sprite->layout=&member;
             if(!PrepareCareSpriteFrames(*sprite,*decodedAtlas.image,careSpriteMemory.residentPixels))return false;
             careSpriteMemory.residentFrames+=member.frameCount;
+            // Prewarm the coat, retaining the same frame registration/program.
+            // Count both resident pixel sets against the existing total budget.
+            for(unsigned frame=0;frame<member.frameCount;++frame) {
+                const auto& r=member.frames[frame].rect;
+                const auto needed=sprite->framePixels[frame].size();
+                if(careSpriteMemory.residentPixels+careSpriteMemory.tuxedoPixels+needed>
+                        cat::sprite_assets::kMaxResidentPixels)return false;
+                auto& pixels=sprite->tuxedoPixels[frame];pixels=sprite->framePixels[frame];
+                cat::coat::Apply(pixels.data(),r.width,r.height,member.clip,frame);
+                sprite->tuxedoFrames[frame]=std::make_unique<Bitmap>(r.width,r.height,r.width*4,
+                    PixelFormat32bppPARGB,reinterpret_cast<BYTE*>(pixels.data()));
+                if(sprite->tuxedoFrames[frame]->GetLastStatus()!=Ok)return false;
+                careSpriteMemory.tuxedoPixels+=needed;
+            }
             g.careSprites.push_back(std::move(sprite));
         }
         decoded.push_back(layout.resourceId);++careSpriteMemory.decodedAtlases;
@@ -1214,20 +1226,6 @@ bool LoadCareSprites() {
 
 bool LoadAtlas() {
     if(!LoadCareSprites())return false;
-    {
-        SpriteAtlas parts;
-        if(!LoadAtlasResource(500,parts,3,6))return false;
-        Rect rect(0,0,parts.image->GetWidth(),parts.image->GetHeight());BitmapData data{};
-        if(parts.image->LockBits(&rect,ImageLockModeRead,PixelFormat32bppPARGB,&data)!=Ok){parts.Reset();return false;}
-        const bool loaded=data.Stride==rect.Width*4 && g.creamRig.PrepareParts(
-            reinterpret_cast<const std::uint32_t*>(data.Scan0),rect.Width,rect.Height);
-        parts.image->UnlockBits(&data);parts.Reset();
-        if(!loaded)return false;
-    }
-    g.creamImage=std::make_unique<Bitmap>(cat::cream::Rig::Width,cat::cream::Rig::Height,
-        cat::cream::Rig::Width*4,PixelFormat32bppPARGB,
-        reinterpret_cast<BYTE*>(const_cast<std::uint32_t*>(g.creamRig.Pixels())));
-    if(g.creamImage->GetLastStatus()!=Ok)return false;
     // Prepare the empty prop once from the supplied box drawing. Its outline
     // overlaps the seated cat, so a rectangular crop alone would retain fur.
     // Source PNG bytes remain unchanged; this is a cached rendering layer.
@@ -1256,19 +1254,18 @@ bool LoadAtlas() {
         // The relaxed sitting pose is the size reference across a character's sheets.
         art.actions.standingHeight = std::max(1, art.actions.frames[6].Height);
     }
-    if (!LoadAtlasResource(105, g.jumpTreat, 2) || !LoadAtlasResource(106, g.gestures, 2) ||
-        !LoadAtlasResource(107, g.recline, 2, 4) ||
-        !LoadAtlasResource(110, g.hanging, 5, 10) ||
-        !LoadAtlasResource(112, g.sleepStyles, 4, 20)) return false;
-    for (int i = 0; i < 2; ++i) {
+    if (!LoadAtlasResource(105, g.jumpTreat, 2, 4) || !LoadAtlasResource(106, g.gestures, 2, 4) ||
+        !LoadAtlasResource(107, g.recline, 2, 2) ||
+        !LoadAtlasResource(110, g.hanging, 1, 1) ||
+        !LoadAtlasResource(112, g.sleepStyles, 2, 2)) return false;
+    for (int i = 0; i < 1; ++i) {
         g.extraStandingHeight[i] = std::max(g.jumpTreat.frames[i * 4 + 2].Height, g.jumpTreat.frames[i * 4 + 3].Height);
         g.gestureStandingHeight[i] = std::max(g.gestures.frames[i * 4].Height, g.gestures.frames[i * 4 + 1].Height);
     }
     return true;
 }
 void ReleaseAtlases() {
-    g.creamImage.reset();g.creamRig={};g.creamCachedSit=-1;
-    ReleaseCarePresentation();
+    ReleaseCarePresentation();g.tuxedoLayer.Reset();
     g.careSprites.clear();careSpriteMemory={};g.authoredBoxProp.Reset();
     g.styleBlendFrom.Reset(); g.styleBlendTo.Reset();
     for (auto& art : g.characters) { art.jointWalking.reset(); art.walking.reset(); art.base.Reset(); art.actions.Reset(); }
@@ -1314,7 +1311,6 @@ void ResetMovement() {
     g.perch.rect = {};
     g.physicsReady = true;
     g.gait.Reset();
-    g.creamMotion.Reset();
     g.poseTransition.Reset();
     ResetPrimaryCarePresentation();
     g.jumpPending = g.jumpLaunched = false;
@@ -1329,7 +1325,7 @@ double WalkingVelocity(const cat::physics::Pose& pose) {
 
 const CareSpriteAtlas* LoadedCareSprite(cat::sprite_sequence::Clip clip,cat::Character character) {
     for(const auto& sprite:g.careSprites)
-        if(sprite->layout->clip==clip && sprite->layout->character==static_cast<unsigned>(character))return sprite.get();
+        if(sprite->layout->clip==clip && sprite->layout->character==cat::sprite_assets::AuthoredCharacter(static_cast<unsigned>(character)))return sprite.get();
     return nullptr;
 }
 void ConfigurePrimaryAuthoredStride() {
@@ -1364,7 +1360,7 @@ void RefreshAnimationTimer() {
         !(g.toy == ToyKind::FishingRod && g.toyEngaged);
     const bool resting = (g.motion == Motion::Sleep || g.motion == Motion::Loaf || g.motion == Motion::BoxSit ||
         g.motion == Motion::Idle || g.motion == Motion::Watch || PrimaryAuthoredCareHolding(ticks)) &&
-        companionResting && toysResting && !g.creamMotion.Active() && !g.companionModel.PostureActive() &&
+        companionResting && toysResting &&
         (!g.physicsReady || (g.physics.CurrentPose().grounded && std::abs(WalkingVelocity(g.physics.CurrentPose())) < .5));
     const UINT interval = g.hidden ? 250 : (g.menuOpen || g.dragging || resting ? 40 : 16);
     const bool precise = interval == 16;
@@ -2177,7 +2173,8 @@ bool DrawCareSprite(Graphics& graphics,const cat::animation::Pose& pose,REAL cen
     const auto saved=graphics.Save();graphics.TranslateTransform(center,bottom);
     graphics.ScaleTransform(pose.flip && sprite->layout->clip!=cat::sprite_sequence::Clip::Box?-1.0f:1.0f,1);
     ImageAttributes attributes;attributes.SetWrapMode(WrapModeClamp,Color(0,0,0,0));
-    auto* isolated=sprite->frames[index].get();
+    auto* isolated=character==cat::Character::Tuxedo?sprite->tuxedoFrames[index].get():sprite->frames[index].get();
+    if(character==cat::Character::Tuxedo && !isolated)return false;
     const auto status=graphics.DrawImage(isolated?isolated:sprite->image.get(),
         RectF(static_cast<REAL>(-frame.anchor.x*sx),static_cast<REAL>(-frame.anchor.y*sy),
             frame.rect.width*sx,frame.rect.height*sy),
@@ -2189,22 +2186,37 @@ bool DrawCareSprite(Graphics& graphics,const cat::animation::Pose& pose,REAL cen
 void DrawStyledAnimationDirect(Graphics& graphics, cat::animation::Pose pose, REAL center, REAL bottom, REAL scale,
                          cat::Character character, cat::Outfit outfit, const cat::nutrition::Visual& body,
                          Surface& blendFrom, Surface& blendTo, int canvasWidth, int canvasHeight) {
-    if(pose.creamRig && g.creamImage) {
-        if(g.creamCachedSit!=pose.creamSit || !cat::gait::SameFeet(g.creamCachedFeet,pose.creamFeet)) {
-            if(!g.creamRig.Raster(pose.creamFeet,pose.creamSit))return;
-            g.creamCachedFeet=pose.creamFeet;g.creamCachedSit=pose.creamSit;
-        }
-        const double reference=scale*CurrentArt(character).base.standingHeight/cat::cream::Rig::ReferenceHeight;
-        const REAL sx=static_cast<REAL>(reference*body.bodyWidth),sy=static_cast<REAL>(reference*body.bodyHeight);
-        const auto saved=graphics.Save();graphics.TranslateTransform(center,bottom);
-        graphics.ScaleTransform(pose.flip?-1.0f:1.0f,1);
-        ImageAttributes attributes;attributes.SetWrapMode(WrapModeClamp,Color(0,0,0,0));
-        graphics.DrawImage(g.creamImage.get(),RectF(static_cast<REAL>(-cat::cream::Rig::AnchorX*sx),
-            static_cast<REAL>(-cat::cream::Rig::AnchorY*sy),cat::cream::Rig::Width*sx,cat::cream::Rig::Height*sy),
-            0,0,cat::cream::Rig::Width,cat::cream::Rig::Height,UnitPixel,&attributes);
-        graphics.Restore(saved);return;
-    }
     if(DrawCareSprite(graphics,pose,center,bottom,scale,character,body))return;
+    if(character==cat::Character::Tuxedo) {
+        // Canonical fallback poses still use Cream's geometry and deformation.
+        // A single reusable surface serves sequential primary/companion paints.
+        auto& layer=g.tuxedoLayer;
+        if((layer.width!=canvasWidth||layer.height!=canvasHeight||!layer.image)&&
+                !layer.Create(canvasWidth,canvasHeight))return;
+        {
+            Graphics target(layer.image.get());target.Clear(Color(0,0,0,0));
+            target.SetSmoothingMode(SmoothingModeAntiAlias);
+            target.SetInterpolationMode(InterpolationModeHighQualityBicubic);
+            target.SetPixelOffsetMode(PixelOffsetModeHighQuality);
+            DrawStyledAnimationDirect(target,pose,center,bottom,scale,cat::Character::Cream,outfit,
+                body,blendFrom,blendTo,canvasWidth,canvasHeight);
+            target.Flush(FlushIntentionSync);
+        }
+        // The fallback canvas has padding. Register the coat in the rendered
+        // silhouette, not in the full window (no resize/crop of the drawing).
+        int left=canvasWidth,right=0,top=canvasHeight,low=0;
+        for(int y=0;y<canvasHeight;++y)for(int x=0;x<canvasWidth;++x)if(layer.pixels[(y*canvasWidth+x)*4+3]>16) {
+            left=std::min(left,x);right=std::max(right,x+1);top=std::min(top,y);low=std::max(low,y+1);
+        }
+        auto* pixels=reinterpret_cast<std::uint32_t*>(layer.pixels);
+        for(int y=top;y<low;++y)for(int x=left;x<right;++x) {
+            const double u=pose.flip?1.-(x-left+.5)/(right-left):(x-left+.5)/(right-left);
+            pixels[y*canvasWidth+x]=cat::coat::Pixel(pixels[y*canvasWidth+x],u,(y-top+.5)/(low-top),
+                cat::sprite_sequence::Clip::None,0);
+        }
+        graphics.DrawImage(layer.image.get(),Rect(0,0,canvasWidth,canvasHeight),0,0,canvasWidth,canvasHeight,UnitPixel);
+        return;
+    }
     if(pose.originalWalk && !cat::species::UsesNewArt(character) &&
             DrawOriginalWalkingPet(graphics,pose,center,bottom,scale,character,body))return;
     if(pose.jointWalk && !cat::species::UsesNewArt(character) &&
@@ -2278,13 +2290,12 @@ void DrawStyledAnimation(Graphics& graphics, cat::animation::Pose pose, REAL cen
             blendFrom,blendTo,canvasWidth,canvasHeight);
     };
     if(!presentation) {direct(graphics,pose);return;}
-    if(pose.creamRig){presentation->Reset();direct(graphics,pose);return;}
     auto& state=*presentation;
     const auto* authored=CareSpriteFor(pose,character);
     using Clip=cat::sprite_sequence::Clip;
     const auto calm=[](Clip clip) {return clip==Clip::Groom||clip==Clip::Sleep||clip==Clip::Eat||clip==Clip::Treat||clip==Clip::Fish;};
     const bool hasCalm=std::any_of(g.careSprites.begin(),g.careSprites.end(),[&](const auto& sprite) {
-        return sprite->layout->character==static_cast<unsigned>(character)&&calm(sprite->layout->clip);
+        return sprite->layout->character==cat::sprite_assets::AuthoredCharacter(static_cast<unsigned>(character))&&calm(sprite->layout->clip);
     });
     if(!hasCalm) {state.Reset();direct(graphics,pose);return;}
     const bool fixed=pose.groundContact&&!pose.jointWalk&&!pose.walkingRig&&!pose.originalWalk&&
@@ -2351,7 +2362,7 @@ void DrawPetStyle(Graphics& graphics, cat::Character character, cat::Outfit outf
 }
 
 bool DrawAuthoredBoxProp(Graphics& graphics,REAL localX,REAL ground,bool foreground=false) {
-    if(g.toy!=ToyKind::Box || g.smallBoxEvent || g.preferences.character!=cat::Character::Cream ||
+    if(g.toy!=ToyKind::Box || g.smallBoxEvent || !cat::CharacterAvailable(g.preferences.character) ||
             g.careSprites.empty() || !g.authoredBoxProp.image)return false;
     const auto& source=g.authoredBoxProp.frames[0];
     const auto visual=cat::nutrition::VisualModifiers(g.nutrition);
@@ -2588,7 +2599,6 @@ void Render() {
             LoadedCareSprite(cat::sprite_sequence::Clip::Sleep,g.preferences.character)) {
         pose.spriteClip=cat::sprite_sequence::Clip::Sleep;pose.spriteFrame=0;pose.spriteTimed=false;
     }
-    if(!cursorAttack)cat::animation::ApplyCreamLocomotion(pose,displayed,g.creamMotion);
     const auto* authored=CareSpriteFor(pose,g.preferences.character);
     g.authoredBoxVisible=authored && authored->layout->clip==cat::sprite_sequence::Clip::Box;
     if(authored)cat::animation::UseAuthoredSprite(pose);
@@ -3143,7 +3153,7 @@ void RunCommand(UINT command) {
     case FolderCommand: ShellExecuteW(g.window, L"open", g.directory.c_str(), nullptr, nullptr, SW_SHOWNORMAL); break;
     case QuitCommand: PostMessageW(g.window, WM_CLOSE, 0, 0); break;
     case CreamCommand: SelectCharacter(cat::Character::Cream); break;
-    case SilverCommand: break; // Retired command must never restore an unavailable pet.
+    case SilverCommand: break; // Retired saved command.
     case UpdateCheckCommand: StartUpdateCheck(true); break;
     case UpdateViewCommand: ShowUpdateDetails(); break;
     case UpdateAutomaticCommand: ToggleAutomaticUpdates(); break;
@@ -3789,17 +3799,6 @@ void Tick() {
             }
         }
         if (g.waitingForStop) targetSpeed = 0;
-        const auto beforePosture=g.physics.CurrentPose();
-        const bool postureReady=g.creamMotion.Prepare(elapsed,
-            std::abs(targetSpeed)>.1 || std::abs(WalkingVelocity(beforePosture))>2,
-            cat::animation::CreamLocomotion(cat::motion::DisplayedMotion(g.motion,g.walkingMotion,
-                beforePosture.grounded,g.waitingForStop,WalkingVelocity(beforePosture))),beforePosture.grounded);
-        if(!postureReady && cat::animation::CreamLocomotion(g.motion)) {
-            targetSpeed=0;
-            // Preparing to walk must not consume the planned walking interval.
-            const auto held=static_cast<ULONGLONG>(std::llround(elapsed*1000));
-            if(cat::animation::Walking(g.motion)){g.motionStart+=held;g.nextDecision+=held;}
-        }
         g.physics.SetTargetVelocity(targetSpeed);
         if (!g.waitingForStop && g.jumpPending) {
             const ULONGLONG takeoff = PrimaryTakeoffMs(g.motion==Motion::Pounce);
@@ -3834,8 +3833,6 @@ void Tick() {
             rendered.grounded,g.waitingForStop,WalkingVelocity(rendered));
         ConfigurePrimaryAuthoredStride();
         g.gait.Advance(gaitMotion, (rendered.relativeTravelX-previousRendered.relativeTravelX) / growth, elapsed, rendered.grounded);
-        g.creamMotion.Travel((rendered.relativeTravelX-previousRendered.relativeTravelX)/
-            (growth*body.bodyWidth),elapsed,rendered.grounded);
         if (physical.landed) {
             g.landedAt = ticks;
             g.landingStrength = std::clamp(physical.landingSpeed / 230.0, .35, 1.0);
@@ -4043,7 +4040,7 @@ int NativePerchHitTest() {
 #include "native_care_sprite_tests.hpp"
 #include "native_care_cache_tests.hpp"
 #include "native_care_presentation_tests.hpp"
-#include "native_cream_motion_tests.hpp"
+#include "native_coat_tests.hpp"
 
 int RenderSelfTest() {
     // Native GDI+ regression path: resources and offscreen DIBs only. This
@@ -4072,7 +4069,7 @@ int RenderSelfTest() {
             if(const int actualSpriteTest=NativeActualCareSpriteRenderTest(context))return actualSpriteTest;
             if(const int presentationTest=NativeCarePresentationRenderTest(context))return presentationTest;
             if(const int walkingTest=NativeAuthoredWalkingRenderTest(context))return walkingTest;
-            if(const int creamTest=NativeCreamMotionRenderTest(context))return creamTest;
+            if(const int coatTest=NativeCoatRenderTest(context))return coatTest;
             DisabledCareSpriteScope canonicalArtwork;
             constexpr REAL center = 210, floor = 280;
             constexpr std::uint64_t fixedTicks = 500000;
@@ -4097,8 +4094,8 @@ int RenderSelfTest() {
             constexpr std::array<cat::Outfit, 4> outfits{{cat::Outfit::None,
                 cat::Outfit::BowTie, cat::Outfit::Scarf, cat::Outfit::Crown}};
             constexpr std::array<std::uint64_t, 4> samples{{0, 360, 1500, 3500}};
-            for (int character = 0; character < 1; ++character) {
-                g.preferences.character = character ? cat::Character::SilverTabby : cat::Character::Cream;
+            for (int character=0;character<1;++character) {
+                g.preferences.character = cat::Character::Cream;
                 const REAL scale = 110.0f / CurrentArt().base.standingHeight;
                 for (int motion = 0; motion <= static_cast<int>(Motion::BoxSit); ++motion) {
                     for (const auto elapsed : samples) {
@@ -4558,7 +4555,7 @@ int NativeMenuContractTest() {
     g.hidden = false; g.menuOpen = false; g.dragging = false;
     g.pet = cat::NewPet(now - 86400); g.pet.updatedUtc = now;
     g.nutrition = cat::nutrition::NewState(g.pet.bornUtc, now, 65);
-    g.preferences = {cat::Character::Cream, cat::Outfit::Scarf};
+    g.preferences = {cat::Character::Tuxedo, cat::Outfit::Scarf};
     g.life.outcome = cat::life::storage::Outcome::Blocked;
     g.memory.outcome = cat::memory::storage::Outcome::Blocked;
     g.companionStore.state = cat::companion::NewState(now);
@@ -4595,9 +4592,9 @@ int NativeMenuContractTest() {
         };
         for (UINT id : {1013u, 2300u, 2301u, 2400u, 1026u})
             if (((state(id) & MFS_CHECKED) != 0) != enabled) return 224;
-        for (int i = 0; i < static_cast<int>(cat::kAvailableCharacters.size()); ++i)
-            if (((state(2500 + i) & MFS_CHECKED) != 0) !=
-                    (i == static_cast<int>(g.preferences.character))) return 225;
+        for (auto c:cat::kAvailableCharacters)
+            if (((state(2500 + static_cast<int>(c)) & MFS_CHECKED) != 0) !=
+                    (c == g.preferences.character)) return 225;
 
         for (UINT id : {1024u, 1026u})
             if (((state(id) & MFS_DISABLED) != 0) == enabled) return 226;

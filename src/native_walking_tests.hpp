@@ -173,7 +173,7 @@ int NativeWalkingRenderTest(std::string& context) {
     // to form the reference. Matching every pixel detects a missing shoulder,
     // an internal transparent slit and a source crop that old reach tests miss.
     if(!CreateDirectoryW(L"render-self-test",nullptr)&&GetLastError()!=ERROR_ALREADY_EXISTS)return 350;
-    for(const auto character:cat::kAvailableCharacters) {
+    for(const auto character:{cat::Character::Cream}) {
         auto& atlas=CurrentArt(character).base;
         std::array<std::unique_ptr<Bitmap>,4> reference;
         std::array<int,4> supportInset{};

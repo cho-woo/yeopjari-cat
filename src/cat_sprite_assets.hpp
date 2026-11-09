@@ -7,6 +7,10 @@
 namespace cat::sprite_assets {
 constexpr unsigned kMaxFrames=cat::sprite_sequence::kMaxAuthoredFrames;
 constexpr unsigned kCharacters=10;
+// Tuxedo is a coat variant of the same authored actor, not a second animation
+// registration. Stable persisted ID 8 deliberately shares Cream's programs,
+// anchors, stride lengths, timings and event cursor.
+constexpr unsigned AuthoredCharacter(unsigned character) { return character==8?0:character; }
 constexpr unsigned kMaxSide=16384;
 constexpr std::uint64_t kMaxImagePixels=32ull*1024*1024;
 constexpr std::uint64_t kMaxResidentPixels=48ull*1024*1024;
@@ -71,6 +75,7 @@ constexpr bool Valid(const Descriptor& asset) {
 template<std::size_t N>
 constexpr const Descriptor* Find(cat::sprite_sequence::Clip clip,unsigned character,
                                 const std::array<Descriptor,N>& assets) {
+    character=AuthoredCharacter(character);
     for(const auto& asset:assets)
         if(asset.clip==clip&&asset.character==character&&Valid(asset))return &asset;
     return nullptr;

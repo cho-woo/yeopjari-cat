@@ -14,11 +14,11 @@ namespace cat {
 enum class Character { Cream = 0, SilverTabby = 1, Black = 2, Calico = 3, Siamese = 4, Munchkin = 5, Dog = 6, Rabbit = 7, Tuxedo = 8, British = 9 };
 constexpr int kCharacterCount = 10; // Serialized ID range, not available menu entries.
 constexpr int kLegacyCharacterCount = kCharacterCount;
-// Stable retired IDs remain readable in old records. Only Cream is offered
+// Stable retired IDs remain readable in old records. Only Cream/Tuxedo are offered
 // or loaded by the application; changing appearance never replaces a pet.
-constexpr std::array<Character,1> kAvailableCharacters{{Character::Cream}};
-inline bool CharacterAvailable(Character c) noexcept { return c==Character::Cream; }
-inline Character AvailableCharacter(Character) noexcept { return Character::Cream; }
+constexpr std::array<Character,2> kAvailableCharacters{{Character::Cream,Character::Tuxedo}};
+inline bool CharacterAvailable(Character c) noexcept { return c==Character::Cream || c==Character::Tuxedo; }
+inline Character AvailableCharacter(Character c) noexcept { return c==Character::Tuxedo?c:Character::Cream; }
 enum class Outfit { None = 0, BowTie = 1, Scarf = 2, Crown = 3, Santa = 4, FishHat = 5, Tie = 6, Hoodie = 7, Sunglasses = 8, Shark = 9, Dinosaur = 10, Pumpkin = 11, Birthday = 12 };
 constexpr int kOutfitCount = 13;
 struct Preferences { Character character = Character::Cream; Outfit outfit = Outfit::None; };

@@ -477,7 +477,7 @@ int NativeActualCareSpriteRenderTest(std::string& context) {
     context="actual care sheet declared species ownership";
     for(const auto clip:cat::sprite_sequence::kAuthoredClips)for(unsigned character=0;character<cat::kCharacterCount;++character) {
         const CareSpriteAtlas* expected=nullptr;
-        for(const auto& asset:g.careSprites)if(asset->layout->clip==clip&&asset->layout->character==character)expected=asset.get();
+        for(const auto& asset:g.careSprites)if(asset->layout->clip==clip&&asset->layout->character==cat::sprite_assets::AuthoredCharacter(character))expected=asset.get();
         cat::animation::Pose pose;pose.spriteTimed=false;pose.spriteClip=clip;
         if(CareSpriteFor(pose,static_cast<cat::Character>(character))!=expected)return 307;
     }
