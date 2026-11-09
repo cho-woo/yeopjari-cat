@@ -1,0 +1,32 @@
+{
+  "generated_candidate_cells": 128,
+  "accepted_new_walk_cycle_frames": 0,
+  "attempts": [
+    {
+      "file": "candidate48.png",
+      "generated_cells": 48,
+      "sha256": "b849cfbb3a6418467e172af15e32a10d23cd1459b2bb8f6c3fcd87c8667776c4",
+      "goal": "One full walk cycle with intermediate limb poses",
+      "tool": "image_gen.imagegen",
+      "product_accepted_frames": 0
+    },
+    {
+      "file": "candidate64.png",
+      "generated_cells": 64,
+      "sha256": "4daba157b451d0b07bb123c5e1912208f064a376639b26c38d1189966a58d1d8",
+      "goal": "One cycle with explicit stance and swing constraints",
+      "tool": "image_gen.imagegen",
+      "product_accepted_frames": 0
+    },
+    {
+      "file": "contact16.png",
+      "generated_cells": 16,
+      "sha256": "521cbe9963e8303fe475850d5bfc6d1d9372130f972206080ca56798009d635b",
+      "goal": "Focused original4-to5 near-front stance inbetweens",
+      "tool": "image_gen.imagegen",
+      "product_accepted_frames": 0
+    }
+  ],
+  "source_art_modified": false,
+  "product_walk_frame_count": 8
+}
