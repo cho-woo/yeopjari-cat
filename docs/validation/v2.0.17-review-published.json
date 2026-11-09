@@ -1,0 +1,43 @@
+{
+  "review_tag": "v2.0.17",
+  "publication_run": 42569165442,
+  "validated_source": "484434d2f34fd9852091c0945944f93aeff7f40e",
+  "accepted_new_art": 0,
+  "public_files": [
+    {
+      "file": "stop-path-fixed.mp4",
+      "bytes": 227957,
+      "sha256": "a0bf03d0903c9b2601963c166c53d95823aecdec40e6030f7c987d4fd880ffa7"
+    },
+    {
+      "file": "stop-path-4s-slow.mp4",
+      "bytes": 39841,
+      "sha256": "b1471e2f18b8a0c7869d26b51fbcbcd105034a830335bdeab277ed766171c58a"
+    },
+    {
+      "file": "candidate48-walk-art-constant-22.mp4",
+      "bytes": 198347,
+      "sha256": "0321d69ce4c90b5b63e0ff9647cc65f431d0aecbc548429237cd54369184d016"
+    },
+    {
+      "file": "candidate64-walk-art-constant-22.mp4",
+      "bytes": 204261,
+      "sha256": "3cd18bb57b3b4e7c7ca0c9aa48b5595fad67788d35541ae7dac3dc89e0e77766"
+    },
+    {
+      "file": "walk-art-review.zip",
+      "bytes": 17653171,
+      "sha256": "e21872b0b59d10c1bd957aa60a63c9119cdb0a9a5f31980aeada294e784d834c"
+    },
+    {
+      "file": "walk-review-SHA256SUMS.txt",
+      "bytes": 466,
+      "sha256": "2f986868cb828fa291669f31a389af5913772501ef42a6e13e9272851c2bdd8a"
+    },
+    {
+      "file": "YeopjariCat-Windows-2.0.17.zip",
+      "bytes": 20903765,
+      "sha256": "106e1f09f46410ed2890909e043ffe72d996228b41cf7100b894bda779d5567e"
+    }
+  ]
+}
