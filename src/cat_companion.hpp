@@ -374,8 +374,8 @@ public:
         // actually braked. Rendering alone must not hide a sliding meal/crouch.
         if(waitingForStop_) {
             const auto start=motionStart_;
-            cat::motion::AdvanceStopGate(waitingForStop_,before.grounded && groundDrive_.Settled(),
-                before.velocityX-before.supportVelocityX,c.ticks,motionStart_,nextDecision_);
+            cat::motion::AdvanceGroundStop(waitingForStop_,before.grounded,
+                before.velocityX-before.supportVelocityX,groundDrive_,c.ticks,motionStart_,nextDecision_);
             if(careUntil_>start) careUntil_+=motionStart_-start;
             velocity=0;
         }
@@ -725,7 +725,9 @@ private:
             if(m==cat::animation::Motion::Sleep) sleepVariant_=Registered(Clip::Sleep)?0:
                 cat::sprite_sequence::SelectSleepVariant(Random(),false);
             const auto physical=physics_.CurrentPose();
-            waitingForStop_=cat::motion::NeedsStop(m,physical.grounded,physical.velocityX-physical.supportVelocityX,alreadyAirborne);
+            const auto rendered=physics_.RenderPose();
+            waitingForStop_=cat::motion::BeginGroundStop(m,physical.grounded,physical.velocityX-physical.supportVelocityX,
+                rendered.velocityX-rendered.supportVelocityX,groundDrive_,alreadyAirborne);
             jumpPending_=jumping && !alreadyAirborne;
         }
         if(cat::animation::Walking(m)) walkingMotion_=m;

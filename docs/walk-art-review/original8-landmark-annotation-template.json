@@ -1,0 +1,271 @@
+{
+  "schema": "manual-authoring-template-v1",
+  "source": "assets/care-sprites/c0-walk.png",
+  "source_sha256": "fdb52258ede319c7f23ffa0af019b8d3fa677bf180caa1e9a89e1b37db0e9e78",
+  "reference_height": 221,
+  "adult_height_logical": 110,
+  "old_stride_logical": 64,
+  "frames": [
+    {
+      "frame": 0,
+      "rect": [
+        0,
+        0,
+        313,
+        313
+      ],
+      "root_source": [
+        161,
+        275
+      ],
+      "floor_source_y": 275,
+      "cycle_phase_start_existing": 0,
+      "feet": {
+        "near_fore": null,
+        "far_fore": null,
+        "near_hind": null,
+        "far_hind": null
+      },
+      "notes": "Fill anatomical foot ID/sole center/contact state manually from original art; never infer four foot identities solely from alpha intervals."
+    },
+    {
+      "frame": 1,
+      "rect": [
+        313,
+        0,
+        314,
+        313
+      ],
+      "root_source": [
+        161,
+        275
+      ],
+      "floor_source_y": 275,
+      "cycle_phase_start_existing": 0.075,
+      "feet": {
+        "near_fore": null,
+        "far_fore": null,
+        "near_hind": null,
+        "far_hind": null
+      },
+      "notes": "Fill anatomical foot ID/sole center/contact state manually from original art; never infer four foot identities solely from alpha intervals."
+    },
+    {
+      "frame": 2,
+      "rect": [
+        627,
+        0,
+        313,
+        313
+      ],
+      "root_source": [
+        161,
+        275
+      ],
+      "floor_source_y": 275,
+      "cycle_phase_start_existing": 0.15,
+      "feet": {
+        "near_fore": null,
+        "far_fore": null,
+        "near_hind": null,
+        "far_hind": null
+      },
+      "notes": "Fill anatomical foot ID/sole center/contact state manually from original art; never infer four foot identities solely from alpha intervals."
+    },
+    {
+      "frame": 3,
+      "rect": [
+        940,
+        0,
+        314,
+        313
+      ],
+      "root_source": [
+        161,
+        275
+      ],
+      "floor_source_y": 275,
+      "cycle_phase_start_existing": 0.22499999999999998,
+      "feet": {
+        "near_fore": null,
+        "far_fore": null,
+        "near_hind": null,
+        "far_hind": null
+      },
+      "notes": "Fill anatomical foot ID/sole center/contact state manually from original art; never infer four foot identities solely from alpha intervals.",
+      "visible_stance_landmark_hypothesis": {
+        "track": "visible_front_stance_3_5",
+        "sole_center_source_approx": [
+          256,
+          273
+        ],
+        "anatomical_foot_id": null,
+        "side_identity_confirmed": false,
+        "confidence": "source-scale visual estimate; reviewer must identify persistent near/far foot before calibration approval",
+        "contact_hypothesis": "planted"
+      }
+    },
+    {
+      "frame": 4,
+      "rect": [
+        0,
+        313,
+        313,
+        314
+      ],
+      "root_source": [
+        161,
+        275
+      ],
+      "floor_source_y": 275,
+      "cycle_phase_start_existing": 0.427,
+      "feet": {
+        "near_fore": null,
+        "far_fore": null,
+        "near_hind": null,
+        "far_hind": null
+      },
+      "notes": "Fill anatomical foot ID/sole center/contact state manually from original art; never infer four foot identities solely from alpha intervals.",
+      "visible_stance_landmark_hypothesis": {
+        "track": "visible_front_stance_3_5",
+        "sole_center_source_approx": [
+          230,
+          273
+        ],
+        "anatomical_foot_id": null,
+        "side_identity_confirmed": false,
+        "confidence": "source-scale visual estimate; reviewer must identify persistent near/far foot before calibration approval",
+        "contact_hypothesis": "planted"
+      }
+    },
+    {
+      "frame": 5,
+      "rect": [
+        313,
+        313,
+        314,
+        314
+      ],
+      "root_source": [
+        161,
+        275
+      ],
+      "floor_source_y": 275,
+      "cycle_phase_start_existing": 0.769,
+      "feet": {
+        "near_fore": null,
+        "far_fore": null,
+        "near_hind": null,
+        "far_hind": null
+      },
+      "notes": "Fill anatomical foot ID/sole center/contact state manually from original art; never infer four foot identities solely from alpha intervals.",
+      "visible_stance_landmark_hypothesis": {
+        "track": "visible_front_stance_3_5",
+        "sole_center_source_approx": [
+          186,
+          273
+        ],
+        "anatomical_foot_id": null,
+        "side_identity_confirmed": false,
+        "confidence": "source-scale visual estimate; reviewer must identify persistent near/far foot before calibration approval",
+        "contact_hypothesis": "planted"
+      }
+    },
+    {
+      "frame": 6,
+      "rect": [
+        627,
+        313,
+        313,
+        314
+      ],
+      "root_source": [
+        161,
+        275
+      ],
+      "floor_source_y": 275,
+      "cycle_phase_start_existing": 0.844,
+      "feet": {
+        "near_fore": null,
+        "far_fore": null,
+        "near_hind": null,
+        "far_hind": null
+      },
+      "notes": "Fill anatomical foot ID/sole center/contact state manually from original art; never infer four foot identities solely from alpha intervals."
+    },
+    {
+      "frame": 7,
+      "rect": [
+        940,
+        313,
+        314,
+        314
+      ],
+      "root_source": [
+        161,
+        275
+      ],
+      "floor_source_y": 275,
+      "cycle_phase_start_existing": 0.9249999999999999,
+      "feet": {
+        "near_fore": null,
+        "far_fore": null,
+        "near_hind": null,
+        "far_hind": null
+      },
+      "notes": "Fill anatomical foot ID/sole center/contact state manually from original art; never infer four foot identities solely from alpha intervals."
+    }
+  ],
+  "new_frame_template": {
+    "frame": null,
+    "source_png": null,
+    "rect": null,
+    "common_reference_height": null,
+    "root_source": null,
+    "floor_source_y": null,
+    "phase_candidate": null,
+    "feet": {
+      "near_fore": {
+        "sole_center_source": null,
+        "contact": "unreviewed",
+        "track_id": null,
+        "occluded": null
+      },
+      "far_fore": {
+        "sole_center_source": null,
+        "contact": "unreviewed",
+        "track_id": null,
+        "occluded": null
+      },
+      "near_hind": {
+        "sole_center_source": null,
+        "contact": "unreviewed",
+        "track_id": null,
+        "occluded": null
+      },
+      "far_hind": {
+        "sole_center_source": null,
+        "contact": "unreviewed",
+        "track_id": null,
+        "occluded": null
+      }
+    },
+    "accepted_unique_limb_art": false,
+    "identity_and_viewpoint_approved": false,
+    "notes": ""
+  },
+  "annotation_rules": [
+    "Null means unknown, not atorigin and not airborne. Do not fit calibration through unknown/occluded feet.",
+    "Track same anatomical foot across a contact interval; label heel/toe roll when sole center changes within contact.",
+    "Root and commonreferenceHeight are clip-wide registration. Do not normalize each boundingbox independently.",
+    "Set accepted_unique_limb_art only after checking new joint/foot shape, registration, alpha, support and loop continuity."
+  ],
+  "artist_delivery_order": [
+    "One coherent full walking cycle, specifically repairing3->4->5 support. Review at22logicalpx/s alongside original8.",
+    "Stop: final swing-foot recovery to stable side stand; support foot remains fixed. Multipleentryposes may be needed for different stopped phases.",
+    "Start: stable side stand->weightshift->first pawlift->initial stance, then distance-driven gait.",
+    "Turn: side stand->weightshift->threequarter/front->opposite side. Add appropriate coat/head registration for changing view.",
+    "Sit: side stand->hindlegflex->hip contact->forepaworder; reverse for rise. Preserve face/body size and floor."
+  ],
+  "review_state": "128 generated candidates across48+64+16 sheets were inspected; no full-cycle or connection asset approved yet."
+}

@@ -260,9 +260,17 @@ inline bool ApplyAuthoredLocomotion(Pose& pose,Motion displayed,const Locomotion
     // replacing it with a front-facing seated cat. No image blending/warping.
     const bool neutral=displayed==Motion::Idle || displayed==Motion::Watch;
     if(resourceAvailable && locomotion.AuthoredConfigured() && pose.groundContact &&
-            locomotion.AuthoredStanding() && (Walking(displayed) ||
-                (neutral && locomotion.RecentAuthoredWalk() && pose.spriteClip==cat::sprite_sequence::Clip::None))) {
-        pose.spriteClip=cat::sprite_sequence::Clip::Walk;pose.spriteTimed=false;pose.spriteFrame=locomotion.AuthoredStandingFrame();
+            ((locomotion.AuthoredStanding() && Walking(displayed)) ||
+                (neutral && !pose.originalWalk && locomotion.RecentAuthoredWalk() && pose.spriteClip==cat::sprite_sequence::Clip::None))) {
+        if(locomotion.AuthoredStanding()) {
+            pose.spriteClip=cat::sprite_sequence::Clip::Walk;pose.spriteTimed=false;pose.spriteFrame=locomotion.AuthoredStandingFrame();
+        } else {
+            // During the first 100ms below walking speed retain the last side
+            // pose. Falling back to the front neutral here caused a one-frame
+            // sit before Standing() became ready, even without a new action.
+            cat::sprite_sequence::Options options;options.cyclePhase=locomotion.AuthoredPhase();
+            AttachSprite(pose,AuthoredLocomotionClip(locomotion),0,options);
+        }
         UseAuthoredSprite(pose);pose.originalWalk=pose.jointWalk=pose.walkingRig=false;
         return true;
     }

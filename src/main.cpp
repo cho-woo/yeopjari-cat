@@ -1440,8 +1440,9 @@ void SetMotion(Motion motion, ULONGLONG duration) {
     if (motion == Motion::BellyRoll) duration = cat::animation::kBellyRollDurationMs;
     if (g.motion == Motion::Walk || g.motion == Motion::Stalk || g.motion == Motion::Zoomies)
         g.walkingMotion = g.motion;
-    g.waitingForStop = g.physicsReady && cat::motion::NeedsStop(motion,
-        g.physics.CurrentPose().grounded, WalkingVelocity(g.physics.CurrentPose()), g.perch.transitioning);
+    g.waitingForStop = g.physicsReady && cat::motion::BeginGroundStop(motion,
+        g.physics.CurrentPose().grounded, WalkingVelocity(g.physics.CurrentPose()),
+        WalkingVelocity(g.physics.RenderPose()),g.groundDrive,g.perch.transitioning);
     const auto ticks = GetTickCount64(); g.motion = motion; g.motionStart = ticks; g.nextDecision = ticks + duration;
     if (!g.toyDispatching && g.toyEngaged) {
         g.toyEngaged = false;
@@ -3739,8 +3740,8 @@ void Tick() {
         if(elapsed>0)UpdateCursorReaction(ticks, clockDelta);
         if(elapsed>0)DispatchAutonomousMotion(ticks);
         if (g.perch.transitioning) { UpdatePerchTransition(ticks, elapsed); Render(); return; }
-        cat::motion::AdvanceStopGate(g.waitingForStop, g.physics.CurrentPose().grounded && g.groundDrive.Settled(),
-            WalkingVelocity(g.physics.CurrentPose()), ticks, g.motionStart, g.nextDecision);
+        cat::motion::AdvanceGroundStop(g.waitingForStop,g.physics.CurrentPose().grounded,
+            WalkingVelocity(g.physics.CurrentPose()),g.groundDrive,ticks,g.motionStart,g.nextDecision);
         const auto actionElapsed = ticks >= g.motionStart ? ticks - g.motionStart : 0;
         const auto body = cat::nutrition::VisualModifiers(g.nutrition);
         const double growth = cat::GrowthScale(g.pet.bornUtc, UtcNow());

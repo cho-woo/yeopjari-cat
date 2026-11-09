@@ -63,6 +63,16 @@ inline bool NeedsStop(animation::Motion requested, bool grounded, double velocit
     return !windowTransfer && stationaryStart && grounded && !ReadyToStart(grounded, velocityX);
 }
 
+// SetMotion and diagnostic requests share the same entry condition. The
+// interpolated body can still be moving after CurrentPose has slowed below the
+// threshold, and a just-stopped body has not yet completed its planted hold.
+inline bool BeginGroundStop(animation::Motion requested,bool grounded,double physicalVelocity,
+                            double displayedVelocity,const GroundDrive& drive,bool windowTransfer=false) {
+    const bool stationaryStart=!animation::Travels(requested) || requested==animation::Motion::Pounce;
+    return !windowTransfer && stationaryStart && grounded &&
+        (!ReadyToStart(true,physicalVelocity) || !ReadyToStart(true,displayedVelocity) || !drive.Settled());
+}
+
 // Request ordinary motor braking before a finite ledge's safe walking edge.
 // The 680px/s² limit matches grounded braking in the Box2D controller; 12px
 // reserves its easing tail and the interval before the next rendered frame.
@@ -91,5 +101,10 @@ inline bool AdvanceStopGate(bool& waiting, bool grounded, double velocityX,
     if (!ReadyToStart(grounded, velocityX)) return false;
     waiting = false;
     return true;
+}
+
+inline bool AdvanceGroundStop(bool& waiting,bool grounded,double physicalVelocity,const GroundDrive& drive,
+                              std::uint64_t ticks,std::uint64_t& started,std::uint64_t& decision) {
+    return AdvanceStopGate(waiting,grounded && drive.Settled(),physicalVelocity,ticks,started,decision);
 }
 } // namespace cat::motion

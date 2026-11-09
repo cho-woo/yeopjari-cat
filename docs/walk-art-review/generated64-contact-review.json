@@ -1,0 +1,2699 @@
+{
+  "candidate": "/workspace/generated_images/exec-bbe63f18-55c7-4541-91ae-6836256e4f3e.png",
+  "sha256": "4daba157b451d0b07bb123c5e1912208f064a376639b26c38d1189966a58d1d8",
+  "generated_cells": 64,
+  "grid": [
+    8,
+    8
+  ],
+  "review_status": "Not approved as coherent product gait. Face placement improves, but contact/cycle verification fails or is unestablished.",
+  "accepted_new_art_count": 0,
+  "frames": [
+    {
+      "index": 0,
+      "rect": [
+        0,
+        0,
+        156,
+        156
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        17,
+        147,
+        136
+      ],
+      "solid_lowest_row": 136,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          29,
+          45
+        ],
+        [
+          62,
+          74
+        ],
+        [
+          92,
+          106
+        ],
+        [
+          109,
+          126
+        ]
+      ]
+    },
+    {
+      "index": 1,
+      "rect": [
+        156,
+        0,
+        157,
+        156
+      ],
+      "solid_bbox_inclusive": [
+        13,
+        17,
+        148,
+        136
+      ],
+      "solid_lowest_row": 136,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          30,
+          47
+        ],
+        [
+          93,
+          107
+        ],
+        [
+          113,
+          128
+        ]
+      ]
+    },
+    {
+      "index": 2,
+      "rect": [
+        313,
+        0,
+        157,
+        156
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        17,
+        148,
+        135
+      ],
+      "solid_lowest_row": 135,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          37,
+          51
+        ],
+        [
+          94,
+          108
+        ],
+        [
+          116,
+          131
+        ]
+      ]
+    },
+    {
+      "index": 3,
+      "rect": [
+        470,
+        0,
+        157,
+        156
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        17,
+        148,
+        135
+      ],
+      "solid_lowest_row": 135,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          39,
+          53
+        ],
+        [
+          93,
+          105
+        ],
+        [
+          115,
+          131
+        ]
+      ]
+    },
+    {
+      "index": 4,
+      "rect": [
+        627,
+        0,
+        156,
+        156
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        18,
+        147,
+        136
+      ],
+      "solid_lowest_row": 136,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          33,
+          50
+        ],
+        [
+          93,
+          104
+        ],
+        [
+          114,
+          130
+        ]
+      ]
+    },
+    {
+      "index": 5,
+      "rect": [
+        783,
+        0,
+        157,
+        156
+      ],
+      "solid_bbox_inclusive": [
+        13,
+        17,
+        148,
+        136
+      ],
+      "solid_lowest_row": 136,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          36,
+          53
+        ],
+        [
+          94,
+          107
+        ],
+        [
+          116,
+          131
+        ]
+      ]
+    },
+    {
+      "index": 6,
+      "rect": [
+        940,
+        0,
+        157,
+        156
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        18,
+        148,
+        135
+      ],
+      "solid_lowest_row": 135,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          37,
+          55
+        ],
+        [
+          92,
+          101
+        ],
+        [
+          114,
+          131
+        ]
+      ]
+    },
+    {
+      "index": 7,
+      "rect": [
+        1097,
+        0,
+        157,
+        156
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        17,
+        148,
+        135
+      ],
+      "solid_lowest_row": 135,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          36,
+          43
+        ],
+        [
+          48,
+          62
+        ],
+        [
+          90,
+          100
+        ],
+        [
+          112,
+          130
+        ]
+      ]
+    },
+    {
+      "index": 8,
+      "rect": [
+        0,
+        156,
+        156,
+        157
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        19,
+        147,
+        137
+      ],
+      "solid_lowest_row": 137,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          33,
+          41
+        ],
+        [
+          49,
+          65
+        ],
+        [
+          85,
+          96
+        ],
+        [
+          107,
+          126
+        ]
+      ]
+    },
+    {
+      "index": 9,
+      "rect": [
+        156,
+        156,
+        157,
+        157
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        20,
+        148,
+        137
+      ],
+      "solid_lowest_row": 137,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          53,
+          71
+        ],
+        [
+          87,
+          98
+        ],
+        [
+          108,
+          125
+        ]
+      ]
+    },
+    {
+      "index": 10,
+      "rect": [
+        313,
+        156,
+        157,
+        157
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        20,
+        148,
+        137
+      ],
+      "solid_lowest_row": 137,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          55,
+          74
+        ],
+        [
+          89,
+          101
+        ],
+        [
+          106,
+          124
+        ]
+      ]
+    },
+    {
+      "index": 11,
+      "rect": [
+        470,
+        156,
+        157,
+        157
+      ],
+      "solid_bbox_inclusive": [
+        13,
+        19,
+        147,
+        136
+      ],
+      "solid_lowest_row": 136,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          55,
+          74
+        ],
+        [
+          90,
+          119
+        ]
+      ]
+    },
+    {
+      "index": 12,
+      "rect": [
+        627,
+        156,
+        156,
+        157
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        19,
+        147,
+        136
+      ],
+      "solid_lowest_row": 136,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          55,
+          74
+        ],
+        [
+          91,
+          117
+        ]
+      ]
+    },
+    {
+      "index": 13,
+      "rect": [
+        783,
+        156,
+        157,
+        157
+      ],
+      "solid_bbox_inclusive": [
+        13,
+        20,
+        148,
+        136
+      ],
+      "solid_lowest_row": 136,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          57,
+          76
+        ],
+        [
+          91,
+          117
+        ]
+      ]
+    },
+    {
+      "index": 14,
+      "rect": [
+        940,
+        156,
+        157,
+        157
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        19,
+        148,
+        136
+      ],
+      "solid_lowest_row": 136,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          57,
+          76
+        ],
+        [
+          89,
+          118
+        ]
+      ]
+    },
+    {
+      "index": 15,
+      "rect": [
+        1097,
+        156,
+        157,
+        157
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        20,
+        148,
+        136
+      ],
+      "solid_lowest_row": 136,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          57,
+          75
+        ],
+        [
+          89,
+          117
+        ]
+      ]
+    },
+    {
+      "index": 16,
+      "rect": [
+        0,
+        313,
+        156,
+        157
+      ],
+      "solid_bbox_inclusive": [
+        11,
+        19,
+        147,
+        136
+      ],
+      "solid_lowest_row": 136,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          58,
+          77
+        ],
+        [
+          86,
+          117
+        ]
+      ]
+    },
+    {
+      "index": 17,
+      "rect": [
+        156,
+        313,
+        157,
+        157
+      ],
+      "solid_bbox_inclusive": [
+        13,
+        19,
+        148,
+        136
+      ],
+      "solid_lowest_row": 136,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          58,
+          77
+        ],
+        [
+          84,
+          117
+        ]
+      ]
+    },
+    {
+      "index": 18,
+      "rect": [
+        313,
+        313,
+        157,
+        157
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        19,
+        148,
+        136
+      ],
+      "solid_lowest_row": 136,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          59,
+          77
+        ],
+        [
+          83,
+          116
+        ]
+      ]
+    },
+    {
+      "index": 19,
+      "rect": [
+        470,
+        313,
+        157,
+        157
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        19,
+        147,
+        136
+      ],
+      "solid_lowest_row": 136,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          58,
+          77
+        ],
+        [
+          81,
+          96
+        ],
+        [
+          98,
+          116
+        ]
+      ]
+    },
+    {
+      "index": 20,
+      "rect": [
+        627,
+        313,
+        156,
+        157
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        19,
+        147,
+        136
+      ],
+      "solid_lowest_row": 136,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          58,
+          77
+        ],
+        [
+          80,
+          95
+        ],
+        [
+          100,
+          117
+        ]
+      ]
+    },
+    {
+      "index": 21,
+      "rect": [
+        783,
+        313,
+        157,
+        157
+      ],
+      "solid_bbox_inclusive": [
+        13,
+        19,
+        148,
+        136
+      ],
+      "solid_lowest_row": 136,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          59,
+          78
+        ],
+        [
+          81,
+          95
+        ],
+        [
+          102,
+          118
+        ]
+      ]
+    },
+    {
+      "index": 22,
+      "rect": [
+        940,
+        313,
+        157,
+        157
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        19,
+        148,
+        136
+      ],
+      "solid_lowest_row": 136,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          50,
+          52
+        ],
+        [
+          60,
+          78
+        ],
+        [
+          81,
+          94
+        ],
+        [
+          102,
+          120
+        ]
+      ]
+    },
+    {
+      "index": 23,
+      "rect": [
+        1097,
+        313,
+        157,
+        157
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        19,
+        148,
+        136
+      ],
+      "solid_lowest_row": 136,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          45,
+          56
+        ],
+        [
+          60,
+          93
+        ],
+        [
+          102,
+          119
+        ]
+      ]
+    },
+    {
+      "index": 24,
+      "rect": [
+        0,
+        470,
+        156,
+        157
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        19,
+        148,
+        136
+      ],
+      "solid_lowest_row": 136,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          41,
+          52
+        ],
+        [
+          55,
+          73
+        ],
+        [
+          75,
+          88
+        ],
+        [
+          99,
+          115
+        ]
+      ]
+    },
+    {
+      "index": 25,
+      "rect": [
+        156,
+        470,
+        157,
+        157
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        19,
+        148,
+        137
+      ],
+      "solid_lowest_row": 137,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          38,
+          48
+        ],
+        [
+          53,
+          71
+        ],
+        [
+          74,
+          87
+        ],
+        [
+          98,
+          115
+        ]
+      ]
+    },
+    {
+      "index": 26,
+      "rect": [
+        313,
+        470,
+        157,
+        157
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        19,
+        148,
+        136
+      ],
+      "solid_lowest_row": 136,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          49,
+          81
+        ],
+        [
+          99,
+          116
+        ]
+      ]
+    },
+    {
+      "index": 27,
+      "rect": [
+        470,
+        470,
+        157,
+        157
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        19,
+        147,
+        136
+      ],
+      "solid_lowest_row": 136,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          45,
+          61
+        ],
+        [
+          66,
+          79
+        ],
+        [
+          98,
+          115
+        ]
+      ]
+    },
+    {
+      "index": 28,
+      "rect": [
+        627,
+        470,
+        156,
+        157
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        19,
+        147,
+        136
+      ],
+      "solid_lowest_row": 136,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          45,
+          62
+        ],
+        [
+          66,
+          79
+        ],
+        [
+          98,
+          114
+        ]
+      ]
+    },
+    {
+      "index": 29,
+      "rect": [
+        783,
+        470,
+        157,
+        157
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        19,
+        148,
+        136
+      ],
+      "solid_lowest_row": 136,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          46,
+          62
+        ],
+        [
+          67,
+          79
+        ],
+        [
+          99,
+          116
+        ]
+      ]
+    },
+    {
+      "index": 30,
+      "rect": [
+        940,
+        470,
+        157,
+        157
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        19,
+        148,
+        136
+      ],
+      "solid_lowest_row": 136,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          44,
+          60
+        ],
+        [
+          65,
+          78
+        ],
+        [
+          99,
+          116
+        ]
+      ]
+    },
+    {
+      "index": 31,
+      "rect": [
+        1097,
+        470,
+        157,
+        157
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        19,
+        148,
+        136
+      ],
+      "solid_lowest_row": 136,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          48,
+          79
+        ],
+        [
+          100,
+          117
+        ]
+      ]
+    },
+    {
+      "index": 32,
+      "rect": [
+        0,
+        627,
+        156,
+        156
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        18,
+        147,
+        136
+      ],
+      "solid_lowest_row": 136,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          52,
+          68
+        ],
+        [
+          74,
+          87
+        ],
+        [
+          101,
+          117
+        ]
+      ]
+    },
+    {
+      "index": 33,
+      "rect": [
+        156,
+        627,
+        157,
+        156
+      ],
+      "solid_bbox_inclusive": [
+        13,
+        18,
+        148,
+        136
+      ],
+      "solid_lowest_row": 136,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          40,
+          47
+        ],
+        [
+          52,
+          65
+        ],
+        [
+          75,
+          87
+        ],
+        [
+          101,
+          117
+        ]
+      ]
+    },
+    {
+      "index": 34,
+      "rect": [
+        313,
+        627,
+        157,
+        156
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        18,
+        148,
+        135
+      ],
+      "solid_lowest_row": 135,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          39,
+          46
+        ],
+        [
+          48,
+          61
+        ],
+        [
+          77,
+          89
+        ],
+        [
+          100,
+          116
+        ]
+      ]
+    },
+    {
+      "index": 35,
+      "rect": [
+        470,
+        627,
+        157,
+        156
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        18,
+        148,
+        135
+      ],
+      "solid_lowest_row": 135,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          40,
+          46
+        ],
+        [
+          51,
+          65
+        ],
+        [
+          82,
+          94
+        ],
+        [
+          98,
+          114
+        ]
+      ]
+    },
+    {
+      "index": 36,
+      "rect": [
+        627,
+        627,
+        156,
+        156
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        18,
+        147,
+        135
+      ],
+      "solid_lowest_row": 135,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          33,
+          44
+        ],
+        [
+          53,
+          65
+        ],
+        [
+          85,
+          113
+        ]
+      ]
+    },
+    {
+      "index": 37,
+      "rect": [
+        783,
+        627,
+        157,
+        156
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        18,
+        148,
+        135
+      ],
+      "solid_lowest_row": 135,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          39,
+          58
+        ],
+        [
+          88,
+          115
+        ]
+      ]
+    },
+    {
+      "index": 38,
+      "rect": [
+        940,
+        627,
+        157,
+        156
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        18,
+        148,
+        135
+      ],
+      "solid_lowest_row": 135,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          38,
+          48
+        ],
+        [
+          52,
+          61
+        ],
+        [
+          89,
+          118
+        ]
+      ]
+    },
+    {
+      "index": 39,
+      "rect": [
+        1097,
+        627,
+        157,
+        156
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        18,
+        148,
+        135
+      ],
+      "solid_lowest_row": 135,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          48,
+          57
+        ],
+        [
+          92,
+          117
+        ]
+      ]
+    },
+    {
+      "index": 40,
+      "rect": [
+        0,
+        783,
+        156,
+        157
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        20,
+        147,
+        135
+      ],
+      "solid_lowest_row": 135,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          46,
+          64
+        ],
+        [
+          92,
+          117
+        ]
+      ]
+    },
+    {
+      "index": 41,
+      "rect": [
+        156,
+        783,
+        157,
+        157
+      ],
+      "solid_bbox_inclusive": [
+        13,
+        20,
+        148,
+        136
+      ],
+      "solid_lowest_row": 136,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          36,
+          54
+        ],
+        [
+          95,
+          114
+        ]
+      ]
+    },
+    {
+      "index": 42,
+      "rect": [
+        313,
+        783,
+        157,
+        157
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        20,
+        148,
+        136
+      ],
+      "solid_lowest_row": 136,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          35,
+          52
+        ],
+        [
+          94,
+          109
+        ]
+      ]
+    },
+    {
+      "index": 43,
+      "rect": [
+        470,
+        783,
+        157,
+        157
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        20,
+        148,
+        136
+      ],
+      "solid_lowest_row": 136,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          33,
+          51
+        ],
+        [
+          94,
+          109
+        ]
+      ]
+    },
+    {
+      "index": 44,
+      "rect": [
+        627,
+        783,
+        156,
+        157
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        20,
+        147,
+        136
+      ],
+      "solid_lowest_row": 136,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          31,
+          48
+        ],
+        [
+          92,
+          106
+        ]
+      ]
+    },
+    {
+      "index": 45,
+      "rect": [
+        783,
+        783,
+        157,
+        157
+      ],
+      "solid_bbox_inclusive": [
+        13,
+        20,
+        148,
+        137
+      ],
+      "solid_lowest_row": 137,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          32,
+          49
+        ],
+        [
+          93,
+          107
+        ]
+      ]
+    },
+    {
+      "index": 46,
+      "rect": [
+        940,
+        783,
+        157,
+        157
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        19,
+        148,
+        136
+      ],
+      "solid_lowest_row": 136,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          31,
+          49
+        ],
+        [
+          94,
+          109
+        ]
+      ]
+    },
+    {
+      "index": 47,
+      "rect": [
+        1097,
+        783,
+        157,
+        157
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        20,
+        148,
+        136
+      ],
+      "solid_lowest_row": 136,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          29,
+          46
+        ],
+        [
+          93,
+          108
+        ]
+      ]
+    },
+    {
+      "index": 48,
+      "rect": [
+        0,
+        940,
+        156,
+        157
+      ],
+      "solid_bbox_inclusive": [
+        11,
+        19,
+        147,
+        134
+      ],
+      "solid_lowest_row": 134,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          29,
+          40
+        ],
+        [
+          91,
+          104
+        ]
+      ]
+    },
+    {
+      "index": 49,
+      "rect": [
+        156,
+        940,
+        157,
+        157
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        19,
+        148,
+        134
+      ],
+      "solid_lowest_row": 134,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          32,
+          42
+        ],
+        [
+          52,
+          62
+        ],
+        [
+          92,
+          105
+        ]
+      ]
+    },
+    {
+      "index": 50,
+      "rect": [
+        313,
+        940,
+        157,
+        157
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        19,
+        148,
+        134
+      ],
+      "solid_lowest_row": 134,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          35,
+          38
+        ],
+        [
+          46,
+          56
+        ],
+        [
+          92,
+          104
+        ]
+      ]
+    },
+    {
+      "index": 51,
+      "rect": [
+        470,
+        940,
+        157,
+        157
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        19,
+        147,
+        134
+      ],
+      "solid_lowest_row": 134,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          37,
+          41
+        ],
+        [
+          47,
+          58
+        ],
+        [
+          92,
+          104
+        ]
+      ]
+    },
+    {
+      "index": 52,
+      "rect": [
+        627,
+        940,
+        156,
+        157
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        19,
+        147,
+        134
+      ],
+      "solid_lowest_row": 134,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          41,
+          43
+        ],
+        [
+          50,
+          61
+        ],
+        [
+          93,
+          104
+        ]
+      ]
+    },
+    {
+      "index": 53,
+      "rect": [
+        783,
+        940,
+        157,
+        157
+      ],
+      "solid_bbox_inclusive": [
+        13,
+        19,
+        148,
+        134
+      ],
+      "solid_lowest_row": 134,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          37,
+          45
+        ],
+        [
+          56,
+          66
+        ],
+        [
+          93,
+          107
+        ]
+      ]
+    },
+    {
+      "index": 54,
+      "rect": [
+        940,
+        940,
+        157,
+        157
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        19,
+        148,
+        134
+      ],
+      "solid_lowest_row": 134,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          36,
+          44
+        ],
+        [
+          56,
+          69
+        ],
+        [
+          92,
+          105
+        ]
+      ]
+    },
+    {
+      "index": 55,
+      "rect": [
+        1097,
+        940,
+        157,
+        157
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        19,
+        148,
+        134
+      ],
+      "solid_lowest_row": 134,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          60,
+          72
+        ],
+        [
+          92,
+          106
+        ]
+      ]
+    },
+    {
+      "index": 56,
+      "rect": [
+        0,
+        1097,
+        156,
+        157
+      ],
+      "solid_bbox_inclusive": [
+        11,
+        19,
+        147,
+        134
+      ],
+      "solid_lowest_row": 134,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          37,
+          45
+        ],
+        [
+          64,
+          72
+        ],
+        [
+          92,
+          106
+        ]
+      ]
+    },
+    {
+      "index": 57,
+      "rect": [
+        156,
+        1097,
+        157,
+        157
+      ],
+      "solid_bbox_inclusive": [
+        13,
+        19,
+        148,
+        134
+      ],
+      "solid_lowest_row": 134,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          37,
+          47
+        ],
+        [
+          66,
+          72
+        ]
+      ]
+    },
+    {
+      "index": 58,
+      "rect": [
+        313,
+        1097,
+        157,
+        157
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        19,
+        148,
+        134
+      ],
+      "solid_lowest_row": 134,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          38,
+          47
+        ],
+        [
+          60,
+          72
+        ]
+      ]
+    },
+    {
+      "index": 59,
+      "rect": [
+        470,
+        1097,
+        157,
+        157
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        19,
+        148,
+        134
+      ],
+      "solid_lowest_row": 134,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          37,
+          48
+        ],
+        [
+          58,
+          70
+        ]
+      ]
+    },
+    {
+      "index": 60,
+      "rect": [
+        627,
+        1097,
+        156,
+        157
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        19,
+        147,
+        134
+      ],
+      "solid_lowest_row": 134,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          34,
+          48
+        ],
+        [
+          116,
+          125
+        ]
+      ]
+    },
+    {
+      "index": 61,
+      "rect": [
+        783,
+        1097,
+        157,
+        157
+      ],
+      "solid_bbox_inclusive": [
+        13,
+        19,
+        148,
+        135
+      ],
+      "solid_lowest_row": 135,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          34,
+          49
+        ],
+        [
+          116,
+          127
+        ]
+      ]
+    },
+    {
+      "index": 62,
+      "rect": [
+        940,
+        1097,
+        157,
+        157
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        19,
+        148,
+        135
+      ],
+      "solid_lowest_row": 135,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          32,
+          48
+        ],
+        [
+          115,
+          129
+        ]
+      ]
+    },
+    {
+      "index": 63,
+      "rect": [
+        1097,
+        1097,
+        157,
+        157
+      ],
+      "solid_bbox_inclusive": [
+        12,
+        19,
+        148,
+        135
+      ],
+      "solid_lowest_row": 135,
+      "sole_candidate_band": [
+        133,
+        139
+      ],
+      "sole_candidate_intervals": [
+        [
+          30,
+          46
+        ],
+        [
+          116,
+          129
+        ]
+      ]
+    }
+  ],
+  "head_eye_proxy_centroid_envelope": [
+    [
+      130.2127659574468,
+      58.02173913043478
+    ],
+    [
+      131.6024096385542,
+      59.62637362637363
+    ]
+  ],
+  "floor_lowest_row_range": [
+    134,
+    137
+  ],
+  "contact_band_correlation": {
+    "method": "Read-only row-band position similarity, not anatomical foot tracking. Contact changes and occlusion can change the band identity; this heuristic cannot certify physical support.",
+    "forward_shift_boundaries": 24,
+    "stationary_boundaries": 18,
+    "boundaries": [
+      {
+        "boundary": [
+          0,
+          1
+        ],
+        "next_foot_band_shift_right_for_best_overlap": -2.0,
+        "iou_weighted": 0.7445482866043613
+      },
+      {
+        "boundary": [
+          1,
+          2
+        ],
+        "next_foot_band_shift_right_for_best_overlap": -2.0,
+        "iou_weighted": 0.7194244604316546
+      },
+      {
+        "boundary": [
+          2,
+          3
+        ],
+        "next_foot_band_shift_right_for_best_overlap": 0.0,
+        "iou_weighted": 0.8369098712446352
+      },
+      {
+        "boundary": [
+          3,
+          4
+        ],
+        "next_foot_band_shift_right_for_best_overlap": 1.0,
+        "iou_weighted": 0.7845528455284553
+      },
+      {
+        "boundary": [
+          4,
+          5
+        ],
+        "next_foot_band_shift_right_for_best_overlap": -2.0,
+        "iou_weighted": 0.8577405857740585
+      },
+      {
+        "boundary": [
+          5,
+          6
+        ],
+        "next_foot_band_shift_right_for_best_overlap": 0.0,
+        "iou_weighted": 0.6862745098039216
+      },
+      {
+        "boundary": [
+          6,
+          7
+        ],
+        "next_foot_band_shift_right_for_best_overlap": 1.5,
+        "iou_weighted": 0.7175572519083969
+      },
+      {
+        "boundary": [
+          7,
+          8
+        ],
+        "next_foot_band_shift_right_for_best_overlap": 3.5,
+        "iou_weighted": 0.6319018404907976
+      },
+      {
+        "boundary": [
+          8,
+          9
+        ],
+        "next_foot_band_shift_right_for_best_overlap": -3.0,
+        "iou_weighted": 0.7407407407407407
+      },
+      {
+        "boundary": [
+          9,
+          10
+        ],
+        "next_foot_band_shift_right_for_best_overlap": -2.0,
+        "iou_weighted": 0.7756410256410257
+      },
+      {
+        "boundary": [
+          10,
+          11
+        ],
+        "next_foot_band_shift_right_for_best_overlap": 0.0,
+        "iou_weighted": 0.7666666666666667
+      },
+      {
+        "boundary": [
+          11,
+          12
+        ],
+        "next_foot_band_shift_right_for_best_overlap": 0.0,
+        "iou_weighted": 0.8081180811808119
+      },
+      {
+        "boundary": [
+          12,
+          13
+        ],
+        "next_foot_band_shift_right_for_best_overlap": -1.0,
+        "iou_weighted": 0.8490566037735849
+      },
+      {
+        "boundary": [
+          13,
+          14
+        ],
+        "next_foot_band_shift_right_for_best_overlap": 0.0,
+        "iou_weighted": 0.9015748031496063
+      },
+      {
+        "boundary": [
+          14,
+          15
+        ],
+        "next_foot_band_shift_right_for_best_overlap": 0.0,
+        "iou_weighted": 0.9053497942386831
+      },
+      {
+        "boundary": [
+          15,
+          16
+        ],
+        "next_foot_band_shift_right_for_best_overlap": 0.0,
+        "iou_weighted": 0.7838827838827839
+      },
+      {
+        "boundary": [
+          16,
+          17
+        ],
+        "next_foot_band_shift_right_for_best_overlap": 0.0,
+        "iou_weighted": 0.8835616438356164
+      },
+      {
+        "boundary": [
+          17,
+          18
+        ],
+        "next_foot_band_shift_right_for_best_overlap": 1.0,
+        "iou_weighted": 0.8959731543624161
+      },
+      {
+        "boundary": [
+          18,
+          19
+        ],
+        "next_foot_band_shift_right_for_best_overlap": 0.0,
+        "iou_weighted": 0.9209621993127147
+      },
+      {
+        "boundary": [
+          19,
+          20
+        ],
+        "next_foot_band_shift_right_for_best_overlap": 0.0,
+        "iou_weighted": 0.8986486486486487
+      },
+      {
+        "boundary": [
+          20,
+          21
+        ],
+        "next_foot_band_shift_right_for_best_overlap": -1.0,
+        "iou_weighted": 0.9137931034482759
+      },
+      {
+        "boundary": [
+          21,
+          22
+        ],
+        "next_foot_band_shift_right_for_best_overlap": -1.0,
+        "iou_weighted": 0.8691275167785235
+      },
+      {
+        "boundary": [
+          22,
+          23
+        ],
+        "next_foot_band_shift_right_for_best_overlap": 1.0,
+        "iou_weighted": 0.853125
+      },
+      {
+        "boundary": [
+          23,
+          24
+        ],
+        "next_foot_band_shift_right_for_best_overlap": 4.25,
+        "iou_weighted": 0.9138461538461539
+      },
+      {
+        "boundary": [
+          24,
+          25
+        ],
+        "next_foot_band_shift_right_for_best_overlap": 1.5,
+        "iou_weighted": 0.8525073746312685
+      },
+      {
+        "boundary": [
+          25,
+          26
+        ],
+        "next_foot_band_shift_right_for_best_overlap": -1.0,
+        "iou_weighted": 0.6335227272727273
+      },
+      {
+        "boundary": [
+          26,
+          27
+        ],
+        "next_foot_band_shift_right_for_best_overlap": 2.0,
+        "iou_weighted": 0.8172043010752689
+      },
+      {
+        "boundary": [
+          27,
+          28
+        ],
+        "next_foot_band_shift_right_for_best_overlap": 0.0,
+        "iou_weighted": 0.8981132075471698
+      },
+      {
+        "boundary": [
+          28,
+          29
+        ],
+        "next_foot_band_shift_right_for_best_overlap": -1.0,
+        "iou_weighted": 0.9274809160305344
+      },
+      {
+        "boundary": [
+          29,
+          30
+        ],
+        "next_foot_band_shift_right_for_best_overlap": 1.0,
+        "iou_weighted": 0.8805970149253731
+      },
+      {
+        "boundary": [
+          30,
+          31
+        ],
+        "next_foot_band_shift_right_for_best_overlap": -1.0,
+        "iou_weighted": 0.8058608058608059
+      },
+      {
+        "boundary": [
+          31,
+          32
+        ],
+        "next_foot_band_shift_right_for_best_overlap": -3.0,
+        "iou_weighted": 0.6542372881355932
+      },
+      {
+        "boundary": [
+          32,
+          33
+        ],
+        "next_foot_band_shift_right_for_best_overlap": 0.0,
+        "iou_weighted": 0.8401486988847584
+      },
+      {
+        "boundary": [
+          33,
+          34
+        ],
+        "next_foot_band_shift_right_for_best_overlap": 1.0,
+        "iou_weighted": 0.7757352941176471
+      },
+      {
+        "boundary": [
+          34,
+          35
+        ],
+        "next_foot_band_shift_right_for_best_overlap": -2.0,
+        "iou_weighted": 0.6608391608391608
+      },
+      {
+        "boundary": [
+          35,
+          36
+        ],
+        "next_foot_band_shift_right_for_best_overlap": 0.0,
+        "iou_weighted": 0.708185053380783
+      },
+      {
+        "boundary": [
+          36,
+          37
+        ],
+        "next_foot_band_shift_right_for_best_overlap": -1.5,
+        "iou_weighted": 0.6151079136690647
+      },
+      {
+        "boundary": [
+          37,
+          38
+        ],
+        "next_foot_band_shift_right_for_best_overlap": -2.0,
+        "iou_weighted": 0.8235294117647058
+      },
+      {
+        "boundary": [
+          38,
+          39
+        ],
+        "next_foot_band_shift_right_for_best_overlap": 0.0,
+        "iou_weighted": 0.6624472573839663
+      },
+      {
+        "boundary": [
+          39,
+          40
+        ],
+        "next_foot_band_shift_right_for_best_overlap": -0.25,
+        "iou_weighted": 0.728
+      },
+      {
+        "boundary": [
+          40,
+          41
+        ],
+        "next_foot_band_shift_right_for_best_overlap": 4.0,
+        "iou_weighted": 0.5953307392996109
+      },
+      {
+        "boundary": [
+          41,
+          42
+        ],
+        "next_foot_band_shift_right_for_best_overlap": 1.5,
+        "iou_weighted": 0.8746987951807229
+      },
+      {
+        "boundary": [
+          42,
+          43
+        ],
+        "next_foot_band_shift_right_for_best_overlap": 0.0,
+        "iou_weighted": 0.8703703703703703
+      },
+      {
+        "boundary": [
+          43,
+          44
+        ],
+        "next_foot_band_shift_right_for_best_overlap": 2.0,
+        "iou_weighted": 0.7543859649122807
+      },
+      {
+        "boundary": [
+          44,
+          45
+        ],
+        "next_foot_band_shift_right_for_best_overlap": -1.0,
+        "iou_weighted": 0.8871794871794871
+      },
+      {
+        "boundary": [
+          45,
+          46
+        ],
+        "next_foot_band_shift_right_for_best_overlap": 0.0,
+        "iou_weighted": 0.8097560975609757
+      },
+      {
+        "boundary": [
+          46,
+          47
+        ],
+        "next_foot_band_shift_right_for_best_overlap": 1.0,
+        "iou_weighted": 0.8160377358490566
+      },
+      {
+        "boundary": [
+          47,
+          48
+        ],
+        "next_foot_band_shift_right_for_best_overlap": 4.0,
+        "iou_weighted": 0.6224489795918368
+      },
+      {
+        "boundary": [
+          48,
+          49
+        ],
+        "next_foot_band_shift_right_for_best_overlap": -1.0,
+        "iou_weighted": 0.7197452229299363
+      },
+      {
+        "boundary": [
+          49,
+          50
+        ],
+        "next_foot_band_shift_right_for_best_overlap": 1.0,
+        "iou_weighted": 0.6726190476190477
+      },
+      {
+        "boundary": [
+          50,
+          51
+        ],
+        "next_foot_band_shift_right_for_best_overlap": -1.0,
+        "iou_weighted": 0.8591549295774648
+      },
+      {
+        "boundary": [
+          51,
+          52
+        ],
+        "next_foot_band_shift_right_for_best_overlap": -2.0,
+        "iou_weighted": 0.8345323741007195
+      },
+      {
+        "boundary": [
+          52,
+          53
+        ],
+        "next_foot_band_shift_right_for_best_overlap": -2.25,
+        "iou_weighted": 0.6570561456752656
+      },
+      {
+        "boundary": [
+          53,
+          54
+        ],
+        "next_foot_band_shift_right_for_best_overlap": 1.0,
+        "iou_weighted": 0.8220858895705522
+      },
+      {
+        "boundary": [
+          54,
+          55
+        ],
+        "next_foot_band_shift_right_for_best_overlap": -1.0,
+        "iou_weighted": 0.75
+      },
+      {
+        "boundary": [
+          55,
+          56
+        ],
+        "next_foot_band_shift_right_for_best_overlap": 0.0,
+        "iou_weighted": 0.7236842105263158
+      },
+      {
+        "boundary": [
+          56,
+          57
+        ],
+        "next_foot_band_shift_right_for_best_overlap": -1.0,
+        "iou_weighted": 0.6013986013986014
+      },
+      {
+        "boundary": [
+          57,
+          58
+        ],
+        "next_foot_band_shift_right_for_best_overlap": 0.0,
+        "iou_weighted": 0.7213114754098361
+      },
+      {
+        "boundary": [
+          58,
+          59
+        ],
+        "next_foot_band_shift_right_for_best_overlap": 1.0,
+        "iou_weighted": 0.7448275862068966
+      },
+      {
+        "boundary": [
+          59,
+          60
+        ],
+        "next_foot_band_shift_right_for_best_overlap": 1.0,
+        "iou_weighted": 0.5388888888888889
+      },
+      {
+        "boundary": [
+          60,
+          61
+        ],
+        "next_foot_band_shift_right_for_best_overlap": -0.25,
+        "iou_weighted": 0.8238021638330757
+      },
+      {
+        "boundary": [
+          61,
+          62
+        ],
+        "next_foot_band_shift_right_for_best_overlap": 1.0,
+        "iou_weighted": 0.8611111111111112
+      },
+      {
+        "boundary": [
+          62,
+          63
+        ],
+        "next_foot_band_shift_right_for_best_overlap": 1.0,
+        "iou_weighted": 0.8210526315789474
+      },
+      {
+        "boundary": [
+          63,
+          0
+        ],
+        "next_foot_band_shift_right_for_best_overlap": 1.0,
+        "iou_weighted": 0.525974025974026
+      }
+    ]
+  },
+  "loop_lower_body_comparison": {
+    "region": [
+      20,
+      85,
+      141,
+      141
+    ],
+    "median_silhouette_iou": 0.9423030297232893,
+    "wrap_iou": 0.9112604263206673,
+    "median_premultiplied_rgb_mean_absolute_difference": 9.965804048892284,
+    "wrap_difference": 14.53582096750546,
+    "largest_changes": [
+      {
+        "boundary": [
+          47,
+          48
+        ],
+        "difference": 21.235766179750136
+      },
+      {
+        "boundary": [
+          31,
+          32
+        ],
+        "difference": 21.193101372780518
+      },
+      {
+        "boundary": [
+          59,
+          60
+        ],
+        "difference": 17.47619607071479
+      },
+      {
+        "boundary": [
+          7,
+          8
+        ],
+        "difference": 16.95591514842852
+      },
+      {
+        "boundary": [
+          52,
+          53
+        ],
+        "difference": 16.695108649520414
+      }
+    ]
+  },
+  "retiming_or_reordering": "Could potentially select a subset and recalibrate a much smaller stride, but there is no verified four-foot contact plan. Timing alone does not establish missing leg poses or fix support-height/body changes. No stride/weights are approved.",
+  "comparison_to_48": "Head/face location is more stable and interpose lower-body changes are often smaller; simply changing to64 cannot be called a completed improvement.",
+  "reasons": [
+    "Most frames lack the cumulative backward stance displacement required to cancel64logicalpx body travel.",
+    "Lower silhouette/contact bands include stationary and forward motion while nominally planted.",
+    "Rows near31->32 and47->48 change leg/body configuration abruptly; later poses look closer to crouching/reaching than a uniform side-view walk.",
+    "Common support-relative solid height still varies134..137 rather than fixed sole contact."
+  ]
+}

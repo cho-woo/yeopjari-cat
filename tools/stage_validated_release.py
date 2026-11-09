@@ -30,7 +30,7 @@ def main():
     release.verify_release(package)
     info = json.loads(metadata[0].read_text())
     version = release.version_from_header(release.ROOT / 'src/app_version.h')
-    assert version == info['version'] == '2.0.16'
+    assert version == info['version'] == '2.0.17'
     exe = package / f'YeopjariCat-{version}.exe'
     verify_silent_exe(exe.read_bytes())
     reports = list(Path('native-review').rglob('render-self-test.txt'))
