@@ -1,0 +1,508 @@
+{
+  "version": "2.0.21",
+  "source_commit": "cdafd8c4e2bab005ad19683cd6c754461cc657ed",
+  "validation_run": 42599106274,
+  "validation_url": "https://github.com/cho-woo/yeopjari-cat/actions/runs/42599106274",
+  "native_self_test": "passed",
+  "native_self_test_step": "Execute Windows save, cursor and moving-window regression tests",
+  "native_gdi_render_test": "passed",
+  "native_gdi_render_step": "Render real Windows GDI+ gait, contact and posture regressions",
+  "native_render_report_sha256": "8af5828fbff6f2d7149f59a252ace7689ebb1a37bc14caee5e21295bcc7726af",
+  "exe_sha256": "bb925e555cb502a0291f710ce6b489ace23485d54d9db5ea2ad9aec4c9f3691c",
+  "native_manual_motion_test": "passed",
+  "native_manual_motion_report_sha256": "f59d447b8658620709eb5ccb0249359f92c786adbbbc24028a732055fbca7b44",
+  "native_manual_motion": {
+    "schema": 1,
+    "test": "manual-motion-native",
+    "status": "passed",
+    "version": "2.0.21",
+    "mesh_walk_default": false,
+    "approved_walk_frames": 64,
+    "menu_commands": [
+      2800,
+      2801,
+      2802
+    ],
+    "menu_labels_checked": true,
+    "unsafe_states_checked": 15,
+    "pause_preference_preserved": true,
+    "suspension_clock_preserved": true,
+    "characters": [
+      {
+        "character": 0,
+        "walk_distance": 107.335,
+        "run_distance": 275.872,
+        "walk_peak_speed": 21.9999,
+        "run_peak_speed": 89.9999,
+        "jump_max_lift": 54.3374,
+        "jump_landed": true,
+        "moving_jump_braked": true
+      },
+      {
+        "character": 8,
+        "walk_distance": 107.335,
+        "run_distance": 275.872,
+        "walk_peak_speed": 21.9999,
+        "run_peak_speed": 89.9999,
+        "jump_max_lift": 54.3374,
+        "jump_landed": true,
+        "moving_jump_braked": true
+      }
+    ]
+  },
+  "normal_walk_frames": 64,
+  "normal_walk_sha256": "bc7e6ae24279dc757e0ffafceb81bea9071ca0e0031cef4bef69661d985ca69b",
+  "mesh_default": false,
+  "locomotion_manifest": "assets/derived-motion/manifest.json",
+  "locomotion_manifest_sha256": "f4be4ac60143ce386913fdc9dbeb515d493f7e67b32c004d880e658eea6c95d8",
+  "locomotion_artwork": {
+    "walk": {
+      "playback_frames": 64,
+      "source": "assets/derived-motion/c0-locomotion-flow.png",
+      "sha256": "bc7e6ae24279dc757e0ffafceb81bea9071ca0e0031cef4bef69661d985ca69b",
+      "original_drawings": 8,
+      "original_source": "assets/care-sprites/c0-walk.png",
+      "original_sha256": "fdb52258ede319c7f23ffa0af019b8d3fa677bf180caa1e9a89e1b37db0e9e78",
+      "derived_playback": true
+    },
+    "run": {
+      "playback_frames": 64,
+      "source": "assets/derived-motion/c0-locomotion-flow.png",
+      "sha256": "bc7e6ae24279dc757e0ffafceb81bea9071ca0e0031cef4bef69661d985ca69b",
+      "original_drawings": 8,
+      "original_source": "assets/care-sprites/c0-walk.png",
+      "original_sha256": "fdb52258ede319c7f23ffa0af019b8d3fa677bf180caa1e9a89e1b37db0e9e78",
+      "derived_playback": true
+    }
+  },
+  "derived_locomotion_provenance": {
+    "path": "assets/derived-motion/provenance.json",
+    "sha256": "6407126d73bbcdb9ca9678d5afeaff742e36084b4e549425c1fee4aa33aa0520",
+    "report": {
+      "schema": 1,
+      "method": "bidirectional_dense_flow_geometric_resampling",
+      "generator": "tools/derive_locomotion_flow.py",
+      "generator_sha256": "78b6ac645e92a486cc555609fc1078c115fa492eb180cbd5c765654a22b1d522",
+      "source_registration": "assets/derived-motion/source-registration.json",
+      "source_registration_sha256": "731fa80035fe6c7bad53530da53c8a590d15a4dd484035fd48c5aae83fa75cb0",
+      "original_source": "assets/care-sprites/c0-walk.png",
+      "original_source_sha256": "fdb52258ede319c7f23ffa0af019b8d3fa677bf180caa1e9a89e1b37db0e9e78",
+      "atlas": {
+        "source": "c0-locomotion-flow.png",
+        "sha256": "bc7e6ae24279dc757e0ffafceb81bea9071ca0e0031cef4bef69661d985ca69b",
+        "width": 2512,
+        "height": 5024
+      },
+      "derived_manifest_sha256": "f4be4ac60143ce386913fdc9dbeb515d493f7e67b32c004d880e658eea6c95d8",
+      "new_hand_drawn_art": false,
+      "precomputed_only": true,
+      "whole_sprite_alpha_blend": false,
+      "one_intermediate_signed_distance_alpha_contour": true,
+      "motion_aligned_material_rgb_fusion": true,
+      "runtime_flow_or_image_processing": false,
+      "per_frame_bbox_scaling": false,
+      "dependencies": {
+        "opencv": "5.0.0",
+        "numpy": "2.3.5",
+        "scipy": "1.17.0",
+        "Pillow": "12.3.0"
+      },
+      "parameters": {
+        "flow": "DIS_MEDIUM",
+        "finest_scale": 0,
+        "flow_gaussian_sigma": {
+          "walk": 1.2,
+          "run": 4.0
+        },
+        "inverse_iterations": 16,
+        "inverse_damping": 0.5,
+        "cell_pixels": 314,
+        "flow_feature": "0.6*luma_on_gray96 + 0.4*alpha255"
+      },
+      "clips": [
+        {
+          "clip": "walk",
+          "frame_count": 64,
+          "derived_frame_count": 64,
+          "source_frame_count": 8,
+          "original_drawings": 8,
+          "samples_per_original_interval": 8,
+          "unique_derived_frames": 64,
+          "source_key_frames_exact_after_runtime_alpha_cleanup": true,
+          "source_key_indices": [
+            0,
+            8,
+            16,
+            24,
+            32,
+            40,
+            48,
+            56
+          ],
+          "source_key_rgba_sha256": [
+            "be734eb909b0ababc9d5ec4d1233eec2f4de160773604d0b6e5bcf6d9b87c5b8",
+            "791fbd78f72d211632f75bcdda866bdab1d8efa65506d8ff46f1a80559ea4a3c",
+            "917ecd56ffa9325c324c564f25d08b51e5e1322dcd33298b45fe9bbbc0639542",
+            "105f0470c23bebbfd9b74096e8c2adbe868e9e2c5cccb3bbb40b12e38f48f530",
+            "906e5fe36796776aaab7fb53cd7434888564001d9d9e60883f597f3cd8527a46",
+            "9f3aa6c2a3fb7bcc8c2068237c070e4b10d8abb5efdf5913b4e1c2db3619caee",
+            "86d63dd8fc33e9e62a51c339493107d9502325b0d881a253c2e121eced046c9c",
+            "94ae0d6e92703b9a91eeb10d6395092ec25882196776a0c9169c19cc398057a3"
+          ],
+          "anchor": [
+            161,
+            275
+          ],
+          "reference_height": 221,
+          "stride_pixels": 32,
+          "maximum_display_rgb_change_64_phase_steps": 1.5944719461310712,
+          "maximum_held_source_rgb_change_64_phase_steps": 5.513022854331301
+        },
+        {
+          "clip": "run",
+          "frame_count": 64,
+          "derived_frame_count": 64,
+          "source_frame_count": 8,
+          "original_drawings": 8,
+          "samples_per_original_interval": 8,
+          "unique_derived_frames": 64,
+          "source_key_frames_exact_after_runtime_alpha_cleanup": true,
+          "source_key_indices": [
+            0,
+            8,
+            16,
+            24,
+            32,
+            40,
+            48,
+            56
+          ],
+          "source_key_rgba_sha256": [
+            "d700e601a21ae8b791277c27db2d2eaa67d99b3ce1677a9245c5f500c1d7a327",
+            "531ca567ea66f47e8b0892ad073bf196daac1ab461110dc639816c93cda54eb5",
+            "0a02445692b88a4921309ddfb2ff9808c3fc8462b6d156565b5466c949fd959d",
+            "b5422f00e479e30f130ece64ca643cc9fcc4cc4d5bc4a2d0bdd3cd816e8b54c4",
+            "414822303e7665d953dca8f6d90657bc49ba2a67329a8094f8c82ea155618920",
+            "a89f4b70b2d446c81a7f73254255e49bfbf61c8abb25a76ec3cb4badc9d0671f",
+            "e21cb05da793244360564247f3b571972b79e3f42bf61cf83055e3c635d3faab",
+            "129ca65e69f81feb310620d82996aaddfda9783d173fd4f21b37c281aa425ee4"
+          ],
+          "anchor": [
+            157,
+            261
+          ],
+          "reference_height": 221,
+          "stride_pixels": 72,
+          "maximum_display_rgb_change_64_phase_steps": 2.171823555194596,
+          "maximum_held_source_rgb_change_64_phase_steps": 8.202030773957622
+        }
+      ],
+      "appearances": [
+        {
+          "character": 8,
+          "source_frame_count": 8,
+          "original_drawings": 8,
+          "derived_frames_per_clip": 64,
+          "original_source": "assets/derived-motion/source-c8-original.png",
+          "original_source_sha256": "a9e30464d49dd1725083de338a59ea1be33db0bb68eab4718434ef28e5ed2a12",
+          "atlas": {
+            "source": "c8-locomotion-flow.png",
+            "sha256": "35125ae146ff91b4b293ed2634ffbaa8a6cbe151d6ffda1ff13b22d4c0dafef2",
+            "width": 2512,
+            "height": 5024
+          },
+          "clips": [
+            {
+              "clip": "walk",
+              "frame_count": 64,
+              "derived_frame_count": 64,
+              "source_frame_count": 8,
+              "original_drawings": 8,
+              "samples_per_original_interval": 8,
+              "unique_derived_frames": 64,
+              "source_key_frames_exact_after_runtime_alpha_cleanup": true,
+              "source_key_indices": [
+                0,
+                8,
+                16,
+                24,
+                32,
+                40,
+                48,
+                56
+              ],
+              "source_key_rgba_sha256": [
+                "3ea8fdbcb533f59041f12cbb433337268ad69ab1f3933aea316cbc0c15bfd98a",
+                "3d6bc5ab2d6712ecd94f8520e1110b7a177a1dda2bdc20033f3d777dcf66c369",
+                "550553be0227e4edd131cbcb5de9bd61831de81b8e65f93124f6e6583db58e0a",
+                "88596b678a00bbfc98c3aaac0b4d7a533a7b9e1b46811a3158eb5ced0ff19fc6",
+                "60995a6e3247deb2269f7635d548f47c19834a9512086a9199f9e307375c6384",
+                "002c2466e15be7c947abf58147e88230537cd4b3f165fce9dd0c7ead7c015012",
+                "ecd496f3738e93dc907eb20a33baed41b8f7b0eb5ee65aa0cdc6a2fae8564ded",
+                "e5112ae81e18b9549ce3977f30de660ee0ed16e6aae49f2bb5c464e2bc0eb89b"
+              ],
+              "anchor": [
+                161,
+                275
+              ],
+              "reference_height": 221,
+              "stride_pixels": 32,
+              "maximum_display_rgb_change_64_phase_steps": 2.942223468392397,
+              "maximum_held_source_rgb_change_64_phase_steps": 8.211415670804811
+            },
+            {
+              "clip": "run",
+              "frame_count": 64,
+              "derived_frame_count": 64,
+              "source_frame_count": 8,
+              "original_drawings": 8,
+              "samples_per_original_interval": 8,
+              "unique_derived_frames": 64,
+              "source_key_frames_exact_after_runtime_alpha_cleanup": true,
+              "source_key_indices": [
+                0,
+                8,
+                16,
+                24,
+                32,
+                40,
+                48,
+                56
+              ],
+              "source_key_rgba_sha256": [
+                "19c03d99b9b8f50c41f1f3c74cae8392d9294da305bc000c4de51a2c4864864f",
+                "a8e7aa419923a8b42dc528828926b476d3a489dfd2c8fa303e52a3368f65d4b3",
+                "b576fe0ea7055d177d08751eac07233576282236fef6ff6705fd9bd9d9e7c504",
+                "1318ffb4dccf624c3dcb4cae25ed5a6eabcd598f3913884c43c0f2817a75dab0",
+                "b1a5fc1b2347401b3647b3b04011aacad3e9510de251ee5e4b51ff1f53fefed9",
+                "957293272d24413b02426d67560a9aa0c7ce4af45a104a8da096787476512112",
+                "8050aa6a440651ed0c1ca92bf464ebebfc92b18552bc4eca62ecd50c23e5296b",
+                "25ee6431662b34d3cfd9fa06e97e26b7fa076e3c050d9c39f43531e891d6d3f2"
+              ],
+              "anchor": [
+                157,
+                261
+              ],
+              "reference_height": 221,
+              "stride_pixels": 72,
+              "maximum_display_rgb_change_64_phase_steps": 3.615166105890087,
+              "maximum_held_source_rgb_change_64_phase_steps": 16.046585010291647
+            }
+          ]
+        }
+      ],
+      "appearance_manifest_sha256": "0149fd8b12e938ba7945a2566faefaaf3acf16cd115cfb307b9bb977467cf0b4"
+    }
+  },
+  "derived_tuxedo_appearance": {
+    "manifest": "assets/derived-motion/appearance-manifest.json",
+    "manifest_sha256": "0149fd8b12e938ba7945a2566faefaaf3acf16cd115cfb307b9bb977467cf0b4",
+    "source": "assets/derived-motion/c8-locomotion-flow.png",
+    "sha256": "35125ae146ff91b4b293ed2634ffbaa8a6cbe151d6ffda1ff13b22d4c0dafef2",
+    "original_source": "assets/derived-motion/source-c8-original.png",
+    "original_sha256": "a9e30464d49dd1725083de338a59ea1be33db0bb68eab4718434ef28e5ed2a12",
+    "original_drawings": 8,
+    "derived_playback_frames_per_clip": 64
+  },
+  "authored_appearance": {
+    "manifest": "assets/styled-sprites/manifest.json",
+    "manifest_sha256": "ab749e994b568c138df25b8312b1317e9ef44ba1fddb752dbf4c91164ea3ca80",
+    "import_report_sha256": "6b2d9dd9f303e72ae41162479d934ee656b9536a19224d36bda878a0f1d4765d",
+    "design": "tuxedo-kitten-authored-20261109",
+    "complete_characters": [
+      8
+    ],
+    "atlases": [
+      {
+        "character": 8,
+        "base_resource_id": 101,
+        "resource_id": 509,
+        "source": "c8-r101.png",
+        "image_width": 1774,
+        "image_height": 887,
+        "sha256": "ede3b3069a2ad94207ecf43dd6fe5e8eb7c0c3f3d2fc1a6e0e36998a5500721c",
+        "base_source": "assets/cat.png",
+        "base_sha256": "f92c5b30167b8978252c812af65ac99ec5be1e7c79fffa1bf3d94810b25d9803"
+      },
+      {
+        "character": 8,
+        "base_resource_id": 102,
+        "resource_id": 510,
+        "source": "c8-r102.png",
+        "image_width": 1774,
+        "image_height": 887,
+        "sha256": "ee911587178b13806ce549d05d3baf8ceb60f11b70b29245155cf354fc95a272",
+        "base_source": "assets/cat-actions.png",
+        "base_sha256": "01d3cb47c255b2e6394c154419c1a18719815135856eb7585e60153aab437bc5"
+      },
+      {
+        "character": 8,
+        "base_resource_id": 105,
+        "resource_id": 511,
+        "source": "c8-r105.png",
+        "image_width": 738,
+        "image_height": 714,
+        "sha256": "e161fbd44f31a1d8e5c1bb08ea90b3a4785680c68fecd6539bbd3e2f0ac73fbd",
+        "base_source": "assets/cream-extra.png",
+        "base_sha256": "c41e7894a60299a816d239a8bfe1233860768acb2039278d0eea26cd73f1c295"
+      },
+      {
+        "character": 8,
+        "base_resource_id": 106,
+        "resource_id": 512,
+        "source": "c8-r106.png",
+        "image_width": 744,
+        "image_height": 762,
+        "sha256": "96dd6e1c89eedb8e246803b4a5a25f16de719dbbb6b07cae4ddadba65954ee4a",
+        "base_source": "assets/cream-gestures.png",
+        "base_sha256": "89fd56d111734cab662099f053a8892189f19d406089f067db99d7ed3fba773a"
+      },
+      {
+        "character": 8,
+        "base_resource_id": 107,
+        "resource_id": 513,
+        "source": "c8-r107.png",
+        "image_width": 1422,
+        "image_height": 370,
+        "sha256": "5b22a7b4fccf4f0c12af8444fb38a7f4422d4768350f948bf7be6c75fef8f5ea",
+        "base_source": "assets/cream-recline.png",
+        "base_sha256": "4f5daddeb2c0f3006cec433b12f51267a2546f507bd6df17cdac8468c0a09439"
+      },
+      {
+        "character": 8,
+        "base_resource_id": 110,
+        "resource_id": 514,
+        "source": "c8-r110.png",
+        "image_width": 243,
+        "image_height": 487,
+        "sha256": "4aea9dd388792f226bd142469b56eebf0a7521949aac512879776f3b91a5391f",
+        "base_source": "assets/cream-hang.png",
+        "base_sha256": "37919d0c3626a22aa8ba59594f54a6baec677ab91638c31a04fe7f65a3b9d039"
+      },
+      {
+        "character": 8,
+        "base_resource_id": 112,
+        "resource_id": 515,
+        "source": "c8-r112.png",
+        "image_width": 598,
+        "image_height": 199,
+        "sha256": "113c200608430660c043ae692dab1a3750c1061172a397149594d16882a9deb3",
+        "base_source": "assets/cream-sleep.png",
+        "base_sha256": "89ecbbe67fc06c7c1593f6ce34162a823d1151730082855e39a4db12f96fec3a"
+      },
+      {
+        "character": 8,
+        "base_resource_id": 113,
+        "resource_id": 500,
+        "source": "c8-r113.png",
+        "image_width": 1254,
+        "image_height": 1254,
+        "sha256": "c173510dd85dc20ec7c22c713e3d66485fbdca768452ba7b4227e68b841a5e42",
+        "base_source": "assets/care-sprites/c0-groom.png",
+        "base_sha256": "d26e8495f42da710c4f9a0b9488ecc4666513146dcc5268ef5311e253cd654f4"
+      },
+      {
+        "character": 8,
+        "base_resource_id": 114,
+        "resource_id": 501,
+        "source": "c8-r114.png",
+        "image_width": 1774,
+        "image_height": 887,
+        "sha256": "658e351b2afa73adc8f65550598370728a740c44ee157f11ae4e84f345fcb8ac",
+        "base_source": "assets/care-sprites/c0-sleep.png",
+        "base_sha256": "76560182751c11b45ff87cea4f30904a48a014c0000f2fffef4d883b2aaeab7a"
+      },
+      {
+        "character": 8,
+        "base_resource_id": 116,
+        "resource_id": 503,
+        "source": "c8-r116.png",
+        "image_width": 1774,
+        "image_height": 887,
+        "sha256": "b509d40cd8c83a025c656bd2a68b593a54a56c3fd660d2931bed227ed8b23b45",
+        "base_source": "assets/care-sprites/c0-fish.png",
+        "base_sha256": "5577d90a87569acab3a20046e34df40651dca4172092a29c81c2f7e95b2f3697"
+      },
+      {
+        "character": 8,
+        "base_resource_id": 117,
+        "resource_id": 504,
+        "source": "c8-r117.png",
+        "image_width": 1448,
+        "image_height": 1086,
+        "sha256": "ef5d7cabef389c0303ab35a3a481749d93917575e935b4f245bf0493b70f5121",
+        "base_source": "assets/care-sprites/c0-punch.png",
+        "base_sha256": "580e91c043ace82a4f04ba8de95b2511b3a6fe764e5def82b91b3da95b9b00c0"
+      },
+      {
+        "character": 8,
+        "base_resource_id": 118,
+        "resource_id": 505,
+        "source": "c8-r118.png",
+        "image_width": 1086,
+        "image_height": 1448,
+        "sha256": "bf6e3f231236994f4fb13a553a3c1a932798c8a87490c6577c7839a00ab70509",
+        "base_source": "assets/care-sprites/c0-eat.png",
+        "base_sha256": "225ef4fc0253da354fc1d186de3394390aa68b78be5d14d80e3653581f85bd09"
+      },
+      {
+        "character": 8,
+        "base_resource_id": 119,
+        "resource_id": 506,
+        "source": "c8-r119.png",
+        "image_width": 1254,
+        "image_height": 1254,
+        "sha256": "1fd1b3f1b5b8025b6dd44ee3dbfea1f03d3cb1aad3e18cfb60a2f1f20727bd0a",
+        "base_source": "assets/care-sprites/c0-jump.png",
+        "base_sha256": "8d1f2bf8e3502381061df15a28f0fca85ee2db57ef963cf72554ec44ff6b4fd7"
+      },
+      {
+        "character": 8,
+        "base_resource_id": 120,
+        "resource_id": 507,
+        "source": "c8-r120.png",
+        "image_width": 1536,
+        "image_height": 1024,
+        "sha256": "7fe4e30db5b67d05eb4f8508a904bf65388db6c759cbbc64a9a54b443d070a2b",
+        "base_source": "assets/care-sprites/c0-treat.png",
+        "base_sha256": "1cc0d92d56fc3b55b85a2ed1d90a29b4e00a3d1c9a8695a7e3af4be1d3044e8e"
+      },
+      {
+        "character": 8,
+        "base_resource_id": 400,
+        "resource_id": 508,
+        "source": "c8-r400.png",
+        "image_width": 2512,
+        "image_height": 5024,
+        "sha256": "35125ae146ff91b4b293ed2634ffbaa8a6cbe151d6ffda1ff13b22d4c0dafef2",
+        "base_source": "assets/derived-motion/c0-locomotion-flow.png",
+        "base_sha256": "bc7e6ae24279dc757e0ffafceb81bea9071ca0e0031cef4bef69661d985ca69b"
+      }
+    ]
+  },
+  "mesh_walk_production_approved": false,
+  "desktop_recording": false,
+  "manual_command_evidence_sha256": {},
+  "publication_run": 42599895976,
+  "publication_url": "https://github.com/cho-woo/yeopjari-cat/actions/runs/42599895976",
+  "release_url": "https://github.com/cho-woo/yeopjari-cat/releases/tag/v2.0.21",
+  "stable_latest": "v2.0.21",
+  "public_downloads_verified_utc": "2026-11-09T10:20:43.370799+00:00",
+  "public_assets_sha256": {
+    "latest.txt": "8e92bdc267723ce221737c8b4fefd94ff33c4ebffdac875012e3cbdd592aa143",
+    "manual-motion-self-test.json": "f59d447b8658620709eb5ccb0249359f92c786adbbbc24028a732055fbca7b44",
+    "motion-update-SHA256SUMS.txt": "fe4f1a1e5224a93797ee940db22d4bfbb314b5f4be625c0e98202ab04cca9697",
+    "release-info.json": "1bd73fd16583c1c70f574c95bdbd41b641a35f377ade6c94dd3024d46ae098f4",
+    "RELEASE_NOTES_KO.txt": "57d0b10228e6a2a6681dd2d611d378375d10606b0ee8f6acd7cab91f019ca084",
+    "render-self-test.txt": "8af5828fbff6f2d7149f59a252ace7689ebb1a37bc14caee5e21295bcc7726af",
+    "SHA256SUMS.txt": "268bc1710ea6c574c80fc9e2870052e38b59cbc8d8cc31e0db11e7bb1a4e2fa7",
+    "windows-validation.json": "3f6206d9ee2217a7c63f40ef17a9fa3f2c3696f4b6948a4944cb0e8346906982",
+    "YeopjariCat-2.0.21.exe": "bb925e555cb502a0291f710ce6b489ace23485d54d9db5ea2ad9aec4c9f3691c",
+    "YeopjariCat-Windows-2.0.21.zip": "df247967960345685fb429824d6d0edd321000b1c6a58b55c5d7366bdcf0e911"
+  },
+  "previews": {
+    "locomotion": "../../previews/v2.0.21/cats-in-motion.mp4",
+    "actions_and_landing": "../../previews/v2.0.21/actions-and-landing.mp4"
+  },
+  "preview_kind": "60fps diagnostic composition of current authored sprites/C++ sampler/Box2D; not Windows desktop recording"
+}
