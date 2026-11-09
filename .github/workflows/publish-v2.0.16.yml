@@ -1,0 +1,22 @@
+name: Publish reviewed v2.0.16 and downloadable walking previews
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: yeopjari-cat-release-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.repository == 'cho-woo/yeopjari-cat' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify reviewed bytes, upload previews and publish the stable update
+        run: python3 tools/publish_walking_update.py
