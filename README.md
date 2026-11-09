@@ -3,17 +3,17 @@
 일하는 동안 Windows 작업표시줄과 창 위에서 함께 지내는 작은 고양이입니다. 현재 버전은 크림치즈냥과 턱시도냥을 제공하며, 두 마리를 각자의 성장·성격·기억과 함께 키우는 기능은 유지합니다.
 
 
-**2.0.15**는 v2.0.13의 재생 방식으로 돌아가고, 크림치즈냥과 턱시도냥에 같은 동작을 연결합니다. [동작 미리보기와 구현 설명](docs/TWO_CATS.md).
+**2.0.16**은 실제 접지 이동거리와 출발·정지·방향 전환을 개선합니다. 크림치즈냥과 턱시도냥에 동일하게 적용합니다. [구현·Windows 검증 결과](docs/WALKING_UPDATE.md).
 
-**2.0.16 개발본**: 실제 접지 이동거리와 정지·방향 전환을 개선했습니다. [구현·Windows 검증 결과](docs/WALKING_UPDATE.md) · [보행 비교 영상](docs/media/walking-native.mp4). 아직 공개 정식 배포는 v2.0.15입니다.
+[보행 비교 MP4 다운로드](https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.16/walking-native.mp4) · [미리보기 ZIP](https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.16/walking-preview.zip). 영상은 다운로드 후 플레이어로 열거나, 미리보기 ZIP의 압축을 풀고 `index.html`을 여세요.
 
 ## 다운로드와 실행
 
 **[최신 버전 다운로드](https://github.com/cho-woo/yeopjari-cat/releases/latest)**
 
-[2.0.15 사용자용 ZIP 바로 받기](https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.15/YeopjariCat-Windows-2.0.15.zip)
+[2.0.16 사용자용 ZIP 바로 받기](https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.16/YeopjariCat-Windows-2.0.16.zip)
 
-**현재 공개 정식 버전은 v2.0.15입니다.** 걷기·앉기는 v2.0.13 방식으로 복원하고, 크림치즈냥과 턱시도냥만 남겼습니다. 두 캐릭터에 같은 원화·동작·물리를 적용하며 털색만 다릅니다. 기존 성장·돌봄 기록과 무음·자동 업데이트를 유지합니다. 고양이 우클릭 → **프로그램 업데이트 → 업데이트 확인…**에서 받을 수 있습니다. [Windows 검증과 미리보기](docs/TWO_CATS.md).
+**현재 공개 정식 버전은 v2.0.16입니다.** 걷기 보폭·접지 거리 계산·정지 및 반전 연결을 개선했습니다. 두 캐릭터에 같은 원화·동작·물리를 적용하며 털색만 다릅니다. 기존 성장·돌봄 기록과 무음·자동 업데이트를 유지합니다. 고양이 우클릭 → **프로그램 업데이트 → 업데이트 확인…**에서 받을 수 있습니다. [공개 파일·공식 피드 검증](docs/validation/v2.0.16-published.json).
 
 실행 대상은 **Windows 10/11 x64**입니다. 사용자 ZIP의 압축을 완전히 풀고 `YeopjariCat.exe`를 실행하세요. Python이나 게임 엔진 설치는 필요하지 않습니다. 프로그램이 업데이트될 수 있도록 바탕화면·문서 폴더 등 본인이 파일을 수정할 수 있는 위치에 두세요.
 

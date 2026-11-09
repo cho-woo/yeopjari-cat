@@ -1,0 +1,50 @@
+{
+  "release": "v2.0.16",
+  "source_commit": "8ae8734ab081d27eb9d5cec51fe082310e46df47",
+  "publication_run": 42562736974,
+  "public_downloads": [
+    {
+      "name": "YeopjariCat-2.0.16.exe",
+      "sha256": "e4b8151e8de3d6a1f393d8b985ed86aa50176e796141166be84ad44ca3ca709a",
+      "bytes": 24533504,
+      "content_type": "application/octet-stream"
+    },
+    {
+      "name": "YeopjariCat-Windows-2.0.16.zip",
+      "sha256": "eddb824c8f41979b865fbec67a817a953bf8948ff49232a5f9815b97c8524e53",
+      "bytes": 20903505,
+      "content_type": "application/octet-stream"
+    },
+    {
+      "name": "walking-native.mp4",
+      "sha256": "ed0548b226bdeb428876fc16b29b918fe27c917a3bfc9a3146e20be1f0ced4d1",
+      "bytes": 228946,
+      "content_type": "application/octet-stream"
+    },
+    {
+      "name": "walking-native.gif",
+      "sha256": "dd09bb2442f1611fa2789dbef821f82703f516fed7625a2f583811417c18df1c",
+      "bytes": 8005949,
+      "content_type": "application/octet-stream"
+    },
+    {
+      "name": "walking-preview.zip",
+      "sha256": "d3033e6f1c5e99c2a2287d04a01bfce77cc601caa7663de6acd96c04cca7718d",
+      "bytes": 8570066,
+      "content_type": "application/octet-stream"
+    },
+    {
+      "name": "preview-SHA256SUMS.txt",
+      "sha256": "420523e6391630a681a71990c96cb040fbd054f44d01631bac0e8a2f769b1b01",
+      "bytes": 256,
+      "content_type": "application/octet-stream"
+    },
+    {
+      "name": "latest.txt",
+      "sha256": "e109d986d28ba46cfeced6cac57d5d9ba14b9ad6a2847368dac475fd8a63980a",
+      "bytes": 1444,
+      "content_type": "application/octet-stream"
+    }
+  ],
+  "official_latest_feed_matches": true
+}

@@ -45,7 +45,7 @@ Walk/Run의 `ms`는 거리에 대응하는 구간 비중이며, 실제 초 단�
 - 새 실제 Box2D 시나리오: 30/60/120Hz 입력에서 출발·속도 변경·정지·반전, 정지 유지, 공중 이동 제외, 30초 지연 및 좌표 재배치 검사 통과.
 - Windows `--self-test`: 저장·메뉴·커서·창 이동 회귀 검사 통과. `--render-self-test`: 실제 GDI+ 보행/접지/착지/두 털색, 투명 픽셀 및 잘림, 캐시·64/128/256장 합성 자산 검사 통과. [네이티브 결과](validation/v2.0.16-render-self-test.txt).
 - 100/125/150% 합성 DPI 검사에서 정지·반전 위치와 그리기를 확인했다. 원화의 공통 기준점·referenceHeight와 캐시 픽셀 수는 유지한다. 실제 배율이 다른 두 모니터와 물리 마우스로 창 밖까지 드래그하는 사용감은 수동 확인하지 못했다.
-- [재생 가능한 비교 페이지](walking-preview.html), [MP4](media/walking-native.mp4), [GIF](media/walking-native.gif). 210개 실제 Windows 출력 프레임, 10.5초/20FPS이며, Chromium에서 마지막까지 재생과 오류 없음 확인. [브라우저 검사](validation/v2.0.16-preview.json). 비교 상단은 이전 로직 재현, 하단은 수정 코드다.
+- [다운로드 후 열 수 있는 미리보기 ZIP](https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.16/walking-preview.zip), [MP4 다운로드](https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.16/walking-native.mp4), [GIF 다운로드](https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.16/walking-native.gif). ZIP은 압축을 모두 풀고 `index.html`을 여세요. 210개 실제 Windows 출력 프레임, 10.5초/20FPS이며, Chromium에서 마지막까지 재생과 오류 없음 확인. [브라우저 검사](validation/v2.0.16-preview.json). 비교 상단은 이전 로직 재현, 하단은 수정 코드다.
 
 ## 동일 Windows 환경에서 측정한 성능
 
@@ -77,8 +77,8 @@ UI Automation의 하위 메뉴 캐릭터 선택은 저장 결과로 확인되지
 | `src/cat_sprite_assets.hpp`, `tools/import_care_sprites.py`, `assets/care-sprites/manifest.json` | 서기 프레임 등록 및 보폭·접지 구간 비중 |
 | `tests/cat_ground_drive_test.cpp`, `src/native_ground_drive_tests.hpp` | 실제 물리 시나리오와 GDI+ 비교 프레임 |
 
-현재 개발본 EXE: `release/YeopjariCat.exe`. 검증에 쓴 원본은 `build/verified-release-2.0.16/YeopjariCat-2.0.16.exe`, 사용자 ZIP은 같은 폴더의 `YeopjariCat-Windows-2.0.16.zip`이다. 검증 후 다시 내려받아 모든 SHA-256을 확인하고 개발본 위치에 복사했다.
+로컬 EXE: `release/YeopjariCat.exe`. 검증에 쓴 원본은 `build/verified-release-2.0.16/YeopjariCat-2.0.16.exe`, 사용자 ZIP은 같은 폴더의 `YeopjariCat-Windows-2.0.16.zip`이다. 검증 후 다시 내려받아 모든 SHA-256을 확인하고 로컬 실행파일 위치에 복사했다.
 
 EXE SHA-256: `e4b8151e8de3d6a1f393d8b985ed86aa50176e796141166be84ad44ca3ca709a`.
 
-[검증 출처](validation/v2.0.16-windows-validation.json). 이 버전은 검증된 개발본/릴리스 초안이며, 공개 자동 업데이트의 최신 정식 버전은 계속 v2.0.15다.
+[검증 출처](validation/v2.0.16-windows-validation.json). 2026-11-09에 검증된 동일 EXE를 [v2.0.16 정식 업데이트](https://github.com/cho-woo/yeopjari-cat/releases/tag/v2.0.16)로 공개했다. 공개 EXE·사용자 ZIP·미리보기 파일을 다시 내려받아 해시를 확인했고, 공식 latest.txt도 v2.0.16과 일치했다. [공개 검증 기록](validation/v2.0.16-published.json).
