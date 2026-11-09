@@ -222,7 +222,7 @@ def encode(path: Path, frames: int, fps: int, size, make_frame: Callable):
 def write_trace(output, trace, mode):
     if trace:
         with (output/f'{mode}-sole-review-trace.csv').open('w', newline='') as handle:
-            writer = csv.DictWriter(handle, fieldnames=list(trace[0]))
+            writer = csv.DictWriter(handle, fieldnames=list(trace[0]), lineterminator='\n')
             writer.writeheader(); writer.writerows(trace)
 
 
