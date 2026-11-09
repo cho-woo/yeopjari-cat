@@ -285,12 +285,12 @@ def main():
         sizes = {p.name: p.stat().st_size for p in files}
         notes = stage / 'notes.md'
         notes.write_text((package / 'RELEASE_NOTES_KO.txt').read_text(encoding='utf-8') + '\n\n' +
-                         '고양이 우클릭 → 동작 → 걷기·달리기·점프를 선택할 수 있습니다.\n'
+                         '고양이 우클릭 → 행동시키기 → 걷기·달리기·점프하기를 선택할 수 있습니다.\n'
                          '고양이 우클릭 → 프로그램 업데이트 → 업데이트 확인…에서 설치할 수 있습니다.\n\n'
                          f'- [Windows ZIP]({BASE_URL}YeopjariCat-Windows-{VERSION}.zip)\n'
                          f'- [Windows EXE]({BASE_URL}YeopjariCat-{VERSION}.exe)\n'
                          f'- [검증 출처와 SHA-256]({BASE_URL}windows-validation.json)\n\n'
-                         '일반 실행은 승인된 기존 8장 보행을 유지합니다. 새 메시 보행 연구는 시각 미승인·명시적 검토 모드입니다.\n'
+                         '기존의 온전한 고양이 그림으로 걷는 리듬을 다듬고, 턱시도냥의 무늬를 모든 동작에 맞춰 정돈했습니다. 기존 돌봄 기능과 성장 기록은 유지합니다.\n'
                          f'검증 소스: `{head}` · [Windows 실행 검사](https://github.com/{REPO}/actions/runs/{run_id}).\n',
                          encoding='utf-8')
         if already_public:
@@ -325,7 +325,7 @@ def main():
         require(api('commits/' + TAG)['sha'] == head, 'Tag changed before publication')
         require(api('releases/latest')['tag_name'] == stable_before, 'Stable latest changed before publication')
         gh('release', 'edit', TAG, '--repo', REPO, '--notes-file', str(notes),
-           '--title', f'Yeopjari Cat {VERSION} — 걷기·달리기·점프 명령',
+           '--title', f'옆자리 고양이 {VERSION} — 가벼운 걸음과 귀여운 턱시도냥',
            '--draft=false', '--prerelease=false', '--latest=true')
         published = json.loads(gh('release', 'view', TAG, '--repo', REPO,
                                  '--json', 'isDraft,isPrerelease,targetCommitish,url'))
