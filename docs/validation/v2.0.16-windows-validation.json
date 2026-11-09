@@ -1,0 +1,9 @@
+{
+  "source_commit": "8ae8734ab081d27eb9d5cec51fe082310e46df47",
+  "validation_run": 42559903373,
+  "validation_url": "https://github.com/cho-woo/yeopjari-cat/actions/runs/42559903373",
+  "native_self_test": "passed",
+  "native_gdi_render_test": "passed",
+  "exe_sha256": "e4b8151e8de3d6a1f393d8b985ed86aa50176e796141166be84ad44ca3ca709a",
+  "preview_is_desktop_recording": false
+}

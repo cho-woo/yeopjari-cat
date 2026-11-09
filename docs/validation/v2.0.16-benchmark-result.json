@@ -1,0 +1,2532 @@
+{
+  "schema": 1,
+  "status": "completed",
+  "started_utc": "2026-11-09T04:08:00.8213110Z",
+  "conditions": {
+    "disposable_profile": true,
+    "logical_processors": 4,
+    "windows": "Microsoft Windows NT 10.0.20348.0",
+    "system_dpi": 96,
+    "screen_width": 1024,
+    "screen_height": 768,
+    "sample_interval_ms": 250,
+    "idle_seconds": 8,
+    "active_seconds": 12,
+    "switch_cycles": 6,
+    "switch_interval_ms": 1000,
+    "settle_seconds": 5,
+    "cpu_normalization": "process kernel+user CPU / measured wall / logical processors",
+    "executable_file_cache": "each executable stream read immediately before launch; warm filesystem cache",
+    "autonomy": "same saved state and wall schedule; random action mix is not deterministic",
+    "repetition": "real UI menu rest/resume cycles, confirmed in private fixture files; deterministic frame-cache stress is separate",
+    "peak_private": "maximum sampled PrivateUsage; OS peak commit is reported separately",
+    "leakage": "observed growth/slope and post-loop settling only; a short run cannot prove absence of leaks"
+  },
+  "runs": [
+    {
+      "label": "baseline",
+      "exe_sha256": "7b5fd64493ab4241bb932d01c630558c0da242e30ef54b17a61b808147e6d266",
+      "file_version": "2.0.15",
+      "exe_bytes": 24514560,
+      "startup_ms": 1375.2198,
+      "startup_cpu_seconds": 1.328125,
+      "startup_private_bytes": 193048576,
+      "scenarios": [
+        {
+          "name": "paused_idle",
+          "wall_seconds": 8.084933600000001,
+          "cpu_seconds": 0.03125,
+          "cpu_one_core_percent": 0.3865214180608731,
+          "cpu_machine_percent": 0.09663035451521827,
+          "private_bytes_start": 193253376,
+          "private_bytes_end": 193261568,
+          "private_bytes_peak_sampled": 193261568,
+          "working_set_peak_sampled": 222699520,
+          "os_peak_working_set_bytes": 223100928,
+          "os_peak_commit_bytes": 193261568,
+          "observed_private_growth_bytes": 8192,
+          "private_growth_slope_bytes_per_second": 488.53721272747026,
+          "action_count": 0,
+          "samples": [
+            {
+              "elapsed_ms": 2.1763,
+              "cpu_seconds": 1.375,
+              "private_bytes": 193253376,
+              "working_set_bytes": 222679040,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193257472,
+              "page_faults": 81247
+            },
+            {
+              "elapsed_ms": 245.3675,
+              "cpu_seconds": 1.375,
+              "private_bytes": 193253376,
+              "working_set_bytes": 222683136,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193257472,
+              "page_faults": 81268
+            },
+            {
+              "elapsed_ms": 495.4954,
+              "cpu_seconds": 1.375,
+              "private_bytes": 193253376,
+              "working_set_bytes": 222683136,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193257472,
+              "page_faults": 81292
+            },
+            {
+              "elapsed_ms": 761.081,
+              "cpu_seconds": 1.375,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222691328,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193261568,
+              "page_faults": 81314
+            },
+            {
+              "elapsed_ms": 1011.2416000000001,
+              "cpu_seconds": 1.375,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222691328,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193261568,
+              "page_faults": 81338
+            },
+            {
+              "elapsed_ms": 1262.7287000000001,
+              "cpu_seconds": 1.375,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222691328,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193261568,
+              "page_faults": 81358
+            },
+            {
+              "elapsed_ms": 1513.7279,
+              "cpu_seconds": 1.375,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222699520,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193261568,
+              "page_faults": 81380
+            },
+            {
+              "elapsed_ms": 1763.8058,
+              "cpu_seconds": 1.375,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222699520,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193261568,
+              "page_faults": 81404
+            },
+            {
+              "elapsed_ms": 2014.8443000000002,
+              "cpu_seconds": 1.375,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222699520,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193261568,
+              "page_faults": 81424
+            },
+            {
+              "elapsed_ms": 2264.9331,
+              "cpu_seconds": 1.375,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222699520,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193261568,
+              "page_faults": 81444
+            },
+            {
+              "elapsed_ms": 2514.8986,
+              "cpu_seconds": 1.375,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222699520,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193261568,
+              "page_faults": 81468
+            },
+            {
+              "elapsed_ms": 2765.0617,
+              "cpu_seconds": 1.375,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222699520,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193261568,
+              "page_faults": 81488
+            },
+            {
+              "elapsed_ms": 3015.081,
+              "cpu_seconds": 1.375,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222699520,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193261568,
+              "page_faults": 81508
+            },
+            {
+              "elapsed_ms": 3266.6836000000003,
+              "cpu_seconds": 1.375,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222699520,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193261568,
+              "page_faults": 81512
+            },
+            {
+              "elapsed_ms": 3515.9042,
+              "cpu_seconds": 1.375,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222699520,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193261568,
+              "page_faults": 81512
+            },
+            {
+              "elapsed_ms": 3766.4758,
+              "cpu_seconds": 1.375,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222699520,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193261568,
+              "page_faults": 81512
+            },
+            {
+              "elapsed_ms": 4017.7184,
+              "cpu_seconds": 1.375,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222699520,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193261568,
+              "page_faults": 81512
+            },
+            {
+              "elapsed_ms": 4268.1731,
+              "cpu_seconds": 1.375,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222699520,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193261568,
+              "page_faults": 81512
+            },
+            {
+              "elapsed_ms": 4518.1248000000005,
+              "cpu_seconds": 1.375,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222699520,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193261568,
+              "page_faults": 81512
+            },
+            {
+              "elapsed_ms": 4768.2928,
+              "cpu_seconds": 1.375,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222699520,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193261568,
+              "page_faults": 81512
+            },
+            {
+              "elapsed_ms": 5018.3998,
+              "cpu_seconds": 1.375,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222699520,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193261568,
+              "page_faults": 81512
+            },
+            {
+              "elapsed_ms": 5268.7793,
+              "cpu_seconds": 1.375,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222699520,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193261568,
+              "page_faults": 81512
+            },
+            {
+              "elapsed_ms": 5534.5662,
+              "cpu_seconds": 1.375,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222699520,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193261568,
+              "page_faults": 81512
+            },
+            {
+              "elapsed_ms": 5784.3186000000005,
+              "cpu_seconds": 1.375,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222646272,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193261568,
+              "page_faults": 81512
+            },
+            {
+              "elapsed_ms": 6034.5160000000005,
+              "cpu_seconds": 1.375,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222646272,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193261568,
+              "page_faults": 81512
+            },
+            {
+              "elapsed_ms": 6285.0025000000005,
+              "cpu_seconds": 1.375,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222646272,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193261568,
+              "page_faults": 81512
+            },
+            {
+              "elapsed_ms": 6535.034900000001,
+              "cpu_seconds": 1.375,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222646272,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193261568,
+              "page_faults": 81512
+            },
+            {
+              "elapsed_ms": 6800.657700000001,
+              "cpu_seconds": 1.375,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193261568,
+              "page_faults": 81512
+            },
+            {
+              "elapsed_ms": 7050.6999000000005,
+              "cpu_seconds": 1.375,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193261568,
+              "page_faults": 81512
+            },
+            {
+              "elapsed_ms": 7305.9187,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193261568,
+              "page_faults": 81512
+            },
+            {
+              "elapsed_ms": 7571.5365,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193261568,
+              "page_faults": 81512
+            },
+            {
+              "elapsed_ms": 7836.895600000001,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193261568,
+              "page_faults": 81512
+            },
+            {
+              "elapsed_ms": 8087.1099,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193261568,
+              "page_faults": 81512
+            }
+          ]
+        },
+        {
+          "name": "ordinary_autonomous_activity",
+          "wall_seconds": 12.199651000000001,
+          "cpu_seconds": 0,
+          "cpu_one_core_percent": 0,
+          "cpu_machine_percent": 0,
+          "private_bytes_start": 193261568,
+          "private_bytes_end": 193261568,
+          "private_bytes_peak_sampled": 193261568,
+          "working_set_peak_sampled": 222638080,
+          "os_peak_working_set_bytes": 223100928,
+          "os_peak_commit_bytes": 193265664,
+          "observed_private_growth_bytes": 0,
+          "private_growth_slope_bytes_per_second": 0,
+          "action_count": 0,
+          "samples": [
+            {
+              "elapsed_ms": 0.10890000000000001,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            },
+            {
+              "elapsed_ms": 249.949,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            },
+            {
+              "elapsed_ms": 515.1715,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            },
+            {
+              "elapsed_ms": 765.1571,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            },
+            {
+              "elapsed_ms": 1016.1077,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            },
+            {
+              "elapsed_ms": 1282.0396,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            },
+            {
+              "elapsed_ms": 1531.875,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            },
+            {
+              "elapsed_ms": 1797.5925,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            },
+            {
+              "elapsed_ms": 2047.4532000000002,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            },
+            {
+              "elapsed_ms": 2313.1883000000003,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            },
+            {
+              "elapsed_ms": 2563.3381,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            },
+            {
+              "elapsed_ms": 2814.1374,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            },
+            {
+              "elapsed_ms": 3064.6569,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            },
+            {
+              "elapsed_ms": 3330.5678000000003,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            },
+            {
+              "elapsed_ms": 3580.6718,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            },
+            {
+              "elapsed_ms": 3830.5982000000004,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            },
+            {
+              "elapsed_ms": 4080.6383,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            },
+            {
+              "elapsed_ms": 4330.6785,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            },
+            {
+              "elapsed_ms": 4580.7979000000005,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            },
+            {
+              "elapsed_ms": 4830.8359,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            },
+            {
+              "elapsed_ms": 5081.829900000001,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            },
+            {
+              "elapsed_ms": 5331.7859,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            },
+            {
+              "elapsed_ms": 5581.9066,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            },
+            {
+              "elapsed_ms": 5831.9384,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            },
+            {
+              "elapsed_ms": 6114.094300000001,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            },
+            {
+              "elapsed_ms": 6364.129800000001,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            },
+            {
+              "elapsed_ms": 6613.8472,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            },
+            {
+              "elapsed_ms": 6864.5559,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            },
+            {
+              "elapsed_ms": 7114.5168,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            },
+            {
+              "elapsed_ms": 7380.213400000001,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            },
+            {
+              "elapsed_ms": 7630.6553,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            },
+            {
+              "elapsed_ms": 7882.3908,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            },
+            {
+              "elapsed_ms": 8133.089800000001,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            },
+            {
+              "elapsed_ms": 8398.7629,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            },
+            {
+              "elapsed_ms": 8648.8217,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            },
+            {
+              "elapsed_ms": 8899.9527,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            },
+            {
+              "elapsed_ms": 9165.584700000001,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            },
+            {
+              "elapsed_ms": 9415.6522,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            },
+            {
+              "elapsed_ms": 9665.9019,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            },
+            {
+              "elapsed_ms": 9915.928600000001,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            },
+            {
+              "elapsed_ms": 10181.518100000001,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            },
+            {
+              "elapsed_ms": 10431.4938,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            },
+            {
+              "elapsed_ms": 10682.1975,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            },
+            {
+              "elapsed_ms": 10932.675500000001,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            },
+            {
+              "elapsed_ms": 11198.2369,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            },
+            {
+              "elapsed_ms": 11448.4343,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            },
+            {
+              "elapsed_ms": 11698.797900000001,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            },
+            {
+              "elapsed_ms": 11949.6646,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            },
+            {
+              "elapsed_ms": 12199.759900000001,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222638080,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81620
+            }
+          ]
+        },
+        {
+          "name": "repeated_rest_resume",
+          "wall_seconds": 5.6527603,
+          "cpu_seconds": 0.015625,
+          "cpu_one_core_percent": 0.2764136310538411,
+          "cpu_machine_percent": 0.06910340776346027,
+          "private_bytes_start": 193261568,
+          "private_bytes_end": 193261568,
+          "private_bytes_peak_sampled": 193261568,
+          "working_set_peak_sampled": 222650368,
+          "os_peak_working_set_bytes": 223100928,
+          "os_peak_commit_bytes": 193265664,
+          "observed_private_growth_bytes": 0,
+          "private_growth_slope_bytes_per_second": 0,
+          "action_count": 6,
+          "samples": [
+            {
+              "elapsed_ms": 0.0789,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222642176,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81729
+            },
+            {
+              "elapsed_ms": 519.4614,
+              "cpu_seconds": 1.421875,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222650368,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81839
+            },
+            {
+              "elapsed_ms": 769.3204000000001,
+              "cpu_seconds": 1.421875,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222650368,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81839
+            },
+            {
+              "elapsed_ms": 1019.3731,
+              "cpu_seconds": 1.421875,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222650368,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81839
+            },
+            {
+              "elapsed_ms": 1535.6252000000002,
+              "cpu_seconds": 1.421875,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222650368,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81947
+            },
+            {
+              "elapsed_ms": 1786.0669,
+              "cpu_seconds": 1.421875,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222650368,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81947
+            },
+            {
+              "elapsed_ms": 2036.0999000000002,
+              "cpu_seconds": 1.421875,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222650368,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 81947
+            },
+            {
+              "elapsed_ms": 2552.7454000000002,
+              "cpu_seconds": 1.421875,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222650368,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 82055
+            },
+            {
+              "elapsed_ms": 2802.8464000000004,
+              "cpu_seconds": 1.421875,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222650368,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 82055
+            },
+            {
+              "elapsed_ms": 3052.9047,
+              "cpu_seconds": 1.421875,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222650368,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 82055
+            },
+            {
+              "elapsed_ms": 3586.8790000000004,
+              "cpu_seconds": 1.421875,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222650368,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 82163
+            },
+            {
+              "elapsed_ms": 3852.4141,
+              "cpu_seconds": 1.421875,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222650368,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 82163
+            },
+            {
+              "elapsed_ms": 4102.9701000000005,
+              "cpu_seconds": 1.421875,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222650368,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 82163
+            },
+            {
+              "elapsed_ms": 4603.1737,
+              "cpu_seconds": 1.421875,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222650368,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 82271
+            },
+            {
+              "elapsed_ms": 4868.780400000001,
+              "cpu_seconds": 1.421875,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222650368,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 82271
+            },
+            {
+              "elapsed_ms": 5119.0905,
+              "cpu_seconds": 1.421875,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222650368,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 82271
+            },
+            {
+              "elapsed_ms": 5652.8392,
+              "cpu_seconds": 1.421875,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222650368,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 82379
+            }
+          ]
+        },
+        {
+          "name": "post_repeat_idle_settle",
+          "wall_seconds": 5.0994672,
+          "cpu_seconds": 0,
+          "cpu_one_core_percent": 0,
+          "cpu_machine_percent": 0,
+          "private_bytes_start": 193261568,
+          "private_bytes_end": 193228800,
+          "private_bytes_peak_sampled": 193261568,
+          "working_set_peak_sampled": 222650368,
+          "os_peak_working_set_bytes": 223100928,
+          "os_peak_commit_bytes": 193265664,
+          "observed_private_growth_bytes": -32768,
+          "private_growth_slope_bytes_per_second": -4479.007331807057,
+          "action_count": 0,
+          "samples": [
+            {
+              "elapsed_ms": 0.058800000000000005,
+              "cpu_seconds": 1.421875,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222650368,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 82379
+            },
+            {
+              "elapsed_ms": 249.292,
+              "cpu_seconds": 1.421875,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222650368,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 82379
+            },
+            {
+              "elapsed_ms": 499.3845,
+              "cpu_seconds": 1.421875,
+              "private_bytes": 193261568,
+              "working_set_bytes": 222650368,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 82379
+            },
+            {
+              "elapsed_ms": 749.9011,
+              "cpu_seconds": 1.421875,
+              "private_bytes": 193228800,
+              "working_set_bytes": 222629888,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 82379
+            },
+            {
+              "elapsed_ms": 1015.3403000000001,
+              "cpu_seconds": 1.421875,
+              "private_bytes": 193228800,
+              "working_set_bytes": 222629888,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 82379
+            },
+            {
+              "elapsed_ms": 1265.4474,
+              "cpu_seconds": 1.421875,
+              "private_bytes": 193228800,
+              "working_set_bytes": 222629888,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 82379
+            },
+            {
+              "elapsed_ms": 1515.467,
+              "cpu_seconds": 1.421875,
+              "private_bytes": 193228800,
+              "working_set_bytes": 222629888,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 82379
+            },
+            {
+              "elapsed_ms": 1766.1595,
+              "cpu_seconds": 1.421875,
+              "private_bytes": 193228800,
+              "working_set_bytes": 222629888,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 82379
+            },
+            {
+              "elapsed_ms": 2031.7857000000001,
+              "cpu_seconds": 1.421875,
+              "private_bytes": 193228800,
+              "working_set_bytes": 222629888,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 82379
+            },
+            {
+              "elapsed_ms": 2297.7716,
+              "cpu_seconds": 1.421875,
+              "private_bytes": 193228800,
+              "working_set_bytes": 222629888,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 82379
+            },
+            {
+              "elapsed_ms": 2547.5607,
+              "cpu_seconds": 1.421875,
+              "private_bytes": 193228800,
+              "working_set_bytes": 222629888,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 82379
+            },
+            {
+              "elapsed_ms": 2798.1578,
+              "cpu_seconds": 1.421875,
+              "private_bytes": 193228800,
+              "working_set_bytes": 222629888,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 82379
+            },
+            {
+              "elapsed_ms": 3063.9773,
+              "cpu_seconds": 1.421875,
+              "private_bytes": 193228800,
+              "working_set_bytes": 222629888,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 82379
+            },
+            {
+              "elapsed_ms": 3329.761,
+              "cpu_seconds": 1.421875,
+              "private_bytes": 193228800,
+              "working_set_bytes": 222629888,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 82379
+            },
+            {
+              "elapsed_ms": 3579.8435,
+              "cpu_seconds": 1.421875,
+              "private_bytes": 193228800,
+              "working_set_bytes": 222629888,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 82379
+            },
+            {
+              "elapsed_ms": 3830.5392,
+              "cpu_seconds": 1.421875,
+              "private_bytes": 193228800,
+              "working_set_bytes": 222629888,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 82379
+            },
+            {
+              "elapsed_ms": 4080.6563,
+              "cpu_seconds": 1.421875,
+              "private_bytes": 193228800,
+              "working_set_bytes": 222629888,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 82379
+            },
+            {
+              "elapsed_ms": 4348.8321000000005,
+              "cpu_seconds": 1.421875,
+              "private_bytes": 193228800,
+              "working_set_bytes": 222629888,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 82379
+            },
+            {
+              "elapsed_ms": 4597.0472,
+              "cpu_seconds": 1.421875,
+              "private_bytes": 193228800,
+              "working_set_bytes": 222629888,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 82379
+            },
+            {
+              "elapsed_ms": 4849.381600000001,
+              "cpu_seconds": 1.421875,
+              "private_bytes": 193228800,
+              "working_set_bytes": 222629888,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 82379
+            },
+            {
+              "elapsed_ms": 5099.526,
+              "cpu_seconds": 1.421875,
+              "private_bytes": 193228800,
+              "working_set_bytes": 222629888,
+              "os_peak_working_set_bytes": 223100928,
+              "os_peak_commit_bytes": 193265664,
+              "page_faults": 82379
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "exe_sha256": "e4b8151e8de3d6a1f393d8b985ed86aa50176e796141166be84ad44ca3ca709a",
+      "file_version": "2.0.16",
+      "exe_bytes": 24533504,
+      "startup_ms": 1379.8135,
+      "startup_cpu_seconds": 1.34375,
+      "startup_private_bytes": 191893504,
+      "scenarios": [
+        {
+          "name": "paused_idle",
+          "wall_seconds": 8.0730143,
+          "cpu_seconds": 0.015625,
+          "cpu_one_core_percent": 0.1935460463633763,
+          "cpu_machine_percent": 0.048386511590844075,
+          "private_bytes_start": 192098304,
+          "private_bytes_end": 192098304,
+          "private_bytes_peak_sampled": 192098304,
+          "working_set_peak_sampled": 221806592,
+          "os_peak_working_set_bytes": 222126080,
+          "os_peak_commit_bytes": 192102400,
+          "observed_private_growth_bytes": 0,
+          "private_growth_slope_bytes_per_second": 0,
+          "action_count": 0,
+          "samples": [
+            {
+              "elapsed_ms": 0.0772,
+              "cpu_seconds": 1.359375,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221687808,
+              "os_peak_working_set_bytes": 222126080,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 80943
+            },
+            {
+              "elapsed_ms": 250.48160000000001,
+              "cpu_seconds": 1.359375,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221794304,
+              "os_peak_working_set_bytes": 222126080,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 80989
+            },
+            {
+              "elapsed_ms": 500.5226,
+              "cpu_seconds": 1.359375,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221798400,
+              "os_peak_working_set_bytes": 222126080,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81014
+            },
+            {
+              "elapsed_ms": 751.067,
+              "cpu_seconds": 1.359375,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221798400,
+              "os_peak_working_set_bytes": 222126080,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81034
+            },
+            {
+              "elapsed_ms": 1001.1945000000001,
+              "cpu_seconds": 1.359375,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221798400,
+              "os_peak_working_set_bytes": 222126080,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81054
+            },
+            {
+              "elapsed_ms": 1252.3937,
+              "cpu_seconds": 1.359375,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221798400,
+              "os_peak_working_set_bytes": 222126080,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81078
+            },
+            {
+              "elapsed_ms": 1502.4198000000001,
+              "cpu_seconds": 1.359375,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221798400,
+              "os_peak_working_set_bytes": 222126080,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81098
+            },
+            {
+              "elapsed_ms": 1767.9499,
+              "cpu_seconds": 1.359375,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221806592,
+              "os_peak_working_set_bytes": 222126080,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81124
+            },
+            {
+              "elapsed_ms": 2018.1254000000001,
+              "cpu_seconds": 1.359375,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221806592,
+              "os_peak_working_set_bytes": 222126080,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81144
+            },
+            {
+              "elapsed_ms": 2269.7446,
+              "cpu_seconds": 1.375,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221806592,
+              "os_peak_working_set_bytes": 222126080,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81164
+            },
+            {
+              "elapsed_ms": 2519.7654,
+              "cpu_seconds": 1.375,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221806592,
+              "os_peak_working_set_bytes": 222126080,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81188
+            },
+            {
+              "elapsed_ms": 2785.3696,
+              "cpu_seconds": 1.375,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221806592,
+              "os_peak_working_set_bytes": 222126080,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81208
+            },
+            {
+              "elapsed_ms": 3036.2597,
+              "cpu_seconds": 1.375,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221806592,
+              "os_peak_working_set_bytes": 222126080,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81232
+            },
+            {
+              "elapsed_ms": 3287.7608,
+              "cpu_seconds": 1.375,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221806592,
+              "os_peak_working_set_bytes": 222126080,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81252
+            },
+            {
+              "elapsed_ms": 3537.9243,
+              "cpu_seconds": 1.375,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221806592,
+              "os_peak_working_set_bytes": 222126080,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81272
+            },
+            {
+              "elapsed_ms": 3787.862,
+              "cpu_seconds": 1.375,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221806592,
+              "os_peak_working_set_bytes": 222126080,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81296
+            },
+            {
+              "elapsed_ms": 4037.9702,
+              "cpu_seconds": 1.375,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221806592,
+              "os_peak_working_set_bytes": 222126080,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81316
+            },
+            {
+              "elapsed_ms": 4287.9385,
+              "cpu_seconds": 1.375,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221806592,
+              "os_peak_working_set_bytes": 222126080,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81324
+            },
+            {
+              "elapsed_ms": 4538.0169000000005,
+              "cpu_seconds": 1.375,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221806592,
+              "os_peak_working_set_bytes": 222126080,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81324
+            },
+            {
+              "elapsed_ms": 4803.6706,
+              "cpu_seconds": 1.375,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221806592,
+              "os_peak_working_set_bytes": 222126080,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81324
+            },
+            {
+              "elapsed_ms": 5053.7131,
+              "cpu_seconds": 1.375,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221806592,
+              "os_peak_working_set_bytes": 222126080,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81324
+            },
+            {
+              "elapsed_ms": 5303.827,
+              "cpu_seconds": 1.375,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221806592,
+              "os_peak_working_set_bytes": 222126080,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81324
+            },
+            {
+              "elapsed_ms": 5553.7286,
+              "cpu_seconds": 1.375,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221806592,
+              "os_peak_working_set_bytes": 222126080,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81324
+            },
+            {
+              "elapsed_ms": 5803.786700000001,
+              "cpu_seconds": 1.375,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221806592,
+              "os_peak_working_set_bytes": 222126080,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81324
+            },
+            {
+              "elapsed_ms": 6053.9946,
+              "cpu_seconds": 1.375,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221806592,
+              "os_peak_working_set_bytes": 222126080,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81324
+            },
+            {
+              "elapsed_ms": 6304.0985,
+              "cpu_seconds": 1.375,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221806592,
+              "os_peak_working_set_bytes": 222126080,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81324
+            },
+            {
+              "elapsed_ms": 6554.177500000001,
+              "cpu_seconds": 1.375,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221806592,
+              "os_peak_working_set_bytes": 222126080,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81324
+            },
+            {
+              "elapsed_ms": 6804.079000000001,
+              "cpu_seconds": 1.375,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221806592,
+              "os_peak_working_set_bytes": 222126080,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81324
+            },
+            {
+              "elapsed_ms": 7054.730600000001,
+              "cpu_seconds": 1.375,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221806592,
+              "os_peak_working_set_bytes": 222126080,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81324
+            },
+            {
+              "elapsed_ms": 7306.5854,
+              "cpu_seconds": 1.375,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221806592,
+              "os_peak_working_set_bytes": 222126080,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81324
+            },
+            {
+              "elapsed_ms": 7572.230100000001,
+              "cpu_seconds": 1.375,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221786112,
+              "os_peak_working_set_bytes": 222126080,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81324
+            },
+            {
+              "elapsed_ms": 7822.4771,
+              "cpu_seconds": 1.375,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221786112,
+              "os_peak_working_set_bytes": 222126080,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81324
+            },
+            {
+              "elapsed_ms": 8073.0915,
+              "cpu_seconds": 1.375,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221786112,
+              "os_peak_working_set_bytes": 222126080,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81324
+            }
+          ]
+        },
+        {
+          "name": "ordinary_autonomous_activity",
+          "wall_seconds": 12.1316727,
+          "cpu_seconds": 0.015625,
+          "cpu_one_core_percent": 0.12879510011838682,
+          "cpu_machine_percent": 0.032198775029596706,
+          "private_bytes_start": 192098304,
+          "private_bytes_end": 192098304,
+          "private_bytes_peak_sampled": 192098304,
+          "working_set_peak_sampled": 221790208,
+          "os_peak_working_set_bytes": 222224384,
+          "os_peak_commit_bytes": 192102400,
+          "observed_private_growth_bytes": 0,
+          "private_growth_slope_bytes_per_second": 0,
+          "action_count": 0,
+          "samples": [
+            {
+              "elapsed_ms": 0.0668,
+              "cpu_seconds": 1.375,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221786112,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81433
+            },
+            {
+              "elapsed_ms": 250.03470000000002,
+              "cpu_seconds": 1.390625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221790208,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81434
+            },
+            {
+              "elapsed_ms": 500.1388,
+              "cpu_seconds": 1.390625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221790208,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81434
+            },
+            {
+              "elapsed_ms": 750.0871000000001,
+              "cpu_seconds": 1.390625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221790208,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81434
+            },
+            {
+              "elapsed_ms": 1000.118,
+              "cpu_seconds": 1.390625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221790208,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81434
+            },
+            {
+              "elapsed_ms": 1265.9326,
+              "cpu_seconds": 1.390625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221790208,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81434
+            },
+            {
+              "elapsed_ms": 1515.8735000000001,
+              "cpu_seconds": 1.390625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221790208,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81434
+            },
+            {
+              "elapsed_ms": 1766.1029,
+              "cpu_seconds": 1.390625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221790208,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81434
+            },
+            {
+              "elapsed_ms": 2017.2247,
+              "cpu_seconds": 1.390625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221790208,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81434
+            },
+            {
+              "elapsed_ms": 2283.7183,
+              "cpu_seconds": 1.390625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221790208,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81434
+            },
+            {
+              "elapsed_ms": 2533.603,
+              "cpu_seconds": 1.390625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221790208,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81434
+            },
+            {
+              "elapsed_ms": 2783.5523000000003,
+              "cpu_seconds": 1.390625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221790208,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81434
+            },
+            {
+              "elapsed_ms": 3034.464,
+              "cpu_seconds": 1.390625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221790208,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81434
+            },
+            {
+              "elapsed_ms": 3284.6229000000003,
+              "cpu_seconds": 1.390625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221790208,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81434
+            },
+            {
+              "elapsed_ms": 3535.0134000000003,
+              "cpu_seconds": 1.390625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221790208,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81434
+            },
+            {
+              "elapsed_ms": 3786.0472,
+              "cpu_seconds": 1.390625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221790208,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81434
+            },
+            {
+              "elapsed_ms": 4037.5232,
+              "cpu_seconds": 1.390625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221790208,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81434
+            },
+            {
+              "elapsed_ms": 4287.5757,
+              "cpu_seconds": 1.390625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221790208,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81434
+            },
+            {
+              "elapsed_ms": 4537.7345000000005,
+              "cpu_seconds": 1.390625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221790208,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81434
+            },
+            {
+              "elapsed_ms": 4787.873500000001,
+              "cpu_seconds": 1.390625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221790208,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81434
+            },
+            {
+              "elapsed_ms": 5038.9253,
+              "cpu_seconds": 1.390625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221790208,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81434
+            },
+            {
+              "elapsed_ms": 5304.4741,
+              "cpu_seconds": 1.390625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221790208,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81434
+            },
+            {
+              "elapsed_ms": 5554.9499000000005,
+              "cpu_seconds": 1.390625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221790208,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81434
+            },
+            {
+              "elapsed_ms": 5805.1223,
+              "cpu_seconds": 1.390625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221790208,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81434
+            },
+            {
+              "elapsed_ms": 6056.1201,
+              "cpu_seconds": 1.390625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221790208,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81434
+            },
+            {
+              "elapsed_ms": 6305.9331,
+              "cpu_seconds": 1.390625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221790208,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81434
+            },
+            {
+              "elapsed_ms": 6556.0765,
+              "cpu_seconds": 1.390625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221790208,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81434
+            },
+            {
+              "elapsed_ms": 6806.592500000001,
+              "cpu_seconds": 1.390625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221790208,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81434
+            },
+            {
+              "elapsed_ms": 7057.2065,
+              "cpu_seconds": 1.390625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221790208,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81434
+            },
+            {
+              "elapsed_ms": 7307.093800000001,
+              "cpu_seconds": 1.390625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221790208,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81434
+            },
+            {
+              "elapsed_ms": 7557.6998,
+              "cpu_seconds": 1.390625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221790208,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81434
+            },
+            {
+              "elapsed_ms": 7823.3651,
+              "cpu_seconds": 1.390625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221790208,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81434
+            },
+            {
+              "elapsed_ms": 8074.3738,
+              "cpu_seconds": 1.390625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221790208,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81434
+            },
+            {
+              "elapsed_ms": 8324.268900000001,
+              "cpu_seconds": 1.390625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221790208,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81434
+            },
+            {
+              "elapsed_ms": 8574.5183,
+              "cpu_seconds": 1.390625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221790208,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81434
+            },
+            {
+              "elapsed_ms": 8825.065200000001,
+              "cpu_seconds": 1.390625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221790208,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81434
+            },
+            {
+              "elapsed_ms": 9076.607600000001,
+              "cpu_seconds": 1.390625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221790208,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81434
+            },
+            {
+              "elapsed_ms": 9342.1855,
+              "cpu_seconds": 1.390625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221790208,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81434
+            },
+            {
+              "elapsed_ms": 9592.6275,
+              "cpu_seconds": 1.390625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221790208,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81434
+            },
+            {
+              "elapsed_ms": 9858.8591,
+              "cpu_seconds": 1.390625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221790208,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81434
+            },
+            {
+              "elapsed_ms": 10109.382800000001,
+              "cpu_seconds": 1.390625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221790208,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81434
+            },
+            {
+              "elapsed_ms": 10359.466400000001,
+              "cpu_seconds": 1.390625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221790208,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81434
+            },
+            {
+              "elapsed_ms": 10609.5822,
+              "cpu_seconds": 1.390625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221790208,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81434
+            },
+            {
+              "elapsed_ms": 10859.695800000001,
+              "cpu_seconds": 1.390625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221790208,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81434
+            },
+            {
+              "elapsed_ms": 11109.8543,
+              "cpu_seconds": 1.390625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221790208,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81434
+            },
+            {
+              "elapsed_ms": 11375.3393,
+              "cpu_seconds": 1.390625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221790208,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81434
+            },
+            {
+              "elapsed_ms": 11631.317500000001,
+              "cpu_seconds": 1.390625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221790208,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81434
+            },
+            {
+              "elapsed_ms": 11881.665,
+              "cpu_seconds": 1.390625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221790208,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81434
+            },
+            {
+              "elapsed_ms": 12131.7395,
+              "cpu_seconds": 1.390625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221790208,
+              "os_peak_working_set_bytes": 222224384,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81434
+            }
+          ]
+        },
+        {
+          "name": "repeated_rest_resume",
+          "wall_seconds": 5.751510499999999,
+          "cpu_seconds": 0.0625,
+          "cpu_one_core_percent": 1.0866710579768568,
+          "cpu_machine_percent": 0.2716677644942142,
+          "private_bytes_start": 192098304,
+          "private_bytes_end": 192098304,
+          "private_bytes_peak_sampled": 192098304,
+          "working_set_peak_sampled": 221794304,
+          "os_peak_working_set_bytes": 222232576,
+          "os_peak_commit_bytes": 192102400,
+          "observed_private_growth_bytes": 0,
+          "private_growth_slope_bytes_per_second": 0,
+          "action_count": 6,
+          "samples": [
+            {
+              "elapsed_ms": 0.0699,
+              "cpu_seconds": 1.40625,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221794304,
+              "os_peak_working_set_bytes": 222232576,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81544
+            },
+            {
+              "elapsed_ms": 569.1386,
+              "cpu_seconds": 1.421875,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221794304,
+              "os_peak_working_set_bytes": 222232576,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81653
+            },
+            {
+              "elapsed_ms": 834.8503000000001,
+              "cpu_seconds": 1.421875,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221794304,
+              "os_peak_working_set_bytes": 222232576,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81653
+            },
+            {
+              "elapsed_ms": 1084.8616,
+              "cpu_seconds": 1.421875,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221794304,
+              "os_peak_working_set_bytes": 222232576,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81653
+            },
+            {
+              "elapsed_ms": 1601.962,
+              "cpu_seconds": 1.4375,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221794304,
+              "os_peak_working_set_bytes": 222232576,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81762
+            },
+            {
+              "elapsed_ms": 1867.6085,
+              "cpu_seconds": 1.4375,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221794304,
+              "os_peak_working_set_bytes": 222232576,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81762
+            },
+            {
+              "elapsed_ms": 2118.2580000000003,
+              "cpu_seconds": 1.4375,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221794304,
+              "os_peak_working_set_bytes": 222232576,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81762
+            },
+            {
+              "elapsed_ms": 2634.0413000000003,
+              "cpu_seconds": 1.4375,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221794304,
+              "os_peak_working_set_bytes": 222232576,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81871
+            },
+            {
+              "elapsed_ms": 2899.6909,
+              "cpu_seconds": 1.4375,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221794304,
+              "os_peak_working_set_bytes": 222232576,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81871
+            },
+            {
+              "elapsed_ms": 3150.1616000000004,
+              "cpu_seconds": 1.4375,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221794304,
+              "os_peak_working_set_bytes": 222232576,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81871
+            },
+            {
+              "elapsed_ms": 3681.9402,
+              "cpu_seconds": 1.46875,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221794304,
+              "os_peak_working_set_bytes": 222232576,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81980
+            },
+            {
+              "elapsed_ms": 3947.7413,
+              "cpu_seconds": 1.46875,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221794304,
+              "os_peak_working_set_bytes": 222232576,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81980
+            },
+            {
+              "elapsed_ms": 4202.7317,
+              "cpu_seconds": 1.46875,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221794304,
+              "os_peak_working_set_bytes": 222232576,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 81980
+            },
+            {
+              "elapsed_ms": 4719.3444,
+              "cpu_seconds": 1.46875,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221794304,
+              "os_peak_working_set_bytes": 222232576,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 82089
+            },
+            {
+              "elapsed_ms": 4984.966100000001,
+              "cpu_seconds": 1.46875,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221794304,
+              "os_peak_working_set_bytes": 222232576,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 82089
+            },
+            {
+              "elapsed_ms": 5235.1283,
+              "cpu_seconds": 1.46875,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221794304,
+              "os_peak_working_set_bytes": 222232576,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 82089
+            },
+            {
+              "elapsed_ms": 5751.5804,
+              "cpu_seconds": 1.46875,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221794304,
+              "os_peak_working_set_bytes": 222232576,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 82198
+            }
+          ]
+        },
+        {
+          "name": "post_repeat_idle_settle",
+          "wall_seconds": 5.0687367000000005,
+          "cpu_seconds": 0,
+          "cpu_one_core_percent": 0,
+          "cpu_machine_percent": 0,
+          "private_bytes_start": 192098304,
+          "private_bytes_end": 192065536,
+          "private_bytes_peak_sampled": 192098304,
+          "working_set_peak_sampled": 221794304,
+          "os_peak_working_set_bytes": 222232576,
+          "os_peak_commit_bytes": 192102400,
+          "observed_private_growth_bytes": -32768,
+          "private_growth_slope_bytes_per_second": -8763.895139755652,
+          "action_count": 0,
+          "samples": [
+            {
+              "elapsed_ms": 0.0601,
+              "cpu_seconds": 1.46875,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221794304,
+              "os_peak_working_set_bytes": 222232576,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 82198
+            },
+            {
+              "elapsed_ms": 264.8893,
+              "cpu_seconds": 1.46875,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221794304,
+              "os_peak_working_set_bytes": 222232576,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 82198
+            },
+            {
+              "elapsed_ms": 530.0317,
+              "cpu_seconds": 1.46875,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221794304,
+              "os_peak_working_set_bytes": 222232576,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 82198
+            },
+            {
+              "elapsed_ms": 781.3065,
+              "cpu_seconds": 1.46875,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221794304,
+              "os_peak_working_set_bytes": 222232576,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 82198
+            },
+            {
+              "elapsed_ms": 1031.4827,
+              "cpu_seconds": 1.46875,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221794304,
+              "os_peak_working_set_bytes": 222232576,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 82198
+            },
+            {
+              "elapsed_ms": 1296.9263,
+              "cpu_seconds": 1.46875,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221794304,
+              "os_peak_working_set_bytes": 222232576,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 82198
+            },
+            {
+              "elapsed_ms": 1548.0983,
+              "cpu_seconds": 1.46875,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221794304,
+              "os_peak_working_set_bytes": 222232576,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 82198
+            },
+            {
+              "elapsed_ms": 1798.7091,
+              "cpu_seconds": 1.46875,
+              "private_bytes": 192098304,
+              "working_set_bytes": 221794304,
+              "os_peak_working_set_bytes": 222232576,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 82198
+            },
+            {
+              "elapsed_ms": 2048.707,
+              "cpu_seconds": 1.46875,
+              "private_bytes": 192065536,
+              "working_set_bytes": 221773824,
+              "os_peak_working_set_bytes": 222232576,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 82198
+            },
+            {
+              "elapsed_ms": 2314.2244,
+              "cpu_seconds": 1.46875,
+              "private_bytes": 192065536,
+              "working_set_bytes": 221773824,
+              "os_peak_working_set_bytes": 222232576,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 82198
+            },
+            {
+              "elapsed_ms": 2564.4112,
+              "cpu_seconds": 1.46875,
+              "private_bytes": 192065536,
+              "working_set_bytes": 221773824,
+              "os_peak_working_set_bytes": 222232576,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 82198
+            },
+            {
+              "elapsed_ms": 2815.0461,
+              "cpu_seconds": 1.46875,
+              "private_bytes": 192065536,
+              "working_set_bytes": 221773824,
+              "os_peak_working_set_bytes": 222232576,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 82198
+            },
+            {
+              "elapsed_ms": 3064.9804000000004,
+              "cpu_seconds": 1.46875,
+              "private_bytes": 192065536,
+              "working_set_bytes": 221773824,
+              "os_peak_working_set_bytes": 222232576,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 82198
+            },
+            {
+              "elapsed_ms": 3315.6681000000003,
+              "cpu_seconds": 1.46875,
+              "private_bytes": 192065536,
+              "working_set_bytes": 221773824,
+              "os_peak_working_set_bytes": 222232576,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 82198
+            },
+            {
+              "elapsed_ms": 3566.1375000000003,
+              "cpu_seconds": 1.46875,
+              "private_bytes": 192065536,
+              "working_set_bytes": 221773824,
+              "os_peak_working_set_bytes": 222232576,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 82198
+            },
+            {
+              "elapsed_ms": 3816.6521000000002,
+              "cpu_seconds": 1.46875,
+              "private_bytes": 192065536,
+              "working_set_bytes": 221773824,
+              "os_peak_working_set_bytes": 222232576,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 82198
+            },
+            {
+              "elapsed_ms": 4066.6704,
+              "cpu_seconds": 1.46875,
+              "private_bytes": 192065536,
+              "working_set_bytes": 221773824,
+              "os_peak_working_set_bytes": 222232576,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 82198
+            },
+            {
+              "elapsed_ms": 4317.2976,
+              "cpu_seconds": 1.46875,
+              "private_bytes": 192065536,
+              "working_set_bytes": 221773824,
+              "os_peak_working_set_bytes": 222232576,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 82198
+            },
+            {
+              "elapsed_ms": 4567.4491,
+              "cpu_seconds": 1.46875,
+              "private_bytes": 192065536,
+              "working_set_bytes": 221773824,
+              "os_peak_working_set_bytes": 222232576,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 82198
+            },
+            {
+              "elapsed_ms": 4818.7902,
+              "cpu_seconds": 1.46875,
+              "private_bytes": 192065536,
+              "working_set_bytes": 221773824,
+              "os_peak_working_set_bytes": 222232576,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 82198
+            },
+            {
+              "elapsed_ms": 5068.7968,
+              "cpu_seconds": 1.46875,
+              "private_bytes": 192065536,
+              "working_set_bytes": 221773824,
+              "os_peak_working_set_bytes": 222232576,
+              "os_peak_commit_bytes": 192102400,
+              "page_faults": 82198
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "automation_events": [
+    {
+      "item": "\uc774 \uc790\ub9ac\uc5d0\uc11c \uc26c\uae30",
+      "parent": "",
+      "pid": 5144,
+      "elapsed_ms": 963.6450000000001,
+      "status": "invoked"
+    },
+    {
+      "item": "\uc774 \uc790\ub9ac\uc5d0\uc11c \uc26c\uae30",
+      "parent": "",
+      "pid": 5144,
+      "elapsed_ms": 226.84740000000002,
+      "status": "invoked"
+    },
+    {
+      "item": "\uc774 \uc790\ub9ac\uc5d0\uc11c \uc26c\uae30",
+      "parent": "",
+      "pid": 5144,
+      "elapsed_ms": 233.03730000000002,
+      "status": "invoked"
+    },
+    {
+      "item": "\uc774 \uc790\ub9ac\uc5d0\uc11c \uc26c\uae30",
+      "parent": "",
+      "pid": 5144,
+      "elapsed_ms": 264.6046,
+      "status": "invoked"
+    },
+    {
+      "item": "\uc774 \uc790\ub9ac\uc5d0\uc11c \uc26c\uae30",
+      "parent": "",
+      "pid": 5144,
+      "elapsed_ms": 234.11960000000002,
+      "status": "invoked"
+    },
+    {
+      "item": "\uc774 \uc790\ub9ac\uc5d0\uc11c \uc26c\uae30",
+      "parent": "",
+      "pid": 5144,
+      "elapsed_ms": 233.5877,
+      "status": "invoked"
+    },
+    {
+      "item": "\uc774 \uc790\ub9ac\uc5d0\uc11c \uc26c\uae30",
+      "parent": "",
+      "pid": 5144,
+      "elapsed_ms": 241.71710000000002,
+      "status": "invoked"
+    },
+    {
+      "item": "\uc774 \uc790\ub9ac\uc5d0\uc11c \uc26c\uae30",
+      "parent": "",
+      "pid": 5144,
+      "elapsed_ms": 218.274,
+      "status": "invoked"
+    },
+    {
+      "item": "\uc774 \uc790\ub9ac\uc5d0\uc11c \uc26c\uae30",
+      "parent": "",
+      "pid": 5144,
+      "elapsed_ms": 250.12390000000002,
+      "status": "invoked"
+    },
+    {
+      "item": "\uc774 \uc790\ub9ac\uc5d0\uc11c \uc26c\uae30",
+      "parent": "",
+      "pid": 2380,
+      "elapsed_ms": 271.4223,
+      "status": "invoked"
+    },
+    {
+      "item": "\uc774 \uc790\ub9ac\uc5d0\uc11c \uc26c\uae30",
+      "parent": "",
+      "pid": 2380,
+      "elapsed_ms": 218.3908,
+      "status": "invoked"
+    },
+    {
+      "item": "\uc774 \uc790\ub9ac\uc5d0\uc11c \uc26c\uae30",
+      "parent": "",
+      "pid": 2380,
+      "elapsed_ms": 233.58280000000002,
+      "status": "invoked"
+    },
+    {
+      "item": "\uc774 \uc790\ub9ac\uc5d0\uc11c \uc26c\uae30",
+      "parent": "",
+      "pid": 2380,
+      "elapsed_ms": 280.036,
+      "status": "invoked"
+    },
+    {
+      "item": "\uc774 \uc790\ub9ac\uc5d0\uc11c \uc26c\uae30",
+      "parent": "",
+      "pid": 2380,
+      "elapsed_ms": 233.8681,
+      "status": "invoked"
+    },
+    {
+      "item": "\uc774 \uc790\ub9ac\uc5d0\uc11c \uc26c\uae30",
+      "parent": "",
+      "pid": 2380,
+      "elapsed_ms": 233.78400000000002,
+      "status": "invoked"
+    },
+    {
+      "item": "\uc774 \uc790\ub9ac\uc5d0\uc11c \uc26c\uae30",
+      "parent": "",
+      "pid": 2380,
+      "elapsed_ms": 249.4333,
+      "status": "invoked"
+    },
+    {
+      "item": "\uc774 \uc790\ub9ac\uc5d0\uc11c \uc26c\uae30",
+      "parent": "",
+      "pid": 2380,
+      "elapsed_ms": 233.76930000000002,
+      "status": "invoked"
+    },
+    {
+      "item": "\uc774 \uc790\ub9ac\uc5d0\uc11c \uc26c\uae30",
+      "parent": "",
+      "pid": 2380,
+      "elapsed_ms": 233.6467,
+      "status": "invoked"
+    }
+  ],
+  "fixture_hashes": [
+    {
+      "name": "interaction-settings.ini",
+      "sha256": "3a800180f531f25341cb69b3cc88ca411728b89e7320f8b572cd1b105d727a5e"
+    },
+    {
+      "name": "life.bak",
+      "sha256": "b2f2ea6266fec4bc2b9628b222126cc058d67831fe30c0568bcac544f9f7f59a"
+    },
+    {
+      "name": "life.ini",
+      "sha256": "5f4008276da7d7419eb1737dc44c287f267bff171f27053628ad1af4073c5001"
+    },
+    {
+      "name": "memory.bak",
+      "sha256": "fbcb433525d179793c4b74dca625689edceb4dc0c8ed284100d0534d076bf33f"
+    },
+    {
+      "name": "memory.ini",
+      "sha256": "92a78d56d7dedb4cff1049aeb632ee3f6410e080c46a6391dea7566a07b9094d"
+    },
+    {
+      "name": "nutrition.bak",
+      "sha256": "4c97507e03adcf939fe39de8899a95f4111fd5c6e0d7f11b85ba0469367bddcc"
+    },
+    {
+      "name": "nutrition.ini",
+      "sha256": "d3780bb76dc0c4aeb0266c7792b072999f72ddca3a914219997e911156019e76"
+    },
+    {
+      "name": "pet.bak",
+      "sha256": "b2f3dec91418ae666d10addcaaa7e78b7d32dccf2c813172350daa0d52466abc"
+    },
+    {
+      "name": "pet.ini",
+      "sha256": "0b3835f435820c90083ddf6e662b6d2591e966717b68f3a5f1e6253ee5933900"
+    },
+    {
+      "name": "pet-2026-11.ini",
+      "sha256": "b2f3dec91418ae666d10addcaaa7e78b7d32dccf2c813172350daa0d52466abc"
+    },
+    {
+      "name": "preferences.ini",
+      "sha256": "03c80b152a7a2f0a3de4f9375235125a848b0b65b6c068c53bdae7ab27cb97c7"
+    },
+    {
+      "name": "update-settings.ini",
+      "sha256": "3f4147e36407ef35d9b83e9bac3464707bb8922721e65cf9ebe9e80ad3c9c481"
+    }
+  ],
+  "completed_utc": "2026-11-09T04:09:12.5074487Z"
+}

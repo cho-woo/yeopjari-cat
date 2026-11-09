@@ -1,0 +1,35 @@
+{
+  "duration": 10.5,
+  "ended": true,
+  "currentTime": 10.5,
+  "width": 720,
+  "height": 510,
+  "error": null,
+  "page_errors": [],
+  "playback_samples": [
+    {
+      "time": 2.018315,
+      "paused": false
+    },
+    {
+      "time": 3.520925,
+      "paused": false
+    },
+    {
+      "time": 4.818232,
+      "paused": false
+    },
+    {
+      "time": 5.417887,
+      "paused": false
+    },
+    {
+      "time": 7.317763,
+      "paused": false
+    },
+    {
+      "time": 9.417717,
+      "paused": false
+    }
+  ]
+}

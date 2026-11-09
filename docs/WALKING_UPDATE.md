@@ -39,4 +39,46 @@ Walk/Run의 `ms`는 거리에 대응하는 구간 비중이며, 실제 초 단�
 
 `native_ground_drive_tests.hpp`는 실제 Box2D로 정지 → 22px/s → 42px/s → 정지 → -28px/s → 정지 없는 반대 요청 → 정지를 재현한다. GDI+로 두 캐릭터를 그리며 100/125/150%는 **합성 DPI 배율 검사**다. 상단 비교는 v2.0.15의 동일 원화/균등 진행/72px/직접 반전 로직 재현이고, 하단은 현재 코드다. 데스크톱 화면 녹화 또는 구버전 EXE의 녹화라고 표시하지 않는다.
 
-실제 테스트 결과와 실행파일 해시는 Windows 검증 후 이 문서에 기록한다. 실제 배율이 다른 두 모니터, 물리 마우스를 창 밖으로 끌어가는 사용감, 장시간 누수 여부는 짧은 자동 검사만으로 확인했다고 주장하지 않는다.
+[최종 소스 검증](https://github.com/cho-woo/yeopjari-cat/actions/runs/42559903373)은 커밋 `8ae8734ab081d27eb9d5cec51fe082310e46df47`에서 Linux 검사/Windows x64 빌드 및 Windows Server 2022 네이티브 실행 검사를 모두 통과했다.
+
+- `tools/check.sh`: 기존 저장·돌봄·행동·물리·커서 검사, 매니페스트/이미지 검증, Windows EXE·ZIP·업데이트 피드·무음 검사 통과.
+- 새 실제 Box2D 시나리오: 30/60/120Hz 입력에서 출발·속도 변경·정지·반전, 정지 유지, 공중 이동 제외, 30초 지연 및 좌표 재배치 검사 통과.
+- Windows `--self-test`: 저장·메뉴·커서·창 이동 회귀 검사 통과. `--render-self-test`: 실제 GDI+ 보행/접지/착지/두 털색, 투명 픽셀 및 잘림, 캐시·64/128/256장 합성 자산 검사 통과. [네이티브 결과](validation/v2.0.16-render-self-test.txt).
+- 100/125/150% 합성 DPI 검사에서 정지·반전 위치와 그리기를 확인했다. 원화의 공통 기준점·referenceHeight와 캐시 픽셀 수는 유지한다. 실제 배율이 다른 두 모니터와 물리 마우스로 창 밖까지 드래그하는 사용감은 수동 확인하지 못했다.
+- [재생 가능한 비교 페이지](walking-preview.html), [MP4](media/walking-native.mp4), [GIF](media/walking-native.gif). 210개 실제 Windows 출력 프레임, 10.5초/20FPS이며, Chromium에서 마지막까지 재생과 오류 없음 확인. [브라우저 검사](validation/v2.0.16-preview.json). 비교 상단은 이전 로직 재현, 하단은 수정 코드다.
+
+## 동일 Windows 환경에서 측정한 성능
+
+같은 실행기(논리 CPU 4개, 1024×768/96DPI), 같은 신규 기록 복사본, 실행파일을 미리 읽은 파일 캐시 조건으로 v2.0.15 공개 EXE와 검증한 v2.0.16 EXE를 한 번씩 순서대로 실행했다. 250ms 간격으로 프로세스 카운터를 읽었다. CPU는 **한 코어를 100%로 본 값**이다.
+
+| 항목 | v2.0.15 | v2.0.16 |
+| --- | ---: | ---: |
+| 보이는 창까지 시작 시간 | 1,375.22ms | 1,379.81ms |
+| 쉬기 8초 평균 CPU | 0.387% | 0.194% |
+| 쉬기 해제 후 12초 평균 CPU | 0.000% | 0.129% |
+| 쉬기·재개 6회 평균 CPU | 0.276% | 1.087% |
+| 시작 시 Private 메모리 | 184.11MiB | 183.00MiB |
+| 전체 관찰 중 최대 Private 메모리 | 184.31MiB | 183.20MiB |
+| OS 최대 Working Set | 212.77MiB | 211.94MiB |
+| 6회 반복 구간 Private 증가 | 0바이트 | 0바이트 |
+
+자율 행동의 종류·실제 보행 시간은 고정하지 않았다. 특히 이전 버전의 12초 CPU가 계측 해상도에서 0으로 나온 만큼 **이 구간을 지속 보행 부하 시험으로 취급하지 않는다**. 반복 구간 CPU도 새 버전이 높게 관찰됐으며, 한 번의 짧은 실행으로 성능 개선/악화를 단정하지 않는다. 실제 장시간 보행 CPU·프레임 지연 분포·장시간 누수는 미검증이다. [전체 측정값과 조건](validation/v2.0.16-benchmark-result.json).
+
+UI Automation의 하위 메뉴 캐릭터 선택은 저장 결과로 확인되지 않아 반복 측정에 사용하지 않았다. 양 버전에서 `paused` 저장값으로 확인되는 최상위 쉬기/재개 메뉴를 6회 반복했다. 두 캐릭터 렌더링/캐시 검사는 별도 네이티브 검사를 사용한다.
+
+## 주요 변경 파일과 빌드
+
+| 파일 | 변경 |
+| --- | --- |
+| `src/cat_physics.cpp` | 접지한 실제 지지면 상대 이동만 누적 |
+| `src/cat_motion_gate.hpp` | 정지·반전·재출발 공통 제어 |
+| `src/cat_authored_locomotion.hpp`, `src/cat_animation.hpp` | 거리 기반 진행, 정지 자세 유지 |
+| `src/main.cpp`, `src/cat_companion.hpp` | 두 고양이에 공통 제어 연결, 가장자리 제동, 잘못된 착지/사회 행동 전환 수정, 그림 겹침 제거 |
+| `src/cat_sprite_assets.hpp`, `tools/import_care_sprites.py`, `assets/care-sprites/manifest.json` | 서기 프레임 등록 및 보폭·접지 구간 비중 |
+| `tests/cat_ground_drive_test.cpp`, `src/native_ground_drive_tests.hpp` | 실제 물리 시나리오와 GDI+ 비교 프레임 |
+
+현재 개발본 EXE: `release/YeopjariCat.exe`. 검증에 쓴 원본은 `build/verified-release-2.0.16/YeopjariCat-2.0.16.exe`, 사용자 ZIP은 같은 폴더의 `YeopjariCat-Windows-2.0.16.zip`이다. 검증 후 다시 내려받아 모든 SHA-256을 확인하고 개발본 위치에 복사했다.
+
+EXE SHA-256: `e4b8151e8de3d6a1f393d8b985ed86aa50176e796141166be84ad44ca3ca709a`.
+
+[검증 출처](validation/v2.0.16-windows-validation.json). 이 버전은 검증된 개발본/릴리스 초안이며, 공개 자동 업데이트의 최신 정식 버전은 계속 v2.0.15다.

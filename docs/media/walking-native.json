@@ -1,0 +1,9 @@
+{
+  "frames": 210,
+  "review_fps": 20,
+  "physics_hz": 60,
+  "duration_seconds": 10.5,
+  "source": "Windows GDI+ / Box2D offscreen diagnostic, not a desktop screen recording",
+  "before": "v2.0.15 gait logic reproduced with original PNGs; not the old executable",
+  "source_archive_sha256": "471a2b48f273d07ba73a7fc959fd658d425ff2bc4a7c0e051428c925778da4e2"
+}

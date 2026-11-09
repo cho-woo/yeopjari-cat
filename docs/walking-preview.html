@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="ko">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>옆자리 고양이 · 보행 비교</title>
+<style>
+  body { max-width: 900px; margin: 32px auto; padding: 0 20px; background: #eef1f4; color: #243447; font: 16px/1.7 system-ui, sans-serif; }
+  video, img { display: block; width: 100%; height: auto; border-radius: 12px; }
+  a { color: #245c8b; }
+  .note { font-size: 14px; }
+</style>
+<h1>출발·속도 변경·정지·방향 전환</h1>
+<p>위쪽은 이전 보행 로직의 재현, 아래쪽은 수정된 보행입니다. 크림치즈냥과 턱시도냥에 같은 동작을 적용했습니다.</p>
+<video controls playsinline loop preload="metadata" poster="media/walking-dpi-100.png">
+  <source src="media/walking-native.mp4" type="video/mp4">
+  <a href="media/walking-native.gif">GIF 보기</a>
+</video>
+<p><a href="media/walking-native.mp4">영상 내려받기</a> · <a href="media/walking-native.gif">GIF 보기</a> · <a href="WALKING_UPDATE.md">구현·검증 결과</a></p>
+<p class="note">Windows GDI+와 Box2D에서 만든 10.5초 진단 영상입니다. 물리 계산은 60Hz, 영상은 20FPS입니다. 실제 바탕화면 녹화나 구버전 실행파일의 녹화는 아닙니다. 걷기 원화 8장은 그대로 사용했으며, 중간 자세가 부족한 구간의 끊김은 남아 있습니다.</p>
+<details><summary>125% 렌더링 확인</summary><img src="media/walking-dpi-125.png" alt="125% 합성 배율에서 정지한 두 고양이"></details>
+<details><summary>150% 렌더링 확인</summary><img src="media/walking-dpi-150.png" alt="150% 합성 배율에서 정지한 두 고양이"></details>
+<p class="note">배율 이미지는 합성 DPI 검사입니다. 실제 혼합 배율 듀얼 모니터 환경의 검증과는 구분합니다.</p>
+</html>

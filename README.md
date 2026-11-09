@@ -5,6 +5,8 @@
 
 **2.0.15**는 v2.0.13의 재생 방식으로 돌아가고, 크림치즈냥과 턱시도냥에 같은 동작을 연결합니다. [동작 미리보기와 구현 설명](docs/TWO_CATS.md).
 
+**2.0.16 개발본**: 실제 접지 이동거리와 정지·방향 전환을 개선했습니다. [구현·Windows 검증 결과](docs/WALKING_UPDATE.md) · [보행 비교 영상](docs/media/walking-native.mp4). 아직 공개 정식 배포는 v2.0.15입니다.
+
 ## 다운로드와 실행
 
 **[최신 버전 다운로드](https://github.com/cho-woo/yeopjari-cat/releases/latest)**
