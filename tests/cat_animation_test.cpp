@@ -852,7 +852,20 @@ void AuthoredClipsFollowHostPhysicsAndPreserveFallbacks() {
         CHECK(!pose.groundContact && pose.lift==0 && pose.x==0);
     }
     CHECK(LandingPose(70,1,1).spriteClip==Clip::Jump);
-    CHECK(LandingPose(280,1,1).spriteClip==Clip::None);
+    for(const auto elapsed:{280u,799u,800u,1070u,3000u,30000u}) {
+        const auto landed=LandingPose(elapsed,1,1);
+        CHECK(landed.spriteClip==Clip::Jump && landed.spriteTimed && landed.groundContact);
+        CHECK(landed.spriteOptions.jump==cat::sprite_sequence::JumpPhase::Landing);
+        CHECK(landed.spriteOptions.contactElapsedMs==elapsed);
+        CHECK(landed.x==0 && landed.lift==0 && landed.scaleX==1 && landed.scaleY==1);
+    }
+    for(unsigned elapsed=0;elapsed<2500;elapsed+=5) {
+        const auto paw=Evaluate(Motion::ToyPaw,elapsed,elapsed,-1);
+        CHECK(paw.spriteClip==Clip::Punch && !paw.spriteTimed && paw.flip && paw.groundContact);
+        CHECK(paw.spriteFrame==cat::sprite_sequence::SampleToyPaw(elapsed).frame);
+        auto registered=paw;UseAuthoredSprite(registered);
+        CHECK(registered.x==0 && registered.lift==0 && registered.blendFrame==-1);
+    }
     CHECK(Evaluate(Motion::Walk,3000,3000,1).spriteClip==Clip::None);
 }
 

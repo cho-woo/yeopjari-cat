@@ -1,0 +1,215 @@
+{
+  "schema": 1,
+  "method": "bidirectional_dense_flow_geometric_resampling",
+  "generator": "tools/derive_locomotion_flow.py",
+  "generator_sha256": "78b6ac645e92a486cc555609fc1078c115fa492eb180cbd5c765654a22b1d522",
+  "source_registration": "assets/derived-motion/source-registration.json",
+  "source_registration_sha256": "731fa80035fe6c7bad53530da53c8a590d15a4dd484035fd48c5aae83fa75cb0",
+  "original_source": "assets/care-sprites/c0-walk.png",
+  "original_source_sha256": "fdb52258ede319c7f23ffa0af019b8d3fa677bf180caa1e9a89e1b37db0e9e78",
+  "atlas": {
+    "source": "c0-locomotion-flow.png",
+    "sha256": "bc7e6ae24279dc757e0ffafceb81bea9071ca0e0031cef4bef69661d985ca69b",
+    "width": 2512,
+    "height": 5024
+  },
+  "derived_manifest_sha256": "f4be4ac60143ce386913fdc9dbeb515d493f7e67b32c004d880e658eea6c95d8",
+  "new_hand_drawn_art": false,
+  "precomputed_only": true,
+  "whole_sprite_alpha_blend": false,
+  "one_intermediate_signed_distance_alpha_contour": true,
+  "motion_aligned_material_rgb_fusion": true,
+  "runtime_flow_or_image_processing": false,
+  "per_frame_bbox_scaling": false,
+  "dependencies": {
+    "opencv": "5.0.0",
+    "numpy": "2.3.5",
+    "scipy": "1.17.0",
+    "Pillow": "12.3.0"
+  },
+  "parameters": {
+    "flow": "DIS_MEDIUM",
+    "finest_scale": 0,
+    "flow_gaussian_sigma": {
+      "walk": 1.2,
+      "run": 4.0
+    },
+    "inverse_iterations": 16,
+    "inverse_damping": 0.5,
+    "cell_pixels": 314,
+    "flow_feature": "0.6*luma_on_gray96 + 0.4*alpha255"
+  },
+  "clips": [
+    {
+      "clip": "walk",
+      "frame_count": 64,
+      "derived_frame_count": 64,
+      "source_frame_count": 8,
+      "original_drawings": 8,
+      "samples_per_original_interval": 8,
+      "unique_derived_frames": 64,
+      "source_key_frames_exact_after_runtime_alpha_cleanup": true,
+      "source_key_indices": [
+        0,
+        8,
+        16,
+        24,
+        32,
+        40,
+        48,
+        56
+      ],
+      "source_key_rgba_sha256": [
+        "be734eb909b0ababc9d5ec4d1233eec2f4de160773604d0b6e5bcf6d9b87c5b8",
+        "791fbd78f72d211632f75bcdda866bdab1d8efa65506d8ff46f1a80559ea4a3c",
+        "917ecd56ffa9325c324c564f25d08b51e5e1322dcd33298b45fe9bbbc0639542",
+        "105f0470c23bebbfd9b74096e8c2adbe868e9e2c5cccb3bbb40b12e38f48f530",
+        "906e5fe36796776aaab7fb53cd7434888564001d9d9e60883f597f3cd8527a46",
+        "9f3aa6c2a3fb7bcc8c2068237c070e4b10d8abb5efdf5913b4e1c2db3619caee",
+        "86d63dd8fc33e9e62a51c339493107d9502325b0d881a253c2e121eced046c9c",
+        "94ae0d6e92703b9a91eeb10d6395092ec25882196776a0c9169c19cc398057a3"
+      ],
+      "anchor": [
+        161,
+        275
+      ],
+      "reference_height": 221,
+      "stride_pixels": 32,
+      "maximum_display_rgb_change_64_phase_steps": 1.5944719461310712,
+      "maximum_held_source_rgb_change_64_phase_steps": 5.513022854331301
+    },
+    {
+      "clip": "run",
+      "frame_count": 64,
+      "derived_frame_count": 64,
+      "source_frame_count": 8,
+      "original_drawings": 8,
+      "samples_per_original_interval": 8,
+      "unique_derived_frames": 64,
+      "source_key_frames_exact_after_runtime_alpha_cleanup": true,
+      "source_key_indices": [
+        0,
+        8,
+        16,
+        24,
+        32,
+        40,
+        48,
+        56
+      ],
+      "source_key_rgba_sha256": [
+        "d700e601a21ae8b791277c27db2d2eaa67d99b3ce1677a9245c5f500c1d7a327",
+        "531ca567ea66f47e8b0892ad073bf196daac1ab461110dc639816c93cda54eb5",
+        "0a02445692b88a4921309ddfb2ff9808c3fc8462b6d156565b5466c949fd959d",
+        "b5422f00e479e30f130ece64ca643cc9fcc4cc4d5bc4a2d0bdd3cd816e8b54c4",
+        "414822303e7665d953dca8f6d90657bc49ba2a67329a8094f8c82ea155618920",
+        "a89f4b70b2d446c81a7f73254255e49bfbf61c8abb25a76ec3cb4badc9d0671f",
+        "e21cb05da793244360564247f3b571972b79e3f42bf61cf83055e3c635d3faab",
+        "129ca65e69f81feb310620d82996aaddfda9783d173fd4f21b37c281aa425ee4"
+      ],
+      "anchor": [
+        157,
+        261
+      ],
+      "reference_height": 221,
+      "stride_pixels": 72,
+      "maximum_display_rgb_change_64_phase_steps": 2.171823555194596,
+      "maximum_held_source_rgb_change_64_phase_steps": 8.202030773957622
+    }
+  ],
+  "appearances": [
+    {
+      "character": 8,
+      "source_frame_count": 8,
+      "original_drawings": 8,
+      "derived_frames_per_clip": 64,
+      "original_source": "assets/derived-motion/source-c8-original.png",
+      "original_source_sha256": "a9e30464d49dd1725083de338a59ea1be33db0bb68eab4718434ef28e5ed2a12",
+      "atlas": {
+        "source": "c8-locomotion-flow.png",
+        "sha256": "35125ae146ff91b4b293ed2634ffbaa8a6cbe151d6ffda1ff13b22d4c0dafef2",
+        "width": 2512,
+        "height": 5024
+      },
+      "clips": [
+        {
+          "clip": "walk",
+          "frame_count": 64,
+          "derived_frame_count": 64,
+          "source_frame_count": 8,
+          "original_drawings": 8,
+          "samples_per_original_interval": 8,
+          "unique_derived_frames": 64,
+          "source_key_frames_exact_after_runtime_alpha_cleanup": true,
+          "source_key_indices": [
+            0,
+            8,
+            16,
+            24,
+            32,
+            40,
+            48,
+            56
+          ],
+          "source_key_rgba_sha256": [
+            "3ea8fdbcb533f59041f12cbb433337268ad69ab1f3933aea316cbc0c15bfd98a",
+            "3d6bc5ab2d6712ecd94f8520e1110b7a177a1dda2bdc20033f3d777dcf66c369",
+            "550553be0227e4edd131cbcb5de9bd61831de81b8e65f93124f6e6583db58e0a",
+            "88596b678a00bbfc98c3aaac0b4d7a533a7b9e1b46811a3158eb5ced0ff19fc6",
+            "60995a6e3247deb2269f7635d548f47c19834a9512086a9199f9e307375c6384",
+            "002c2466e15be7c947abf58147e88230537cd4b3f165fce9dd0c7ead7c015012",
+            "ecd496f3738e93dc907eb20a33baed41b8f7b0eb5ee65aa0cdc6a2fae8564ded",
+            "e5112ae81e18b9549ce3977f30de660ee0ed16e6aae49f2bb5c464e2bc0eb89b"
+          ],
+          "anchor": [
+            161,
+            275
+          ],
+          "reference_height": 221,
+          "stride_pixels": 32,
+          "maximum_display_rgb_change_64_phase_steps": 2.942223468392397,
+          "maximum_held_source_rgb_change_64_phase_steps": 8.211415670804811
+        },
+        {
+          "clip": "run",
+          "frame_count": 64,
+          "derived_frame_count": 64,
+          "source_frame_count": 8,
+          "original_drawings": 8,
+          "samples_per_original_interval": 8,
+          "unique_derived_frames": 64,
+          "source_key_frames_exact_after_runtime_alpha_cleanup": true,
+          "source_key_indices": [
+            0,
+            8,
+            16,
+            24,
+            32,
+            40,
+            48,
+            56
+          ],
+          "source_key_rgba_sha256": [
+            "19c03d99b9b8f50c41f1f3c74cae8392d9294da305bc000c4de51a2c4864864f",
+            "a8e7aa419923a8b42dc528828926b476d3a489dfd2c8fa303e52a3368f65d4b3",
+            "b576fe0ea7055d177d08751eac07233576282236fef6ff6705fd9bd9d9e7c504",
+            "1318ffb4dccf624c3dcb4cae25ed5a6eabcd598f3913884c43c0f2817a75dab0",
+            "b1a5fc1b2347401b3647b3b04011aacad3e9510de251ee5e4b51ff1f53fefed9",
+            "957293272d24413b02426d67560a9aa0c7ce4af45a104a8da096787476512112",
+            "8050aa6a440651ed0c1ca92bf464ebebfc92b18552bc4eca62ecd50c23e5296b",
+            "25ee6431662b34d3cfd9fa06e97e26b7fa076e3c050d9c39f43531e891d6d3f2"
+          ],
+          "anchor": [
+            157,
+            261
+          ],
+          "reference_height": 221,
+          "stride_pixels": 72,
+          "maximum_display_rgb_change_64_phase_steps": 3.615166105890087,
+          "maximum_held_source_rgb_change_64_phase_steps": 16.046585010291647
+        }
+      ]
+    }
+  ],
+  "appearance_manifest_sha256": "0149fd8b12e938ba7945a2566faefaaf3acf16cd115cfb307b9bb977467cf0b4"
+}

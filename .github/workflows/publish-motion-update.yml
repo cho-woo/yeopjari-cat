@@ -1,9 +1,9 @@
-name: Publish exact Windows-validated walking running and jumping command update
+name: Publish exact Windows-validated artwork and animation update
 on:
   workflow_dispatch:
     inputs:
       validation_run:
-        description: Successful Validate run for v2.0.20 with native Windows save and render tests
+        description: Successful Validate run for v2.0.21 with native Windows save and render tests
         required: true
         type: string
 permissions:

@@ -80,7 +80,10 @@ bool MenuCommands(bool enabled) {
 int Run(std::string& proof) {
     Host host;
     const auto* walk = LoadedCareSprite(cat::sprite_sequence::Clip::Walk,cat::Character::Cream);
-    if (!walk || walk->layout->frameCount != 8 || g.meshWalkReview) return 520;
+    if (!walk || !cat::sprite_assets::Valid(*walk->layout) || walk->layout->frameCount < 8 ||
+            LoadedCareSprite(cat::sprite_sequence::Clip::Walk,cat::Character::Tuxedo) != walk ||
+            g.meshWalkReview) return 520;
+    const auto approvedWalkFrames = walk->layout->frameCount;
     std::ostringstream characters;
     bool first = true;
     for (const auto character : cat::kAvailableCharacters) {
@@ -224,8 +227,8 @@ int Run(std::string& proof) {
         ++unsafe;
     }
     proof = "{\"schema\":1,\"test\":\"manual-motion-native\",\"status\":\"passed\",\"version\":\""
-        YEOPJARI_VERSION_STRING "\",\"mesh_walk_default\":false,\"approved_walk_frames\":8,"
-        "\"menu_commands\":[2800,2801,2802],\"menu_labels_checked\":true,\"unsafe_states_checked\":" +
+        YEOPJARI_VERSION_STRING "\",\"mesh_walk_default\":false,\"approved_walk_frames\":" +
+        std::to_string(approvedWalkFrames) + ",\"menu_commands\":[2800,2801,2802],\"menu_labels_checked\":true,\"unsafe_states_checked\":" +
         std::to_string(unsafe) + ",\"pause_preference_preserved\":true,\"suspension_clock_preserved\":true,"
         "\"characters\":[" + characters.str() + "]}\n";
     return 0;

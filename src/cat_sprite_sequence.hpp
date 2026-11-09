@@ -350,6 +350,7 @@ constexpr std::uint64_t kCareMinDurationMs=3500;
 constexpr std::uint64_t kCareMaxDurationMs=12000;
 constexpr std::uint64_t kCareOutroMs=1400;
 constexpr std::uint64_t kLandingMs=280;
+constexpr std::uint64_t kToyPawContactMs=330,kToyPawReleaseMs=660;
 constexpr std::uint64_t kEatDurationMs=5000;
 constexpr std::uint64_t kFishDurationMs=5000;
 constexpr std::uint64_t kTreatDurationMs=4200;
@@ -393,6 +394,19 @@ inline Frame Timed(std::uint64_t elapsed,const std::array<std::uint64_t,N>& dura
         start+=durations[index];
     }
     return {static_cast<unsigned>(N-1),durations[N-1],durations[N-1],false,true,true,true};
+}
+
+// One quiet reach, touch and recovery for an existing floor toy. These are
+// complete frames from the common actor's paw sheet, not a second cat from
+// the legacy action atlas. Keep the reach visible for the whole physical
+// controller's contact window, including a contact delayed by a rolling ball.
+inline Frame SampleToyPaw(std::uint64_t elapsed) {
+    constexpr std::array<unsigned,8> frames{{0,1,2,3,5,6,8,11}};
+    constexpr std::array<std::uint64_t,8> exposures{{120,90,70,50,
+        kToyPawReleaseMs-kToyPawContactMs,120,180,240}};
+    auto pose=Timed(elapsed,exposures);
+    pose.frame=frames[pose.frame];
+    return pose;
 }
 
 // A bounded story visits one related family of poses once. Stretch its

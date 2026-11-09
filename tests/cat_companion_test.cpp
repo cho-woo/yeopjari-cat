@@ -630,25 +630,47 @@ void OptionalWalkReviewKeepsBothCoatsOnTheRegisteredStride() {
 void RegisteredCompanionCareFinishesItsWholeProgram() {
     using Clip=cat::sprite_sequence::Clip;
     using Food=cat::feeding::FoodKind;
+    for(const auto character:{cat::Character::Cream,cat::Character::Tuxedo})
     for(const auto food:{Food::Meal,Food::Treat,Food::Fish}) {
-        State state=NewState(born);state.preferences.character=cat::Character::Cream;
+        State state=NewState(born);state.preferences.character=character;
         state.nutrition.fullness=state.pet.hunger=45;
         Model model;model.Bind(state);model.Reset(0,1600,700);
         auto c=Frame(100,model.Physical().x+60);c.primaryVisible=false;
         const auto clip=food==Food::Treat?Clip::Treat:food==Food::Fish?Clip::Fish:Clip::Eat;
-        const auto* asset=cat::sprite_assets::Find(clip,0,cat::sprite_assets::kCareSprites);
+        const auto* asset=cat::sprite_assets::Find(clip,static_cast<unsigned>(character),cat::sprite_assets::kCareSprites);
         CHECK(asset && asset->program.stepCount);
         const auto duration=cat::sprite_sequence::ProgramDuration(asset->program);
-        CHECK(duration>=5000);
+        const auto intro=cat::sprite_sequence::Duration(asset->program,asset->program.intro);
+        const auto loop=cat::sprite_sequence::Duration(asset->program,asset->program.loop);
+        const auto outro=cat::sprite_sequence::Duration(asset->program,asset->program.outro);
+        // Whole-program completion follows each action's registered length,
+        // not a former five-second minimum. A default cyclic meal must still
+        // show its complete entrance, at least one bite/lick, and its ending.
+        CHECK(duration>0 && duration>=intro+outro);
+        CHECK(!loop || duration-intro-outro>=loop);
         CHECK(model.FeedFood(born,c.ticks,food,1)==cat::nutrition::FeedResult::Accepted);
         model.Tick(c);
+        const auto start=c.ticks;
         const auto end=c.ticks+duration;
+        std::set<unsigned> introSeen,outroSeen;
+        bool sawLoop=false;
         while(c.ticks+17<end) {
             const auto view=model.View(c.ticks);
             CHECK(view.animation.spriteClip==clip && view.animation.spriteOptions.durationMs==duration);
             CHECK(view.motion==(food==Food::Treat?cat::animation::Motion::Treat:cat::animation::Motion::Eat));
+            CHECK(view.animation.spriteElapsedMs==c.ticks-start);
+            auto options=view.animation.spriteOptions;options.sheetFrames=asset->frameCount;
+            const auto source=cat::sprite_sequence::SampleProgram(clip,asset->program,
+                view.animation.spriteElapsedMs,options);
+            CHECK(!source.finished && source.step<asset->program.stepCount);
+            if(source.step<asset->program.loop.first)introSeen.insert(source.step);
+            else if(source.step<asset->program.outro.first)sawLoop=true;
+            else outroSeen.insert(source.step);
             Step(model,c,1);
         }
+        CHECK(introSeen.size()==asset->program.intro.count);
+        CHECK(sawLoop==bool(asset->program.loop.count));
+        CHECK(outroSeen.size()==asset->program.outro.count);
         const auto last=model.View(end-1);
         CHECK(last.animation.spriteClip==clip && last.animation.spriteElapsedMs==duration-1);
         auto options=last.animation.spriteOptions;options.sheetFrames=asset->frameCount;
@@ -722,7 +744,11 @@ void AuthoredSleepKeepsItsIdentityIncludingWindowRestAndWake() {
     c.primaryPlatform={912,400,2100,120,true};c.supportPlatform=c.primaryPlatform;
     CHECK(model.TrySocial(Interaction::WindowFollow,c));
     for(unsigned frame=0;frame<240 && !model.Physical().onPlatform;++frame)Step(model,c,1);
-    CHECK(model.Physical().onPlatform);Step(model,c,70);
+    CHECK(model.Physical().onPlatform);
+    const auto* jump=cat::sprite_assets::Find(Clip::Jump,0,cat::sprite_assets::kCareSprites);
+    CHECK(jump && jump->program.stepCount);
+    const auto recovery=cat::sprite_sequence::Duration(jump->program,jump->program.outro);
+    Step(model,c,static_cast<unsigned>((recovery+16)/17+1));
     c.primary.x=model.Physical().x+65;c.primaryMotion=cat::animation::Motion::Sleep;
     CHECK(model.TrySocial(Interaction::SharedSleep,c));model.Tick(c);
     CHECK(model.View(c.ticks).physical.onPlatform);

@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "design": "authored-tuxedo-motion-flow-v1",
+  "atlases": [
+    {
+      "character": 8,
+      "base_resource_id": 400,
+      "resource_id": 508,
+      "source": "c8-locomotion-flow.png",
+      "sha256": "35125ae146ff91b4b293ed2634ffbaa8a6cbe151d6ffda1ff13b22d4c0dafef2",
+      "image_width": 2512,
+      "image_height": 5024
+    }
+  ]
+}

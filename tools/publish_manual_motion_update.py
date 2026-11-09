@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Publish the exact Windows-validated v2.0.20 command update as stable.
+"""Publish the exact Windows-validated v2.0.21 artwork/motion update as stable.
 
 CI-only. Uses a draft/tag prepared at the validated source commit. It never
 rebuilds, replaces a public release, or promotes the opt-in mesh walking study.
@@ -23,9 +23,9 @@ import release
 from verify_silent_exe import verify_silent_exe
 
 REPO = 'cho-woo/yeopjari-cat'
-VERSION = '2.0.20'
+VERSION = '2.0.21'
 TAG = 'v' + VERSION
-PREVIOUS_STABLE = 'v2.0.16'
+PREVIOUS_STABLE = 'v2.0.20'
 ROOT = Path(__file__).resolve().parents[1]
 FEED_URL = f'https://github.com/{REPO}/releases/latest/download/latest.txt'
 BASE_URL = f'https://github.com/{REPO}/releases/download/{TAG}/'
@@ -85,25 +85,113 @@ def validated_source(run_id, head):
 
 
 def normal_walk_contract():
-    manifest = json.loads((ROOT / 'assets/care-sprites/manifest.json').read_text(encoding='utf-8'))
-    walk = exactly_one((c for c in manifest['clips'] if c['clip'] == 'walk' and c['character'] == 0),
-                       'normal cream walk clip')
-    require(walk['frame_count'] == len(walk['frames']) == 8, 'Normal walk must retain eight approved drawings')
-    walk_path = ROOT / 'assets/care-sprites' / walk['source']
-    require(sha(walk_path) == walk['sha256'], 'Normal walking artwork hash differs from its manifest')
+    original_path = ROOT / 'assets/care-sprites/manifest.json'
+    original = json.loads(original_path.read_text(encoding='utf-8'))
+    derived_path = ROOT / 'assets/derived-motion/manifest.json'
+    playback_path = derived_path if derived_path.is_file() else original_path
+    playback = json.loads(playback_path.read_text(encoding='utf-8'))
+
+    def clip_contract(manifest, manifest_path, clip_name):
+        clip = exactly_one((c for c in manifest['clips'] if c['clip'] == clip_name and c['character'] == 0),
+                           'cream ' + clip_name + ' clip in ' + str(manifest_path.relative_to(ROOT)))
+        count = clip.get('frame_count')
+        require(type(count) is int and count == len(clip['frames']) and count >= 8,
+                'Walking/running artwork must identify at least eight valid playback frames')
+        relative = Path(clip['source'])
+        require(not relative.is_absolute() and '..' not in relative.parts, 'Unsafe artwork source path')
+        path = manifest_path.parent / relative
+        require(path.is_file() and not path.is_symlink() and sha(path) == clip['sha256'],
+                'Walking/running artwork hash differs from its exact manifest')
+        return {'playback_frames': count, 'source': str(path.relative_to(ROOT)), 'sha256': clip['sha256']}
+
+    locomotion = {}
+    for name in ('walk', 'run'):
+        source_clip = clip_contract(original, original_path, name)
+        playback_clip = clip_contract(playback, playback_path, name)
+        locomotion[name] = {**playback_clip, 'original_drawings': source_clip['playback_frames'],
+                            'original_source': source_clip['source'], 'original_sha256': source_clip['sha256'],
+                            'derived_playback': playback_path != original_path}
+    provenance_path = derived_path.parent / 'provenance.json'
+    derived_provenance = None
+    derived_appearance = None
+    if playback_path == derived_path:
+        require(provenance_path.is_file(), 'Derived locomotion requires its source provenance')
+        derived_provenance = {'path': str(provenance_path.relative_to(ROOT)),
+                              'sha256': sha(provenance_path),
+                              'report': json.loads(provenance_path.read_text(encoding='utf-8'))}
+        derived_appearance = derived_appearance_contract(derived_path.parent,
+                                                        derived_provenance['report'], locomotion)
     source = (ROOT / 'src/main.cpp').read_text(encoding='utf-8')
     require(re.search(r'\bbool\s+meshWalkReview\s*=\s*false\s*;', source),
             'Mesh walking must remain disabled by default')
-    return {'normal_walk_frames': 8, 'normal_walk_sha256': walk['sha256'], 'mesh_default': False}
+    return {'normal_walk_frames': locomotion['walk']['playback_frames'],
+            'normal_walk_sha256': locomotion['walk']['sha256'], 'mesh_default': False,
+            'locomotion_manifest': str(playback_path.relative_to(ROOT)),
+            'locomotion_manifest_sha256': sha(playback_path), 'locomotion_artwork': locomotion,
+            'derived_locomotion_provenance': derived_provenance,
+            'derived_tuxedo_appearance': derived_appearance}
 
 
-def manual_motion_contract(path):
+def derived_appearance_contract(directory, provenance, locomotion):
+    manifest_path = directory / 'appearance-manifest.json'
+    require(manifest_path.is_file(), 'Derived locomotion requires the actual Tuxedo appearance manifest')
+    manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
+    require(manifest.get('schema') == 1, 'Wrong derived Tuxedo appearance schema')
+    atlas = exactly_one((a for a in manifest['atlases'] if a['character'] == 8 and a['base_resource_id'] == 400),
+                        'derived Tuxedo locomotion appearance')
+    relative = Path(atlas['source'])
+    require(not relative.is_absolute() and '..' not in relative.parts, 'Unsafe derived Tuxedo source path')
+    path = directory / relative
+    require(path.is_file() and not path.is_symlink(), 'Missing actual derived Tuxedo locomotion atlas')
+    digest = sha(path)
+    appearance = exactly_one((a for a in provenance.get('appearances', []) if a['character'] == 8),
+                             'derived Tuxedo source provenance')
+    require(appearance['source_frame_count'] == appearance['original_drawings'] and
+            type(appearance['source_frame_count']) is int and appearance['source_frame_count'] >= 8,
+            'Tuxedo source drawing count is missing or inconsistent')
+    require(all(appearance['derived_frames_per_clip'] == clip['playback_frames'] for clip in locomotion.values()),
+            'Tuxedo derived playback must match the exact Cream locomotion frame registration')
+    require(appearance['atlas']['source'] == atlas['source'] and appearance['atlas']['sha256'] == digest,
+            'Derived Tuxedo atlas differs from its source provenance')
+    original_relative = Path(appearance['original_source'])
+    require(not original_relative.is_absolute() and '..' not in original_relative.parts,
+            'Original authored Tuxedo source must be a repository-relative path')
+    original_path = ROOT / original_relative
+    require(original_path.is_file() and not original_path.is_symlink() and
+            sha(original_path) == appearance['original_source_sha256'],
+            'Original authored Tuxedo source hash differs from the derivation provenance')
+    return {'manifest': str(manifest_path.relative_to(ROOT)), 'manifest_sha256': sha(manifest_path),
+            'source': str(path.relative_to(ROOT)), 'sha256': digest,
+            'original_source': str(original_relative), 'original_sha256': sha(original_path),
+            'original_drawings': appearance['original_drawings'],
+            'derived_playback_frames_per_clip': appearance['derived_frames_per_clip']}
+
+
+def authored_appearance_contract():
+    from import_styled_sprites import prepare_import
+
+    # This checks actual authored PNG hashes, base registration, complete
+    # Tuxedo coverage, and exact generated header/RC/report bytes together.
+    report = prepare_import(ROOT, check=True, require_character=8)
+    manifest_path = ROOT / 'assets/styled-sprites/manifest.json'
+    report_path = ROOT / 'assets/styled-sprites/import-report.json'
+    return {'manifest': str(manifest_path.relative_to(ROOT)), 'manifest_sha256': sha(manifest_path),
+            'import_report_sha256': sha(report_path), 'design': report['design'],
+            'complete_characters': report['complete_characters'],
+            'atlases': [atlas for atlas in report['sources'] if atlas['character'] == 8]}
+
+
+def manual_motion_contract(path, expected_walk_frames=None):
     report = json.loads(path.read_text(encoding='utf-8-sig'))
     require(report.get('schema') == 1 and report.get('test') == 'manual-motion-native' and
             report.get('status') == 'passed' and report.get('exit_code', 0) == 0 and
             report.get('version') == VERSION, 'Native manual-motion test did not pass for this version')
-    require(report.get('mesh_walk_default') is False and report.get('approved_walk_frames') == 8,
-            'Native report does not retain the approved default walk')
+    walk_frames = report.get('approved_walk_frames')
+    require(report.get('mesh_walk_default') is False and type(walk_frames) is int and walk_frames >= 8,
+            'Native report does not identify valid default walking playback')
+    if expected_walk_frames is not None:
+        require(walk_frames == expected_walk_frames,
+                'Native default walking frame count differs from the published artwork manifest')
     require(report.get('menu_commands') == [2800, 2801, 2802] and
             report.get('menu_labels_checked') is True and
             isinstance(report.get('unsafe_states_checked'), int) and report['unsafe_states_checked'] > 0,
@@ -186,7 +274,8 @@ def publication_result(published, head, run_id, walk_contract, expected):
         with open(summary, 'a', encoding='utf-8') as output:
             output.write(f'Published [{TAG}]({published["url"]}) from `{head}`.\n\n'
                          f'Official [latest feed]({FEED_URL}) and public asset hashes verified.\n\n'
-                         'Normal walk: 8 drawings. Mesh review default: disabled.\n')
+                         f'Normal walking playback: {walk_contract["normal_walk_frames"]} frames. '
+                         'Artwork source and derived-frame counts are recorded in windows-validation.json.\n')
 
 
 def main():
@@ -200,6 +289,13 @@ def main():
     validated_source(run_id, head)
     require(release.version_from_header(ROOT / 'src/app_version.h') == VERSION, 'Wrong source version')
     walk_contract = normal_walk_contract()
+    walk_contract['authored_appearance'] = authored_appearance_contract()
+    derived_tuxedo = walk_contract.get('derived_tuxedo_appearance')
+    if derived_tuxedo:
+        selected = exactly_one((a for a in walk_contract['authored_appearance']['atlases']
+                                if a['base_resource_id'] == 400), 'runtime Tuxedo locomotion appearance')
+        require(selected['sha256'] == derived_tuxedo['sha256'],
+                'Runtime Tuxedo appearance does not use the exact derived locomotion atlas')
     stable_before = api('releases/latest')['tag_name']
     require(stable_before in (PREVIOUS_STABLE, TAG),
             f'Stable latest changed from {PREVIOUS_STABLE} to {stable_before}; reassess this publication')
@@ -216,7 +312,7 @@ def main():
     report = exactly_one(native_root.rglob('render-self-test.txt'), 'native render report')
     require(report.read_text(encoding='utf-8-sig').startswith('exit=0 '), 'Native render artifact does not report exit=0')
     manual_report = exactly_one(native_root.rglob('manual-motion-self-test.json'), 'native manual-motion report')
-    manual_contract = manual_motion_contract(manual_report)
+    manual_contract = manual_motion_contract(manual_report, walk_contract['normal_walk_frames'])
 
     history = json.loads(gh('release', 'list', '--repo', REPO, '--limit', '1000',
                            '--json', 'tagName,isDraft,isPrerelease'))

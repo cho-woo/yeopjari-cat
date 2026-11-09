@@ -621,6 +621,18 @@ void ProgramAndAtlasValidationRejectUnsafeInputs() {
     CHECK(ResourceId(Clip::None,0)==0&&ResourceId(Clip::Walk,10)==0);
 }
 
+void ToyPawUsesTheCommonActorAndThePhysicalContactWindow() {
+    for(std::uint64_t elapsed=0;elapsed<4000;++elapsed) {
+        const auto pose=SampleToyPaw(elapsed);
+        CHECK(pose.frame<12 && pose.groundContact && !pose.looping);
+        if(elapsed<kToyPawContactMs)CHECK(pose.frame<5);
+        if(elapsed>=kToyPawContactMs && elapsed<kToyPawReleaseMs)CHECK(pose.frame==5);
+        if(elapsed>=kToyPawReleaseMs)CHECK(pose.frame>=6);
+    }
+    CHECK(SampleToyPaw(1200).frame==11 && SampleToyPaw(1200).finished);
+    CHECK(SampleToyPaw(std::numeric_limits<std::uint64_t>::max()).frame==11);
 }
-int main(){try{SheetMetadataAndEveryFrame();SleepDoesNotRestartYawnOrWake();AuthoredSheetGridsPreserveTheLegacyLayout();EightFrameSleepUsesStoryPosesWithoutWakingInItsRestLoop();EightFrameSleepWakePauseAndInterruptionRemainBounded();SleepVariantSelectionPreservesLegacyAndKeepsAlternatesRare();PunchCuesDoNotRepeatOrReplay();JumpTracksPhysicalState();JumpFlightNeverReusesThePlantedPrelaunchFrame();GroundedVisitsHoldAndGroomBounds();MealsHaveOneEntranceAndOneEnding();ExpandedProgramsVisitEveryDistinctDrawing();AuthoredSectionsPreserveExposureAndPersistentRest();AuthoredCuesAreSimulationEventsOncePerAction();SameStepContactsUseTheLatestVisibleOffset();ExpandedJumpAndLocomotionFollowPhysics();ProgramAndAtlasValidationRejectUnsafeInputs();
+
+}
+int main(){try{SheetMetadataAndEveryFrame();SleepDoesNotRestartYawnOrWake();AuthoredSheetGridsPreserveTheLegacyLayout();EightFrameSleepUsesStoryPosesWithoutWakingInItsRestLoop();EightFrameSleepWakePauseAndInterruptionRemainBounded();SleepVariantSelectionPreservesLegacyAndKeepsAlternatesRare();PunchCuesDoNotRepeatOrReplay();JumpTracksPhysicalState();JumpFlightNeverReusesThePlantedPrelaunchFrame();GroundedVisitsHoldAndGroomBounds();MealsHaveOneEntranceAndOneEnding();ExpandedProgramsVisitEveryDistinctDrawing();AuthoredSectionsPreserveExposureAndPersistentRest();AuthoredCuesAreSimulationEventsOncePerAction();SameStepContactsUseTheLatestVisibleOffset();ExpandedJumpAndLocomotionFollowPhysics();ProgramAndAtlasValidationRejectUnsafeInputs();ToyPawUsesTheCommonActorAndThePhysicalContactWindow();
 std::cout<<"Sprite sequences: "<<checks<<" checks passed\n";return EXIT_SUCCESS;}catch(const std::exception& error){std::cerr<<error.what()<<'\n';return EXIT_FAILURE;}}

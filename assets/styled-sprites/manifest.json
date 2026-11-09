@@ -1,0 +1,171 @@
+{
+  "schema": 1,
+  "design": "tuxedo-kitten-authored-20261109",
+  "atlases": [
+    {
+      "character": 8,
+      "base_resource_id": 101,
+      "resource_id": 509,
+      "source": "c8-r101.png",
+      "image_width": 1774,
+      "image_height": 887,
+      "sha256": "ede3b3069a2ad94207ecf43dd6fe5e8eb7c0c3f3d2fc1a6e0e36998a5500721c",
+      "base_source": "assets/cat.png",
+      "base_sha256": "f92c5b30167b8978252c812af65ac99ec5be1e7c79fffa1bf3d94810b25d9803"
+    },
+    {
+      "character": 8,
+      "base_resource_id": 102,
+      "resource_id": 510,
+      "source": "c8-r102.png",
+      "image_width": 1774,
+      "image_height": 887,
+      "sha256": "ee911587178b13806ce549d05d3baf8ceb60f11b70b29245155cf354fc95a272",
+      "base_source": "assets/cat-actions.png",
+      "base_sha256": "01d3cb47c255b2e6394c154419c1a18719815135856eb7585e60153aab437bc5"
+    },
+    {
+      "character": 8,
+      "base_resource_id": 105,
+      "resource_id": 511,
+      "source": "c8-r105.png",
+      "image_width": 738,
+      "image_height": 714,
+      "sha256": "e161fbd44f31a1d8e5c1bb08ea90b3a4785680c68fecd6539bbd3e2f0ac73fbd",
+      "base_source": "assets/cream-extra.png",
+      "base_sha256": "c41e7894a60299a816d239a8bfe1233860768acb2039278d0eea26cd73f1c295"
+    },
+    {
+      "character": 8,
+      "base_resource_id": 106,
+      "resource_id": 512,
+      "source": "c8-r106.png",
+      "image_width": 744,
+      "image_height": 762,
+      "sha256": "96dd6e1c89eedb8e246803b4a5a25f16de719dbbb6b07cae4ddadba65954ee4a",
+      "base_source": "assets/cream-gestures.png",
+      "base_sha256": "89fd56d111734cab662099f053a8892189f19d406089f067db99d7ed3fba773a"
+    },
+    {
+      "character": 8,
+      "base_resource_id": 107,
+      "resource_id": 513,
+      "source": "c8-r107.png",
+      "image_width": 1422,
+      "image_height": 370,
+      "sha256": "5b22a7b4fccf4f0c12af8444fb38a7f4422d4768350f948bf7be6c75fef8f5ea",
+      "base_source": "assets/cream-recline.png",
+      "base_sha256": "4f5daddeb2c0f3006cec433b12f51267a2546f507bd6df17cdac8468c0a09439"
+    },
+    {
+      "character": 8,
+      "base_resource_id": 110,
+      "resource_id": 514,
+      "source": "c8-r110.png",
+      "image_width": 243,
+      "image_height": 487,
+      "sha256": "4aea9dd388792f226bd142469b56eebf0a7521949aac512879776f3b91a5391f",
+      "base_source": "assets/cream-hang.png",
+      "base_sha256": "37919d0c3626a22aa8ba59594f54a6baec677ab91638c31a04fe7f65a3b9d039"
+    },
+    {
+      "character": 8,
+      "base_resource_id": 112,
+      "resource_id": 515,
+      "source": "c8-r112.png",
+      "image_width": 598,
+      "image_height": 199,
+      "sha256": "113c200608430660c043ae692dab1a3750c1061172a397149594d16882a9deb3",
+      "base_source": "assets/cream-sleep.png",
+      "base_sha256": "89ecbbe67fc06c7c1593f6ce34162a823d1151730082855e39a4db12f96fec3a"
+    },
+    {
+      "character": 8,
+      "base_resource_id": 113,
+      "resource_id": 500,
+      "source": "c8-r113.png",
+      "image_width": 1254,
+      "image_height": 1254,
+      "sha256": "c173510dd85dc20ec7c22c713e3d66485fbdca768452ba7b4227e68b841a5e42",
+      "base_source": "assets/care-sprites/c0-groom.png",
+      "base_sha256": "d26e8495f42da710c4f9a0b9488ecc4666513146dcc5268ef5311e253cd654f4"
+    },
+    {
+      "character": 8,
+      "base_resource_id": 114,
+      "resource_id": 501,
+      "source": "c8-r114.png",
+      "image_width": 1774,
+      "image_height": 887,
+      "sha256": "658e351b2afa73adc8f65550598370728a740c44ee157f11ae4e84f345fcb8ac",
+      "base_source": "assets/care-sprites/c0-sleep.png",
+      "base_sha256": "76560182751c11b45ff87cea4f30904a48a014c0000f2fffef4d883b2aaeab7a"
+    },
+    {
+      "character": 8,
+      "base_resource_id": 116,
+      "resource_id": 503,
+      "source": "c8-r116.png",
+      "image_width": 1774,
+      "image_height": 887,
+      "sha256": "b509d40cd8c83a025c656bd2a68b593a54a56c3fd660d2931bed227ed8b23b45",
+      "base_source": "assets/care-sprites/c0-fish.png",
+      "base_sha256": "5577d90a87569acab3a20046e34df40651dca4172092a29c81c2f7e95b2f3697"
+    },
+    {
+      "character": 8,
+      "base_resource_id": 117,
+      "resource_id": 504,
+      "source": "c8-r117.png",
+      "image_width": 1448,
+      "image_height": 1086,
+      "sha256": "ef5d7cabef389c0303ab35a3a481749d93917575e935b4f245bf0493b70f5121",
+      "base_source": "assets/care-sprites/c0-punch.png",
+      "base_sha256": "580e91c043ace82a4f04ba8de95b2511b3a6fe764e5def82b91b3da95b9b00c0"
+    },
+    {
+      "character": 8,
+      "base_resource_id": 118,
+      "resource_id": 505,
+      "source": "c8-r118.png",
+      "image_width": 1086,
+      "image_height": 1448,
+      "sha256": "bf6e3f231236994f4fb13a553a3c1a932798c8a87490c6577c7839a00ab70509",
+      "base_source": "assets/care-sprites/c0-eat.png",
+      "base_sha256": "225ef4fc0253da354fc1d186de3394390aa68b78be5d14d80e3653581f85bd09"
+    },
+    {
+      "character": 8,
+      "base_resource_id": 119,
+      "resource_id": 506,
+      "source": "c8-r119.png",
+      "image_width": 1254,
+      "image_height": 1254,
+      "sha256": "1fd1b3f1b5b8025b6dd44ee3dbfea1f03d3cb1aad3e18cfb60a2f1f20727bd0a",
+      "base_source": "assets/care-sprites/c0-jump.png",
+      "base_sha256": "8d1f2bf8e3502381061df15a28f0fca85ee2db57ef963cf72554ec44ff6b4fd7"
+    },
+    {
+      "character": 8,
+      "base_resource_id": 120,
+      "resource_id": 507,
+      "source": "c8-r120.png",
+      "image_width": 1536,
+      "image_height": 1024,
+      "sha256": "7fe4e30db5b67d05eb4f8508a904bf65388db6c759cbbc64a9a54b443d070a2b",
+      "base_source": "assets/care-sprites/c0-treat.png",
+      "base_sha256": "1cc0d92d56fc3b55b85a2ed1d90a29b4e00a3d1c9a8695a7e3af4be1d3044e8e"
+    },
+    {
+      "character": 8,
+      "base_resource_id": 400,
+      "resource_id": 508,
+      "source": "c8-r400.png",
+      "image_width": 2512,
+      "image_height": 5024,
+      "sha256": "35125ae146ff91b4b293ed2634ffbaa8a6cbe151d6ffda1ff13b22d4c0dafef2",
+      "base_source": "assets/derived-motion/c0-locomotion-flow.png",
+      "base_sha256": "bc7e6ae24279dc757e0ffafceb81bea9071ca0e0031cef4bef69661d985ca69b"
+    }
+  ]
+}

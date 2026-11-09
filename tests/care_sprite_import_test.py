@@ -136,6 +136,62 @@ class CareSpriteImportTests(unittest.TestCase):
         rc=(self.root/importer.RC).read_text();self.assertIn('192 RCDATA "../assets/care-sprites/c9-treat.png"',rc)
         self.assertEqual(importer.prepare_import(self.root,check=True)['clips'],9)
 
+    def derived_fixture(self):
+        walk=self.authored(16,columns=4,clip='walk')
+        frames=[{'rect':[(i%4)*16,(i//4)*16,16,16],'anchor':[8,16]} for i in range(16)]
+        walk.update(frame_count=8,frames=frames[:8],sequence={'loop':[{'frame':i,'ms':125} for i in range(8)]})
+        run=dict(walk,clip='run',frames=frames[8:],stride_pixels=150)
+        self.apply([self.entry('groom'),walk,run],schema=2)
+        canonical=self.root/importer.CANONICAL
+        original=json.loads(canonical.read_text())
+        directory=self.root/'assets/derived-motion';directory.mkdir()
+        derived=self.authored(128,columns=8,clip='walk')
+        data=(self.inputs/derived['source']).read_bytes()
+        atlas=directory/'c0-locomotion-flow.png';atlas.write_bytes(data)
+        registrations=[{'rect':[(i%8)*16,(i//8)*16,16,16],'anchor':[8,16]} for i in range(128)]
+        clips=[]
+        for name,offset,stride in [('walk',0,72),('run',64,150)]:
+            clips.append(dict(derived,clip=name,source=atlas.name,frame_count=64,
+                frames=registrations[offset:offset+64],stride_pixels=stride,
+                sequence={'loop':[{'frame':i,'ms':125} for i in range(64)]}))
+        manifest=directory/'manifest.json';manifest.write_text(json.dumps({'schema':2,'clips':clips}))
+        source=directory/'source-registration.json'
+        source.write_text(json.dumps({'schema':2,'clips':[c for c in original['clips'] if c['clip'] in ('walk','run')]}))
+        generator=self.root/'tools/derive_locomotion_flow.py';generator.parent.mkdir()
+        generator.write_bytes((ROOT/'tools/derive_locomotion_flow.py').read_bytes())
+        original_png=self.root/'assets/care-sprites/c0-walk.png'
+        sha=lambda path:hashlib.sha256(path.read_bytes()).hexdigest()
+        report={'schema':1,'precomputed_only':True,'whole_sprite_alpha_blend':False,
+            'generator':'tools/derive_locomotion_flow.py','generator_sha256':sha(generator),
+            'source_registration':'assets/derived-motion/source-registration.json','source_registration_sha256':sha(source),
+            'original_source':'assets/care-sprites/c0-walk.png','original_source_sha256':sha(original_png),
+            'derived_manifest_sha256':sha(manifest),'atlas':{'source':atlas.name,'sha256':sha(atlas)},
+            'clips':[{'clip':name,'source_frame_count':8,'original_drawings':8,'derived_frame_count':64}
+                     for name in ('walk','run')]}
+        (directory/'provenance.json').write_text(json.dumps(report))
+        return canonical,original_png,atlas
+
+    def test_default_derived_motion_overrides_runtime_without_replacing_originals(self):
+        canonical,original,atlas=self.derived_fixture()
+        before={path:path.read_bytes() for path in (canonical,original)}
+        result=importer.prepare_import(self.root)
+        self.assertEqual(result['derived_locomotion_clips'],2)
+        self.assertEqual(result['actual_frames'],16+64+64)
+        self.assertEqual({path:path.read_bytes() for path in before},before)
+        header=(self.root/importer.HEADER).read_text();rc=(self.root/importer.RC).read_text()
+        self.assertEqual(header.count('assets/derived-motion/c0-locomotion-flow.png'),2)
+        self.assertEqual(rc.count('400 RCDATA "../assets/derived-motion/c0-locomotion-flow.png"'),1)
+        self.assertNotIn('401 RCDATA',rc)
+        self.assertEqual(importer.prepare_import(self.root,check=True)['derived_locomotion_clips'],2)
+
+    def test_derived_atlas_drift_fails_before_generated_outputs_change(self):
+        _,_,atlas=self.derived_fixture()
+        before={name:(self.root/name).read_bytes() for name in (importer.HEADER,importer.RC)}
+        atlas.write_bytes(atlas.read_bytes()+b'drift')
+        with self.assertRaisesRegex(importer.ImportError,'atlas drift'):
+            importer.prepare_import(self.root)
+        self.assertEqual({name:(self.root/name).read_bytes() for name in before},before)
+
     @unittest.skipUnless(shutil.which('g++'),'C++ compiler unavailable')
     def test_generated_metadata_compiles_and_find_is_typed(self):
         self.apply([self.entry('sleep',1),self.entry('treat',9)])

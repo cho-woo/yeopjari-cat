@@ -208,7 +208,7 @@ inline bool Eligible(const State& s,const EventContext& c,Event e) {
     case Event::Yawn:return !c.sleeping&&s.sleepiness>=.35;
     case Event::SleepTalk:return c.sleeping;
     case Event::Peek:return !c.sleeping&&!c.perched&&!c.roamingPaused;
-    case Event::SmallBox:return !c.sleeping&&!c.perched&&c.boxAvailable;
+    case Event::SmallBox:return false; // Retired event ID remains stable for saved histories.
     case Event::CrownPride:return !c.sleeping&&c.crownWorn;
     case Event::EdgeHang:return !c.sleeping&&!c.roamingPaused&&c.perched&&c.edgeSupported&&
         std::isfinite(c.edgeDistanceLogical)&&c.edgeDistanceLogical>=0&&c.edgeDistanceLogical<=24;
@@ -243,7 +243,7 @@ inline Event PeekEvent(const State& s,const EventContext& c) {
     const auto draw=Mix(static_cast<std::uint64_t>(s.bornUtc)^Mix(static_cast<std::uint64_t>(c.nowUtc/300))^0x1feda75ULL);
     if(draw%1000>=18) return Event::None;
     std::array<Event,10> choices{};unsigned count=0;
-    for(auto e:{Event::Yawn,Event::SleepTalk,Event::Peek,Event::SmallBox,Event::CrownPride,Event::EdgeHang,Event::ScreenCrossing,Event::BondKnead,Event::BondGreeting,Event::BondLifetime})
+    for(auto e:{Event::Yawn,Event::SleepTalk,Event::Peek,Event::CrownPride,Event::EdgeHang,Event::ScreenCrossing,Event::BondKnead,Event::BondGreeting,Event::BondLifetime})
         if(Eligible(s,c,e)) choices[count++]=e;
     return count?choices[(draw/1000)%count]:Event::None;
 }

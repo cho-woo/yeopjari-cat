@@ -1,0 +1,654 @@
+{
+  "schema": 1,
+  "design": "tuxedo-kitten-authored-20261109",
+  "generator": "image_gen",
+  "design_reference": "design-reference.png",
+  "notes": "New authored Tuxedo textures replace the retired runtime color mask. Pose templates retain common registration. Derived walk/run are geometric motion samples from eight new authored poses per gait, not sixty-four unique drawings.",
+  "pose_template_manifest": "../care-sprites/manifest.json",
+  "fallback_packing": {
+    "cat.png": {
+      "atlas_uniform_scale": 0.9833795013850416,
+      "frames": [
+        {
+          "frame": 0,
+          "original_cell": [
+            0,
+            0,
+            443,
+            443
+          ],
+          "registration_rect": [
+            32,
+            54,
+            389,
+            336
+          ],
+          "packed_rect": [
+            34,
+            61,
+            384,
+            328
+          ]
+        },
+        {
+          "frame": 1,
+          "original_cell": [
+            443,
+            0,
+            887,
+            443
+          ],
+          "registration_rect": [
+            484,
+            54,
+            381,
+            339
+          ],
+          "packed_rect": [
+            485,
+            61,
+            378,
+            331
+          ]
+        },
+        {
+          "frame": 2,
+          "original_cell": [
+            887,
+            0,
+            1330,
+            443
+          ],
+          "registration_rect": [
+            925,
+            53,
+            384,
+            338
+          ],
+          "packed_rect": [
+            927,
+            62,
+            381,
+            328
+          ]
+        },
+        {
+          "frame": 3,
+          "original_cell": [
+            1330,
+            0,
+            1774,
+            443
+          ],
+          "registration_rect": [
+            1357,
+            54,
+            396,
+            339
+          ],
+          "packed_rect": [
+            1362,
+            61,
+            385,
+            331
+          ]
+        },
+        {
+          "frame": 4,
+          "original_cell": [
+            0,
+            443,
+            443,
+            887
+          ],
+          "registration_rect": [
+            56,
+            468,
+            329,
+            366
+          ],
+          "packed_rect": [
+            58,
+            474,
+            324,
+            359
+          ]
+        },
+        {
+          "frame": 5,
+          "original_cell": [
+            443,
+            443,
+            887,
+            887
+          ],
+          "registration_rect": [
+            497,
+            467,
+            325,
+            367
+          ],
+          "packed_rect": [
+            498,
+            472,
+            323,
+            361
+          ]
+        },
+        {
+          "frame": 6,
+          "original_cell": [
+            887,
+            443,
+            1330,
+            887
+          ],
+          "registration_rect": [
+            907,
+            552,
+            411,
+            271
+          ],
+          "packed_rect": [
+            909,
+            558,
+            408,
+            264
+          ]
+        },
+        {
+          "frame": 7,
+          "original_cell": [
+            1330,
+            443,
+            1774,
+            887
+          ],
+          "registration_rect": [
+            1389,
+            520,
+            357,
+            318
+          ],
+          "packed_rect": [
+            1390,
+            533,
+            355,
+            304
+          ]
+        }
+      ]
+    },
+    "cat-actions.png": {
+      "atlas_uniform_scale": 0.9813664596273292,
+      "frames": [
+        {
+          "frame": 0,
+          "original_cell": [
+            0,
+            0,
+            443,
+            443
+          ],
+          "registration_rect": [
+            61,
+            149,
+            366,
+            288
+          ],
+          "packed_rect": [
+            64,
+            155,
+            360,
+            281
+          ]
+        },
+        {
+          "frame": 1,
+          "original_cell": [
+            443,
+            0,
+            887,
+            443
+          ],
+          "registration_rect": [
+            512,
+            120,
+            289,
+            318
+          ],
+          "packed_rect": [
+            513,
+            121,
+            286,
+            316
+          ]
+        },
+        {
+          "frame": 2,
+          "original_cell": [
+            887,
+            0,
+            1330,
+            443
+          ],
+          "registration_rect": [
+            940,
+            120,
+            287,
+            318
+          ],
+          "packed_rect": [
+            943,
+            122,
+            281,
+            315
+          ]
+        },
+        {
+          "frame": 3,
+          "original_cell": [
+            1330,
+            0,
+            1774,
+            443
+          ],
+          "registration_rect": [
+            1378,
+            153,
+            342,
+            283
+          ],
+          "packed_rect": [
+            1380,
+            157,
+            337,
+            278
+          ]
+        },
+        {
+          "frame": 4,
+          "original_cell": [
+            0,
+            443,
+            443,
+            887
+          ],
+          "registration_rect": [
+            80,
+            487,
+            317,
+            334
+          ],
+          "packed_rect": [
+            82,
+            492,
+            312,
+            328
+          ]
+        },
+        {
+          "frame": 5,
+          "original_cell": [
+            443,
+            443,
+            887,
+            887
+          ],
+          "registration_rect": [
+            527,
+            491,
+            320,
+            331
+          ],
+          "packed_rect": [
+            530,
+            493,
+            314,
+            328
+          ]
+        },
+        {
+          "frame": 6,
+          "original_cell": [
+            887,
+            443,
+            1330,
+            887
+          ],
+          "registration_rect": [
+            952,
+            491,
+            299,
+            330
+          ],
+          "packed_rect": [
+            955,
+            495,
+            292,
+            325
+          ]
+        },
+        {
+          "frame": 7,
+          "original_cell": [
+            1330,
+            443,
+            1774,
+            887
+          ],
+          "registration_rect": [
+            1380,
+            495,
+            330,
+            324
+          ],
+          "packed_rect": [
+            1382,
+            499,
+            325,
+            319
+          ]
+        }
+      ]
+    },
+    "cream-extra.png": {
+      "atlas_uniform_scale": 0.5551470588235294,
+      "frames": [
+        {
+          "frame": 0,
+          "original_cell": [
+            0,
+            0,
+            369,
+            357
+          ],
+          "registration_rect": [
+            4,
+            4,
+            361,
+            294
+          ],
+          "packed_rect": [
+            12,
+            12,
+            346,
+            285
+          ]
+        },
+        {
+          "frame": 1,
+          "original_cell": [
+            369,
+            0,
+            738,
+            357
+          ],
+          "registration_rect": [
+            373,
+            4,
+            327,
+            265
+          ],
+          "packed_rect": [
+            375,
+            12,
+            324,
+            256
+          ]
+        },
+        {
+          "frame": 2,
+          "original_cell": [
+            0,
+            357,
+            369,
+            714
+          ],
+          "registration_rect": [
+            4,
+            361,
+            329,
+            345
+          ],
+          "packed_rect": [
+            8,
+            366,
+            321,
+            339
+          ]
+        },
+        {
+          "frame": 3,
+          "original_cell": [
+            369,
+            357,
+            738,
+            714
+          ],
+          "registration_rect": [
+            373,
+            361,
+            304,
+            349
+          ],
+          "packed_rect": [
+            374,
+            368,
+            302,
+            341
+          ]
+        }
+      ]
+    },
+    "cream-gestures.png": {
+      "atlas_uniform_scale": 0.5933014354066986,
+      "frames": [
+        {
+          "frame": 0,
+          "original_cell": [
+            0,
+            0,
+            372,
+            381
+          ],
+          "registration_rect": [
+            4,
+            4,
+            293,
+            373
+          ],
+          "packed_rect": [
+            8,
+            11,
+            286,
+            365
+          ]
+        },
+        {
+          "frame": 1,
+          "original_cell": [
+            372,
+            0,
+            744,
+            381
+          ],
+          "registration_rect": [
+            376,
+            4,
+            318,
+            372
+          ],
+          "packed_rect": [
+            382,
+            14,
+            307,
+            361
+          ]
+        },
+        {
+          "frame": 2,
+          "original_cell": [
+            0,
+            381,
+            372,
+            762
+          ],
+          "registration_rect": [
+            4,
+            385,
+            364,
+            361
+          ],
+          "packed_rect": [
+            8,
+            391,
+            355,
+            354
+          ]
+        },
+        {
+          "frame": 3,
+          "original_cell": [
+            372,
+            381,
+            744,
+            762
+          ],
+          "registration_rect": [
+            376,
+            385,
+            361,
+            360
+          ],
+          "packed_rect": [
+            384,
+            392,
+            346,
+            352
+          ]
+        }
+      ]
+    },
+    "cream-recline.png": {
+      "atlas_uniform_scale": 0.511049723756906,
+      "frames": [
+        {
+          "frame": 0,
+          "original_cell": [
+            0,
+            0,
+            711,
+            370
+          ],
+          "registration_rect": [
+            4,
+            4,
+            665,
+            362
+          ],
+          "packed_rect": [
+            84,
+            77,
+            506,
+            288
+          ]
+        },
+        {
+          "frame": 1,
+          "original_cell": [
+            711,
+            0,
+            1422,
+            370
+          ],
+          "registration_rect": [
+            715,
+            4,
+            703,
+            352
+          ],
+          "packed_rect": [
+            794,
+            72,
+            545,
+            283
+          ]
+        }
+      ]
+    },
+    "cream-hang.png": {
+      "atlas_uniform_scale": 0.272196261682243,
+      "frames": [
+        {
+          "frame": 0,
+          "original_cell": [
+            0,
+            0,
+            243,
+            487
+          ],
+          "registration_rect": [
+            4,
+            4,
+            235,
+            479
+          ],
+          "packed_rect": [
+            5,
+            7,
+            233,
+            475
+          ]
+        }
+      ]
+    },
+    "cream-sleep.png": {
+      "atlas_uniform_scale": 0.26900584795321636,
+      "frames": [
+        {
+          "frame": 0,
+          "original_cell": [
+            0,
+            0,
+            299,
+            199
+          ],
+          "registration_rect": [
+            4,
+            4,
+            291,
+            191
+          ],
+          "packed_rect": [
+            10,
+            9,
+            279,
+            185
+          ]
+        },
+        {
+          "frame": 1,
+          "original_cell": [
+            299,
+            0,
+            598,
+            199
+          ],
+          "registration_rect": [
+            303,
+            4,
+            278,
+            190
+          ],
+          "packed_rect": [
+            304,
+            7,
+            276,
+            186
+          ]
+        }
+      ]
+    }
+  }
+}

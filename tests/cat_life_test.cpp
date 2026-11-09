@@ -101,7 +101,10 @@ void EventConditions(){
     c.trigger=Trigger::TailChase;CHECK(Eligible(s,c,Event::TailStartle));
     c.trigger=Trigger::Sneeze;CHECK(Eligible(s,c,Event::SneezeStartle));
     c.trigger=Trigger::None;c.sleeping=true;CHECK(Eligible(s,c,Event::SleepTalk));CHECK(!Eligible(s,c,Event::Yawn));
-    c.sleeping=false;c.boxAvailable=true;c.crownWorn=true;CHECK(Eligible(s,c,Event::SmallBox));CHECK(Eligible(s,c,Event::CrownPride));
+    c.sleeping=false;c.boxAvailable=true;c.crownWorn=true;CHECK(!Eligible(s,c,Event::SmallBox));CHECK(Eligible(s,c,Event::CrownPride));
+    static_assert(static_cast<unsigned>(Event::SmallBox)==7);
+    const auto beforeRetired=Serialize(s);
+    CHECK(!CommitEvent(s,c,Event::SmallBox));CHECK(Serialize(s)==beforeRetired);
     c.perched=true;CHECK(!Eligible(s,c,Event::SmallBox));CHECK(!Eligible(s,c,Event::Peek));
     CHECK(!Eligible(s,c,Event::EdgeHang));c.edgeSupported=true;c.edgeDistanceLogical=18;
     CHECK(Eligible(s,c,Event::EdgeHang));c.edgeDistanceLogical=25;CHECK(!Eligible(s,c,Event::EdgeHang));
@@ -186,7 +189,8 @@ void AutomaticRareVariety(){
     const unsigned reactions=counts[static_cast<unsigned>(Event::PunchStartle)]+
         counts[static_cast<unsigned>(Event::TailStartle)]+counts[static_cast<unsigned>(Event::SneezeStartle)];
     CHECK(total>400);CHECK(reactions>100&&reactions*4<total*3);
-    for(auto e:{Event::Yawn,Event::SleepTalk,Event::Peek,Event::SmallBox,Event::CrownPride,
+    CHECK(counts[static_cast<unsigned>(Event::SmallBox)]==0);
+    for(auto e:{Event::Yawn,Event::SleepTalk,Event::Peek,Event::CrownPride,
             Event::ScreenCrossing,Event::BondKnead,Event::BondGreeting,Event::BondLifetime})
         CHECK(counts[static_cast<unsigned>(e)]>=10);
     auto s=Legacy();auto c=Context(s.updatedUtc);c.trigger=Trigger::Punch;

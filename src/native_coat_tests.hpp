@@ -1,7 +1,59 @@
 #pragma once
 
-// Real GDI+ dispatcher checks for both available characters. Color may differ;
-// source choice, alpha, support, size, timing and physics must be identical.
+namespace native_coat_tests {
+struct Resource {
+    IStream* stream=nullptr;
+    std::unique_ptr<Bitmap> image;
+    ~Resource(){image.reset();if(stream)stream->Release();}
+    bool Open(int id,const char* expectedHash) {
+        const auto resource=FindResourceW(g.instance,MAKEINTRESOURCEW(id),RT_RCDATA);
+        if(!resource)return false;
+        const auto loaded=LoadResource(g.instance,resource);
+        const auto count=SizeofResource(g.instance,resource);
+        const auto* bytes=static_cast<const BYTE*>(LockResource(loaded));
+        if(!bytes||!count||count>cat::sprite_assets::kMaxImageBytes||!expectedHash)return false;
+        BCRYPT_ALG_HANDLE algorithm=nullptr;BCRYPT_HASH_HANDLE hash=nullptr;
+        if(BCryptOpenAlgorithmProvider(&algorithm,BCRYPT_SHA256_ALGORITHM,nullptr,0)<0)return false;
+        DWORD objectSize=0,resultSize=0;
+        bool ok=BCryptGetProperty(algorithm,BCRYPT_OBJECT_LENGTH,reinterpret_cast<PUCHAR>(&objectSize),
+            sizeof(objectSize),&resultSize,0)>=0&&objectSize<1048576;
+        std::vector<BYTE> object(ok?objectSize:0);std::array<BYTE,32> digest{};
+        if(ok)ok=BCryptCreateHash(algorithm,&hash,object.data(),objectSize,nullptr,0,0)>=0;
+        if(ok)ok=BCryptHashData(hash,const_cast<PUCHAR>(bytes),count,0)>=0&&
+            BCryptFinishHash(hash,digest.data(),static_cast<ULONG>(digest.size()),0)>=0;
+        if(hash)BCryptDestroyHash(hash);
+        BCryptCloseAlgorithmProvider(algorithm,0);
+        constexpr char hex[]="0123456789abcdef";std::string actual;
+        for(const auto byte:digest){actual+=hex[byte>>4];actual+=hex[byte&15];}
+        if(!ok||actual!=expectedHash)return false;
+        const auto memory=GlobalAlloc(GMEM_MOVEABLE,count);if(!memory)return false;
+        const auto target=GlobalLock(memory);if(!target){GlobalFree(memory);return false;}
+        std::memcpy(target,bytes,count);GlobalUnlock(memory);
+        if(FAILED(CreateStreamOnHGlobal(memory,TRUE,&stream))){GlobalFree(memory);return false;}
+        image.reset(Bitmap::FromStream(stream,FALSE));
+        return image&&image->GetLastStatus()==Ok;
+    }
+};
+
+bool ValidPixels(const std::uint32_t* pixels,int width,int height,bool padded=false) {
+    if(!pixels||width<=0||height<=0)return false;
+    int left=width,top=height,right=-1,bottom=-1;std::size_t solid=0;
+    for(int y=0;y<height;++y)for(int x=0;x<width;++x) {
+        const auto pixel=pixels[static_cast<std::size_t>(y)*width+x];
+        const unsigned alpha=pixel>>24;
+        if(((pixel>>16)&255)>alpha||((pixel>>8)&255)>alpha||(pixel&255)>alpha)return false;
+        if(alpha>16){++solid;left=std::min(left,x);top=std::min(top,y);right=std::max(right,x);bottom=std::max(bottom,y);}
+    }
+    return solid>=32&&left<=right&&top<=bottom&&
+        (!padded||(left>0&&top>0&&right<width-1&&bottom<height-1));
+}
+std::uint64_t PixelsHash(const std::vector<std::uint32_t>& pixels) {
+    return cat::Checksum(std::string(reinterpret_cast<const char*>(pixels.data()),pixels.size()*4));
+}
+} // namespace native_coat_tests
+
+// Real GDI+ checks for independent authored coats. Shared registration and
+// physical support do not require the same pixels or silhouette.
 int NativeCoatRenderTest(std::string& context) {
     using C=cat::Character;
     Surface cream,tuxedo,from,to,review;
@@ -19,27 +71,68 @@ int NativeCoatRenderTest(std::string& context) {
             character,cat::Outfit::None,body,from,to,420,340);
         graphics.Flush(FlushIntentionSync);return graphics.GetLastStatus()==Ok;
     };
+    const auto fallback=[&](const SpriteAtlas& atlas,int base) {
+        const auto* style=cat::styled_assets::Find(8,base,cat::styled_assets::kStyledAtlases);
+        native_coat_tests::Resource source;
+        return style&&atlas.baseResourceId==base&&atlas.resourceId==style->resourceId&&
+            source.Open(style->resourceId,style->sha256)&&
+            source.image->GetWidth()==style->imageWidth&&source.image->GetHeight()==style->imageHeight;
+    };
+    context="authored tuxedo fallback resource selection and SHA256";
+    if(!fallback(CurrentArt(C::Tuxedo).base,101)||!fallback(CurrentArt(C::Tuxedo).actions,102)||
+            !fallback(g.tuxedoJumpTreat,105)||!fallback(g.tuxedoGestures,106)||
+            !fallback(g.tuxedoRecline,107)||!fallback(g.tuxedoHanging,110)||
+            !fallback(g.tuxedoSleepStyles,112))return 441;
     for(const auto& asset:g.careSprites) {
         const auto& d=*asset->layout;
-        context="two-coat native parity clip="+std::to_string(static_cast<int>(d.clip));
-        if(cat::sprite_assets::Find(d.clip,8,cat::sprite_assets::kCareSprites)!=&d||
+        context="independent native coats clip="+std::to_string(static_cast<int>(d.clip));
+        if(!cat::sprite_assets::Valid(d)||LoadedCareSprite(d.clip,C::Cream)!=asset.get()||
                 LoadedCareSprite(d.clip,C::Tuxedo)!=asset.get())return 441;
+        if(d.clip==cat::sprite_sequence::Clip::Box) {
+            if(asset->tuxedoStyle)return 441;
+            for(unsigned frame=0;frame<d.frameCount;++frame)
+                if(!asset->tuxedoPixels[frame].empty()||asset->tuxedoFrames[frame])return 442;
+            continue; // Archived box art has no product event or new tuxedo asset.
+        }
+        const auto* style=cat::styled_assets::Find(8,d.resourceId,cat::styled_assets::kStyledAtlases);
+        if(!style||asset->tuxedoStyle!=style||!cat::styled_assets::Fits(*style,d))return 441;
+        native_coat_tests::Resource source;
+        if(!source.Open(style->resourceId,style->sha256))return 441;
+        CareSpriteAtlas expected;expected.layout=&d;std::size_t expectedPixels=0;
+        if(!PrepareCareSpriteFrames(expected,*source.image,expectedPixels))return 442;
         for(unsigned frame=0;frame<d.frameCount;++frame) {
-            context="two-coat native parity clip="+std::to_string(static_cast<int>(d.clip))+" frame="+std::to_string(frame);
+            context="independent native coats clip="+std::to_string(static_cast<int>(d.clip))+" frame="+std::to_string(frame);
             const auto& a=asset->framePixels[frame];const auto& b=asset->tuxedoPixels[frame];
-            if(a.size()!=b.size()||!asset->tuxedoFrames[frame])return 442;
-            coatPixels+=b.size();std::size_t changed=0;
-            for(std::size_t p=0;p<a.size();++p) {
-                if((a[p]>>24)!=(b[p]>>24))return 443;
-                changed+=a[p]!=b[p];
-            }
-            if(changed<100)return 444;
+            const auto& r=d.frames[frame].rect;
+            const auto count=static_cast<std::size_t>(r.width)*r.height;
+            if(a.size()!=count||b.size()!=count||!asset->frames[frame]||!asset->tuxedoFrames[frame]||
+                    a.data()==b.data()||asset->frames[frame].get()==asset->tuxedoFrames[frame].get()||
+                    asset->frames[frame]->GetWidth()!=static_cast<UINT>(r.width)||
+                    asset->frames[frame]->GetHeight()!=static_cast<UINT>(r.height)||
+                    asset->tuxedoFrames[frame]->GetWidth()!=static_cast<UINT>(r.width)||
+                    asset->tuxedoFrames[frame]->GetHeight()!=static_cast<UINT>(r.height))return 442;
+            if(!native_coat_tests::ValidPixels(a.data(),r.width,r.height)||
+                    !native_coat_tests::ValidPixels(b.data(),r.width,r.height))return 443;
+            // The independently decoded declared PNG must supply these cached
+            // pixels; correct metadata alone cannot prove the loader used it.
+            if(b!=expected.framePixels[frame])return 444;
+            coatPixels+=b.size();
+            const auto* creamBuffer=a.data();const auto* tuxedoBuffer=b.data();
+            const auto* creamImage=asset->frames[frame].get();const auto* tuxedoImage=asset->tuxedoFrames[frame].get();
+            const auto creamCapacity=a.capacity(),tuxedoCapacity=b.capacity();
+            const auto creamHash=native_coat_tests::PixelsHash(a),tuxedoHash=native_coat_tests::PixelsHash(b);
             cat::animation::Pose pose;pose.spriteClip=d.clip;pose.spriteFrame=frame;
             cat::animation::UseAuthoredSprite(pose);
+            if(CareSpriteFor(pose,C::Cream)!=asset.get()||CareSpriteFor(pose,C::Tuxedo)!=asset.get()||
+                    SpriteFrameFor(pose,d)!=frame)return 445;
             for(bool flip:{false,true}) {
                 pose.flip=flip;
                 if(!draw(cream,C::Cream,pose)||!draw(tuxedo,C::Tuxedo,pose))return 445;
-                for(int p=3;p<420*340*4;p+=4)if(cream.pixels[p]!=tuxedo.pixels[p])return 446;
+                if(!native_coat_tests::ValidPixels(reinterpret_cast<const std::uint32_t*>(cream.pixels),420,340,true)||
+                        !native_coat_tests::ValidPixels(reinterpret_cast<const std::uint32_t*>(tuxedo.pixels),420,340,true))return 446;
+                if(a.data()!=creamBuffer||b.data()!=tuxedoBuffer||a.capacity()!=creamCapacity||b.capacity()!=tuxedoCapacity||
+                        asset->frames[frame].get()!=creamImage||asset->tuxedoFrames[frame].get()!=tuxedoImage||
+                        native_coat_tests::PixelsHash(a)!=creamHash||native_coat_tests::PixelsHash(b)!=tuxedoHash)return 446;
             }
             if(frame==0||frame==d.frameCount/2||frame==d.frameCount-1) {
                 const int pair=frame==0?0:frame==d.frameCount/2?1:2;
@@ -57,12 +150,14 @@ int NativeCoatRenderTest(std::string& context) {
     }
     if(coatPixels!=careSpriteMemory.tuxedoPixels||coatPixels+careSpriteMemory.residentPixels>
             cat::sprite_assets::kMaxResidentPixels)return 447;
-    // Fallback poses and targeted paw deformations still share the canonical
-    // actor; no retired species atlas may be selected by persisted ID 8.
+    // Fallback silhouettes are independently authored as well; every pose must
+    // remain nonempty, inside its canvas, and correctly premultiplied.
     for(int frame:{0,1,2,3,4,5,6,7,8,12,24,25,26,27,28}) {
+        context="independent fallback coats frame="+std::to_string(frame);
         cat::animation::Pose pose;pose.frame=frame;
         if(!draw(cream,C::Cream,pose)||!draw(tuxedo,C::Tuxedo,pose))return 448;
-        for(int p=3;p<420*340*4;p+=4)if(cream.pixels[p]!=tuxedo.pixels[p])return 449;
+        if(!native_coat_tests::ValidPixels(reinterpret_cast<const std::uint32_t*>(cream.pixels),420,340,true)||
+                !native_coat_tests::ValidPixels(reinterpret_cast<const std::uint32_t*>(tuxedo.pixels),420,340,true))return 449;
     }
     if(!SaveNativeWalkingReview(*review.image,L"render-self-test/two-cats-gdi.png"))return 450;
     return 0;

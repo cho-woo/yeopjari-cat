@@ -121,11 +121,13 @@ inline Pose AirbornePose(double velocityY,int direction) {
 inline Pose LandingPose(std::uint64_t elapsedSinceContact,double strength,int direction) {
     Pose p;
     p.flip=direction<0;
-    if(elapsedSinceContact<cat::sprite_sequence::kLandingMs) {
-        cat::sprite_sequence::Options sprite;
-        sprite.jump=cat::sprite_sequence::JumpPhase::Landing;sprite.contactElapsedMs=elapsedSinceContact;
-        AttachSprite(p,cat::sprite_sequence::Clip::Jump,0,sprite);
-    }
+    // The registered recovery can outlast the legacy 280ms body compression.
+    // Keep its settled last drawing until the host chooses the next action;
+    // dropping the clip here briefly substituted the old seated animal after
+    // both primary and companion landings.
+    cat::sprite_sequence::Options sprite;
+    sprite.jump=cat::sprite_sequence::JumpPhase::Landing;sprite.contactElapsedMs=elapsedSinceContact;
+    AttachSprite(p,cat::sprite_sequence::Clip::Jump,0,sprite);
     const double impact=std::isfinite(strength) ? std::clamp(strength,0.0,1.0) : 0.0;
     if(elapsedSinceContact<280)
         p.joints.crouch=.7*impact*std::sin(elapsedSinceContact/280.0*kPi);
@@ -533,6 +535,13 @@ inline Pose Evaluate(Motion motion, std::uint64_t elapsed, std::uint64_t ticks, 
     case Motion::Eat:AttachSprite(p,Clip::Eat,elapsed);break;
     case Motion::Treat:AttachSprite(p,Clip::Treat,elapsed);break;
     case Motion::Punch:AttachSprite(p,Clip::Punch,elapsed);break;
+    case Motion::ToyPaw:
+        // Keep the same complete authored actor for ball/lure play. The
+        // fixed contact window is shared with the existing toy controller;
+        // only the drawing changes, never its root or the physical impulse.
+        p.spriteClip=Clip::Punch;p.spriteTimed=false;
+        p.spriteFrame=cat::sprite_sequence::SampleToyPaw(elapsed).frame;
+        break;
     case Motion::Jump:AttachSprite(p,Clip::Jump,elapsed);break;
     default:break;
     }

@@ -1,0 +1,307 @@
+{
+  "schema": 2,
+  "clips": [
+    {
+      "clip": "walk",
+      "character": 0,
+      "columns": 4,
+      "rows": 4,
+      "reference_height": 221,
+      "frames": [
+        {
+          "rect": [
+            0,
+            0,
+            313,
+            313
+          ],
+          "anchor": [
+            161,
+            275
+          ]
+        },
+        {
+          "rect": [
+            313,
+            0,
+            314,
+            313
+          ],
+          "anchor": [
+            161,
+            275
+          ]
+        },
+        {
+          "rect": [
+            627,
+            0,
+            313,
+            313
+          ],
+          "anchor": [
+            161,
+            275
+          ]
+        },
+        {
+          "rect": [
+            940,
+            0,
+            314,
+            313
+          ],
+          "anchor": [
+            161,
+            275
+          ]
+        },
+        {
+          "rect": [
+            0,
+            313,
+            313,
+            314
+          ],
+          "anchor": [
+            161,
+            275
+          ]
+        },
+        {
+          "rect": [
+            313,
+            313,
+            314,
+            314
+          ],
+          "anchor": [
+            161,
+            275
+          ]
+        },
+        {
+          "rect": [
+            627,
+            313,
+            313,
+            314
+          ],
+          "anchor": [
+            161,
+            275
+          ]
+        },
+        {
+          "rect": [
+            940,
+            313,
+            314,
+            314
+          ],
+          "anchor": [
+            161,
+            275
+          ]
+        }
+      ],
+      "sha256": "fdb52258ede319c7f23ffa0af019b8d3fa677bf180caa1e9a89e1b37db0e9e78",
+      "source": "../care-sprites/c0-walk.png",
+      "frame_count": 8,
+      "sequence": {
+        "intro": [],
+        "loop": [
+          {
+            "frame": 0,
+            "ms": 125
+          },
+          {
+            "frame": 1,
+            "ms": 125
+          },
+          {
+            "frame": 2,
+            "ms": 125
+          },
+          {
+            "frame": 3,
+            "ms": 125
+          },
+          {
+            "frame": 4,
+            "ms": 125
+          },
+          {
+            "frame": 5,
+            "ms": 125
+          },
+          {
+            "frame": 6,
+            "ms": 125
+          },
+          {
+            "frame": 7,
+            "ms": 125
+          }
+        ],
+        "outro": [],
+        "finish": "complete",
+        "duration_ms": 0,
+        "events": []
+      },
+      "stride_pixels": 32,
+      "standing_frame": 0
+    },
+    {
+      "clip": "run",
+      "character": 0,
+      "columns": 4,
+      "rows": 4,
+      "reference_height": 221,
+      "frames": [
+        {
+          "rect": [
+            0,
+            627,
+            313,
+            313
+          ],
+          "anchor": [
+            157,
+            261
+          ]
+        },
+        {
+          "rect": [
+            313,
+            627,
+            314,
+            313
+          ],
+          "anchor": [
+            157,
+            261
+          ]
+        },
+        {
+          "rect": [
+            627,
+            627,
+            313,
+            313
+          ],
+          "anchor": [
+            157,
+            261
+          ]
+        },
+        {
+          "rect": [
+            940,
+            627,
+            314,
+            313
+          ],
+          "anchor": [
+            157,
+            261
+          ]
+        },
+        {
+          "rect": [
+            0,
+            940,
+            313,
+            314
+          ],
+          "anchor": [
+            157,
+            261
+          ]
+        },
+        {
+          "rect": [
+            313,
+            940,
+            314,
+            314
+          ],
+          "anchor": [
+            157,
+            261
+          ]
+        },
+        {
+          "rect": [
+            627,
+            940,
+            313,
+            314
+          ],
+          "anchor": [
+            157,
+            261
+          ]
+        },
+        {
+          "rect": [
+            940,
+            940,
+            314,
+            314
+          ],
+          "anchor": [
+            157,
+            261
+          ]
+        }
+      ],
+      "sha256": "fdb52258ede319c7f23ffa0af019b8d3fa677bf180caa1e9a89e1b37db0e9e78",
+      "source": "../care-sprites/c0-walk.png",
+      "frame_count": 8,
+      "sequence": {
+        "intro": [],
+        "loop": [
+          {
+            "frame": 0,
+            "ms": 80
+          },
+          {
+            "frame": 1,
+            "ms": 80
+          },
+          {
+            "frame": 2,
+            "ms": 80
+          },
+          {
+            "frame": 3,
+            "ms": 80
+          },
+          {
+            "frame": 4,
+            "ms": 80
+          },
+          {
+            "frame": 5,
+            "ms": 80
+          },
+          {
+            "frame": 6,
+            "ms": 80
+          },
+          {
+            "frame": 7,
+            "ms": 80
+          }
+        ],
+        "outro": [],
+        "finish": "complete",
+        "duration_ms": 0,
+        "events": []
+      },
+      "stride_pixels": 72,
+      "standing_frame": 7
+    }
+  ]
+}

@@ -62,8 +62,8 @@ inline double ApproachVelocity(double distance, double maxSpeed = 38.0,
     return std::copysign(speed, distance);
 }
 
-inline constexpr std::uint64_t kPawContactMs = 330;
-inline constexpr std::uint64_t kPawContactEndMs = 660;
+inline constexpr std::uint64_t kPawContactMs = cat::sprite_sequence::kToyPawContactMs;
+inline constexpr std::uint64_t kPawContactEndMs = cat::sprite_sequence::kToyPawReleaseMs;
 
 // The active paw phase starts at 330ms. One action can impulse a ball only
 // once; a skipped contact window must not kick it after the paw has retracted.
@@ -235,9 +235,9 @@ public:
     double ActiveSeconds() const { return activeSeconds_; }
 
     static Kind Choose(std::uint32_t entropy) {
-        constexpr Kind catalog[]{Kind::Ball, Kind::Box, Kind::PaperBag,
+        constexpr Kind catalog[]{Kind::Ball, Kind::PaperBag,
                                  Kind::Catnip, Kind::FishingRod, Kind::Cushion};
-        return catalog[entropy % 6];
+        return catalog[entropy % 5];
     }
     static double Delay(bool first, std::uint32_t entropy) {
         const double fraction = static_cast<double>(entropy) / 4294967295.0;

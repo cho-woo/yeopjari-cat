@@ -24,6 +24,11 @@ PNG files are copied byte-for-byte into assets/care-sprites. A canonical manifes
 there makes later --check invocations reproducible. No manifest and empty generated
 files is a supported default, using the application's existing artwork. Explicit
 missing manifests, opaque images and generated-file drift fail closed.
+
+Default imports also select the precomputed derived-motion Walk/Run override
+when present. Its separate source registration/provenance retain the original
+eight drawings; the original care manifest and PNG are never replaced by the
+derived atlas. An explicit --manifest retains the ordinary source-import behavior.
 """
 from __future__ import annotations
 
@@ -55,6 +60,7 @@ MAX_SIDE=16384
 HEADER='src/care_sprites.generated.hpp'
 RC='src/care_sprites.generated.rc'
 CANONICAL='assets/care-sprites/manifest.json'
+DERIVED='assets/derived-motion/manifest.json'
 
 class ImportError(ValueError):
     pass
@@ -284,6 +290,56 @@ def numeric(value):
     return repr(value) if type(value) is float else str(value)
 
 
+def derived_locomotion(root,originals):
+    """Select a checked derived resource without canonicalizing over originals."""
+    directory=root/'assets/derived-motion';manifest=directory/'manifest.json'
+    if not directory.exists():return originals,0
+    require(manifest.is_file(),f'Missing derived locomotion manifest: {manifest}')
+    provenance=directory/'provenance.json'
+    require(provenance.is_file(),'Missing derived locomotion provenance')
+    try:report=json.loads(provenance.read_text(encoding='utf-8'),object_pairs_hook=unique_object)
+    except (OSError,UnicodeError,ValueError) as error:raise ImportError('Cannot read derived provenance') from error
+    require(report.get('schema')==1 and report.get('precomputed_only') is True and
+            report.get('whole_sprite_alpha_blend') is False,'Invalid derived motion provenance')
+    def verify(path,expected,label):
+        require(path.is_file() and hashlib.sha256(path.read_bytes()).hexdigest()==expected,
+                f'Derived {label} drift or missing file')
+    verify(manifest,report.get('derived_manifest_sha256'),'manifest')
+    for key in ('generator','source_registration','original_source'):
+        relative=report.get(key)
+        require(isinstance(relative,str) and not Path(relative).is_absolute(),f'Derived {key} path')
+        path=(root/relative).resolve()
+        require(path.is_relative_to(root.resolve()),f'Derived {key} must stay inside the project')
+        verify(path,report.get(key+'_sha256'),key)
+    atlas=report.get('atlas',{})
+    require(isinstance(atlas,dict) and isinstance(atlas.get('source'),str) and
+            Path(atlas['source']).name==atlas['source'],'Derived atlas filename')
+    verify(directory/atlas['source'],atlas.get('sha256'),'atlas')
+    replacements=load_entries(manifest)
+    require(len(replacements)==2 and {(e['clip'],e['character']) for e in replacements}==
+            {('walk',0),('run',0)},'Derived override must contain only Cream Walk and Run')
+    evidence=report.get('clips',[])
+    for entry in replacements:
+        base=next((e for e in originals if e['clip']==entry['clip'] and e['character']==0),None)
+        proof=next((e for e in evidence if e.get('clip')==entry['clip']),{})
+        require(base is not None and len(base['frames'])==proof.get('source_frame_count')==
+                proof.get('original_drawings')==8,'Derived motion must retain eight source drawings')
+        require(len(entry['frames'])==proof.get('derived_frame_count')==64 and
+                entry['sha256']==atlas.get('sha256') and base['sha256']==report.get('original_source_sha256'),
+                'Derived frame count or source binding')
+        require(entry['reference_height']==base['reference_height'] and entry['stride_pixels']==base['stride_pixels'],
+                'Derived motion must preserve scale and distance-driven stride')
+        require(all(f['anchor']==base['frames'][0]['anchor'] for f in entry['frames']),
+                'Derived motion must preserve fixed foot registration')
+        entry['asset_path']=(Path('assets/derived-motion')/atlas['source']).as_posix()
+    replaced={(entry['clip'],entry['character']) for entry in replacements}
+    result=[entry for entry in originals if (entry['clip'],entry['character']) not in replaced]+replacements
+    result.sort(key=lambda value:(value['character'],LAYOUT[value['clip']][0]))
+    require(sum(frame['rect'][2]*frame['rect'][3] for entry in result for frame in entry['frames'])<=MAX_RESIDENT_PIXELS,
+            'Derived frame storage exceeds192MiB resident budget')
+    return result,len(replacements)
+
+
 def generated_program(program):
     if program is None:return 'cat::sprite_sequence::Program{}'
     scope='cat::sprite_sequence::'
@@ -313,7 +369,8 @@ def generated(entries):
             header+=f'{len(entry["frames"])},{entry["width"]},{entry["height"]},{numeric(entry["reference_height"])},{{{{\n'
             for frame in entry['frames']:
                 header+='        Frame{{'+','.join(map(str,frame['rect']))+'},{'+','.join(map(numeric,frame['anchor']))+'}},\n'
-            header+='    }},"'+entry['sha256']+'","assets/care-sprites/'+entry['filename']+'"'
+            asset_path=entry.get('asset_path','assets/care-sprites/'+entry['filename'])
+            header+='    }},"'+entry['sha256']+'","'+asset_path+'"'
             if entry['program'] is not None or entry['stride_pixels']:
                 header+=','+generated_program(entry['program'])+','+numeric(entry['stride_pixels'])+','+str(entry['standing_frame'])
             header+='},\n'
@@ -321,7 +378,7 @@ def generated(entries):
                 require(resources[entry['resource']]==entry['sha256'],'Conflicting PNGs share a resource identifier')
             else:
                 resources[entry['resource']]=entry['sha256']
-                rc+=f'{entry["resource"]} RCDATA "../assets/care-sprites/{entry["filename"]}"\n'
+                rc+=f'{entry["resource"]} RCDATA "../{asset_path}"\n'
         header+='}};\n'
     header+='}\n'
     return header.encode(),rc.encode()
@@ -330,13 +387,15 @@ def generated(entries):
 def prepare_import(root,manifest_path=None,check=False):
     root=Path(root).resolve();default=root/CANONICAL
     selected=Path(manifest_path).resolve() if manifest_path is not None else default if default.is_file() else None
-    entries=load_entries(selected);header,rc=generated(entries)
+    originals=load_entries(selected)
+    entries,derived=derived_locomotion(root,originals) if manifest_path is None else (originals,0)
+    header,rc=generated(entries)
     outputs={root/HEADER:header,root/RC:rc}
-    for entry in entries:outputs[root/'assets/care-sprites'/entry['filename']]=entry['data']
+    for entry in originals:outputs[root/'assets/care-sprites'/entry['filename']]=entry['data']
     if selected is not None:
-        schema=2 if any(entry['schema']==2 for entry in entries) else 1
+        schema=2 if any(entry['schema']==2 for entry in originals) else 1
         clips=[]
-        for entry in entries:
+        for entry in originals:
             value={key:entry[key] for key in ('clip','character','columns','rows','reference_height','frames','sha256')}
             value['source']=entry['filename']
             if schema==2:
@@ -364,6 +423,7 @@ def prepare_import(root,manifest_path=None,check=False):
             try:os.replace(temporary,path)
             finally:temporary.unlink(missing_ok=True)
     return {'status':'verified' if check else 'imported','clips':len(entries),'original_png_bytes_preserved':True,
+            'derived_locomotion_clips':derived,
             'resource_ids':[entry['resource'] for entry in entries],
             'unique_sheets':len({entry['sha256'] for entry in entries}),
             'actual_frames':sum(len(entry['frames']) for entry in entries),

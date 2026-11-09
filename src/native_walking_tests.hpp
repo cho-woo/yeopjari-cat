@@ -67,10 +67,9 @@ int NativeAuthoredWalkingRenderTest(std::string& context) {
             const auto frame=layout->program.steps[range.first+step].frame;
             if(std::find(expectedFrames.begin(),expectedFrames.end(),frame)==expectedFrames.end())expectedFrames.push_back(frame);
         }
-        // The checked-in final sheet supplies eight Walk plus eight Run
-        // drawings. General playlist/cache capacity has separate synthetic
-        // coverage; this review must not invent additional source poses.
-        if(expectedFrames.empty()||expectedFrames.size()!=8)return 431;
+        // Validate every registered playback sample. Original key drawings and
+        // offline motion samples share the same product path.
+        if(expectedFrames.size()<8||expectedFrames.size()>cat::sprite_assets::kMaxFrames)return 431;
         std::vector<bool> seen(layout->frameCount,false);unsigned visited=0;
 
         for(unsigned tick=0;tick<1200&&visited<expectedFrames.size();++tick) {
@@ -103,8 +102,10 @@ int NativeAuthoredWalkingRenderTest(std::string& context) {
             }
             if(visible<350)return 435;
 
-            if(dimensions.first==1 && motion!=Motion::Stalk) {
-                const unsigned column=static_cast<unsigned>(std::find(expectedFrames.begin(),expectedFrames.end(),frame)-expectedFrames.begin());
+            const auto ordinal=static_cast<unsigned>(std::find(expectedFrames.begin(),expectedFrames.end(),frame)-expectedFrames.begin());
+            const unsigned column=ordinal*8/static_cast<unsigned>(expectedFrames.size());
+            const unsigned evidenceOrdinal=(column*static_cast<unsigned>(expectedFrames.size())+7)/8;
+            if(dimensions.first==1 && motion!=Motion::Stalk && ordinal==evidenceOrdinal) {
                 const unsigned size=desiredHeight==80?0:desiredHeight==110?1:2;
                 const unsigned row=size*4+(motion==Motion::Zoomies?2:0)+(facing<0?1:0);
                 Graphics graphics(evidence.image.get());graphics.SetInterpolationMode(InterpolationModeNearestNeighbor);

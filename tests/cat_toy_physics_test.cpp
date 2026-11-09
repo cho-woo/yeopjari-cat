@@ -61,11 +61,16 @@ void FullActivity(cat::toy::Kind kind, double fps, double growth, double destina
     cat::physics::Controller physics;
     physics.Reset(300,low,high);
     PhysicsBall ball; ball.Reset(destination);
+    Lure lure;
     Session session; session.Start(kind,destination<300 ? -1 : 1);
     Automatic automatic;
     AutoInput automaticInput; automaticInput.eligible=true;
     AutoDecision placement;
-    const auto entropy=static_cast<std::uint32_t>(kind)-1;
+    // Serialized enum IDs retain the retired Box hole. Select deterministic
+    // entropy from the current catalog rather than assuming contiguous IDs.
+    std::uint32_t entropy=0;
+    while(entropy<5 && Automatic::Choose(entropy)!=kind)++entropy;
+    CHECK(entropy<5 && kind!=Kind::Box);
     for (int tick=0;tick<1000 && placement.action==AutoAction::None;++tick)
         placement=automatic.Advance(.25,automaticInput,entropy);
     CHECK(placement.action==AutoAction::Place && placement.kind==kind);
@@ -83,6 +88,9 @@ void FullActivity(cat::toy::Kind kind, double fps, double growth, double destina
             const auto bounds=RollingBounds(1920,low,high,36*growth);
             ball.Advance(dt,bounds.first,bounds.second);
             toyX=ball.x;
+        } else if(kind==Kind::FishingRod) {
+            lure.Advance(dt);
+            toyX=destination+lure.offset;
         }
         const auto target=[&] { return SessionTarget(session,toyX,physics.RenderPose().x,growth,low,high); };
         const bool arrived=std::abs(target()-physics.RenderPose().x)<=2 && std::abs(state.velocityX)<=3;
@@ -95,15 +103,22 @@ void FullActivity(cat::toy::Kind kind, double fps, double growth, double destina
             if (session.phase==Phase::Interact && UsesCenter(kind))
                 CHECK(std::abs(state.x-toyX)<=2.5);
         }
-        if (kind==Kind::Ball && session.phase==Phase::Interact &&
+        if ((kind==Kind::Ball || kind==Kind::FishingRod) && session.phase==Phase::Interact &&
                 PawContactAt(static_cast<std::uint64_t>(session.elapsedMs),consumed,toyX-state.x,
-                             55*growth,state.grounded && ball.lift<=24*growth)) {
-            const auto before=ball.x;
-            ball.Kick(toyX<state.x ? -1 : 1,90);
-            CHECK(ball.x==before); // A visible contact supplies impulse, never a position correction.
+                             55*growth,state.grounded && (kind!=Kind::Ball || ball.lift<=24*growth))) {
+            if(kind==Kind::Ball) {
+                const auto before=ball.x;
+                ball.Kick(toyX<state.x ? -1 : 1,90);
+                CHECK(ball.x==before); // Contact supplies impulse, never a position correction.
+            } else {
+                const auto before=lure.offset;
+                lure.Touch(toyX<state.x ? -1 : 1);
+                CHECK(lure.offset==before);
+            }
             ++contacts;
         }
-        const double speed=session.phase==Phase::Enter ? 22 : kind==Kind::Ball ? 58 : 38;
+        const double speed=session.phase==Phase::Enter ? 22 :
+            kind==Kind::Ball || kind==Kind::FishingRod ? 58 : 38;
         physics.SetTargetVelocity(Travels(session.phase) ? ApproachVelocity(target()-physics.RenderPose().x,speed) : 0);
         physics.Update(dt);
         maxStep=std::max(maxStep,std::abs(physics.CurrentPose().x-previous));
@@ -111,12 +126,12 @@ void FullActivity(cat::toy::Kind kind, double fps, double growth, double destina
     }
     CHECK(session.phase==Phase::Wait);
     CHECK(maxStep<=60*std::max(1/fps,1.0/60)+.1); // At most one bounded fixed-step move, never a Reset/teleport.
-    if (kind==Kind::Ball) CHECK(contacts==4);
+    if (kind==Kind::Ball || kind==Kind::FishingRod) CHECK(contacts==4);
     else {
         CHECK(sawExit);
         CHECK(std::abs(physics.CurrentPose().x-destination)>=50*growth);
         CHECK(sawEnter==IsContainer(kind));
-        CHECK(sawSleep==(kind==Kind::Box || kind==Kind::Cushion));
+        CHECK(sawSleep==(kind==Kind::Cushion));
     }
     // The automatic lifecycle must wait for a real Box2D ball to finish moving,
     // while containers retire only after the physical exit has completed.
@@ -162,8 +177,12 @@ void PauseAndRaisedSupport() {
 
 int main() {
     try {
+        using cat::toy::Kind;
+        constexpr Kind supported[]{Kind::Ball,Kind::PaperBag,Kind::Catnip,Kind::FishingRod,Kind::Cushion};
+        for(unsigned index=0;index<5;++index) CHECK(cat::toy::Automatic::Choose(index)==supported[index]);
+        for(unsigned entropy=0;entropy<1000;++entropy) CHECK(cat::toy::Automatic::Choose(entropy)!=Kind::Box);
         for (double fps : {30.0, 60.0, 120.0})
-            for (auto kind : {cat::toy::Kind::Ball, cat::toy::Kind::Box})
+            for (auto kind : {Kind::Ball,Kind::PaperBag})
                 for (double growth : {.82, 1.0}) {
                     Approach(kind, fps, 500, 700, growth, 60, false);
                     Approach(kind, fps, 800, 600, growth, -60, false);
@@ -180,9 +199,10 @@ int main() {
             for (double growth:{.82,1.0}) {
                 FullActivity(cat::toy::Kind::Ball,fps,growth,440);
                 FullActivity(cat::toy::Kind::Ball,fps,growth,1815);
-                FullActivity(cat::toy::Kind::Box,fps,growth,440);
+                FullActivity(cat::toy::Kind::PaperBag,fps,growth,440);
                 FullActivity(cat::toy::Kind::PaperBag,fps,growth,110);
                 FullActivity(cat::toy::Kind::Catnip,fps,growth,440);
+                FullActivity(cat::toy::Kind::FishingRod,fps,growth,440);
                 FullActivity(cat::toy::Kind::Cushion,fps,growth,440);
             }
         PauseAndRaisedSupport();
