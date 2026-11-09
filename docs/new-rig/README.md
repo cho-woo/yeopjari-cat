@@ -69,3 +69,15 @@ bash tools/check.sh
 ## v2.0.19 진단 보정
 
 v2.0.18의 새 비교 진단에서는 턱시도 표시 배율 `110 / standingHeight`가 정수 나눗셈으로0이 되어 오른쪽 캐릭터가 비었다. 일반 앱의 공유 털색 경로와 기존 두 캐릭터 GDI+ 검사는 정상으로 확인했다. v2.0.19는 `110.0`으로 수정하고, 매 비교 프레임에서 두 행·두 캐릭터의 실제 색 픽셀 수를 검사한다. 두 영역이 모두 비어 있어도 같은 알파라는 이유만으로 통과하는 것을 막는다. 이 수정은 원화의 시각 검수 불합격 상태를 바꾸지 않는다.
+
+## 최종 공개 파일과 실행 검증
+
+최종 검토본은 [v2.0.19](https://github.com/cho-woo/yeopjari-cat/releases/tag/v2.0.19)이다. 검증 소스는 `73f7a7ad4e7faae9d413e68f4d922fd5d19eb1b8`, [Windows 검사42584267688](https://github.com/cho-woo/yeopjari-cat/actions/runs/42584267688), [게시42584983208](https://github.com/cho-woo/yeopjari-cat/actions/runs/42584983208)이다. Python87개 검사(환경 전용1개 제외), C++/Box2D 회귀 검사, Windows 저장·커서·이동 창 검사, 실제 GDI+ 출력 검사를 통과했다. 공개 파일13개 체크섬과 원본 ZIP/증거 ZIP 무결성을 다시 확인했다.
+
+실제 비교 출력525프레임의 두 행·두 캐릭터, 총2,100영역을 확인했다. 최소 색 픽셀 수는 기존 크림8,017/턱시도7,234, 새 리그 크림8,227/턱시도7,472다. 공개 MP4 두 개는 Chromium에서 끝까지 재생됐다. [Windows 비교](native/native-mesh-walk-22.mp4)는60FPS·8.75초, [접지 확대](native/native-mesh-walk-contact-3x-slow.mp4)는20FPS·4.15초다. 두 영상은 실제 앱의 GDI+·Box2D 진단 출력이며 바탕화면 녹화가 아니다.
+
+현재 `/workspace/yeopjari-cat/release/YeopjariCat.exe`는 공개 검증본과 동일하며 SHA256은 `8ce652f3e37cf1a466edbef6aa66d53aa72c15ef2d88d69645e29d7bf27f10e9`이다. 로컬 크로스 빌드 증거는 `windows-cross-build.json`, 공개 Windows 실행 증거는 `native/mesh-walk-validation.json`, 최종 상태는 `validation.json`을 참조한다. 편집 원본 ZIP은 검증 대상 커밋의 스냅샷이며, 이 후속 검증 기록과 공개 릴리스의 증거 JSON이 실제 Windows 결과를 보완한다.
+
+**시각 검수 실패는 그대로다.** [실제 Windows 화면 판정](native/visual-assessment.json)에 어깨의 대각선 경계, 허벅지/관절의 겹친 표면·두께와 돌출부를 기록했다. 네 발 제어점의 표시상 최대 접지 이동 범위0.363435논리px는 리그 좌표+실제 Box2D 표시 위치에서 계산한 값이며, 그림 속 발을 광학적으로 추적한 수치가 아니다. 숫자 통과를 자연스러운 보행 완성으로 해석하지 않는다.
+
+`native/benchmark-summary.json`의 성능 표본은 기본 실행과v2.0.15의 비교다. **미승인 메시 검토 모드의 성능 측정은 아니다.** 기본 실행v2.0.19에서 시작 약2.06초, 대기 CPU0%, 일반 자율 활동 평균 약0.13%(코어1개 기준), 표본 최대 PrivateUsage 약183.2MiB를 관찰했다. 짧은 반복 표본에서 메모리 증가는 없었지만 장시간 검토 모드 누수 검증을 대신하지 않는다. 사용자 PC의 실제 이종 DPI 듀얼 모니터·수동 바탕화면 녹화는 수행하지 않았다.

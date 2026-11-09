@@ -1,0 +1,29 @@
+{
+  "source_commit": "73f7a7ad4e7faae9d413e68f4d922fd5d19eb1b8",
+  "validation_run": 42584267688,
+  "source": "actual Windows GDI+ DrawCareSprite + Box2D native diagnostic, not desktop recording",
+  "comparison_coats": 2,
+  "reviewed_stills": [
+    "native/compare-10000.png",
+    "native/compare-10262.png",
+    "native/compare-10524.png",
+    "native/contact-10041.png"
+  ],
+  "scale_and_speed": "110logicalpx/22logicalpx_per_second, nativecomparison60FPS",
+  "visual_quality_status": "FAILED",
+  "production_approved": false,
+  "identity_notes": "Original head remains recognizable; lower-body/limb joints do not yet preserve a natural coherent silhouette.",
+  "remaining_defects": [
+    "Diagonal shoulder/torso paint seam",
+    "Pasted hip/haunch layers and distorted knee/ankle skin",
+    "Inconsistent limb thickness during recovery",
+    "Small inner tail-mask step"
+  ],
+  "numeric_results_are_not_visual_approval": true,
+  "raster_presence": {
+    "baseline_cream": 8017,
+    "baseline_tuxedo": 7234,
+    "review_cream": 8227,
+    "review_tuxedo": 7472
+  }
+}

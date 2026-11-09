@@ -1,0 +1,84 @@
+{
+  "source": "actual GDI+ DrawCareSprite and Box2D, not desktop capture",
+  "desktop_recording": false,
+  "poses_interpolated": false,
+  "source_native_review_sha256": "f0a7dc983c14d74d18a956e60c53b38d6a3d71e3afcf2911101f141e551712b0",
+  "source_contract": {
+    "render": "actual GDI+ DrawCareSprite and Box2D, not desktop capture",
+    "visual_approved": false,
+    "production_approved": false,
+    "art_status": "UNAPPROVED mesh rig review",
+    "display_height_logical": 110,
+    "speed_logical": 22,
+    "physics_hz": 60,
+    "comparison_output_fps": 60,
+    "contact_input_hz": 60,
+    "contact_slow_output_fps": 20,
+    "contact_scale": 3,
+    "old_stride": 64.0,
+    "new_stride": 29.999999,
+    "new_frames": 83,
+    "new_loop_drawings": 82,
+    "standing_hold_frame": 82,
+    "plant_drift_measurement": "rig sole annotation plus actual displayed Box2D root, not raster optical tracking",
+    "maximum_displayed_control_plant_drift_logical_px": 0.363435,
+    "maximum_planted_ground_gap_logical_px": 1.5e-05,
+    "comparison_coats_checked": 2,
+    "actor_presence_threshold_pixels": 1000,
+    "actor_presence_samples": 2100,
+    "minimum_actor_colored_pixels": {
+      "baseline_cream": 8017,
+      "baseline_tuxedo": 7234,
+      "review_cream": 8227,
+      "review_tuxedo": 7472
+    }
+  },
+  "comparison": {
+    "file": "native-mesh-walk-22.mp4",
+    "frames": 525,
+    "output_fps": 60,
+    "duration_seconds": 8.75,
+    "native_png_sequence_sha256": "ede9e655d40c447bc3834904e3bcd5a1d34b1e0dbd5fd4934d0200ad00b6a936",
+    "video_sha256": "74c3a2920303122846b781494bba08d9607dee24c0f34467cbcfee5330c864e8",
+    "probe": {
+      "programs": [],
+      "streams": [
+        {
+          "codec_name": "h264",
+          "width": 900,
+          "height": 520,
+          "pix_fmt": "yuv420p",
+          "r_frame_rate": "60/1",
+          "nb_frames": "525"
+        }
+      ],
+      "format": {
+        "duration": "8.750000"
+      }
+    }
+  },
+  "contacts": {
+    "file": "native-mesh-walk-contact-3x-slow.mp4",
+    "frames": 83,
+    "output_fps": 20,
+    "duration_seconds": 4.15,
+    "native_png_sequence_sha256": "3bbf5cc69ea4b47d531703c0ea4945f948e49e3671d3e944e23ecf2414690b05",
+    "video_sha256": "f3d223b3e12acbd65c1258b2a88ebccbb48fa3587e1cdfe2e7ae9ab4df5ad7d0",
+    "probe": {
+      "programs": [],
+      "streams": [
+        {
+          "codec_name": "h264",
+          "width": 1100,
+          "height": 760,
+          "pix_fmt": "yuv420p",
+          "r_frame_rate": "20/1",
+          "nb_frames": "83"
+        }
+      ],
+      "format": {
+        "duration": "4.150000"
+      }
+    }
+  }
+}

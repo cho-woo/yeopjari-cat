@@ -1,0 +1,72 @@
+{
+  "status": "completed",
+  "scope": "ordinary application, NOT --mesh-walk-review; not a measured review-mode performance claim",
+  "runs": [
+    {
+      "label": "baseline",
+      "file_version": "2.0.15",
+      "startup_ms": 2119.332,
+      "startup_cpu_seconds": 2.09375,
+      "startup_private_bytes": 193044480,
+      "scenarios": [
+        {
+          "name": "paused_idle",
+          "cpu_one_core_percent": 0,
+          "private_bytes_peak_sampled": 193257472,
+          "observed_private_growth_bytes": 8192
+        },
+        {
+          "name": "ordinary_autonomous_activity",
+          "cpu_one_core_percent": 0.12906454078658794,
+          "private_bytes_peak_sampled": 193257472,
+          "observed_private_growth_bytes": 0
+        },
+        {
+          "name": "repeated_rest_resume",
+          "cpu_one_core_percent": 1.383383391891399,
+          "private_bytes_peak_sampled": 193257472,
+          "observed_private_growth_bytes": -28672
+        },
+        {
+          "name": "post_repeat_idle_settle",
+          "cpu_one_core_percent": 0,
+          "private_bytes_peak_sampled": 193228800,
+          "observed_private_growth_bytes": 0
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "file_version": "2.0.19",
+      "startup_ms": 2063.0887000000002,
+      "startup_cpu_seconds": 2.046875,
+      "startup_private_bytes": 191885312,
+      "scenarios": [
+        {
+          "name": "paused_idle",
+          "cpu_one_core_percent": 0,
+          "private_bytes_peak_sampled": 192094208,
+          "observed_private_growth_bytes": 0
+        },
+        {
+          "name": "ordinary_autonomous_activity",
+          "cpu_one_core_percent": 0.1293910530769718,
+          "private_bytes_peak_sampled": 192094208,
+          "observed_private_growth_bytes": 0
+        },
+        {
+          "name": "repeated_rest_resume",
+          "cpu_one_core_percent": 0.8369757326854317,
+          "private_bytes_peak_sampled": 192094208,
+          "observed_private_growth_bytes": 0
+        },
+        {
+          "name": "post_repeat_idle_settle",
+          "cpu_one_core_percent": 0,
+          "private_bytes_peak_sampled": 192094208,
+          "observed_private_growth_bytes": -28672
+        }
+      ]
+    }
+  ]
+}

@@ -22,10 +22,24 @@
     "part_cells_used": 5
   },
   "windows_cross_build": "passed; see windows-cross-build.json",
-  "windows_native_execution": "pending GitHub Actions validation; no Windows available in local Linux environment",
+  "windows_native_execution": {
+    "status": "passed",
+    "validation_run": 42584267688,
+    "publication_run": 42584983208,
+    "validation_url": "https://github.com/cho-woo/yeopjari-cat/actions/runs/42584267688",
+    "native_self_test": "passed",
+    "native_gdi_render": "passed",
+    "comparison_actor_presence": {
+      "baseline_cream": 8017,
+      "baseline_tuxedo": 7234,
+      "review_cream": 8227,
+      "review_tuxedo": 7472
+    },
+    "actor_presence_samples": 2100
+  },
   "videos": {
     "pillow_review": "60 FPS, 110 logical px, 22 logical px/s, old>=3cycles",
-    "native_review": "pending native GDI+ output; not desktop recording"
+    "native_review": "actual Windows GDI+ DrawCareSprite + Box2D diagnostic; NOT desktop recording; both coats visible; comparison60FPS/8.75s, contact20FPS/4.15s"
   },
   "source_atlas_sha256": "1d49bb068e3a4571d2c9dee0c4e6b276a4e61807f1712c9a49db79b725621c70",
   "final_python_suite": {
@@ -34,5 +48,14 @@
     "environment_skips": 1,
     "exit_code": 0,
     "log_sha256": "edb5765497e1d6ce49d29098fe2a1e0d61be8a82b74356b30c7294f0265b6430"
-  }
+  },
+  "review_version": "2.0.19",
+  "validated_source_commit": "73f7a7ad4e7faae9d413e68f4d922fd5d19eb1b8",
+  "current_executable": {
+    "path": "/workspace/yeopjari-cat/release/YeopjariCat.exe",
+    "sha256": "8ce652f3e37cf1a466edbef6aa66d53aa72c15ef2d88d69645e29d7bf27f10e9",
+    "public_download_hash_verified": true
+  },
+  "desktop_recording_performed": false,
+  "manual_multi_monitor_dpi_test_performed": false
 }

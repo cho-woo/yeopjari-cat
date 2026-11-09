@@ -1,0 +1,22 @@
+{
+  "release_url": "https://github.com/cho-woo/yeopjari-cat/releases/tag/v2.0.19",
+  "source_commit": "73f7a7ad4e7faae9d413e68f4d922fd5d19eb1b8",
+  "validation_run": 42584267688,
+  "publication_run": 42584983208,
+  "all_asset_sizes_valid": true,
+  "sha256": {
+    "RELEASE_NOTES_KO.txt": "5072c3187a3c9d4c545380f8f292cbfd85a1a6cb3d46da498862e6eb210a6041",
+    "SHA256SUMS.txt": "9b9a0ea9d6c404429029413cca66b4d3a82aed0e12bd362e1a693cc3e95055e4",
+    "YeopjariCat-2.0.19.exe": "8ce652f3e37cf1a466edbef6aa66d53aa72c15ef2d88d69645e29d7bf27f10e9",
+    "YeopjariCat-Mesh-Review-2.0.19.zip": "721265b687e11a66aebbbf2e7a84499cb06840c5337ff2dd7d9bf82c6cd50a94",
+    "YeopjariCat-Windows-2.0.19.zip": "d42a509f47bfe5799b5ed1968f210078afa69e85f7db4e62a84bae9cd4128b9d",
+    "cream-mesh-editable-source.zip": "6ca0efc97da39a250ba343e52dde44b82146aa33e6f250d3d8c592254fb398c1",
+    "latest.txt": "e62155163d85fca9cf070a6c33756b334f8362b4292e72920ac68c933e1d2474",
+    "mesh-walk-encoding.json": "aa2d0cd85ce7041d7ab17032c050d8433e70b0f831844c762c332432a4d5c6cb",
+    "mesh-walk-validation.json": "b77f93d10813949e6438dad3bfa16fcc70d31acb95bebeeb2db67bbbf6c258eb",
+    "native-mesh-walk-22.mp4": "74c3a2920303122846b781494bba08d9607dee24c0f34467cbcfee5330c864e8",
+    "native-mesh-walk-contact-3x-slow.mp4": "f3d223b3e12acbd65c1258b2a88ebccbb48fa3587e1cdfe2e7ae9ab4df5ad7d0",
+    "native-mesh-walk-evidence.zip": "5b2fcd3ead29f366d126b4cad1c237ada6be1529a19d3b8b26761ec7ee6a772b",
+    "render-self-test.txt": "8af5828fbff6f2d7149f59a252ace7689ebb1a37bc14caee5e21295bcc7726af"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "browser": "Chromium on Linux, HTTP localhost",
+  "all_played_to_end": true,
+  "tests": [
+    {
+      "file": "native/native-mesh-walk-22.mp4",
+      "width": 900,
+      "height": 520,
+      "duration": 8.75,
+      "ended": true,
+      "error": null
+    },
+    {
+      "file": "native/native-mesh-walk-contact-3x-slow.mp4",
+      "width": 1100,
+      "height": 760,
+      "duration": 4.15,
+      "ended": true,
+      "error": null
+    }
+  ]
+}
