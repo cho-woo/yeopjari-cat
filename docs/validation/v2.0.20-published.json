@@ -1,0 +1,78 @@
+{
+  "version": "2.0.20",
+  "source_commit": "920e0840c3dc86cd3ac70336c674f73756d2a0ea",
+  "validation_run": 42590902133,
+  "validation_url": "https://github.com/cho-woo/yeopjari-cat/actions/runs/42590902133",
+  "native_self_test": "passed",
+  "native_self_test_step": "Execute Windows save, cursor and moving-window regression tests",
+  "native_gdi_render_test": "passed",
+  "native_gdi_render_step": "Render real Windows GDI+ gait, contact and posture regressions",
+  "native_render_report_sha256": "8af5828fbff6f2d7149f59a252ace7689ebb1a37bc14caee5e21295bcc7726af",
+  "exe_sha256": "377f901f1bee0922be5fe4e610c192ffee1441487f50a70705d9a627bf80aa42",
+  "native_manual_motion_test": "passed",
+  "native_manual_motion_report_sha256": "cac731e99ddaf252c9429496a3044d8bdd0213cd15fc8707387119823040ce47",
+  "native_manual_motion": {
+    "schema": 1,
+    "test": "manual-motion-native",
+    "status": "passed",
+    "version": "2.0.20",
+    "mesh_walk_default": false,
+    "approved_walk_frames": 8,
+    "menu_commands": [
+      2800,
+      2801,
+      2802
+    ],
+    "menu_labels_checked": true,
+    "unsafe_states_checked": 15,
+    "pause_preference_preserved": true,
+    "suspension_clock_preserved": true,
+    "characters": [
+      {
+        "character": 0,
+        "walk_distance": 107.335,
+        "run_distance": 275.872,
+        "walk_peak_speed": 21.9999,
+        "run_peak_speed": 89.9999,
+        "jump_max_lift": 54.3374,
+        "jump_landed": true,
+        "moving_jump_braked": true
+      },
+      {
+        "character": 8,
+        "walk_distance": 107.335,
+        "run_distance": 275.872,
+        "walk_peak_speed": 21.9999,
+        "run_peak_speed": 89.9999,
+        "jump_max_lift": 54.3374,
+        "jump_landed": true,
+        "moving_jump_braked": true
+      }
+    ]
+  },
+  "normal_walk_frames": 8,
+  "normal_walk_sha256": "fdb52258ede319c7f23ffa0af019b8d3fa677bf180caa1e9a89e1b37db0e9e78",
+  "mesh_default": false,
+  "mesh_walk_production_approved": false,
+  "desktop_recording": false,
+  "manual_command_evidence_sha256": {},
+  "publication_run": 42591580869,
+  "publication_url": "https://github.com/cho-woo/yeopjari-cat/actions/runs/42591580869",
+  "release_url": "https://github.com/cho-woo/yeopjari-cat/releases/tag/v2.0.20",
+  "stable_latest": "v2.0.20",
+  "public_downloads_verified_utc": "2026-11-09T09:13:58.453633+00:00",
+  "public_assets_sha256": {
+    "latest.txt": "1699e8560a32d0f0907e747434a4f48aa9a9c12c14479573a48dbc64d072367a",
+    "manual-motion-self-test.json": "cac731e99ddaf252c9429496a3044d8bdd0213cd15fc8707387119823040ce47",
+    "motion-update-SHA256SUMS.txt": "cbd07647dfb4219fd586bc172aadd309b905a299a8bae7447f23e2250207addd",
+    "release-info.json": "d8fcb4dd5749819e95b67b1c9916f314c267d7758bb9e207f79fb9d569b3dd57",
+    "RELEASE_NOTES_KO.txt": "b77748f22b23a5ca43dcf595a27436df28b2f407b985ffc7d667e3c4d61c6765",
+    "render-self-test.txt": "8af5828fbff6f2d7149f59a252ace7689ebb1a37bc14caee5e21295bcc7726af",
+    "SHA256SUMS.txt": "f512db4af20cfc8cc37c0fb8a268c990479e6f4c3f011919b31075808dd792db",
+    "windows-validation.json": "dce4585d3d67e6301b6ba1b48085e390af757d27f3015ffe1bc8e58e9b2baff6",
+    "YeopjariCat-2.0.20.exe": "377f901f1bee0922be5fe4e610c192ffee1441487f50a70705d9a627bf80aa42",
+    "YeopjariCat-Windows-2.0.20.zip": "44181a5279752868dabefb6103e816a62923c3754fcf031efaef259a7a4c6a01"
+  },
+  "preview": "../../previews/v2.0.20/cats-in-motion.mp4",
+  "preview_kind": "diagnostic composition of current original sprites, not a desktop recording"
+}

@@ -3,19 +3,17 @@
 일하는 동안 Windows 작업표시줄과 창 위에서 함께 지내는 작은 고양이입니다. 현재 버전은 크림치즈냥과 턱시도냥을 제공하며, 두 마리를 각자의 성장·성격·기억과 함께 키우는 기능은 유지합니다.
 
 
-**2.0.16**은 실제 접지 이동거리와 출발·정지·방향 전환을 개선합니다. 크림치즈냥과 턱시도냥에 동일하게 적용합니다. [구현·Windows 검증 결과](docs/WALKING_UPDATE.md).
+**v2.0.20:** 우클릭 → **행동시키기 → 걷기 / 달리기 / 점프하기**로 직접 움직이게 할 수 있습니다. 걷는 리듬을 가볍게 다듬고, 턱시도냥의 얼굴·가슴·발은 하얗게, 귀·등·꼬리는 부드러운 검정으로 정돈했습니다. 먹기·그루밍·잠자기 등에서도 같은 무늬를 사용합니다.
 
-[보행 비교 MP4 다운로드](https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.16/walking-native.mp4) · [미리보기 ZIP](https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.16/walking-preview.zip). 영상은 다운로드 후 플레이어로 열거나, 미리보기 ZIP의 압축을 풀고 `index.html`을 여세요.
-
-**v2.0.20:** 우클릭 → **행동시키기 → 걷기 / 달리기 / 점프하기**로 직접 움직이게 할 수 있습니다. 걷는 리듬을 가볍게 다듬고, 턱시도냥의 얼굴·가슴·발은 하얗게, 귀·등·꼬리는 부드러운 검정으로 정돈했습니다.
+[움직임 미리보기 MP4 다운로드](https://raw.githubusercontent.com/cho-woo/yeopjari-cat/main/docs/previews/v2.0.20/cats-in-motion.mp4) · [미리보기 이미지](docs/previews/v2.0.20/cats-in-motion.png). 현재 원화와 재생 리듬을 보여주는 합성 영상이며, 바탕화면 녹화는 아닙니다.
 
 ## 다운로드와 실행
 
 **[최신 버전 다운로드](https://github.com/cho-woo/yeopjari-cat/releases/latest)**
 
-[2.0.16 사용자용 ZIP 바로 받기](https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.16/YeopjariCat-Windows-2.0.16.zip)
+[2.0.20 사용자용 ZIP 바로 받기](https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.20/YeopjariCat-Windows-2.0.20.zip)
 
-**현재 공개 정식 버전은 v2.0.16입니다.** 걷기 보폭·접지 거리 계산·정지 및 반전 연결을 개선했습니다. 두 캐릭터에 같은 원화·동작·물리를 적용하며 털색만 다릅니다. 기존 성장·돌봄 기록과 무음·자동 업데이트를 유지합니다. 고양이 우클릭 → **프로그램 업데이트 → 업데이트 확인…**에서 받을 수 있습니다. [공개 파일·공식 피드 검증](docs/validation/v2.0.16-published.json).
+**현재 공개 정식 버전은 v2.0.20입니다.** 걷기·달리기의 리듬, 턱시도냥 외형과 직접 행동시키기를 개선했습니다. 기존 성장·돌봄 기록, 장난감, 두 마리 키우기, 무음·자동 업데이트를 유지합니다. 고양이 우클릭 → **프로그램 업데이트 → 업데이트 확인…**에서 받을 수 있습니다. [Windows 실행·배포 확인](docs/validation/v2.0.20-published.json).
 
 실행 대상은 **Windows 10/11 x64**입니다. 사용자 ZIP의 압축을 완전히 풀고 `YeopjariCat.exe`를 실행하세요. Python이나 게임 엔진 설치는 필요하지 않습니다. 프로그램이 업데이트될 수 있도록 바탕화면·문서 폴더 등 본인이 파일을 수정할 수 있는 위치에 두세요.
 
