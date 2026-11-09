@@ -102,8 +102,8 @@ foreach ($file in @($OldExe,$NewExe)) {
 }
 $OldExe = (Resolve-Path -LiteralPath $OldExe).Path
 $NewExe = (Resolve-Path -LiteralPath $NewExe).Path
-if ((Get-Item -LiteralPath $OldExe).VersionInfo.FileVersion -notmatch '^2\.0\.12(?:\.|$)') {
-    throw 'The comparison baseline must be the real v2.0.12 executable.'
+if ((Get-Item -LiteralPath $OldExe).VersionInfo.FileVersion -notmatch '^2\.0\.15(?:\.|$)') {
+    throw 'The comparison baseline must be the real v2.0.15 executable.'
 }
 $budget = $IdleSeconds + $ActiveSeconds + $SwitchCycles*$SwitchIntervalMs/1000 + $SettleSeconds + $StartupTimeoutSeconds
 if ($budget -gt 180) { throw 'Timed scenarios plus startup timeout exceed three minutes per executable.' }
