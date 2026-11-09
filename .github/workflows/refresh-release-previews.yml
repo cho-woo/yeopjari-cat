@@ -1,0 +1,19 @@
+name: Refresh v2.0.15 preview media without replacing the application
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: yeopjari-cat-release-publication
+  cancel-in-progress: false
+jobs:
+  refresh:
+    if: github.repository == 'cho-woo/yeopjari-cat' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify published application and refresh only its review media
+        run: python3 tools/refresh_release_previews.py

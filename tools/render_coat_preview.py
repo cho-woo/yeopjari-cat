@@ -51,7 +51,7 @@ int main(){
  for(unsigned t=0;t<12000;t+=50){
   auto clip=t<4000?Clip::Walk:t<5000?Clip::Sleep:Clip::Groom;
   auto* a=cat::sprite_assets::Find(clip,0,cat::sprite_assets::kCareSprites);
-  Options o;o.stage=Stage::Looping;o.sheetFrames=a->frameCount;
+  Options o;o.stage=Stage::Automatic;o.sheetFrames=a->frameCount;
   if(t<4000){
    gait.Advance(cat::animation::Motion::Walk,22*.05,.05,true);
    auto pose=cat::animation::Evaluate(cat::animation::Motion::Walk,t,500000,1,gait);
@@ -64,6 +64,8 @@ int main(){
 }''')
         subprocess.run(['g++','-std=c++17','-O2','-I',str(ROOT/'src'),str(sampler),'-o',str(binary)],check=True)
         samples=subprocess.check_output([str(binary)],text=True).splitlines();images=[]
+        for clip in (0,9):
+            assert len({int(line.split()[2]) for line in samples if int(line.split()[1])==clip})>=8, 'Preview must advance both walking and grooming'
         by_id={i if i<8 else i+1:c for i,c in enumerate(clips)}
         for line in samples:
             t,clip,frame=map(int,line.split());c=by_id[clip]
@@ -73,7 +75,9 @@ int main(){
             for coat in range(2):paste(canvas,c,frame,coat,110+coat*360+min(t+50,4000)/1000.*22*140/110,260,140)
             images.append(canvas.convert('RGB'))
         images[0].save(output/'two-cats.gif',save_all=True,append_images=images[1:],duration=50,loop=0,disposal=2,optimize=False)
-        subprocess.run(['ffmpeg','-y','-v','error','-i',str(output/'two-cats.gif'),'-pix_fmt','yuv420p','-movflags','+faststart',str(output/'two-cats.mp4')],check=True)
+        subprocess.run(['ffmpeg','-y','-v','error','-i',str(output/'two-cats.gif'),'-vf','tpad=stop_mode=clone:stop_duration=12','-t','12','-r','20','-pix_fmt','yuv420p','-movflags','+faststart',str(output/'two-cats.mp4')],check=True)
+    duration=float(subprocess.check_output(['ffprobe','-v','error','-show_entries','format=duration','-of','default=noprint_wrappers=1:nokey=1',str(output/'two-cats.mp4')],text=True))
+    assert abs(duration-12)<.06, duration
     print(output/'two-cats.gif')
 
 if __name__=='__main__':main()
