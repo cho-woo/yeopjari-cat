@@ -1,0 +1,63 @@
+name: Stage a validated Windows release as a review draft
+on:
+  workflow_dispatch:
+    inputs:
+      validation_run:
+        description: Successful validate.yml run ID whose application source is in main
+        required: true
+        type: string
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: yeopjari-cat-release-publication
+  cancel-in-progress: false
+jobs:
+  stage:
+    if: github.repository == 'cho-woo/yeopjari-cat' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      VALIDATION_RUN: ${{ inputs.validation_run }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Require successful native Windows validation of the application source
+        run: |
+          python3 - <<'PY'
+          import json, os, subprocess
+          run_id = os.environ['VALIDATION_RUN']
+          assert run_id.isdigit()
+          def api(path):
+              return json.loads(subprocess.check_output(['gh', 'api', 'repos/cho-woo/yeopjari-cat/' + path]))
+          run = api('actions/runs/' + run_id)
+          assert run['path'] == '.github/workflows/validate.yml'
+          assert run['status'] == 'completed' and run['conclusion'] == 'success'
+          assert run['head_repository']['full_name'] == 'cho-woo/yeopjari-cat'
+          jobs = api('actions/runs/' + run_id + '/jobs')['jobs']
+          assert all(any(j['name'] == name and j['conclusion'] == 'success' for j in jobs)
+                     for name in ['validate', 'windows-smoke'])
+          sha = run['head_sha']
+          subprocess.run(['git', 'merge-base', '--is-ancestor', sha, 'HEAD'], check=True)
+          subprocess.run(['git', 'diff', '--exit-code', sha, 'HEAD', '--', 'src', 'assets', 'tests',
+                          'build.sh', 'tools/setup.sh', 'tools/release.py', 'tools/check.sh', 'tools/test.sh'], check=True)
+          with open(os.environ['GITHUB_ENV'], 'a') as output:
+              output.write('VALIDATED_SHA=' + sha + '\n')
+          print('Verified application source and native tests:', sha)
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-x64-validated-package
+          path: verified-package
+          run-id: ${{ inputs.validation_run }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-native-validation
+          path: native-review
+          run-id: ${{ inputs.validation_run }}
+          github-token: ${{ github.token }}
+      - name: Verify, stage and download-check the exact package and preview assets
+        run: python3 tools/stage_validated_release.py
