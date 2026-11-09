@@ -306,7 +306,8 @@ int main(){
                    dict(entry,sequence={'loop':[{'frame':0,'ms':10}],'events':[{'step':1,'offset_ms':0,'type':'contact'}]}),
                    dict(entry,sequence={'loop':[{'frame':0,'ms':10}],'events':[{'step':0,'offset_ms':0,'type':'unknown'}]}),
                    dict(entry,sequence={'loop':[{'frame':0,'ms':10}],'events':[{'step':0,'offset_ms':0,'type':'contact'}]*65}),
-                   dict(entry,stride_pixels=float('nan')),dict(entry,stride_pixels=-1)]
+                   dict(entry,stride_pixels=float('nan')),dict(entry,stride_pixels=-1),
+                   dict(entry,standing_frame=256),dict(entry,standing_frame=-1),dict(entry,standing_frame=True)]
         no_sequence=dict(entry);no_sequence.pop('sequence');malformed.append(no_sequence)
         for value in malformed:
             with self.subTest(value=str(value)[-200:]),self.assertRaises(importer.ImportError):self.apply([value],schema=2)

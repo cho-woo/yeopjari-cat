@@ -217,13 +217,17 @@ public:
     double OriginalWalkPhase() const { return originalWalkPhase_; }
     // Register once when art/body width changes. Reconfiguration preserves the
     // step fraction; changing an action name never restarts an authored cycle.
-    bool ConfigureAuthoredStrides(double walkStride,double runStride) {
+    bool ConfigureAuthoredStrides(double walkStride,double runStride,unsigned standingFrame=0) {
+        standingFrame_=standingFrame;
         return authoredCycle_.Configure(walkStride,runStride);
     }
     bool AuthoredConfigured() const { return authoredCycle_.Configured(); }
     double AuthoredPhase() const { return authoredCycle_.Phase(); }
     cat::authored_locomotion::Mode AuthoredMode() const { return authoredCycle_.CurrentMode(); }
     double AuthoredStride() const { return authoredCycle_.Stride(); }
+    unsigned AuthoredStandingFrame() const {return standingFrame_;}
+    bool AuthoredStanding() const {return authoredCycle_.Standing();}
+    bool RecentAuthoredWalk() const {return authoredCycle_.RecentWalk();}
     double Speed() const { return cycle_.Speed(); } // Observed body pixels per second.
     cat::gait::Parameters Settings(Motion motion) const { return cycle_.Settings(motion==Motion::Stalk); }
     cat::gait::Feet Feet(Motion motion) const { return cycle_.Targets(motion==Motion::Stalk); }
@@ -237,6 +241,7 @@ private:
     cat::gait::Cycle cycle_;
     cat::gait::Cycle jointCycle_{cat::walk_dynamics::ParametersFor(cat::walk_dynamics::Mode::Walk),false,0};
     double originalWalkPhase_=0;
+    unsigned standingFrame_=0;
     cat::authored_locomotion::Cycle authoredCycle_;
     cat::walk_dynamics::Mode jointMode_=cat::walk_dynamics::Mode::Walk;
 };
@@ -251,6 +256,16 @@ inline cat::sprite_sequence::Clip AuthoredLocomotionClip(const Locomotion& locom
 // absent art keeps its complete original drawings and fallback behavior.
 inline bool ApplyAuthoredLocomotion(Pose& pose,Motion displayed,const Locomotion& locomotion,
                                    bool resourceAvailable) {
+    // Finish braking on the same side-view animal instead of immediately
+    // replacing it with a front-facing seated cat. No image blending/warping.
+    const bool neutral=displayed==Motion::Idle || displayed==Motion::Watch;
+    if(resourceAvailable && locomotion.AuthoredConfigured() && pose.groundContact &&
+            locomotion.AuthoredStanding() && (Walking(displayed) ||
+                (neutral && locomotion.RecentAuthoredWalk() && pose.spriteClip==cat::sprite_sequence::Clip::None))) {
+        pose.spriteClip=cat::sprite_sequence::Clip::Walk;pose.spriteTimed=false;pose.spriteFrame=locomotion.AuthoredStandingFrame();
+        UseAuthoredSprite(pose);pose.originalWalk=pose.jointWalk=pose.walkingRig=false;
+        return true;
+    }
     if(!resourceAvailable || !locomotion.AuthoredConfigured() || !Walking(displayed) ||
             !pose.groundContact || !pose.originalWalk ||
             pose.spriteClip!=cat::sprite_sequence::Clip::None)return false;

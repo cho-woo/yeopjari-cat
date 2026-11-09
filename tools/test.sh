@@ -19,6 +19,8 @@ g++ -std=c++17 -O2 -Wall -Wextra tests/cat_toy_physics_test.cpp src/cat_physics.
 build/native-tests/cat_toy_physics_test
 
 g++ -std=c++17 -O2 -Wall -Wextra tests/cat_motion_gate_test.cpp src/cat_physics.cpp -Ithird_party/box2d/include build/native-box2d/libbox2d.a -lm -o build/native-tests/cat_motion_gate_test
+g++ -std=c++17 -O2 -Wall -Wextra tests/cat_ground_drive_test.cpp src/cat_physics.cpp -Ithird_party/box2d/include build/native-box2d/libbox2d.a -lm -o build/native-tests/cat_ground_drive_test
+build/native-tests/cat_ground_drive_test
 build/native-tests/cat_motion_gate_test
 
 g++ -std=c++17 -O2 -Wall -Wextra tests/cat_cursor_session_test.cpp src/cat_physics.cpp -Ithird_party/box2d/include build/native-box2d/libbox2d.a -lm -o build/native-tests/cat_cursor_session_test

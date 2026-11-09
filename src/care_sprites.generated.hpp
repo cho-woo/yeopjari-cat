@@ -37,7 +37,7 @@ inline constexpr std::array<Descriptor,10> kCareSprites{{
         cat::sprite_sequence::Step{13,500},
         cat::sprite_sequence::Step{14,600},
         cat::sprite_sequence::Step{15,650},
-    }},cat::sprite_sequence::Range{0,14},cat::sprite_sequence::Range{14,0},cat::sprite_sequence::Range{14,2},cat::sprite_sequence::Finish::Complete,0,0,{{}}},0},
+    }},cat::sprite_sequence::Range{0,14},cat::sprite_sequence::Range{14,0},cat::sprite_sequence::Range{14,2},cat::sprite_sequence::Finish::Complete,0,0,{{}}},0,0},
     Descriptor{cat::sprite_sequence::Clip::Sleep,0,114,4,2,8,1774,887,373,{{
         Frame{{0,0,443,443},{251,404}},
         Frame{{443,0,444,443},{248,404}},
@@ -55,7 +55,7 @@ inline constexpr std::array<Descriptor,10> kCareSprites{{
         cat::sprite_sequence::Step{6,1000},
         cat::sprite_sequence::Step{2,800},
         cat::sprite_sequence::Step{0,900},
-    }},cat::sprite_sequence::Range{0,3},cat::sprite_sequence::Range{3,1},cat::sprite_sequence::Range{4,3},cat::sprite_sequence::Finish::Complete,0,0,{{}}},0},
+    }},cat::sprite_sequence::Range{0,3},cat::sprite_sequence::Range{3,1},cat::sprite_sequence::Range{4,3},cat::sprite_sequence::Finish::Complete,0,0,{{}}},0,0},
     Descriptor{cat::sprite_sequence::Clip::Box,0,115,4,2,8,1774,887,360,{{
         Frame{{0,0,443,443},{329,403}},
         Frame{{443,0,444,443},{164,403}},
@@ -74,7 +74,7 @@ inline constexpr std::array<Descriptor,10> kCareSprites{{
         cat::sprite_sequence::Step{7,10000},
         cat::sprite_sequence::Step{6,900},
         cat::sprite_sequence::Step{5,900},
-    }},cat::sprite_sequence::Range{0,3},cat::sprite_sequence::Range{3,3},cat::sprite_sequence::Range{6,2},cat::sprite_sequence::Finish::Complete,0,0,{{}}},0},
+    }},cat::sprite_sequence::Range{0,3},cat::sprite_sequence::Range{3,3},cat::sprite_sequence::Range{6,2},cat::sprite_sequence::Finish::Complete,0,0,{{}}},0,0},
     Descriptor{cat::sprite_sequence::Clip::Fish,0,116,4,2,8,1774,887,360,{{
         Frame{{0,0,443,443},{255,386}},
         Frame{{443,0,444,443},{238,386}},
@@ -93,7 +93,7 @@ inline constexpr std::array<Descriptor,10> kCareSprites{{
         cat::sprite_sequence::Step{5,600},
         cat::sprite_sequence::Step{6,700},
         cat::sprite_sequence::Step{7,850},
-    }},cat::sprite_sequence::Range{0,6},cat::sprite_sequence::Range{6,0},cat::sprite_sequence::Range{6,2},cat::sprite_sequence::Finish::Complete,0,0,{{}}},0},
+    }},cat::sprite_sequence::Range{0,6},cat::sprite_sequence::Range{6,0},cat::sprite_sequence::Range{6,2},cat::sprite_sequence::Finish::Complete,0,0,{{}}},0,0},
     Descriptor{cat::sprite_sequence::Clip::Punch,0,117,4,3,12,1448,1086,297,{{
         Frame{{0,0,362,362},{201,319}},
         Frame{{362,0,362,362},{201,319}},
@@ -120,7 +120,7 @@ inline constexpr std::array<Descriptor,10> kCareSprites{{
         cat::sprite_sequence::Step{9,200},
         cat::sprite_sequence::Step{10,300},
         cat::sprite_sequence::Step{11,400},
-    }},cat::sprite_sequence::Range{0,10},cat::sprite_sequence::Range{10,0},cat::sprite_sequence::Range{10,2},cat::sprite_sequence::Finish::Complete,0,1,{{cat::sprite_sequence::Cue{5,0,1}}}},0},
+    }},cat::sprite_sequence::Range{0,10},cat::sprite_sequence::Range{10,0},cat::sprite_sequence::Range{10,2},cat::sprite_sequence::Finish::Complete,0,1,{{cat::sprite_sequence::Cue{5,0,1}}}},0,0},
     Descriptor{cat::sprite_sequence::Clip::Eat,0,118,3,4,12,1086,1448,310,{{
         Frame{{0,0,362,362},{181,333}},
         Frame{{362,0,362,362},{174,330}},
@@ -147,7 +147,7 @@ inline constexpr std::array<Descriptor,10> kCareSprites{{
         cat::sprite_sequence::Step{9,600},
         cat::sprite_sequence::Step{10,500},
         cat::sprite_sequence::Step{11,800},
-    }},cat::sprite_sequence::Range{0,10},cat::sprite_sequence::Range{10,0},cat::sprite_sequence::Range{10,2},cat::sprite_sequence::Finish::Complete,0,0,{{}}},0},
+    }},cat::sprite_sequence::Range{0,10},cat::sprite_sequence::Range{10,0},cat::sprite_sequence::Range{10,2},cat::sprite_sequence::Finish::Complete,0,0,{{}}},0,0},
     Descriptor{cat::sprite_sequence::Clip::Jump,0,119,4,4,16,1254,1254,244,{{
         Frame{{0,0,313,313},{160,273}},
         Frame{{313,0,314,313},{160,273}},
@@ -182,7 +182,7 @@ inline constexpr std::array<Descriptor,10> kCareSprites{{
         cat::sprite_sequence::Step{13,160},
         cat::sprite_sequence::Step{14,180},
         cat::sprite_sequence::Step{15,220},
-    }},cat::sprite_sequence::Range{0,3},cat::sprite_sequence::Range{3,8},cat::sprite_sequence::Range{11,5},cat::sprite_sequence::Finish::Complete,0,2,{{cat::sprite_sequence::Cue{3,0,2},cat::sprite_sequence::Cue{11,0,4}}}},0},
+    }},cat::sprite_sequence::Range{0,3},cat::sprite_sequence::Range{3,8},cat::sprite_sequence::Range{11,5},cat::sprite_sequence::Finish::Complete,0,2,{{cat::sprite_sequence::Cue{3,0,2},cat::sprite_sequence::Cue{11,0,4}}}},0,0},
     Descriptor{cat::sprite_sequence::Clip::Treat,0,120,6,4,24,1536,1024,221,{{
         Frame{{40,0,218,256},{110,234}},
         Frame{{296,0,218,256},{110,234}},
@@ -233,7 +233,7 @@ inline constexpr std::array<Descriptor,10> kCareSprites{{
         cat::sprite_sequence::Step{21,300},
         cat::sprite_sequence::Step{22,500},
         cat::sprite_sequence::Step{23,600},
-    }},cat::sprite_sequence::Range{0,5},cat::sprite_sequence::Range{5,10},cat::sprite_sequence::Range{15,9},cat::sprite_sequence::Finish::Complete,0,0,{{}}},0},
+    }},cat::sprite_sequence::Range{0,5},cat::sprite_sequence::Range{5,10},cat::sprite_sequence::Range{15,9},cat::sprite_sequence::Finish::Complete,0,0,{{}}},0,0},
     Descriptor{cat::sprite_sequence::Clip::Walk,0,400,4,4,8,1254,1254,221,{{
         Frame{{0,0,313,313},{161,275}},
         Frame{{313,0,314,313},{161,275}},
@@ -244,15 +244,15 @@ inline constexpr std::array<Descriptor,10> kCareSprites{{
         Frame{{627,313,313,314},{161,275}},
         Frame{{940,313,314,314},{161,275}},
     }},"fdb52258ede319c7f23ffa0af019b8d3fa677bf180caa1e9a89e1b37db0e9e78","assets/care-sprites/c0-walk.png",cat::sprite_sequence::Program{8,{{
-        cat::sprite_sequence::Step{0,125},
-        cat::sprite_sequence::Step{1,125},
-        cat::sprite_sequence::Step{2,125},
-        cat::sprite_sequence::Step{3,125},
-        cat::sprite_sequence::Step{4,125},
-        cat::sprite_sequence::Step{5,125},
-        cat::sprite_sequence::Step{6,125},
-        cat::sprite_sequence::Step{7,125},
-    }},cat::sprite_sequence::Range{0,0},cat::sprite_sequence::Range{0,8},cat::sprite_sequence::Range{8,0},cat::sprite_sequence::Finish::Complete,0,0,{{}}},72},
+        cat::sprite_sequence::Step{0,75},
+        cat::sprite_sequence::Step{1,75},
+        cat::sprite_sequence::Step{2,75},
+        cat::sprite_sequence::Step{3,202},
+        cat::sprite_sequence::Step{4,342},
+        cat::sprite_sequence::Step{5,75},
+        cat::sprite_sequence::Step{6,81},
+        cat::sprite_sequence::Step{7,75},
+    }},cat::sprite_sequence::Range{0,0},cat::sprite_sequence::Range{0,8},cat::sprite_sequence::Range{8,0},cat::sprite_sequence::Finish::Complete,0,0,{{}}},64,0},
     Descriptor{cat::sprite_sequence::Clip::Run,0,400,4,4,8,1254,1254,221,{{
         Frame{{0,627,313,313},{157,261}},
         Frame{{313,627,314,313},{157,261}},
@@ -271,6 +271,6 @@ inline constexpr std::array<Descriptor,10> kCareSprites{{
         cat::sprite_sequence::Step{5,80},
         cat::sprite_sequence::Step{6,80},
         cat::sprite_sequence::Step{7,80},
-    }},cat::sprite_sequence::Range{0,0},cat::sprite_sequence::Range{0,8},cat::sprite_sequence::Range{8,0},cat::sprite_sequence::Finish::Complete,0,0,{{}}},150},
+    }},cat::sprite_sequence::Range{0,0},cat::sprite_sequence::Range{0,8},cat::sprite_sequence::Range{8,0},cat::sprite_sequence::Finish::Complete,0,0,{{}}},150,7},
 }};
 }

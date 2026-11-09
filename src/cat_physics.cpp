@@ -270,7 +270,13 @@ struct Controller::Impl {
         const double supportTravel = current.onPlatform && onPlatform ?
             (b2Body_GetPosition(platform).x - platformBeforeX) * kPixelsPerMeter : 0.0;
         current.supportTravelX += supportTravel;
-        current.relativeTravelX += current.x-previous.x-supportTravel;
+        // Only continuous contact with the SAME support contributes to gait.
+        // A render tick can include flight and landing substeps; counting all
+        // x travel then testing only its final grounded flag skipped paws on
+        // contact. Relocations already synchronize previous/current elsewhere.
+        if (previous.grounded && grounded && previous.onPlatform == onPlatform &&
+                !previous.hanging && !current.hanging)
+            current.relativeTravelX += current.x-previous.x-supportTravel;
         current.onPlatform = onPlatform;
         current.supportVelocityX = onPlatform ? platformVelocity.x*kPixelsPerMeter : 0;
     }

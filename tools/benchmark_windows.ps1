@@ -294,7 +294,7 @@ try {
     Get-ChildItem -LiteralPath $save -File | Where-Object Name -ne $marker | Copy-Item -Destination $fixture
     $result.fixture_hashes=@(Get-ChildItem -LiteralPath $fixture -File | Sort-Object Name | ForEach-Object {
         [ordered]@{name=$_.Name;sha256=(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()}})
-    foreach($entry in @(@{label='v2.0.12';exe=$OldExe},@{label='candidate';exe=$NewExe})) {
+    foreach($entry in @(@{label='baseline';exe=$OldExe},@{label='candidate';exe=$NewExe})) {
         Get-ChildItem -LiteralPath $save -File | Where-Object Name -ne $marker | Remove-Item -Force
         Get-ChildItem -LiteralPath $fixture -File | Copy-Item -Destination $save
         # Match warm filesystem-cache conditions without altering the app.
@@ -309,7 +309,7 @@ try {
         $run.scenarios+=,(Measure-Scenario $app 'ordinary_autonomous_activity' $ActiveSeconds)
         Invoke-AppMenu $app '이 자리에서 쉬기';Wait-SavedValue 'pet.ini' 'paused=1'
         $switch={param($index)
-            if($index%2 -eq 0){Invoke-AppMenu $app '실버 태비냥' '캐릭터 선택';Wait-SavedValue 'preferences.ini' 'character=silver_tabby'}
+            if($index%2 -eq 0){Invoke-AppMenu $app '턱시도냥' '캐릭터 선택';Wait-SavedValue 'preferences.ini' 'character=tuxedo'}
             else{Invoke-AppMenu $app '크림 치즈냥' '캐릭터 선택';Wait-SavedValue 'preferences.ini' 'character=cream'}
         }
         $run.scenarios+=,(Measure-Scenario $app 'repeated_character_switch' ($SwitchCycles*$SwitchIntervalMs/1000) $switch $SwitchCycles)

@@ -335,7 +335,13 @@ void SpeciesLimitsAndBraking() {
     CHECK(m.Physical().velocityX>10);
     CHECK(m.Feed(c.nowUtc,c.ticks,false)==cat::nutrition::FeedResult::Accepted);
     CHECK(cat::animation::Travels(m.View(c.ticks).motion)); // A seated eating frame cannot slide during braking.
-    Step(m,c,30);CHECK(std::abs(m.Physical().velocityX)<2);CHECK(m.View(c.ticks).motion==cat::animation::Motion::Eat);
+    for(unsigned tick=0;tick<60 && m.View(c.ticks).motion!=cat::animation::Motion::Eat;++tick) {
+        Step(m,c,1);
+        if(std::abs(m.Physical().velocityX)>cat::motion::kStoppedSpeed)
+            CHECK(cat::animation::Walking(m.View(c.ticks).motion));
+    }
+    CHECK(std::abs(m.Physical().velocityX)<cat::motion::kStoppedSpeed);
+    CHECK(m.View(c.ticks).motion==cat::animation::Motion::Eat);
     CHECK(Valid(s));
     m.DragTo(700);
     State saved;std::string error;

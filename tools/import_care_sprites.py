@@ -14,6 +14,8 @@ explicit sequence: intro/loop/outro lists of {frame,ms}, finish (hold/complete),
 optional duration_ms and events [{step,offset_ms,type}]. Event step addresses
 the concatenated intro, loop and outro lists. Walk/run additionally require
 stride_pixels: logical travel per complete cycle, independent of frame count.
+Optional standing_frame selects the planted pose. Walk/run step ms are distance
+weights, not an independent wall-time animation clock.
 
   python3 tools/import_care_sprites.py --manifest /path/to/manifest.json
   python3 tools/import_care_sprites.py --check
@@ -199,7 +201,7 @@ def load_entries(manifest_path):
     for index,entry in enumerate(manifest['clips']):
         label=f'clips[{index}]'
         required={'clip','character','source','columns','rows','reference_height'}
-        optional={'frames','anchor','sha256'}|({'frame_count','sequence','stride_pixels'} if schema==2 else set())
+        optional={'frames','anchor','sha256'}|({'frame_count','sequence','stride_pixels','standing_frame'} if schema==2 else set())
         require(isinstance(entry,dict) and required<=set(entry) and set(entry)<=required|optional,f'{label}: unsupported or missing fields')
         name=entry['clip'];require(isinstance(name,str) and name in LAYOUT,f'{label}: unknown clip')
         require(schema==2 or name not in ('walk','run'),f'{label}: locomotion requires schema2 and a sequence')
@@ -237,6 +239,7 @@ def load_entries(manifest_path):
         program=sequence(entry['sequence'],count,label+'.sequence') if 'sequence' in entry else None
         require(program is not None or ((columns,rows) in permitted and count==columns*rows and name not in ('walk','run')),
                 f'{label}: custom frame count or locomotion requires an explicit sequence')
+        standing=integer(entry.get('standing_frame',0),label+'.standing_frame',0,count-1)
         stride=number(entry.get('stride_pixels',0),label+'.stride_pixels',0,4096)
         require(name not in ('walk','run') or stride>0,f'{label}: locomotion stride_pixels must be positive')
         frames=[]
@@ -267,7 +270,7 @@ def load_entries(manifest_path):
         resource=400+character*2+(name=='run') if name in ('walk','run') else 113+character*8+clip_index
         entries.append({'clip':name,'enum':enum,'character':character,'resource':resource,'schema':schema,
                         'columns':columns,'rows':rows,'reference_height':reference,'width':width,'height':height,
-                        'frames':frames,'filename':filename,'sha256':digest,'data':data,'program':program,'stride_pixels':stride})
+                        'frames':frames,'filename':filename,'sha256':digest,'data':data,'program':program,'stride_pixels':stride,'standing_frame':standing})
     entries.sort(key=lambda value:(value['character'],LAYOUT[value['clip']][0]))
     for entry in entries:
         if entry['clip']=='run':
@@ -312,7 +315,7 @@ def generated(entries):
                 header+='        Frame{{'+','.join(map(str,frame['rect']))+'},{'+','.join(map(numeric,frame['anchor']))+'}},\n'
             header+='    }},"'+entry['sha256']+'","assets/care-sprites/'+entry['filename']+'"'
             if entry['program'] is not None or entry['stride_pixels']:
-                header+=','+generated_program(entry['program'])+','+numeric(entry['stride_pixels'])
+                header+=','+generated_program(entry['program'])+','+numeric(entry['stride_pixels'])+','+str(entry['standing_frame'])
             header+='},\n'
             if entry['resource'] in resources:
                 require(resources[entry['resource']]==entry['sha256'],'Conflicting PNGs share a resource identifier')
@@ -339,7 +342,9 @@ def prepare_import(root,manifest_path=None,check=False):
             if schema==2:
                 value['frame_count']=len(entry['frames'])
                 if entry['program'] is not None:value['sequence']=entry['program']['canonical']
-                if entry['stride_pixels']:value['stride_pixels']=entry['stride_pixels']
+                if entry['stride_pixels']:
+                    value['stride_pixels']=entry['stride_pixels']
+                    value['standing_frame']=entry['standing_frame']
             clips.append(value)
         canonical={'schema':schema,'clips':clips}
         outputs[default]=(json.dumps(canonical,ensure_ascii=False,indent=2)+'\n').encode()

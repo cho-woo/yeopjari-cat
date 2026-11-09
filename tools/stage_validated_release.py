@@ -30,7 +30,7 @@ def main():
     release.verify_release(package)
     info = json.loads(metadata[0].read_text())
     version = release.version_from_header(release.ROOT / 'src/app_version.h')
-    assert version == info['version'] == '2.0.15'
+    assert version == info['version'] == '2.0.16'
     exe = package / f'YeopjariCat-{version}.exe'
     verify_silent_exe(exe.read_bytes())
     reports = list(Path('native-review').rglob('render-self-test.txt'))
@@ -41,11 +41,14 @@ def main():
     stage = Path('review-assets')
     stage.mkdir()
     files = [package / name for name in info['files']]
-    for path in [reports[0], captures[0], Path('docs/media/two-cats.gif'),
-                 Path('docs/media/two-cats.mp4')]:
+    for path in [reports[0], captures[0]]:
         target = stage / path.name
         shutil.copyfile(path, target)
         files.append(target)
+    # Native frames and raw measured counters travel together for local review.
+    # Do not attach an obsolete earlier release's generated preview.
+    archive = Path(shutil.make_archive(str(stage / 'native-walking-evidence'), 'zip', 'native-review'))
+    files.append(archive)
     provenance = stage / 'windows-validation.json'
     provenance.write_text(json.dumps({
         'source_commit': os.environ['VALIDATED_SHA'],

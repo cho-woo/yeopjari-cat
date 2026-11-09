@@ -25,11 +25,14 @@ public:
     void Reset() {
         phase_ = 0;
         mode_ = Mode::Walk;
+        stillSeconds_=0;hasWalked_=false;
     }
     bool Configured() const { return walkStride_ > 0 && runStride_ > 0; }
     double Phase() const { return phase_; }
     Mode CurrentMode() const { return mode_; }
     double Stride() const { return mode_ == Mode::Run ? runStride_ : walkStride_; }
+    bool Standing() const {return hasWalked_ && stillSeconds_>=.10;}
+    bool RecentWalk() const {return hasWalked_ && stillSeconds_<1.2;}
 
     bool Advance(double signedDistance, double seconds, bool walking, bool grounded) {
         if (!std::isfinite(signedDistance) || !std::isfinite(seconds) || seconds < 0 ||
@@ -39,11 +42,18 @@ public:
         }
         // Carrying a cat with its window, falling off a support, pauses and
         // blocked movement cannot consume a step or switch its painted gait.
-        if (!Configured() || !walking || !grounded || signedDistance == 0 || seconds == 0)
+        if (!Configured() || seconds == 0)
             return true;
+        if (!grounded) {stillSeconds_=0;hasWalked_=false;return true;}
         const double distance = std::abs(signedDistance);
         const double speed = distance / seconds;
         if (!std::isfinite(speed)) { Reset(); return false; }
+        if(speed<=.5) stillSeconds_=std::min(10.0,stillSeconds_+seconds);
+        if(!walking || distance==0)return true;
+        if(speed>.5) {
+            if(stillSeconds_>=.18) {phase_=0;mode_=Mode::Walk;}
+            stillSeconds_=0;hasWalked_=true;
+        }
         if (mode_ == Mode::Walk && speed >= RunEnterSpeed) mode_ = Mode::Run;
         else if (mode_ == Mode::Run && speed <= RunExitSpeed) mode_ = Mode::Walk;
         const double advance = distance / Stride();
@@ -58,6 +68,8 @@ private:
         return std::isfinite(value) && value > 0 && value <= 16384;
     }
     double walkStride_ = 0, runStride_ = 0, phase_ = 0;
+    double stillSeconds_=0;
+    bool hasWalked_=false;
     Mode mode_ = Mode::Walk;
 };
 } // namespace cat::authored_locomotion

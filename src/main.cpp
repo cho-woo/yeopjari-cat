@@ -298,6 +298,7 @@ struct App {
     cat::nutrition::State nutrition;
     cat::physics::Controller physics;
     cat::animation::Locomotion gait;
+    cat::motion::GroundDrive groundDrive;
     cat::animation::PoseTransition poseTransition;
     bool physicsReady = false, jumpPending = false, jumpLaunched = false;
     bool waitingForStop = false;
@@ -1311,6 +1312,7 @@ void ResetMovement() {
     g.perch.rect = {};
     g.physicsReady = true;
     g.gait.Reset();
+    g.groundDrive.Reset(g.direction);
     g.poseTransition.Reset();
     ResetPrimaryCarePresentation();
     g.jumpPending = g.jumpLaunched = false;
@@ -1335,7 +1337,7 @@ void ConfigurePrimaryAuthoredStride() {
     if(walk && run) {
         const auto body=cat::nutrition::VisualModifiers(g.nutrition);
         g.gait.ConfigureAuthoredStrides(walk->layout->stridePixels*body.bodyWidth,
-            run->layout->stridePixels*body.bodyWidth);
+            run->layout->stridePixels*body.bodyWidth,walk->layout->standingFrame);
     }
 }
 ULONGLONG PrimaryTakeoffMs(bool pounce=false) {
@@ -2289,6 +2291,12 @@ void DrawStyledAnimation(Graphics& graphics, cat::animation::Pose pose, REAL cen
         DrawStyledAnimationDirect(target,drawing,center,bottom,scale,character,outfit,body,
             blendFrom,blendTo,canvasWidth,canvasHeight);
     };
+    if(cat::CharacterAvailable(character) && !g.careSprites.empty()) {
+        if(pose.blendFrame>=0 && pose.blend>=.5)pose.frame=pose.blendFrame;
+        pose.blendFrame=-1;pose.blend=0;
+        if(presentation)presentation->Reset();
+        direct(graphics,pose);return;
+    }
     if(!presentation) {direct(graphics,pose);return;}
     auto& state=*presentation;
     const auto* authored=CareSpriteFor(pose,character);
@@ -2355,7 +2363,8 @@ void DrawPetStyle(Graphics& graphics, cat::Character character, cat::Outfit outf
     RectF bounds; graphics.GetVisibleClipBounds(&bounds);
     const int width=std::max(1,static_cast<int>(std::ceil(bounds.X+bounds.Width)));
     const int height=std::max(1,static_cast<int>(std::ceil(bounds.Y+bounds.Height)));
-    if (from.width!=width || from.height!=height) { from.Create(width,height); to.Create(width,height); }
+    if ((!cat::CharacterAvailable(character) || g.careSprites.empty()) &&
+            (from.width!=width || from.height!=height)) { from.Create(width,height); to.Create(width,height); }
     const REAL scale=desiredHeight/std::max(1,CurrentArt(character).base.standingHeight);
     DrawStyledAnimation(graphics,pose,center,bottom,scale,character,outfit,body,from,to,width,height,
         presentation,ticks,generation,paused);
@@ -3730,7 +3739,7 @@ void Tick() {
         if(elapsed>0)UpdateCursorReaction(ticks, clockDelta);
         if(elapsed>0)DispatchAutonomousMotion(ticks);
         if (g.perch.transitioning) { UpdatePerchTransition(ticks, elapsed); Render(); return; }
-        cat::motion::AdvanceStopGate(g.waitingForStop, g.physics.CurrentPose().grounded,
+        cat::motion::AdvanceStopGate(g.waitingForStop, g.physics.CurrentPose().grounded && g.groundDrive.Settled(),
             WalkingVelocity(g.physics.CurrentPose()), ticks, g.motionStart, g.nextDecision);
         const auto actionElapsed = ticks >= g.motionStart ? ticks - g.motionStart : 0;
         const auto body = cat::nutrition::VisualModifiers(g.nutrition);
@@ -3789,7 +3798,7 @@ void Tick() {
             }
         }
         targetSpeed *= cat::species::ProfileFor(g.preferences.character).movementSpeedMultiplier;
-        if (g.perch.active && g.physics.OnPlatform() && targetSpeed != 0) {
+        if (g.physics.CurrentPose().grounded && targetSpeed != 0) {
             const auto support = g.physics.CurrentPose();
             const auto [low, high] = MovementBoundsLogical();
             if (cat::motion::BrakeBeforeEdge(support.x, WalkingVelocity(support), targetSpeed, low, high)) {
@@ -3799,6 +3808,10 @@ void Tick() {
             }
         }
         if (g.waitingForStop) targetSpeed = 0;
+        const auto motorPose=g.physics.CurrentPose();
+        targetSpeed=g.groundDrive.Update(targetSpeed,WalkingVelocity(motorPose),
+            WalkingVelocity(g.physics.RenderPose()),motorPose.grounded,elapsed);
+        if(motorPose.grounded)g.facing=g.groundDrive.Facing();
         g.physics.SetTargetVelocity(targetSpeed);
         if (!g.waitingForStop && g.jumpPending) {
             const ULONGLONG takeoff = PrimaryTakeoffMs(g.motion==Motion::Pounce);
@@ -3827,7 +3840,7 @@ void Tick() {
             FinishPerchTransition(ticks);
         }
         if (std::abs(WalkingVelocity(physical)) > 2) g.facing = WalkingVelocity(physical) < 0 ? -1 : 1;
-        else g.facing = g.direction;
+        else if(physical.grounded) g.facing = g.groundDrive.Facing();
         if (g.motion == Motion::Walk || g.motion == Motion::Stalk || g.motion == Motion::Zoomies) g.walkingMotion = g.motion;
         const Motion gaitMotion=cat::motion::DisplayedMotion(g.motion,g.walkingMotion,
             rendered.grounded,g.waitingForStop,WalkingVelocity(rendered));
@@ -4041,6 +4054,7 @@ int NativePerchHitTest() {
 #include "native_care_cache_tests.hpp"
 #include "native_care_presentation_tests.hpp"
 #include "native_coat_tests.hpp"
+#include "native_ground_drive_tests.hpp"
 
 int RenderSelfTest() {
     // Native GDI+ regression path: resources and offscreen DIBs only. This
@@ -4070,6 +4084,7 @@ int RenderSelfTest() {
             if(const int presentationTest=NativeCarePresentationRenderTest(context))return presentationTest;
             if(const int walkingTest=NativeAuthoredWalkingRenderTest(context))return walkingTest;
             if(const int coatTest=NativeCoatRenderTest(context))return coatTest;
+            if(const int driveTest=NativeGroundDriveReview(context))return driveTest;
             DisabledCareSpriteScope canonicalArtwork;
             constexpr REAL center = 210, floor = 280;
             constexpr std::uint64_t fixedTicks = 500000;

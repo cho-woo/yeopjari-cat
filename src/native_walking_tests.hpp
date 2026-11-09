@@ -72,7 +72,7 @@ int NativeAuthoredWalkingRenderTest(std::string& context) {
         // coverage; this review must not invent additional source poses.
         if(expectedFrames.empty()||expectedFrames.size()!=8)return 431;
         std::vector<bool> seen(layout->frameCount,false);unsigned visited=0;
-        std::vector<BYTE> heldPixels;unsigned heldFrame=0;
+
         for(unsigned tick=0;tick<1200&&visited<expectedFrames.size();++tick) {
             if(!gait.Advance(motion,speed/60,1./60,true))return 431;
             auto pose=cat::animation::Evaluate(motion,tick*1000/60,500000,facing,gait);
@@ -102,7 +102,7 @@ int NativeAuthoredWalkingRenderTest(std::string& context) {
                 }
             }
             if(visible<350)return 435;
-            heldPixels=actual;heldFrame=frame;
+
             if(dimensions.first==1 && motion!=Motion::Stalk) {
                 const unsigned column=static_cast<unsigned>(std::find(expectedFrames.begin(),expectedFrames.end(),frame)-expectedFrames.begin());
                 const unsigned size=desiredHeight==80?0:desiredHeight==110?1:2;
@@ -125,7 +125,10 @@ int NativeAuthoredWalkingRenderTest(std::string& context) {
         for(unsigned tick=0;tick<30;++tick)if(!gait.Advance(motion,0,1./60,true))return 436;
         auto paused=cat::animation::Evaluate(motion,900000,900000,facing,gait);
         if(!cat::animation::ApplyAuthoredLocomotion(paused,motion,gait,true)||gait.AuthoredPhase()!=phase||
-                SpriteFrameFor(paused,*layout)!=heldFrame||!draw(paused,body,desiredHeight,false)||copy()!=heldPixels)return 436;
+                paused.spriteClip!=Clip::Walk||paused.spriteFrame!=walk->standingFrame||paused.spriteTimed)return 436;
+        // A blocked request settles on the planted source frame rather than
+        // indefinitely freezing a lifted paw. Physical phase itself is held.
+        if(!draw(paused,body,desiredHeight,false))return 436;
         if(!gait.Advance(motion,speed/60,1./60,false)||gait.AuthoredPhase()!=phase)return 436;
         auto falling=cat::animation::AirbornePose(-100,facing);
         if(cat::animation::ApplyAuthoredLocomotion(falling,motion,gait,true)||falling.spriteClip!=Clip::Jump)return 436;

@@ -1970,35 +1970,35 @@
         "loop": [
           {
             "frame": 0,
-            "ms": 125
+            "ms": 75
           },
           {
             "frame": 1,
-            "ms": 125
+            "ms": 75
           },
           {
             "frame": 2,
-            "ms": 125
+            "ms": 75
           },
           {
             "frame": 3,
-            "ms": 125
+            "ms": 202
           },
           {
             "frame": 4,
-            "ms": 125
+            "ms": 342
           },
           {
             "frame": 5,
-            "ms": 125
+            "ms": 75
           },
           {
             "frame": 6,
-            "ms": 125
+            "ms": 81
           },
           {
             "frame": 7,
-            "ms": 125
+            "ms": 75
           }
         ],
         "outro": [],
@@ -2006,7 +2006,8 @@
         "duration_ms": 0,
         "events": []
       },
-      "stride_pixels": 72
+      "stride_pixels": 64,
+      "standing_frame": 0
     },
     {
       "clip": "run",
@@ -2156,7 +2157,8 @@
         "duration_ms": 0,
         "events": []
       },
-      "stride_pixels": 150
+      "stride_pixels": 150,
+      "standing_frame": 7
     }
   ]
 }

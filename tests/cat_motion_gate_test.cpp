@@ -60,7 +60,7 @@ void PounceLandingKeepsSteppingThroughItsRealBrakingDistance() {
             gait.Advance(displayed,after.x-before.x,dt);
             if(!after.grounded){airborne=true;continue;}
             if(!airborne)continue;
-            if(std::abs(after.velocityX)>2){
+            if(std::abs(after.velocityX)>cat::motion::kStoppedSpeed){
                 coasting=true;coastDistance+=std::abs(after.x-before.x);
                 const auto pose=cat::animation::Evaluate(displayed,1500,1500,direction,gait);
                 CHECK(displayed==Motion::Walk&&pose.frame<4&&pose.blendFrame<4);
@@ -125,7 +125,7 @@ void InterruptionsAndPauseKeepPhase() {
         CHECK(!cat::motion::NeedsStop(travel, true, 120));
     CHECK(!cat::motion::NeedsStop(Motion::Jump, false, 120));
     CHECK(!cat::motion::NeedsStop(Motion::Jump, true, 120, true));
-    CHECK(!cat::motion::NeedsStop(Motion::Sleep, true, 1.9));
+    CHECK(!cat::motion::NeedsStop(Motion::Sleep, true, .49));
     CHECK(cat::motion::NeedsStop(Motion::Pounce, true, 120));
     cat::physics::Controller physics;
     physics.Reset(500, 96, 1824);
@@ -154,7 +154,7 @@ void InterruptionsAndPauseKeepPhase() {
     start += 10000; decision += 10000;
     CHECK(!cat::motion::AdvanceStopGate(waiting, true, 20, 11216, start, decision));
     CHECK(start == 11216 && decision == 15216);
-    CHECK(cat::motion::AdvanceStopGate(waiting, true, 1.5, 11232, start, decision));
+    CHECK(cat::motion::AdvanceStopGate(waiting, true, .4, 11232, start, decision));
     CHECK(start == 11232 && decision == 15232);
 }
 

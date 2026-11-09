@@ -4,7 +4,42 @@
 #include <cstdint>
 
 namespace cat::motion {
-inline constexpr double kStoppedSpeed = 2.0;
+inline constexpr double kStoppedSpeed = .5;
+
+// One per actor. The motor still belongs to Box2D; this gate changes only its
+// request. Both simulated and displayed velocities must settle before a flip.
+// Seconds are accepted simulation time, never wall time across menus/suspend.
+class GroundDrive {
+public:
+    static constexpr double PlantSeconds=.18, TurnSeconds=.12, StartSeconds=.10;
+    void Reset(int facing=1) { facing_=facing<0?-1:1; still_=PlantSeconds; hold_=0; turning_=false; }
+    int Facing() const { return facing_; }
+    bool Settled() const { return still_>=PlantSeconds; }
+    double Update(double desired,double physical,double displayed,bool grounded,double seconds) {
+        if(!std::isfinite(desired)||!std::isfinite(physical)||!std::isfinite(displayed)||
+                !std::isfinite(seconds)||seconds<=0||seconds>.25) return 0;
+        if(!grounded) {still_=0;hold_=0;turning_=false;return desired;}
+        const bool moving=std::abs(physical)>kStoppedSpeed||std::abs(displayed)>kStoppedSpeed;
+        if(moving) {still_=0; if(std::abs(displayed)>kStoppedSpeed)facing_=displayed<0?-1:1;}
+        else still_=std::min(10.0,still_+seconds);
+        const int requested=desired<0?-1:1;
+        if(desired!=0 && requested!=facing_) {
+            turning_=true;
+            if(moving || !Settled()) return 0;
+            facing_=requested;hold_=TurnSeconds;
+        }
+        if(hold_>0) {hold_=std::max(0.0,hold_-seconds);return 0;}
+        if(turning_) {turning_=false;return desired;}
+        // A stopped animal starts in the registered planted drawing. A change
+        // of requested speed in the same direction never resets its step.
+        if(desired!=0 && !moving && still_<StartSeconds) return 0;
+        return desired;
+    }
+private:
+    int facing_=1;
+    double still_=PlantSeconds,hold_=0;
+    bool turning_=false;
+};
 
 inline bool ReadyToStart(bool grounded, double velocityX) {
     return grounded && std::isfinite(velocityX) && std::abs(velocityX) <= kStoppedSpeed;

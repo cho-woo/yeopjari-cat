@@ -32,6 +32,7 @@ struct Descriptor {
     const char* sourcePath="";
     cat::sprite_sequence::Program program{};
     double stridePixels=0;
+    unsigned standingFrame=0; // Planted source drawing; same scale/anchor as the gait.
 };
 constexpr int ResourceId(cat::sprite_sequence::Clip clip,unsigned character) {
     if(character>=kCharacters)return 0;
@@ -48,7 +49,7 @@ constexpr bool Valid(const Descriptor& asset) {
     const bool aliasedRun=asset.clip==Clip::Run && asset.resourceId==ResourceId(Clip::Walk,asset.character);
     if(asset.character>=kCharacters||!KnownClip(asset.clip)||
        (asset.resourceId!=ResourceId(asset.clip,asset.character)&&!aliasedRun)||
-       asset.frameCount==0||asset.frameCount>kMaxFrames||asset.imageWidth==0||asset.imageHeight==0||
+       asset.frameCount==0||asset.standingFrame>=asset.frameCount||asset.frameCount>kMaxFrames||asset.imageWidth==0||asset.imageHeight==0||
        asset.imageWidth>kMaxSide||asset.imageHeight>kMaxSide||
        static_cast<std::uint64_t>(asset.imageWidth)*asset.imageHeight>kMaxImagePixels||
        !(asset.referenceHeight>0&&asset.referenceHeight<=kMaxSide)||

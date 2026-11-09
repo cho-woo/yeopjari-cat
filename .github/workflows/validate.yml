@@ -58,6 +58,20 @@ jobs:
           & python -X utf8 tools/verify_silent_exe.py $exe
           if ($LASTEXITCODE -ne 0) { throw 'Silent executable check failed.' }
           "TEST_EXE=$exe" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+      - name: Compare baseline and candidate on the same Windows desktop
+        timeout-minutes: 8
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Path benchmark-baseline | Out-Null
+          Invoke-WebRequest 'https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.15/YeopjariCat-2.0.15.exe' -OutFile benchmark-baseline/YeopjariCat-2.0.15.exe
+          $old = (Resolve-Path benchmark-baseline/YeopjariCat-2.0.15.exe).Path
+          if ((Get-FileHash $old -Algorithm SHA256).Hash.ToLowerInvariant() -ne '7b5fd64493ab4241bb932d01c630558c0da242e30ef54b17a61b808147e6d266') { throw 'Baseline hash mismatch' }
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/benchmark_windows.ps1 -OldExe $old -NewExe $env:TEST_EXE -OutputDirectory native-benchmark -DisposableProfile -IdleSeconds 8 -ActiveSeconds 12 -SwitchCycles 6 -SettleSeconds 5
+          if ($LASTEXITCODE -ne 0) {
+            if (Test-Path native-benchmark/failed-result.json) { Get-Content native-benchmark/failed-result.json -Raw | Write-Host }
+            throw 'Matched Windows benchmark failed'
+          }
       - name: Execute Windows save, cursor and moving-window regression tests
         id: selftest
         timeout-minutes: 2
@@ -88,4 +102,5 @@ jobs:
           path: |
             render-self-test.txt
             render-self-test/
+            native-benchmark/
           if-no-files-found: ignore
