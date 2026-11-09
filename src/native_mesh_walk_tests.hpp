@@ -56,6 +56,10 @@ int NativeMeshWalkReview(std::string& context,bool required=false) {
     const std::array<const wchar_t*,4> names{{L"NF",L"FF",L"NR",L"FR"}};
     const std::array<Color,4> colors{{Color(255,230,120,15),Color(255,35,115,215),Color(255,180,50,65),Color(255,20,145,130)}};
     double maximumPlantDrift=0,maximumPlantGroundGap=0;
+    constexpr std::size_t minimumActorPixels=1000;
+    std::array<std::size_t,4> minimumObservedActorPixels;
+    minimumObservedActorPixels.fill(std::numeric_limits<std::size_t>::max());
+    std::size_t actorPresenceSamples=0;
     for(unsigned scene=0;scene<2;++scene) {
         const bool enlarged=scene==1;
         const int width=enlarged?1100:900,height=enlarged?760:520;
@@ -113,7 +117,7 @@ int NativeMeshWalkReview(std::string& context,bool required=false) {
                     static_cast<REAL>(110*factor/CurrentArt(cat::Character::Cream).base.standingHeight),
                     cat::Character::Cream,cat::Outfit::None,body,from,to,width,height);
                 if(!enlarged)DrawStyledAnimationDirect(graphics,pose,center+420,floor,
-                    static_cast<REAL>(110/CurrentArt(cat::Character::Tuxedo).base.standingHeight),
+                    static_cast<REAL>(110.0/CurrentArt(cat::Character::Tuxedo).base.standingHeight),
                     cat::Character::Tuxedo,cat::Outfit::None,body,from,to,width,height);
                 if(lane) {
                     const auto& sample=cat::mesh_walk::kSamples[frame];
@@ -147,6 +151,31 @@ int NativeMeshWalkReview(std::string& context,bool required=false) {
                 }
             }
             graphics.Flush(FlushIntentionSync);
+            if(!enlarged)for(unsigned lane=0;lane<2;++lane)for(unsigned coat=0;coat<2;++coat) {
+                // Inspect the actual final raster, not source alpha or a draw
+                // call count. These actor ROIs omit the row title and ground.
+                // A zero scale must fail even if every source/cache check passed.
+                const double center=160+travel+(coat?420:0);
+                const int floor=lane?490:245;
+                const int left=std::max(0,static_cast<int>(std::floor(center-80)));
+                const int right=std::min(width,static_cast<int>(std::ceil(center+80)));
+                std::size_t colored=0;
+                for(int y=floor-140;y<floor-8;++y)for(int x=left;x<right;++x) {
+                    const auto* pixel=canvas.pixels+(static_cast<std::size_t>(y)*width+x)*4;
+                    const int difference=std::abs(static_cast<int>(pixel[0])-243)+
+                        std::abs(static_cast<int>(pixel[1])-239)+std::abs(static_cast<int>(pixel[2])-235);
+                    if(pixel[3]>128&&difference>24)++colored;
+                }
+                const unsigned actor=lane*2+coat;
+                minimumObservedActorPixels[actor]=std::min(minimumObservedActorPixels[actor],colored);
+                ++actorPresenceSamples;
+                if(colored<minimumActorPixels) {
+                    context="native mesh Walk actor missing: tick="+std::to_string(tick)+
+                        " lane="+std::to_string(lane)+" coat="+(coat?"Tuxedo":"Cream")+
+                        " colored_pixels="+std::to_string(colored);
+                    return 502;
+                }
+            }
             const auto path=L"render-self-test/mesh-walk/"+std::wstring(enlarged?L"contact-":L"compare-")+
                 std::to_wstring(10000+tick)+L".png";
             if(!SaveNativeWalkingReview(*canvas.image,path.c_str()))return 497;
@@ -160,7 +189,12 @@ int NativeMeshWalkReview(std::string& context,bool required=false) {
         std::to_string(cat::mesh_walk::kLoopFrameCount)+",\"standing_hold_frame\":"+
         std::to_string(candidate.standingFrame)+",\"plant_drift_measurement\":\"rig sole annotation plus actual displayed Box2D root, not raster optical tracking\",\"maximum_displayed_control_plant_drift_logical_px\":"+
         std::to_string(maximumPlantDrift)+",\"maximum_planted_ground_gap_logical_px\":"+
-        std::to_string(maximumPlantGroundGap)+"}\n";
+        std::to_string(maximumPlantGroundGap)+",\"comparison_coats_checked\":2,\"actor_presence_threshold_pixels\":"+
+        std::to_string(minimumActorPixels)+",\"actor_presence_samples\":"+std::to_string(actorPresenceSamples)+
+        ",\"minimum_actor_colored_pixels\":{\"baseline_cream\":"+std::to_string(minimumObservedActorPixels[0])+
+        ",\"baseline_tuxedo\":"+std::to_string(minimumObservedActorPixels[1])+
+        ",\"review_cream\":"+std::to_string(minimumObservedActorPixels[2])+
+        ",\"review_tuxedo\":"+std::to_string(minimumObservedActorPixels[3])+"}}\n";
     if(!WriteBytes(L"render-self-test/mesh-walk/review.json",description))return 499;
     return 0;
 #endif

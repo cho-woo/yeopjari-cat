@@ -59,3 +59,9 @@ only an endpoint reference. It does not complete those transitions.
 Re-bake manually edited source with `--existing-blend` as documented in README.
 That path preserves manual meshes, UVs, weights, paint, controls and keyframes;
 its integrity report hashes the editing data before and after evaluation.
+
+The tested edit/re-bake path covers vertex positions, UVs, weights, paint and
+existing animation keys. The current width diagnostic in `author.py` reads the
+authored seven-vertex rings; arbitrary retopology/vertex reordering also needs
+that diagnostic's ring indexing updated. Do not claim an arbitrary remesh was
+validated by the existing edit-preservation smoke test.

@@ -1,8 +1,8 @@
 {
   "build_succeeded": true,
   "executable": "/workspace/yeopjari-cat/release/YeopjariCat.exe",
-  "executable_bytes": 30017536,
-  "executable_sha256": "1e6374f7448462c08a8fddf2ce4966ad2479c6aeefdd8947601b8a3e8d6cb240",
+  "executable_bytes": 30022656,
+  "executable_sha256": "c969a15634bfc4a36b7115ebb5922432fcace04ec3d33f33f013a2f3683da080",
   "optional_review_resource_id": 480,
   "embedded_review_png_sha256": "1d49bb068e3a4571d2c9dee0c4e6b276a4e61807f1712c9a49db79b725621c70",
   "embedded_png_bytes_match_canonical_asset": true,
@@ -11,5 +11,6 @@
   "review_auxiliary_neutral_frames": 1,
   "visual_approved": false,
   "production_approved": false,
-  "windows_execution_performed_here": false
+  "windows_execution_performed_here": false,
+  "build_version": "2.0.19"
 }

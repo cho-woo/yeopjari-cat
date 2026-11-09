@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Publish exact Windows-validated v2.0.18 review bytes and editable sources.
+"""Publish exact Windows-validated v2.0.19 review bytes and editable sources.
 
 CI-only. Native rendering/numerical evidence is not visual production approval.
 The existing stable release and its updater feed remain unchanged.
@@ -20,7 +20,7 @@ import release
 from verify_silent_exe import verify_silent_exe
 
 REPO = 'cho-woo/yeopjari-cat'
-VERSION = '2.0.18'
+VERSION = '2.0.19'
 TAG = 'v' + VERSION
 STABLE = 'v2.0.16'
 ROOT = Path(__file__).resolve().parents[1]
