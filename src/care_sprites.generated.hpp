@@ -244,15 +244,15 @@ inline constexpr std::array<Descriptor,10> kCareSprites{{
         Frame{{627,313,313,314},{161,275}},
         Frame{{940,313,314,314},{161,275}},
     }},"fdb52258ede319c7f23ffa0af019b8d3fa677bf180caa1e9a89e1b37db0e9e78","assets/care-sprites/c0-walk.png",cat::sprite_sequence::Program{8,{{
-        cat::sprite_sequence::Step{0,75},
-        cat::sprite_sequence::Step{1,75},
-        cat::sprite_sequence::Step{2,75},
-        cat::sprite_sequence::Step{3,202},
-        cat::sprite_sequence::Step{4,342},
-        cat::sprite_sequence::Step{5,75},
-        cat::sprite_sequence::Step{6,81},
-        cat::sprite_sequence::Step{7,75},
-    }},cat::sprite_sequence::Range{0,0},cat::sprite_sequence::Range{0,8},cat::sprite_sequence::Range{8,0},cat::sprite_sequence::Finish::Complete,0,0,{{}}},64,0},
+        cat::sprite_sequence::Step{0,125},
+        cat::sprite_sequence::Step{1,125},
+        cat::sprite_sequence::Step{2,125},
+        cat::sprite_sequence::Step{3,125},
+        cat::sprite_sequence::Step{4,125},
+        cat::sprite_sequence::Step{5,125},
+        cat::sprite_sequence::Step{6,125},
+        cat::sprite_sequence::Step{7,125},
+    }},cat::sprite_sequence::Range{0,0},cat::sprite_sequence::Range{0,8},cat::sprite_sequence::Range{8,0},cat::sprite_sequence::Finish::Complete,0,0,{{}}},32,0},
     Descriptor{cat::sprite_sequence::Clip::Run,0,400,4,4,8,1254,1254,221,{{
         Frame{{0,627,313,313},{157,261}},
         Frame{{313,627,314,313},{157,261}},
@@ -271,6 +271,6 @@ inline constexpr std::array<Descriptor,10> kCareSprites{{
         cat::sprite_sequence::Step{5,80},
         cat::sprite_sequence::Step{6,80},
         cat::sprite_sequence::Step{7,80},
-    }},cat::sprite_sequence::Range{0,0},cat::sprite_sequence::Range{0,8},cat::sprite_sequence::Range{8,0},cat::sprite_sequence::Finish::Complete,0,0,{{}}},150,7},
+    }},cat::sprite_sequence::Range{0,0},cat::sprite_sequence::Range{0,8},cat::sprite_sequence::Range{8,0},cat::sprite_sequence::Finish::Complete,0,0,{{}}},72,7},
 }};
 }

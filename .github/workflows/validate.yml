@@ -125,6 +125,7 @@ jobs:
         with:
           name: windows-native-validation
           path: |
+            manual-motion-self-test.json
             render-self-test.txt
             render-self-test/
             native-benchmark/

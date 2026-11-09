@@ -30,5 +30,25 @@ int main() {
                 assert(coat::Pixel(0xffbc8e62,x/100.,y/100.,clip,f)==0xffbc8e62);
         }
     assert(coat::Pixel(0xfff6bb78,.4,.3,Clip::Groom,0)!=0xfff6bb78);
-    std::cout<<"PASS: two-character selection, shared programs, coat alpha and prop protection\n";
+    // A single anatomical coat must survive the source painter's warm stripes.
+    const auto red=[](std::uint32_t p){return (p>>16)&255;};
+    for(auto fur:{0xfff6bb78u,0xfff6e5d2u}) {
+        assert(red(coat::Pixel(fur,.40,.60,Clip::Walk,0))<85); // Solid back.
+        assert(red(coat::Pixel(fur,.68,.73,Clip::Walk,0))>220); // White chest.
+        assert(red(coat::Pixel(fur,.60,.87,Clip::Groom,0))>220); // White paw.
+        assert(red(coat::Pixel(fur,.25,.61,Clip::Groom,0))<85); // Whole tail.
+        const auto paw=coat::Pixel(fur,.60,.87,Clip::Groom,0);
+        assert(((paw>>16)&255)==((paw>>8)&255)&&((paw>>8)&255)==(paw&255));
+    }
+    // Actual facial features survive; reflected warm fur cannot make pink holes.
+    const auto h=coat::Head(Clip::Punch,0);
+    assert(coat::Pixel(0xff68310f,h.cx-.12,h.cy+.12,Clip::Punch,0)==0xff68310f);
+    assert(coat::Pixel(0xffef9c9a,h.cx,h.cy+.22,Clip::Punch,0)==0xffef9c9a);
+    const auto ear=coat::Pixel(0xfff6d2bf,h.cx-.20,h.cy-.10,Clip::Punch,0);
+    assert(red(ear)<85&&std::abs(int((ear>>16)&255)-int(ear&255))<4);
+    // The turn/tilt and curled fallback use their own source-registered regions.
+    assert(coat::Head(Clip::Groom,0).cx-coat::Head(Clip::Groom,11).cx>.12);
+    assert(coat::Head(Clip::Sleep,4).angle<-.4);
+    assert(coat::Head(Clip::None,6).cy>coat::Head(Clip::None,4).cy+.15);
+    std::cout<<"PASS: shared programs, anatomical coat, white paws, facial features, alpha and props\n";
 }

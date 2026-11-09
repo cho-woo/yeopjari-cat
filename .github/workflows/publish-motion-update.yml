@@ -1,0 +1,91 @@
+name: Publish exact Windows-validated walking running and jumping command update
+on:
+  workflow_dispatch:
+    inputs:
+      validation_run:
+        description: Successful Validate run for v2.0.20 with native Windows save and render tests
+        required: true
+        type: string
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: yeopjari-cat-release-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.repository == 'cho-woo/yeopjari-cat' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      VALIDATION_RUN: ${{ inputs.validation_run }}
+    steps:
+      - name: Select the exact successful native Windows validation commit
+        id: validated
+        run: |
+          python3 - <<'PY'
+          import json, os, re, subprocess, traceback
+          try:
+              run_id = os.environ['VALIDATION_RUN']
+              if not run_id.isdigit():
+                  raise ValueError('validation_run must be a numeric Validate run ID')
+              def api(path):
+                  return json.loads(subprocess.check_output(['gh','api','repos/cho-woo/yeopjari-cat/'+path]))
+              run = api('actions/runs/'+run_id)
+              if not (run['path'] == '.github/workflows/validate.yml' and
+                      run['status'] == 'completed' and run['conclusion'] == 'success' and
+                      run['head_repository']['full_name'] == 'cho-woo/yeopjari-cat' and
+                      run['head_branch'] == 'main' and re.fullmatch('[0-9a-f]{40}',run['head_sha'])):
+                  raise ValueError('Select a successful Validate run for main in this repository')
+              jobs = api('actions/runs/'+run_id+'/jobs?per_page=100')['jobs']
+              if len(jobs) >= 100 or not all(any(j['name']==name and j['status']=='completed' and
+                       j['conclusion']=='success' for j in jobs) for name in ['validate','windows-smoke']):
+                  raise ValueError('The source/package validation and native Windows jobs must both pass')
+              native = next(j for j in jobs if j['name']=='windows-smoke')
+              for name in ['Execute Windows save, cursor and moving-window regression tests',
+                           'Render real Windows GDI+ gait, contact and posture regressions']:
+                  if not any(s['name']==name and s['status']=='completed' and s['conclusion']=='success'
+                             for s in native['steps']):
+                      raise ValueError('Missing successful native Windows step: '+name)
+              with open(os.environ['GITHUB_OUTPUT'],'a') as output:
+                  output.write('sha='+run['head_sha']+'\n')
+              print('Selected validated source:',run['head_sha'],'run:',run_id)
+          except Exception:
+              detail = traceback.format_exc()[-6000:]
+              print('::error::'+detail.replace('%','%25').replace('\r','%0D').replace('\n','%0A'))
+              raise
+          PY
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.validated.outputs.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-x64-validated-package
+          path: verified-package
+          run-id: ${{ inputs.validation_run }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-native-validation
+          path: native-review
+          run-id: ${{ inputs.validation_run }}
+          github-token: ${{ github.token }}
+      - name: Verify exact validated bytes, publish stable and confirm the official public feed
+        run: |
+          set +e
+          python3 tools/publish_manual_motion_update.py > /tmp/motion-publication.log 2>&1
+          code=$?
+          cat /tmp/motion-publication.log
+          if [ "$code" -ne 0 ]; then
+            python3 - <<'PY'
+          from pathlib import Path
+          detail = Path('/tmp/motion-publication.log').read_text(errors='replace')[-6000:]
+          print('::error::' + detail.replace('%','%25').replace('\r','%0D').replace('\n','%0A'))
+          PY
+            exit "$code"
+          fi
