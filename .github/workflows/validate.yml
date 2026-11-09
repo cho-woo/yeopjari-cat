@@ -13,7 +13,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install pinned build dependencies
-        run: bash tools/setup.sh
+        run: |
+          set +e
+          bash tools/setup.sh > /tmp/yeopjari-setup.log 2>&1
+          code=$?
+          cat /tmp/yeopjari-setup.log
+          if [ "$code" -ne 0 ]; then
+            python3 - <<'PY'
+          from pathlib import Path
+          text = Path('/tmp/yeopjari-setup.log').read_text(errors='replace')[-3500:]
+          print('::error::' + text.replace('%','%25').replace('\r','%0D').replace('\n','%0A'))
+          PY
+            exit "$code"
+          fi
       - name: Test, build and verify local package and feed
         run: bash tools/check.sh
       - uses: actions/upload-artifact@v4
