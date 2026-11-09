@@ -139,6 +139,11 @@ class ContactCalibrationTests(unittest.TestCase):
         self.assertFalse(calibrator.calibrate(document)['accepted'])
         document = contact_fixture(); del document['entry']['frames'][1]['anchor']
         self.assertFalse(calibrator.calibrate(document)['accepted'])
+        for key, value in (('character', True), ('standing_frame', 8)):
+            document = contact_fixture(); document['entry'][key] = value
+            self.assertFalse(calibrator.calibrate(document)['accepted'])
+        document = contact_fixture(); document['schema'] = True
+        self.assertFalse(calibrator.calibrate(document)['accepted'])
 
     def test_failed_cli_does_not_replace_existing_export(self):
         with tempfile.TemporaryDirectory() as directory:

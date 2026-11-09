@@ -236,7 +236,7 @@
       "registered_frame_count": 64,
       "stride_pixels": 64,
       "reference_height": 121,
-      "timing_status": "registered source timing",
+      "timing_status": "UNAPPROVED uniform inspection weights; not contact-calibrated",
       "loop": [
         {
           "frame": 0,

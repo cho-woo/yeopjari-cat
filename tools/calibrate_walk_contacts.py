@@ -81,7 +81,7 @@ def distance_weights(distances):
 
 def calibrate(document, base_dir=Path('.')):
     errors = []
-    if not isinstance(document, dict) or document.get('schema') != 1:
+    if not isinstance(document, dict) or type(document.get('schema')) is not int or document['schema'] != 1:
         return reject(['Expected an annotated-contact schema-1 JSON document'])
     entry = document.get('entry')
     annotations = document.get('annotations')
@@ -95,6 +95,10 @@ def calibrate(document, base_dir=Path('.')):
         return reject(['entry.frame_count differs from explicit frames'])
     if not number(entry.get('reference_height')) or not 0 < entry['reference_height'] <= 16384:
         return reject(['One positive common entry.reference_height is required'])
+    if type(entry.get('character', 0)) is not int or not 0 <= entry.get('character', 0) < 10:
+        return reject(['entry.character must be a serialized integer ID in 0..9'])
+    if type(entry.get('standing_frame', 0)) is not int or not 0 <= entry.get('standing_frame', 0) < count:
+        return reject(['entry.standing_frame must address an explicit registered frame'])
     for key in ('columns', 'rows'):
         if type(entry.get(key)) is not int or entry[key] <= 0:
             errors.append(f'entry.{key} must be a positive integer')
@@ -165,8 +169,8 @@ def calibrate(document, base_dir=Path('.')):
         try:
             from PIL import Image
             with Image.open(source) as original:
-                if original.mode != 'RGBA':
-                    return reject(['Source PNG must have a real RGBA alpha channel'])
+                if original.format != 'PNG' or original.mode != 'RGBA':
+                    return reject(['Source must be a PNG with a real RGBA alpha channel'])
                 image = original.copy()
             source_sha = hashlib.sha256(source.read_bytes()).hexdigest()
             image_status = 'RGBA source read; explicit planted contacts checked against material alpha'
@@ -235,6 +239,7 @@ def calibrate(document, base_dir=Path('.')):
             errors.append(f'Interval {index}->{following}: root gap {distance:.6f} logical px requires more inbetweens')
     complete = all(value is not None and value > 0 for value in distances)
     report = {'source_image_status': image_status, 'source_sha256': source_sha,
+              'acceptance_scope': 'Annotated contact/registration geometry only; not proof of artwork identity or correctness of human foot labels',
               'frame_count': count, 'logical_scale': scale, 'limits': limits,
               'max_floor_residual_logical_px': max(floor_residuals, default=0),
               'landmarks': landmark_report, 'intervals': intervals, 'uncovered_intervals': uncovered,

@@ -786,5 +786,7 @@
     "duration_ms": 0,
     "events": []
   },
-  "review_status": "UNAPPROVED. Uniform weights are an inspection probe, not contact calibration."
+  "review_status": "UNAPPROVED. Uniform weights are an inspection probe, not contact calibration.",
+  "label": "Generated 48-pose candidate - NOT APPROVED",
+  "timing_status": "UNAPPROVED uniform inspection weights; not contact-calibrated"
 }
