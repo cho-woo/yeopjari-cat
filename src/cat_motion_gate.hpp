@@ -22,13 +22,13 @@ public:
         const bool moving=std::abs(physical)>kStoppedSpeed||std::abs(displayed)>kStoppedSpeed;
         if(moving) {still_=0; if(std::abs(displayed)>kStoppedSpeed)facing_=displayed<0?-1:1;}
         else still_=std::min(10.0,still_+seconds);
+        if(hold_>0) {hold_=std::max(0.0,hold_-seconds);return 0;}
         const int requested=desired<0?-1:1;
         if(desired!=0 && requested!=facing_) {
             turning_=true;
             if(moving || !Settled()) return 0;
-            facing_=requested;hold_=TurnSeconds;
+            facing_=requested;hold_=TurnSeconds;return 0;
         }
-        if(hold_>0) {hold_=std::max(0.0,hold_-seconds);return 0;}
         if(turning_) {turning_=false;return desired;}
         // A stopped animal starts in the registered planted drawing. A change
         // of requested speed in the same direction never resets its step.

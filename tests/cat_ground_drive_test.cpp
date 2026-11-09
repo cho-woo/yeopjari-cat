@@ -40,6 +40,8 @@ int main(){
   }CHECK(landed);
   const auto before=p.RenderPose();p.Update(30);CHECK(p.RenderPose().x==before.x);CHECK(p.RenderPose().relativeTravelX==before.relativeTravelX);
   p.RelocateBounds(96,1800,100);CHECK(p.RenderPose().relativeTravelX==before.relativeTravelX);
+  drive.Reset();CHECK(drive.Update(-30,0,0,true,.016)==0);CHECK(drive.Facing()==-1);
+  for(int i=0;i<6;++i){CHECK(drive.Update(i%2?30:-30,0,0,true,.016)==0);CHECK(drive.Facing()==-1);}
   drive.Reset();drive.Update(-30,30,30,true,.016);const int facing=drive.Facing();
   for(int i=0;i<100;++i)drive.Update(-30,0,0,true,0);
   CHECK(drive.Facing()==facing); // suspended clock
