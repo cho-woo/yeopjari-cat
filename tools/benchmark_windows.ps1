@@ -244,7 +244,7 @@ function Write-PerformanceSummary($Data,[string]$Path) {
     $colors=@([Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(48,115,186)),[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(221,132,35)))
     try {
         $graphics.Clear([Drawing.Color]::White)
-        $graphics.DrawString('Measured ordinary-app comparison: v2.0.12 / candidate',$title,[Drawing.Brushes]::Black,16,14)
+        $graphics.DrawString('Measured ordinary-app comparison: v2.0.15 / candidate',$title,[Drawing.Brushes]::Black,16,14)
         $graphics.DrawString('Process CPU, one-core mean %',$font,[Drawing.Brushes]::Black,355,61)
         $graphics.DrawString('Peak sampled PrivateUsage, MiB',$font,[Drawing.Brushes]::Black,790,61)
         $index=0
@@ -262,7 +262,7 @@ function Write-PerformanceSummary($Data,[string]$Path) {
         $y=570
         foreach($run in $Data.runs){
             $phase=$run.scenarios[2]
-            $text=$run.label+': repeated-switch private growth '+([double]$phase.observed_private_growth_bytes/1048576).ToString('F3',[Globalization.CultureInfo]::InvariantCulture)+' MiB; completed commands '+$phase.action_count
+            $text=$run.label+': repeated-rest/resume private growth '+([double]$phase.observed_private_growth_bytes/1048576).ToString('F3',[Globalization.CultureInfo]::InvariantCulture)+' MiB; completed commands '+$phase.action_count
             $graphics.DrawString($text,$font,[Drawing.Brushes]::Black,16,[single]$y);$y+=25
         }
         $bitmap.Save($Path,[Drawing.Imaging.ImageFormat]::Png)
@@ -279,7 +279,7 @@ $result=[ordered]@{schema=1;status='running';started_utc=[DateTime]::UtcNow.ToSt
         settle_seconds=$SettleSeconds;cpu_normalization='process kernel+user CPU / measured wall / logical processors';
         executable_file_cache='each executable stream read immediately before launch; warm filesystem cache';
         autonomy='same saved state and wall schedule; random action mix is not deterministic';
-        repetition='real UI menu character changes, confirmed in private fixture files; deterministic frame-cache stress is separate';
+        repetition='real UI menu rest/resume cycles, confirmed in private fixture files; deterministic frame-cache stress is separate';
         peak_private='maximum sampled PrivateUsage; OS peak commit is reported separately';
         leakage='observed growth/slope and post-loop settling only; a short run cannot prove absence of leaks'};
     runs=@();automation_events=@()}
@@ -308,11 +308,15 @@ try {
         Invoke-AppMenu $app '이 자리에서 쉬기';Wait-SavedValue 'pet.ini' 'paused=0'
         $run.scenarios+=,(Measure-Scenario $app 'ordinary_autonomous_activity' $ActiveSeconds)
         Invoke-AppMenu $app '이 자리에서 쉬기';Wait-SavedValue 'pet.ini' 'paused=1'
+        # Top-level rest/resume works on both releases. UIA's submenu
+        # invocation did not reliably dispatch character changes on the runner.
+        # Do not count unconfirmed character selections as completed work.
         $switch={param($index)
-            if($index%2 -eq 0){Invoke-AppMenu $app '턱시도냥' '캐릭터 선택';Wait-SavedValue 'preferences.ini' 'character=tuxedo'}
-            else{Invoke-AppMenu $app '크림 치즈냥' '캐릭터 선택';Wait-SavedValue 'preferences.ini' 'character=cream'}
+            Invoke-AppMenu $app '이 자리에서 쉬기'
+            if($index%2 -eq 0){Wait-SavedValue 'pet.ini' 'paused=0'}
+            else{Wait-SavedValue 'pet.ini' 'paused=1'}
         }
-        $run.scenarios+=,(Measure-Scenario $app 'repeated_character_switch' ($SwitchCycles*$SwitchIntervalMs/1000) $switch $SwitchCycles)
+        $run.scenarios+=,(Measure-Scenario $app 'repeated_rest_resume' ($SwitchCycles*$SwitchIntervalMs/1000) $switch $SwitchCycles)
         $run.scenarios+=,(Measure-Scenario $app 'post_repeat_idle_settle' $SettleSeconds)
         Close-Cat $app;$app=$null;$result.runs+=,$run
         $csvRows=foreach($scenario in $run.scenarios){foreach($sample in $scenario.samples){
