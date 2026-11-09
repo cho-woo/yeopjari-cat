@@ -1,0 +1,11 @@
+{
+  "frames": 210,
+  "review_fps": 20,
+  "physics_hz": 60,
+  "duration_seconds": 10.5,
+  "source": "Windows GDI+ / Box2D offscreen diagnostic, not a desktop screen recording",
+  "before": "v2.0.16 Current diagnostic stop-wait omission reproduced with identical original8 PNGs; not the old executable",
+  "after": "shipping BeginGroundStop / AdvanceGroundStop / DisplayedMotion / action clock",
+  "new_accepted_art_frames": 0,
+  "source_archive_sha256": "ae6707e1417bd0f6e0222f80ea09d54a5181e93879f6fa6e212d1e66a2954279"
+}

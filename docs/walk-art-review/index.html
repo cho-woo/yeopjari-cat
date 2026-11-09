@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="ko">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>옆자리 고양이 · 정지 경로 수정과 보행 원화 검수</title>
+<style>body{max-width:960px;margin:28px auto;padding:0 18px;font:16px/1.7 system-ui,sans-serif;background:#eef1f4;color:#243447}video,img{width:100%;height:auto;border-radius:8px}a{color:#245c8b}.status{padding:12px;background:#fff3d9}</style>
+<h1>정지 경로 수정과 보행 원화 검수</h1>
+<p class="status">정지 때 정면 자세가 끼는 오류는 수정했습니다. 이미지 도구로 128셀 후보를 생성했지만 완성된 보행 주기로 승인한 추가 원화는 0장입니다. 아래 원화 영상은 미승인 후보를 검토하는 자료이며 제품의 개선 완료 보행이 아닙니다.</p>
+<h2>1. 실제 앱과 같은 정지 대기 경로</h2>
+<p>위: v2.0.16 진단의 정지 대기 누락 재현. 아래: 실제 앱과 같은 정지 진입·안정 대기·동작 시간·표시 선택. 양쪽 모두 기존 8장 원화, 동일한 64px 보폭과 시나리오입니다.</p>
+<video controls playsinline preload="metadata"><source src="stop-path-fixed.mp4" type="video/mp4"></video>
+<p>Windows GDI+ 진단 출력 20FPS, Box2D 60Hz. 활동 중 앱 화면 갱신 목표 약60FPS. 바탕화면 녹화는 아닙니다.</p>
+<p><a href="stop-path-4s-slow.mp4">4.0~4.9초 구간 3배 느리게 보기</a></p>
+<h2>2. 정속 22논리 px/s 원화 후보 비교</h2>
+<p>위: 기존 8장. 아래: 생성 후보. 표시 높이는 공통110논리px, 영상60FPS입니다. 동일한 64px·약2.91초 주기에 넣어 문제를 관찰한 비교입니다. 후보의 균등 비중은 검수용 가정이며 접지 보정값으로 승인하지 않았습니다. Pillow로 합성한 정속 리뷰이고 Windows GDI+나 실제 바탕화면 녹화가 아닙니다.</p>
+<p>48셀 후보 — 발 궤적·접지 높이 검수 불합격</p>
+<video controls playsinline preload="metadata"><source src="candidate48-walk-art-constant-22.mp4" type="video/mp4"></video>
+<p>64셀 후보 — 얼굴 위치는 개선됐지만 네 발의 접지·반복 연결 검수 불합격</p>
+<video controls playsinline preload="metadata"><source src="candidate64-walk-art-constant-22.mp4" type="video/mp4"></video>
+<h2>3. 원본 기준과 다음 작화</h2>
+<img src="original8-normalized-reference.png" alt="기존8장 원화와 공통 기준점·바닥선">
+<p>추가16셀 접지 연구의 후반에는 실제 중간 다리 형태가 생겼지만 원본4→5의 양끝과 연결되지 않고 최대5.17논리px 간격이 남았습니다. 완성 원화로 등록하지 않았습니다.</p>
+<p><a href="README.md">상세 결과</a> · <a href="walk-authoring-spec.json">중간 자세 명세</a> · <a href="original8-landmark-annotation-template.json">원본 주석 템플릿</a> · <a href="generation-attempts.json">생성·승인 수 기록</a></p>
+</html>

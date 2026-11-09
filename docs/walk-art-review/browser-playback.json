@@ -1,0 +1,31 @@
+{
+  "videos": [
+    {
+      "duration": 10.5,
+      "ended": true,
+      "error": null,
+      "width": 720,
+      "height": 510,
+      "movie": "stop-path-fixed.mp4"
+    },
+    {
+      "duration": 5.833333,
+      "ended": true,
+      "error": null,
+      "width": 760,
+      "height": 470,
+      "movie": "candidate48-walk-art-constant-22.mp4"
+    },
+    {
+      "duration": 5.833333,
+      "ended": true,
+      "error": null,
+      "width": 760,
+      "height": 470,
+      "movie": "candidate64-walk-art-constant-22.mp4"
+    }
+  ],
+  "slow_clip_played": true,
+  "page_errors": [],
+  "test_transport": "localhost HTTP; downloaded bundle files"
+}

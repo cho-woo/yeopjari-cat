@@ -7,6 +7,8 @@
 
 [보행 비교 MP4 다운로드](https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.16/walking-native.mp4) · [미리보기 ZIP](https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.16/walking-preview.zip). 영상은 다운로드 후 플레이어로 열거나, 미리보기 ZIP의 압축을 풀고 `index.html`을 여세요.
 
+**보행 원화 보강 검토:** [정지 경로 수정·생성 원화 검수 결과](docs/walk-art-review/README.md). 정지 오류는 수정했고, 새 걷기 원화는 아직 검수 미통과입니다.
+
 ## 다운로드와 실행
 
 **[최신 버전 다운로드](https://github.com/cho-woo/yeopjari-cat/releases/latest)**
