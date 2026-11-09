@@ -71,4 +71,16 @@ jobs:
           run-id: ${{ inputs.validation_run }}
           github-token: ${{ github.token }}
       - name: Verify exact package, encode native evidence and publish unapproved prerelease
-        run: python3 tools/publish_mesh_review.py
+        run: |
+          set +e
+          python3 tools/publish_mesh_review.py > /tmp/mesh-publication.log 2>&1
+          code=$?
+          cat /tmp/mesh-publication.log
+          if [ "$code" -ne 0 ]; then
+            python3 - <<'PY'
+          from pathlib import Path
+          detail = Path('/tmp/mesh-publication.log').read_text(errors='replace')[-6000:]
+          print('::error::' + detail.replace('%','%25').replace('\r','%0D').replace('\n','%0A'))
+          PY
+            exit "$code"
+          fi
