@@ -9,6 +9,7 @@
 #include "cat_walk_dynamics.hpp"
 #include "cat_sprite_sequence.hpp"
 #include "cat_authored_locomotion.hpp"
+#include "cat_cream_motion.hpp"
 
 namespace cat::animation {
 
@@ -33,6 +34,9 @@ constexpr double kOriginalWalkMaxFramesPerSecond = 12.0;
 
 // Offsets are logical pixels; the native renderer applies monitor DPI and real-age growth.
 struct Pose {
+    bool creamRig=false;
+    double creamSit=0;
+    cat::gait::Feet creamFeet{};
     bool fishMeal=false; // Transient accepted feeding presentation; never serialized.
     cat::sprite_sequence::Clip spriteClip=cat::sprite_sequence::Clip::None;
     unsigned spriteFrame=0;
@@ -59,6 +63,20 @@ struct Pose {
     cat::gait::Feet walkFeet{};
     bool walkFeetValid=false;
 };
+
+inline bool CreamLocomotion(Motion motion) {
+    return motion==Motion::Walk || motion==Motion::Stalk || motion==Motion::Idle || motion==Motion::Watch;
+}
+inline bool ApplyCreamLocomotion(Pose& pose,Motion displayed,const cat::cream::Motion& motion) {
+    using Clip=cat::sprite_sequence::Clip;
+    if(!CreamLocomotion(displayed)||!pose.groundContact||pose.bellyRig||pose.centerPivot||
+       (pose.spriteClip!=Clip::None && pose.spriteClip!=Clip::Walk && pose.spriteClip!=Clip::Run &&
+        !(pose.spriteClip==Clip::Sleep&&!pose.spriteTimed&&pose.spriteFrame==0)))return false;
+    pose.creamRig=true;pose.creamSit=motion.Sit();pose.creamFeet=motion.Feet();
+    pose.spriteClip=Clip::None;pose.spriteTimed=false;pose.originalWalk=pose.jointWalk=pose.walkingRig=false;
+    pose.x=pose.lift=pose.angle=0;pose.scaleX=pose.scaleY=1;pose.blendFrame=-1;pose.joints={};
+    return true;
+}
 
 // Authored artwork is an optional presentation layer. Canonical frame IDs,
 // physical root height and saved state remain independent of sheet layouts.

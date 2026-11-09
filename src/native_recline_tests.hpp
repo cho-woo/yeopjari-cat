@@ -30,7 +30,7 @@ int NativeReclineRenderTest(std::string& context) {
         return visible>=500;
     };
     const std::array<std::pair<int,int>,4> turns{{{4,24},{24,25},{25,24},{24,4}}};
-    for(int c=0;c<cat::kCharacterCount;++c)for(int facing:{-1,1})for(double condition:{0.,50.,100.}) {
+    for(int c=0;c<static_cast<int>(cat::kAvailableCharacters.size());++c)for(int facing:{-1,1})for(double condition:{0.,50.,100.}) {
         const auto character=static_cast<cat::Character>(c);
         auto state=g.nutrition;state.bodyCondition=condition;
         const auto body=cat::nutrition::VisualModifiers(state);

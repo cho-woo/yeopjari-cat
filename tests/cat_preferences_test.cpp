@@ -17,8 +17,7 @@ std::string Signed(const std::string& body) {
 }
 
 void RoundTripAllAppearances() {
-    for (int ci=0;ci<cat::kCharacterCount;++ci) {
-        const auto character=static_cast<cat::Character>(ci);
+    for (const auto character:cat::kAvailableCharacters) {
         for (int oi=0;oi<cat::kOutfitCount;++oi) {
             const auto outfit=static_cast<cat::Outfit>(oi);
             cat::Preferences original{character, outfit}, restored;
@@ -41,7 +40,7 @@ void LegacySchemaOneStillLoads() {
         const auto body = std::string("schema=1\ncharacter=") + pair.first + "\n";
         cat::Preferences restored{cat::Character::Cream, cat::Outfit::Crown};
         CHECK(cat::ParsePreferences(Signed(body), restored));
-        CHECK(restored.character == pair.second);
+        CHECK(restored.character == cat::Character::Cream);
         CHECK(restored.outfit == cat::Outfit::None);
     }
 }
@@ -74,6 +73,17 @@ void PetRecordRemainsIndependent() {
     cat::Preferences destination; std::string error;
     CHECK(!cat::ParsePreferences(saved, destination, error));
 }
+void RetiredCharactersMigrateWithoutLosingOutfits() {
+    CHECK(cat::kAvailableCharacters.size()==1);
+    for(int i=0;i<cat::kLegacyCharacterCount;++i) {
+        cat::Preferences old{static_cast<cat::Character>(i),cat::Outfit::Scarf},migrated;
+        CHECK(cat::ParsePreferences(cat::SerializePreferences(old),migrated));
+        CHECK(migrated.character==cat::Character::Cream);
+        CHECK(migrated.outfit==cat::Outfit::Scarf);
+        CHECK(cat::CharacterAvailable(old.character)==(i==0));
+        CHECK(cat::ParsePreferences(cat::SerializePreferences(migrated),migrated));
+    }
+}
 }
 
 int main() {
@@ -82,6 +92,7 @@ int main() {
         LegacySchemaOneStillLoads();
         InvalidDataDoesNotMutate();
         PetRecordRemainsIndependent();
+        RetiredCharactersMigrateWithoutLosingOutfits();
         std::cout << "PASS: preferences schema 2 and legacy compatibility; " << checks << " checks\n";
         return 0;
     } catch (const std::exception& error) {

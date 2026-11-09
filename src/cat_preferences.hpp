@@ -12,13 +12,19 @@ namespace cat {
 // Appearance is independent of birthday and care records. Schema 2 adds outfits
 // while remaining fully compatible with schema-1 character-only saves.
 enum class Character { Cream = 0, SilverTabby = 1, Black = 2, Calico = 3, Siamese = 4, Munchkin = 5, Dog = 6, Rabbit = 7, Tuxedo = 8, British = 9 };
-constexpr int kCharacterCount = 10;
+constexpr int kCharacterCount = 10; // Serialized ID range, not available menu entries.
+constexpr int kLegacyCharacterCount = kCharacterCount;
+// Stable retired IDs remain readable in old records. Only Cream is offered
+// or loaded by the application; changing appearance never replaces a pet.
+constexpr std::array<Character,1> kAvailableCharacters{{Character::Cream}};
+inline bool CharacterAvailable(Character c) noexcept { return c==Character::Cream; }
+inline Character AvailableCharacter(Character) noexcept { return Character::Cream; }
 enum class Outfit { None = 0, BowTie = 1, Scarf = 2, Crown = 3, Santa = 4, FishHat = 5, Tie = 6, Hoodie = 7, Sunglasses = 8, Shark = 9, Dinosaur = 10, Pumpkin = 11, Birthday = 12 };
 constexpr int kOutfitCount = 13;
 struct Preferences { Character character = Character::Cream; Outfit outfit = Outfit::None; };
 
 inline bool IsValid(Character character) noexcept {
-    return static_cast<int>(character) >= 0 && static_cast<int>(character) < kCharacterCount;
+    return static_cast<int>(character) >= 0 && static_cast<int>(character) < kLegacyCharacterCount;
 }
 inline bool IsValid(Outfit outfit) noexcept {
     return static_cast<int>(outfit) >= 0 && static_cast<int>(outfit) < kOutfitCount;
@@ -58,7 +64,7 @@ inline const wchar_t* OutfitName(Outfit outfit) noexcept {
     }
 }
 inline const char* CharacterKey(Character c) noexcept {
-    static constexpr std::array<const char*, kCharacterCount> keys{{"cream", "silver_tabby", "black", "calico", "siamese", "munchkin", "dog", "rabbit", "tuxedo", "british"}};
+    static constexpr std::array<const char*, kLegacyCharacterCount> keys{{"cream", "silver_tabby", "black", "calico", "siamese", "munchkin", "dog", "rabbit", "tuxedo", "british"}};
     return IsValid(c) ? keys[static_cast<std::size_t>(c)] : "cream";
 }
 inline const char* OutfitKey(Outfit o) noexcept {
@@ -114,7 +120,7 @@ inline bool ParsePreferences(const std::string& text, Preferences& destination, 
         }
         if (schema != "2") return fail("Unsupported preference schema");
         bool characterFound = false, outfitFound = false;
-        for (int i = 0; i < kCharacterCount; ++i) if (character == CharacterKey(static_cast<Character>(i))) {
+        for (int i = 0; i < kLegacyCharacterCount; ++i) if (character == CharacterKey(static_cast<Character>(i))) {
             parsed.character = static_cast<Character>(i); characterFound = true; break;
         }
         for (int i = 0; i < kOutfitCount; ++i) if (outfit == OutfitKey(static_cast<Outfit>(i))) {
@@ -123,6 +129,7 @@ inline bool ParsePreferences(const std::string& text, Preferences& destination, 
         if (!characterFound) return fail("Unsupported character");
         if (!outfitFound) return fail("Unsupported outfit");
     }
+    parsed.character=AvailableCharacter(parsed.character);
     destination = parsed; error.clear(); return true;
 }
 

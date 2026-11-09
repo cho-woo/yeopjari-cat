@@ -190,7 +190,7 @@ int Run() {
         host.Sample(host.PawX(),host.PawHeight());
     if(!EnvironmentBusy())return 291;
     // Real legacy and new-art atlas dimensions drive the native paw geometry.
-    for (const auto character : {cat::Character::Cream, cat::Character::Rabbit}) {
+    for (const auto character : cat::kAvailableCharacters) {
         host.Reset(character);
         const auto savedPet = cat::Serialize(g.pet);
         const auto savedMemory = cat::memory::Serialize(g.memory.state);

@@ -4,16 +4,13 @@
 #include "care_sprites.generated.rc"
 101 RCDATA "../assets/cat.png"
 102 RCDATA "../assets/cat-actions.png"
-103 RCDATA "../assets/cat-silver.png"
-104 RCDATA "../assets/cat-silver-actions.png"
 105 RCDATA "../assets/cat-jump-churu.png"
 106 RCDATA "../assets/cat-gestures.png"
 107 RCDATA "../assets/cat-recline.png"
-109 RCDATA "../assets/companion-poses.png"
 110 RCDATA "../assets/companions-hang.png"
-111 RCDATA "../assets/companions-back.png"
 112 RCDATA "../assets/companions-sleep.png"
 193 RCDATA "../assets/care-sprites/box-prop.png"
+500 RCDATA "../assets/cream-rig-parts.png"
 1 RT_MANIFEST "app.manifest"
 
 1 VERSIONINFO

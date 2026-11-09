@@ -6,7 +6,7 @@
 // Runs only under --render-self-test, after loading resources. No save paths,
 // audio device, updater or user interaction is involved.
 int NativeExpandedRenderTest(std::string& context) {
-    // Preserve the original canonical-pixel assertions for all ten animals;
+    // Preserve the original canonical-pixel assertions for the available character;
     // real authored sheets have their own complete native regression below.
     DisabledCareSpriteScope canonicalArtwork;
     Surface canvas;
@@ -27,7 +27,7 @@ int NativeExpandedRenderTest(std::string& context) {
     };
     auto copy = [&] { return std::vector<BYTE>(canvas.pixels,canvas.pixels+420*320*4); };
     std::array<std::uint64_t,cat::kCharacterCount> identities{};
-    for (int c=0;c<cat::kCharacterCount;++c) {
+    for (int c=0;c<static_cast<int>(cat::kAvailableCharacters.size());++c) {
         const auto character=static_cast<cat::Character>(c);
         for (int index=0;index<=static_cast<int>(Motion::Pride);++index) {
             const auto motion=static_cast<Motion>(index);

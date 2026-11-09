@@ -173,7 +173,7 @@ int NativeWalkingRenderTest(std::string& context) {
     // to form the reference. Matching every pixel detects a missing shoulder,
     // an internal transparent slit and a source crop that old reach tests miss.
     if(!CreateDirectoryW(L"render-self-test",nullptr)&&GetLastError()!=ERROR_ALREADY_EXISTS)return 350;
-    for(const auto character:{cat::Character::Cream,cat::Character::SilverTabby}) {
+    for(const auto character:cat::kAvailableCharacters) {
         auto& atlas=CurrentArt(character).base;
         std::array<std::unique_ptr<Bitmap>,4> reference;
         std::array<int,4> supportInset{};
@@ -294,7 +294,7 @@ int NativeWalkingRenderTest(std::string& context) {
     }
     // The later eight animals retain their existing inverse-warp fallback.
     // Their real source/head/nutrition regressions remain independent below.
-    for(int c=2;c<cat::kCharacterCount;++c)for(int facing:{-1,1}) {
+    for(int c=2;c<static_cast<int>(cat::kAvailableCharacters.size());++c)for(int facing:{-1,1}) {
         const auto character=static_cast<cat::Character>(c);
         auto& art=CurrentArt(character);
         const auto& source=art.base.skins[cat::species::UsesNewArt(character)?2:1];
@@ -379,6 +379,7 @@ int NativeWalkingRenderTest(std::string& context) {
     // cached limb normalization. Compare it with an independent freshly
     // prepared rig using the actual embedded legacy and new-art sources.
     for(const auto character:{cat::Character::Rabbit}) {
+        if(!cat::CharacterAvailable(character))continue; // Retired inverse-warp fallback.
         auto& art=CurrentArt(character);
         const auto& source=art.base.skins[cat::species::UsesNewArt(character)?2:1];
         const double reference=110.0/std::max(1,art.base.standingHeight);

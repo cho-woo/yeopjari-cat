@@ -94,10 +94,9 @@ void ShowCompanionMenu(POINT point) {
     AppendMenuW(menu, MF_STRING | (cat::feeding::CanOfferFish(prefs.character) ? MF_ENABLED : MF_GRAYED),
         kCompanionFish, L"이 고양이에게 생선 주기");
     HMENU characters = CreatePopupMenu();
-    for (int i=0; i<cat::kCharacterCount; ++i) {
-        const auto character = static_cast<cat::Character>(i);
+    for (const auto character:cat::kAvailableCharacters) {
         AppendMenuW(characters, MF_STRING | (character==prefs.character ? MF_CHECKED : 0),
-            kCompanionCharacterFirst+i, cat::CharacterName(character));
+            kCompanionCharacterFirst+static_cast<int>(character), cat::CharacterName(character));
     }
     AppendMenuW(menu, MF_POPUP, reinterpret_cast<UINT_PTR>(characters), L"캐릭터 선택");
     AppendMenuW(menu, MF_STRING | (g.companionStore.state.pet.roamingPaused ? MF_CHECKED : 0), kCompanionPause, L"이 자리에서 쉬기");
@@ -121,6 +120,7 @@ void ShowCompanionMenu(POINT point) {
         const bool old = paused; paused = !paused;
         if (!SaveCompanion()) paused = old;
     } else if (command >= kCompanionCharacterFirst && command < kCompanionCharacterFirst+cat::kCharacterCount) {
+        if(!cat::CharacterAvailable(static_cast<cat::Character>(command-kCompanionCharacterFirst)))return;
         auto& p = g.companionStore.state.preferences; const auto old = p;
         p.character = static_cast<cat::Character>(command-kCompanionCharacterFirst);
         if (!SaveCompanion()) p = old;

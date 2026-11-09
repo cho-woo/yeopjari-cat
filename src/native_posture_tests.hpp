@@ -33,7 +33,7 @@ int NativePostureRenderTest(std::string& context) {
         }
         return visible>=700;
     };
-    for(int c=0;c<cat::kCharacterCount;++c)for(int facing:{-1,1}) {
+    for(int c=0;c<static_cast<int>(cat::kAvailableCharacters.size());++c)for(int facing:{-1,1}) {
         const auto character=static_cast<cat::Character>(c);
         auto loaf=cat::animation::Evaluate(Motion::Loaf,6000,500000,facing);
         auto idle=cat::animation::Evaluate(Motion::Idle,0,500000,facing);

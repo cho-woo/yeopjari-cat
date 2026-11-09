@@ -332,7 +332,8 @@ void SpeciesLimitsAndBraking() {
     Step(m,c,180);CHECK(m.Physical().onPlatform);
     m.DragTo(400);c=Frame(4000,600);s.nutrition.fullness=50;s.pet.hunger=50;
     CHECK(m.TrySocial(Interaction::Follow,c));Step(m,c,30);
-    CHECK(m.Physical().velocityX>10);
+    CHECK(std::abs(m.Physical().velocityX)<2); // Stand up before moving.
+    Step(m,c,60);CHECK(m.Physical().velocityX>10);
     CHECK(m.Feed(c.nowUtc,c.ticks,false)==cat::nutrition::FeedResult::Accepted);
     CHECK(cat::animation::Travels(m.View(c.ticks).motion)); // A seated eating frame cannot slide during braking.
     Step(m,c,30);CHECK(std::abs(m.Physical().velocityX)<2);CHECK(m.View(c.ticks).motion==cat::animation::Motion::Eat);
@@ -360,7 +361,10 @@ void ManualCareIsNotInterrupted() {
         c.paused=true;c.ticks+=10000;c.nowUtc+=10;m.Tick(c);
         c.paused=false;c.ticks+=100;c.nowUtc+=1;
         CHECK(!m.FoodOffered(c));CHECK(!m.Pet(c.nowUtc,c.ticks));CHECK(!m.Play(c.nowUtc,c.ticks));
-        c.ticks=14301;c.nowUtc=born+15;
+        const auto clip=treat?cat::sprite_sequence::Clip::Treat:cat::sprite_sequence::Clip::Eat;
+        const auto* art=cat::sprite_assets::Find(clip,0,cat::sprite_assets::kCareSprites);
+        CHECK(art);c.ticks=101+10000+cat::sprite_sequence::ProgramDuration(art->program);
+        c.nowUtc=born+c.ticks/1000;
         CHECK(m.FoodOffered(c)); // Ordinary interaction may resume after the preserved meal ends.
         CHECK(s.pet.feedCount==(treat?0U:1U));CHECK(s.pet.snackCount==(treat?1U:0U));CHECK(Valid(s));
         m.Pet(born+301,301100); // A manual pet also takes priority over an automatic proposal.
@@ -441,7 +445,9 @@ void BrakingPreservesTheCompleteMeal() {
     const auto acceptedAt=c.ticks;
     CHECK(m.Feed(c.nowUtc,c.ticks,false)==cat::nutrition::FeedResult::Accepted);
     c.primaryVisible=false;
-    while(c.ticks<acceptedAt+4250)Step(m,c,1);
+    const auto* meal=cat::sprite_assets::Find(cat::sprite_sequence::Clip::Eat,0,cat::sprite_assets::kCareSprites);
+    CHECK(meal);
+    while(c.ticks<acceptedAt+cat::sprite_sequence::ProgramDuration(meal->program)+50)Step(m,c,1);
     CHECK(m.View(c.ticks).motion==cat::animation::Motion::Eat);
     CHECK(!m.Pet(c.nowUtc,c.ticks)); // Braking time cannot consume the accepted meal.
     CHECK(s.pet.feedCount==1 && s.memory.meals==1 && s.memory.pets==0);
@@ -618,7 +624,7 @@ void RegisteredCompanionCareFinishesItsWholeProgram() {
         c.ticks+=groomDuration;c.nowUtc=born+static_cast<std::int64_t>(c.ticks/1000);model.Tick(c);
         const auto neutral=model.View(c.ticks);
         CHECK(neutral.motion==cat::animation::Motion::Idle);
-        CHECK(neutral.animation.spriteClip==Clip::Sleep && neutral.animation.spriteFrame==0 && !neutral.animation.spriteTimed);
+        CHECK(neutral.animation.creamRig && neutral.animation.spriteClip==Clip::None && !neutral.animation.spriteTimed);
         CHECK(Valid(state));
     }
 }
