@@ -188,7 +188,19 @@ function Wait-SavedValue([string]$File,[string]$Value) {
     $timer=[Diagnostics.Stopwatch]::StartNew()
     while($timer.Elapsed.TotalSeconds -lt 3){
         if(Test-Path -LiteralPath (Join-Path $save $File)){
-            $text=[IO.File]::ReadAllText((Join-Path $save $File))
+            try {
+                $text=[IO.File]::ReadAllText((Join-Path $save $File))
+            } catch {
+                # Atomic app saves can briefly own the fixture file. Retry
+                # only sharing/lock violations within the existing deadline;
+                # permission, corruption and missing-state failures still fail.
+                $sharingFailure=$_.Exception
+                while($sharingFailure.InnerException){$sharingFailure=$sharingFailure.InnerException}
+                $sharingCode=$sharingFailure.HResult -band 0xffff
+                if(-not ($sharingFailure -is [IO.IOException]) -or $sharingCode -notin @(32,33)){throw}
+                Start-Sleep -Milliseconds 30
+                continue
+            }
             if(($text -split "`n") -contains $Value){return}
         }
         Start-Sleep -Milliseconds 30

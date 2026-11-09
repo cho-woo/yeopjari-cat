@@ -63,22 +63,41 @@ int NativeAuthoredWalkingRenderTest(std::string& context) {
         const auto range=layout->program.loop.count?layout->program.loop:
             cat::sprite_sequence::Range{0,layout->program.stepCount};
         std::vector<unsigned> expectedFrames;
+        const auto cycleWeight=cat::sprite_sequence::Duration(layout->program,range);
+        auto shortestWeight=cycleWeight;
         for(unsigned step=0;step<range.count;++step) {
-            const auto frame=layout->program.steps[range.first+step].frame;
+            const auto& exposure=layout->program.steps[range.first+step];
+            const auto frame=exposure.frame;
+            shortestWeight=std::min<std::uint64_t>(shortestWeight,exposure.durationMs);
             if(std::find(expectedFrames.begin(),expectedFrames.end(),frame)==expectedFrames.end())expectedFrames.push_back(frame);
         }
         // Validate every registered playback sample. Original key drawings and
         // offline motion samples share the same product path.
-        if(expectedFrames.size()<8||expectedFrames.size()>cat::sprite_assets::kMaxFrames)return 431;
+        if(expectedFrames.size()<8||expectedFrames.size()>cat::sprite_assets::kMaxFrames||!shortestWeight)return 431;
         std::vector<bool> seen(layout->frameCount,false);unsigned visited=0;
+        const double cycleSeconds=layout->stridePixels*body.bodyWidth/speed;
+        const double coverageDelta=std::min(1./60,cycleSeconds*static_cast<double>(shortestWeight)/
+            (2*static_cast<double>(cycleWeight)));
+        const unsigned coverageTicks=static_cast<unsigned>(std::ceil(cycleSeconds/coverageDelta))+2;
 
-        for(unsigned tick=0;tick<1200&&visited<expectedFrames.size();++tick) {
-            if(!gait.Advance(motion,speed/60,1./60,true))return 431;
+        // Retain the real60Hz playback pass. At fast speeds its phase lattice
+        // can miss some dense samples indefinitely (Run,width1.26 is nearly
+        // 1/33 cycle per tick). If needed, one additional physical cycle at
+        // half the shortest exposure covers every source without changing
+        // product cadence or skipping any of the pixel/ground checks below.
+        for(unsigned tick=0;tick<1200+coverageTicks&&visited<expectedFrames.size();++tick) {
+            const double delta=tick<1200?1./60:coverageDelta;
+            const double expectedPhase=cat::sprite_sequence::UnitPhase(gait.AuthoredPhase()+speed*delta/
+                (layout->stridePixels*body.bodyWidth));
+            if(!gait.Advance(motion,speed*delta,delta,true))return 431;
+            const double phaseError=std::abs(gait.AuthoredPhase()-expectedPhase);
+            if(std::min(phaseError,1-phaseError)>1e-10)return 431;
             auto pose=cat::animation::Evaluate(motion,tick*1000/60,500000,facing,gait);
             if(!cat::animation::ApplyAuthoredLocomotion(pose,motion,gait,true))return 431;
             context="authored runtime gait clip="+std::to_string(static_cast<unsigned>(pose.spriteClip))+
                 " facing="+std::to_string(facing)+" width="+std::to_string(body.bodyWidth)+
-                " height="+std::to_string(desiredHeight)+" tick="+std::to_string(tick);
+                " height="+std::to_string(desiredHeight)+" tick="+std::to_string(tick)+
+                (tick<1200?" pass=60Hz":" pass=exposure-coverage");
             if(pose.spriteClip!=layout->clip||!pose.spriteTimed||pose.originalWalk||pose.jointWalk||pose.walkingRig||
                     pose.x!=0||pose.lift!=0||pose.angle!=0||pose.scaleX!=1||pose.scaleY!=1||
                     pose.blendFrame!=-1||!cat::deform::Zero(pose.joints))return 432;
