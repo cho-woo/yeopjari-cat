@@ -36,6 +36,16 @@ the fixed-size contact sheet and video are the visual review.
 alpha and fully decodes the H.264/yuv420p/faststart MP4 after writing. It is not
 a Windows desktop or app capture.
 
+The v23 bridge correction uses local pose-locked material keys for newly
+exposed tail/face surfaces. `temporal_mode: bracketing` prevents unrelated
+front/profile views from contributing simultaneously. `absolute_material`
+transports the authored coat luminance rather than retaining ginger stripes
+as gray blotches, while preserving fine original detail; optional neutral coat
+chroma is applied before original pink skin and iris restoration. These options
+are enabled only by the bridge job config. Existing Walk loop, Run and Eat PNGs
+remain unchanged. `validate_bridges.py` records alpha equality and warm-coat
+counts independently of the full 41-frame visual review.
+
 ```sh
 python3 tools/video_tuxedo/review.py \
   --matte-dir build/user-run-video/matting/corrected \

@@ -1,0 +1,300 @@
+{
+  "schema": 1,
+  "version": "2.0.22",
+  "source_commit": "0cf8e02e41dec160bf3c9f277769f8711886605d",
+  "release": {
+    "id": 439895355,
+    "url": "https://github.com/cho-woo/yeopjari-cat/releases/tag/v2.0.22",
+    "tag": "v2.0.22",
+    "stable": false,
+    "latest_stable_api": "https://api.github.com/repos/cho-woo/yeopjari-cat/releases/latest",
+    "published_at_utc": "2026-11-10T03:01:54Z",
+    "published_at_kst": "2026-11-10T12:01:54+09:00",
+    "prerelease": true,
+    "withdrawn_from_stable": true,
+    "release_metadata_updated_at_utc": "2026-11-10T03:09:31Z"
+  },
+  "validation": {
+    "run_id": 42745784641,
+    "url": "https://github.com/cho-woo/yeopjari-cat/actions/runs/42745784641",
+    "workflow": ".github/workflows/validate.yml",
+    "attempt": 1,
+    "conclusion": "success",
+    "native_steps": [
+      {
+        "name": "Compare baseline and candidate on the same Windows desktop",
+        "conclusion": "success"
+      },
+      {
+        "name": "Execute Windows save, cursor and moving-window regression tests",
+        "conclusion": "success"
+      },
+      {
+        "name": "Render real Windows GDI+ gait, contact and posture regressions",
+        "conclusion": "success"
+      },
+      {
+        "name": "Capture source-video walking through Windows GDI+ and Box2D at 60 FPS",
+        "conclusion": "success"
+      },
+      {
+        "name": "Capture source-video meal, walk and run through Windows GDI+ and Box2D at 60 FPS",
+        "conclusion": "success"
+      }
+    ]
+  },
+  "publication": {
+    "run_id": 42746478499,
+    "url": "https://github.com/cho-woo/yeopjari-cat/actions/runs/42746478499",
+    "workflow": ".github/workflows/publish-motion-update.yml",
+    "attempt": 1,
+    "source_commit": "0cf8e02e41dec160bf3c9f277769f8711886605d",
+    "conclusion": "success"
+  },
+  "ci_artifacts": [
+    {
+      "id": 13731517057,
+      "name": "windows-native-validation",
+      "size_bytes": 140281052,
+      "url": "https://github.com/cho-woo/yeopjari-cat/actions/runs/42745784641/artifacts/13731517057"
+    },
+    {
+      "id": 13731202668,
+      "name": "windows-x64-validated-package",
+      "size_bytes": 113394541,
+      "url": "https://github.com/cho-woo/yeopjari-cat/actions/runs/42745784641/artifacts/13731202668"
+    }
+  ],
+  "artwork": {
+    "characters": [
+      0,
+      8
+    ],
+    "source_video_fps": 24,
+    "extracted_unique_source_video_poses": 161,
+    "new_motion_drawings": 0,
+    "runtime_clips": 10,
+    "registered_frames_per_character": 253,
+    "retained_clips": {
+      "groom": 16,
+      "sleep": 8,
+      "box": 8,
+      "fish": 8,
+      "punch": 12,
+      "jump": 16,
+      "treat": 24
+    },
+    "retained_registered_frames": 92,
+    "video_actions": {
+      "walk": {
+        "registered_frames": 61,
+        "loop_frames": 20,
+        "resource": 400,
+        "source_video": "assets/natural-gait/source-walk.mp4",
+        "source_video_sha256": "0c48d1669a718126d8c7385115982d390a85ff8217f36d0004ee74bb6345bae6",
+        "source_fps": 24
+      },
+      "run": {
+        "registered_frames": 13,
+        "loop_frames": 13,
+        "resource": 401,
+        "source_video": "assets/natural-gait/source-run.mp4",
+        "source_video_sha256": "97afd88cf9f3d6edbb395049efcdec8b46101cb3478795217e26688a71053e1c",
+        "source_fps": 24
+      },
+      "eat": {
+        "registered_frames": 87,
+        "loop_frames": 0,
+        "resource": 118,
+        "source_video": "assets/natural-gait/source-eat.mp4",
+        "source_video_sha256": "d2f200fe77ada70ced514aea3bbd39709f8bdc401cd8a5f229f804f8cc785c17",
+        "source_fps": 24
+      }
+    },
+    "tuxedo_appearance": "authored material textures on the same source-video geometry"
+  },
+  "native_previews": [
+    {
+      "url": "https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.22/walking-native.mp4",
+      "kind": "native offscreen Windows GDI+ / Box2D capture",
+      "desktop_recording": false,
+      "output_fps": 60,
+      "frames": 600,
+      "duration_seconds": 10.0,
+      "canvas": [
+        960,
+        500
+      ],
+      "character_reference_height_px": 110,
+      "retimed": false,
+      "interpolated_frames": 0
+    },
+    {
+      "url": "https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.22/motions-native.mp4",
+      "kind": "native offscreen Windows GDI+ / Box2D capture",
+      "desktop_recording": false,
+      "output_fps": 60,
+      "frames": 1019,
+      "duration_seconds": 16.983333333333334,
+      "canvas": [
+        960,
+        500
+      ],
+      "character_reference_height_px": 110,
+      "retimed": false,
+      "interpolated_frames": 0
+    }
+  ],
+  "verification": {
+    "all_18_downloaded_assets_match_github_api_size_and_sha256": true,
+    "both_checksum_manifests_match": true,
+    "windows_package_verifier_passed": true,
+    "silent_exe_verifier_passed": true,
+    "both_movie_cadence_and_frame_counts_checked_with_ffprobe": true,
+    "detailed_native_evidence": "https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.22/windows-validation.json",
+    "official_feed_at_publication_fetched_and_matched_published_asset": true
+  },
+  "public_asset_base_url": "https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.22/",
+  "public_assets": [
+    {
+      "name": "RELEASE_NOTES_KO.txt",
+      "id": 729888607,
+      "size_bytes": 1299,
+      "sha256": "a22a43836f552b40c8c407473899650e62019883630b753eff451070bb444eb9"
+    },
+    {
+      "name": "SHA256SUMS.txt",
+      "id": 729888631,
+      "size_bytes": 350,
+      "sha256": "7c6047b091971b579f962b83c887642531857e8fa3c038b975a1de696a65cbc5"
+    },
+    {
+      "name": "YeopjariCat-2.0.22.exe",
+      "id": 729888360,
+      "size_bytes": 60183552,
+      "sha256": "55393fdb1dfd886e2f9c2c02901da0bba4c37323c187af010e05c3b0f5891819"
+    },
+    {
+      "name": "YeopjariCat-Windows-2.0.22.zip",
+      "id": 729888448,
+      "size_bytes": 56660281,
+      "sha256": "6e8cee6d18d2173c33057c34d4b87f6deeb206566d551a3fb87657c81e84b953"
+    },
+    {
+      "name": "latest.txt",
+      "id": 729888575,
+      "size_bytes": 1996,
+      "sha256": "cd8489abaf83c7a0287324a1a145b3a9f55749710c2f4115ea122440eedb2e97"
+    },
+    {
+      "name": "manual-motion-self-test.json",
+      "id": 729888773,
+      "size_bytes": 668,
+      "sha256": "e2ac447857d6979feb0833891f0e3568b1beff2258fc6c14834bd7f553c31f60"
+    },
+    {
+      "name": "motion-update-SHA256SUMS.txt",
+      "id": 729889373,
+      "size_bytes": 1501,
+      "sha256": "48ac2279fa7aca897ead9e8c0ba960cfeecfc47d79f2d7084926a6b802366677"
+    },
+    {
+      "name": "motions-native-capture.json",
+      "id": 729889200,
+      "size_bytes": 1348,
+      "sha256": "956a2d53323862d5632efd59e5689920b427813417dc4e4c9c1a740e1332a84b"
+    },
+    {
+      "name": "motions-native-trace.json",
+      "id": 729889259,
+      "size_bytes": 681171,
+      "sha256": "9ecb8893c63d753857a57e342b66191f8b2cf33ee86aa7c9920878515f60c312"
+    },
+    {
+      "name": "motions-native.json",
+      "id": 729889150,
+      "size_bytes": 2068,
+      "sha256": "bf54e49661c2012699724764951a472aefc4de78e0b433fdb07eb42c6a43f7e9"
+    },
+    {
+      "name": "motions-native.mp4",
+      "id": 729889103,
+      "size_bytes": 718511,
+      "sha256": "c07a375698010a2ee2b09880f020dcde983249b402fe3a9e0d62320e8a050ea2"
+    },
+    {
+      "name": "release-info.json",
+      "id": 729888676,
+      "size_bytes": 797,
+      "sha256": "bd246ad6277afaa7404c903886729a5447abc9a694afc9a2bc9cbb9815bb49d8"
+    },
+    {
+      "name": "render-self-test.txt",
+      "id": 729888709,
+      "size_bytes": 55,
+      "sha256": "8af5828fbff6f2d7149f59a252ace7689ebb1a37bc14caee5e21295bcc7726af"
+    },
+    {
+      "name": "walking-native-capture.json",
+      "id": 729888972,
+      "size_bytes": 922,
+      "sha256": "06bb457c4ca9ced2ed0376c7eaf786e0e5ccfa7b40d42c114307f5a3946eb86f"
+    },
+    {
+      "name": "walking-native-trace.json",
+      "id": 729889047,
+      "size_bytes": 271814,
+      "sha256": "7115ff51f364c411d2bcd042392ae16ba09693c6f369457f757d788425b491e0"
+    },
+    {
+      "name": "walking-native.json",
+      "id": 729888914,
+      "size_bytes": 1779,
+      "sha256": "9f5cb9f6285ed4cddd17c26483fed578b4be1a2e7525ba716849d2ac59713b4b"
+    },
+    {
+      "name": "walking-native.mp4",
+      "id": 729888868,
+      "size_bytes": 444145,
+      "sha256": "453588c60025456d4f1af970b93b6e4b0d16dff5fccbb9a94de7a4ff1f349f52"
+    },
+    {
+      "name": "windows-validation.json",
+      "id": 729889296,
+      "size_bytes": 50951,
+      "sha256": "a91adea48beb0526839f038c06ceb7933ce9042c7a5d1989738d07058a6a8bb1"
+    }
+  ],
+  "record_status": "historical_release_withdrawn_from_stable",
+  "official_feed_at_publication": {
+    "url": "https://github.com/cho-woo/yeopjari-cat/releases/latest/download/latest.txt",
+    "version": "2.0.22",
+    "size_bytes": 1996,
+    "sha256": "cd8489abaf83c7a0287324a1a145b3a9f55749710c2f4115ea122440eedb2e97",
+    "download_url": "https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.22/YeopjariCat-2.0.22.exe",
+    "exe_sha256": "55393fdb1dfd886e2f9c2c02901da0bba4c37323c187af010e05c3b0f5891819",
+    "matches_downloaded_release_asset": true
+  },
+  "current_official_feed": {
+    "url": "https://github.com/cho-woo/yeopjari-cat/releases/latest/download/latest.txt",
+    "version": "2.0.21",
+    "latest_stable_release": "https://github.com/cho-woo/yeopjari-cat/releases/tag/v2.0.21",
+    "sha256": "8e92bdc267723ce221737c8b4fefd94ff33c4ebffdac875012e3cbdd592aa143",
+    "size_bytes": 1360
+  },
+  "visual_review": {
+    "status": "failed",
+    "source": "actual published native Windows capture",
+    "movie": "motions-native.mp4",
+    "approximate_elapsed_seconds": 0.983,
+    "input_video_frame": 13,
+    "defect": "Tuxedo entry bridge has a brown tail blob and inconsistent coat patches. Passing numeric and native execution checks did not establish visual quality.",
+    "review_image": "docs/validation/v2.0.22-tuxedo-bridge-defect.png"
+  },
+  "correction": {
+    "version": "2.0.23",
+    "status": "in_progress",
+    "scope": "Correct Tuxedo appearance on existing bridge geometry; keep motion programs and cadence.",
+    "original_v2_0_22_release_assets_unchanged": true
+  }
+}

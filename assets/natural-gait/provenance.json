@@ -27,7 +27,7 @@
     {
       "role": "appearance_importer",
       "path": "tools/video_tuxedo/transfer.py",
-      "sha256": "5356444aba6d6d1968c7f29428f3e0f5a18fd2022140ec19346c8a4b97f6c9a2"
+      "sha256": "5226999dfc7ca110ec0b5da31ac89966c529feacf6b0152e2ccbe38504fc1c4a"
     },
     {
       "role": "input_video",
@@ -60,7 +60,7 @@
       "character": 8,
       "base_resource_id": 400,
       "source": "tuxedo-video-walk.png",
-      "sha256": "1ed781a6b9e26a12ce7bff092f0d300c108e7de4b1d82253e455299031329c1a",
+      "sha256": "9fbd42688410f772ba9c85bfb3bd4bee34214715cb4a9b79e31ae5fc140cae4f",
       "image_width": 2408,
       "image_height": 1904
     },

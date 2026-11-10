@@ -14,6 +14,6 @@ All three videos are710×592/24FPS. At their native cadence, Walk is81.6logical 
 
 Repack with `python3 tools/pack_walk_video.py`, then run `python3 tools/import_care_sprites.py`. Import the three matching Tuxedo atlases with `tools/import_styled_sprites.py`. Source videos, registrations, output atlases and authoring scripts are bound in `provenance.json`; source-frame records and appearance proofs describe individual inputs. Original care assets and archived flow-derived assets remain under their existing directories but do not replace these three runtime registrations.
 
-Matting and Tuxedo field transport are offline tools under `tools/matte_walk_video.py` and `tools/video_tuxedo/`. Their authoring dependencies are OpenCV, NumPy, Pillow, SciPy and ONNXRuntime. The Windows app uses only the packed PNG resources. Source-video pose count161 is distinct from the11 new appearance-key paintings: no new motion poses were generated.
+Matting and Tuxedo field transport are offline tools under `tools/matte_walk_video.py` and `tools/video_tuxedo/`. Their authoring dependencies are OpenCV, NumPy, Pillow, SciPy and ONNXRuntime. The Windows app uses only the packed PNG resources. The161 source-video poses are separate from appearance-key paintings. No new motion poses are counted for material edits.
 
 The downloadable walking-native.mp4 and motions-native.mp4 are60FPS Windows GDI+/Box2D offscreen captures through the same PrimaryDisplayedPose path as the product. Offline authoring previews are24FPS and are not desktop recordings.

@@ -1,0 +1,303 @@
+{
+  "schema": 1,
+  "frame_count": 41,
+  "alpha_exact_all": true,
+  "warm_check": "entire foreground including visible tails; actual pink skin/blush excluded; Lab a>10 and b>15",
+  "warm_pixels_before": 23126,
+  "warm_pixels_after": 0,
+  "visual_check": "All 41 frames inspected separately at fixed 110px; color checks do not prove pattern quality.",
+  "aggregate_method": "SHA256 of ascending configured filename bytes followed by PNG file bytes",
+  "aggregate_rgba_sha256": "900d3943a8b8fb960719f239465d2f0bc53f2833c2b0fcaf191ab47b2bf81473",
+  "config_sha256": "b9f5a686d958c5a30dc6245fc03227ce1d57af9b6dc5e752e7fd8fb20eb4cb2c",
+  "transfer_script_sha256": "5226999dfc7ca110ec0b5da31ac89966c529feacf6b0152e2ccbe38504fc1c4a",
+  "new_motion_poses": 0,
+  "frames": [
+    {
+      "source_frame": 2,
+      "alpha_exact": true,
+      "full_foreground_warm_coat_pixels_before": 73,
+      "full_foreground_warm_coat_pixels_after": 0,
+      "rgba_sha256": "d635979428ea9465c642fddd71a07f4985580f892259281512f79099224c8101"
+    },
+    {
+      "source_frame": 3,
+      "alpha_exact": true,
+      "full_foreground_warm_coat_pixels_before": 29,
+      "full_foreground_warm_coat_pixels_after": 0,
+      "rgba_sha256": "b9d8056feeed68247b34946ddebb46806371b72b0a7073cc4acf282d6060b7b5"
+    },
+    {
+      "source_frame": 4,
+      "alpha_exact": true,
+      "full_foreground_warm_coat_pixels_before": 74,
+      "full_foreground_warm_coat_pixels_after": 0,
+      "rgba_sha256": "f8148b070ea356b2252fd42122373e43dce78c0e7a3d587bd4cbcc8073b0c9bf"
+    },
+    {
+      "source_frame": 5,
+      "alpha_exact": true,
+      "full_foreground_warm_coat_pixels_before": 65,
+      "full_foreground_warm_coat_pixels_after": 0,
+      "rgba_sha256": "26fad5b2bc85b62e47b21e90cd4f72f774c0a04bbc502379fb41f4c29183963c"
+    },
+    {
+      "source_frame": 6,
+      "alpha_exact": true,
+      "full_foreground_warm_coat_pixels_before": 179,
+      "full_foreground_warm_coat_pixels_after": 0,
+      "rgba_sha256": "daef418aa4e2dbf426f14ef532bd67bda1ffd07f17d2899433ea90d5d0c9a8ef"
+    },
+    {
+      "source_frame": 7,
+      "alpha_exact": true,
+      "full_foreground_warm_coat_pixels_before": 172,
+      "full_foreground_warm_coat_pixels_after": 0,
+      "rgba_sha256": "9b6aadba436e88e1e3e553c4131cd3d3b1b25f322d21ba55386373d6ba5601df"
+    },
+    {
+      "source_frame": 8,
+      "alpha_exact": true,
+      "full_foreground_warm_coat_pixels_before": 0,
+      "full_foreground_warm_coat_pixels_after": 0,
+      "rgba_sha256": "ecb9a713ef2063b12eaf4d05f874618e98ce17e41145b3f56fa10a16c9d632b6"
+    },
+    {
+      "source_frame": 9,
+      "alpha_exact": true,
+      "full_foreground_warm_coat_pixels_before": 13,
+      "full_foreground_warm_coat_pixels_after": 0,
+      "rgba_sha256": "88962a524a80c9e198569844b6156aafe814304b7dd4e27aa1be5ffd73714a8e"
+    },
+    {
+      "source_frame": 10,
+      "alpha_exact": true,
+      "full_foreground_warm_coat_pixels_before": 620,
+      "full_foreground_warm_coat_pixels_after": 0,
+      "rgba_sha256": "3bb22621649bcc25ba2d435d152aa2b75f77f204296cf67caba119ee8dcbe45e"
+    },
+    {
+      "source_frame": 11,
+      "alpha_exact": true,
+      "full_foreground_warm_coat_pixels_before": 2068,
+      "full_foreground_warm_coat_pixels_after": 0,
+      "rgba_sha256": "fca9921cc36d2cb4c45c13aa796730ad07ecad5ca210bcaf217599e8f34445e6"
+    },
+    {
+      "source_frame": 12,
+      "alpha_exact": true,
+      "full_foreground_warm_coat_pixels_before": 2432,
+      "full_foreground_warm_coat_pixels_after": 0,
+      "rgba_sha256": "b0319858d89524d46e7a58fea939aeaee03090fc50f127f900b3ddb33e06f365"
+    },
+    {
+      "source_frame": 13,
+      "alpha_exact": true,
+      "full_foreground_warm_coat_pixels_before": 2310,
+      "full_foreground_warm_coat_pixels_after": 0,
+      "rgba_sha256": "93baac3d0a44b6eac46dfa01fe53aaf80fc8ff8302d9d3ec1e426ed6b88c3b48"
+    },
+    {
+      "source_frame": 14,
+      "alpha_exact": true,
+      "full_foreground_warm_coat_pixels_before": 2043,
+      "full_foreground_warm_coat_pixels_after": 0,
+      "rgba_sha256": "46bc2dcc8cfec3836e19d384871d2db5ce11f58c4e3d52b23772b7f61faacf8b"
+    },
+    {
+      "source_frame": 15,
+      "alpha_exact": true,
+      "full_foreground_warm_coat_pixels_before": 2231,
+      "full_foreground_warm_coat_pixels_after": 0,
+      "rgba_sha256": "6f1b741ea6ed28793c8b9567b5330385be3b9c7b9f3ee499b153bc4363bf4a08"
+    },
+    {
+      "source_frame": 16,
+      "alpha_exact": true,
+      "full_foreground_warm_coat_pixels_before": 2212,
+      "full_foreground_warm_coat_pixels_after": 0,
+      "rgba_sha256": "dce20a77ab6e864244a4c90b4f366f40f21a298efdf2eaa4e9af0ff21b07267a"
+    },
+    {
+      "source_frame": 17,
+      "alpha_exact": true,
+      "full_foreground_warm_coat_pixels_before": 911,
+      "full_foreground_warm_coat_pixels_after": 0,
+      "rgba_sha256": "261f09c8227ecbb70fb317a9e914ec93f2441032c1ab5ad66f0f736d5827a9d1"
+    },
+    {
+      "source_frame": 18,
+      "alpha_exact": true,
+      "full_foreground_warm_coat_pixels_before": 1097,
+      "full_foreground_warm_coat_pixels_after": 0,
+      "rgba_sha256": "8c9a46add57aa4c8b80e5f40c7e8572af963019b1d2bbc1eb63f4923c2e13562"
+    },
+    {
+      "source_frame": 19,
+      "alpha_exact": true,
+      "full_foreground_warm_coat_pixels_before": 1078,
+      "full_foreground_warm_coat_pixels_after": 0,
+      "rgba_sha256": "32009b757c5b141583f46b5f7925fa3e0bbd23946b15e9656482eb7c24785355"
+    },
+    {
+      "source_frame": 20,
+      "alpha_exact": true,
+      "full_foreground_warm_coat_pixels_before": 639,
+      "full_foreground_warm_coat_pixels_after": 0,
+      "rgba_sha256": "03cc5e8e3fe1ca0a26c2ec2386eb12f75962bd010a0c475053f7b2bf14a26bbb"
+    },
+    {
+      "source_frame": 21,
+      "alpha_exact": true,
+      "full_foreground_warm_coat_pixels_before": 462,
+      "full_foreground_warm_coat_pixels_after": 0,
+      "rgba_sha256": "7d41b0bd6a02f4fe3da590d544c3c1dfdcc0a2e3f8c567b4b0ba7b29ee9d8c44"
+    },
+    {
+      "source_frame": 22,
+      "alpha_exact": true,
+      "full_foreground_warm_coat_pixels_before": 75,
+      "full_foreground_warm_coat_pixels_after": 0,
+      "rgba_sha256": "031cabb464daae176ef2463aa8cf2f3b12f18174fa84d7553f1deab98c30074b"
+    },
+    {
+      "source_frame": 23,
+      "alpha_exact": true,
+      "full_foreground_warm_coat_pixels_before": 9,
+      "full_foreground_warm_coat_pixels_after": 0,
+      "rgba_sha256": "131a852561044469c55d4f4ea993b06cec5fdc7072769eadbe6e690e5174946d"
+    },
+    {
+      "source_frame": 24,
+      "alpha_exact": true,
+      "full_foreground_warm_coat_pixels_before": 3,
+      "full_foreground_warm_coat_pixels_after": 0,
+      "rgba_sha256": "013a9502b4820da819b23c075f21896053c234cedda0809d76bcd8b95f08d8dc"
+    },
+    {
+      "source_frame": 25,
+      "alpha_exact": true,
+      "full_foreground_warm_coat_pixels_before": 3,
+      "full_foreground_warm_coat_pixels_after": 0,
+      "rgba_sha256": "c0e5da0f7230df2e4cbe2d8bb67af8480f5b25b6d055cf6e68bd1e90f991d7bf"
+    },
+    {
+      "source_frame": 26,
+      "alpha_exact": true,
+      "full_foreground_warm_coat_pixels_before": 1,
+      "full_foreground_warm_coat_pixels_after": 0,
+      "rgba_sha256": "c6ed951c09989bd430ca7b75eb2411a3ec952f6fb498573afc8d7dbc2d576f80"
+    },
+    {
+      "source_frame": 27,
+      "alpha_exact": true,
+      "full_foreground_warm_coat_pixels_before": 4,
+      "full_foreground_warm_coat_pixels_after": 0,
+      "rgba_sha256": "efa98bfaa42dcd006ebcdf449523e99e2d5e6f06fd6c7604a76000589b115b98"
+    },
+    {
+      "source_frame": 28,
+      "alpha_exact": true,
+      "full_foreground_warm_coat_pixels_before": 38,
+      "full_foreground_warm_coat_pixels_after": 0,
+      "rgba_sha256": "98fdb7d2baafaa3730174cbbf419f2ff96feb8dda34de3a01b298f4dbb830cdc"
+    },
+    {
+      "source_frame": 29,
+      "alpha_exact": true,
+      "full_foreground_warm_coat_pixels_before": 27,
+      "full_foreground_warm_coat_pixels_after": 0,
+      "rgba_sha256": "cf6c910234d7ac0dafa69eaf9520aa7f31ee986538f5eb3820ae186e1fbe3dd2"
+    },
+    {
+      "source_frame": 108,
+      "alpha_exact": true,
+      "full_foreground_warm_coat_pixels_before": 11,
+      "full_foreground_warm_coat_pixels_after": 0,
+      "rgba_sha256": "041a552bd4155a67984bac9e73e48a4390b8adc0beb72d6b1b5141044ccfb677"
+    },
+    {
+      "source_frame": 109,
+      "alpha_exact": true,
+      "full_foreground_warm_coat_pixels_before": 7,
+      "full_foreground_warm_coat_pixels_after": 0,
+      "rgba_sha256": "294dcaa5925c70548af5979332b8bdaa2554fdc995283392f92522d35786345a"
+    },
+    {
+      "source_frame": 110,
+      "alpha_exact": true,
+      "full_foreground_warm_coat_pixels_before": 0,
+      "full_foreground_warm_coat_pixels_after": 0,
+      "rgba_sha256": "c697fc07e133dbaa5fdf50866006f665964d991df47dad0ad7f84c51270f8cea"
+    },
+    {
+      "source_frame": 111,
+      "alpha_exact": true,
+      "full_foreground_warm_coat_pixels_before": 1,
+      "full_foreground_warm_coat_pixels_after": 0,
+      "rgba_sha256": "8f8e614d070af0177c6d3ba5bf33441a69d7bf3d3a4f3032e6e68d86b34acf25"
+    },
+    {
+      "source_frame": 112,
+      "alpha_exact": true,
+      "full_foreground_warm_coat_pixels_before": 1,
+      "full_foreground_warm_coat_pixels_after": 0,
+      "rgba_sha256": "da6240bb9e651b45c4a283d00664644fafce09ac4dbce4e5ab7c242b2384a6fd"
+    },
+    {
+      "source_frame": 113,
+      "alpha_exact": true,
+      "full_foreground_warm_coat_pixels_before": 198,
+      "full_foreground_warm_coat_pixels_after": 0,
+      "rgba_sha256": "8add23046fb77291729a1e5a1829a016d561e21744bc1379169000c4d5b327f8"
+    },
+    {
+      "source_frame": 114,
+      "alpha_exact": true,
+      "full_foreground_warm_coat_pixels_before": 3,
+      "full_foreground_warm_coat_pixels_after": 0,
+      "rgba_sha256": "8cd02fa26409187ea297cb09f894c8b85ba4d75e8c8ad53d49b80bf4ba371ed5"
+    },
+    {
+      "source_frame": 115,
+      "alpha_exact": true,
+      "full_foreground_warm_coat_pixels_before": 60,
+      "full_foreground_warm_coat_pixels_after": 0,
+      "rgba_sha256": "2e897b41ec25ea1f0c24a99210067167ae47acc4d159ffb7c5fce8a1450585ca"
+    },
+    {
+      "source_frame": 116,
+      "alpha_exact": true,
+      "full_foreground_warm_coat_pixels_before": 672,
+      "full_foreground_warm_coat_pixels_after": 0,
+      "rgba_sha256": "ea2b265ebcc8e07fca2c62f48140228d2d242da744ec58a9c32de550b3015b3c"
+    },
+    {
+      "source_frame": 117,
+      "alpha_exact": true,
+      "full_foreground_warm_coat_pixels_before": 1233,
+      "full_foreground_warm_coat_pixels_after": 0,
+      "rgba_sha256": "681aab2bed1f3340ecb6edc8c2157425d6b6223d712561539a0c731af75e5af4"
+    },
+    {
+      "source_frame": 118,
+      "alpha_exact": true,
+      "full_foreground_warm_coat_pixels_before": 1707,
+      "full_foreground_warm_coat_pixels_after": 0,
+      "rgba_sha256": "915a685fea340adeb185244e9d1cabb6f61967c463b7dd050601d5828df5a269"
+    },
+    {
+      "source_frame": 119,
+      "alpha_exact": true,
+      "full_foreground_warm_coat_pixels_before": 246,
+      "full_foreground_warm_coat_pixels_after": 0,
+      "rgba_sha256": "ca500392e5998717ce28293a8dc7c97174197badc0345c82a0bbe0815bf0f152"
+    },
+    {
+      "source_frame": 120,
+      "alpha_exact": true,
+      "full_foreground_warm_coat_pixels_before": 119,
+      "full_foreground_warm_coat_pixels_after": 0,
+      "rgba_sha256": "6fd1eb93cfd1b92ed3fe6b47ff0fa8096cdaea2f85066e901fce41c70a51d25b"
+    }
+  ]
+}

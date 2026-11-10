@@ -6,24 +6,56 @@
       "time": 2
     },
     {
+      "source_frame": 6,
+      "time": 6
+    },
+    {
+      "source_frame": 6,
+      "time": 7
+    },
+    {
       "source_frame": 8,
       "time": 8
     },
     {
-      "source_frame": 50,
+      "source_frame": 13,
+      "time": 13
+    },
+    {
+      "source_frame": 18,
       "time": 18
     },
     {
-      "source_frame": 60,
-      "time": 28
+      "source_frame": 26,
+      "time": 26
     },
     {
-      "source_frame": 60,
+      "source_frame": 26,
+      "time": 29
+    },
+    {
+      "source_frame": 110,
       "time": 108
+    },
+    {
+      "source_frame": 110,
+      "time": 110
     },
     {
       "source_frame": 114,
       "time": 114
+    },
+    {
+      "source_frame": 116,
+      "time": 116
+    },
+    {
+      "source_frame": 118,
+      "time": 118
+    },
+    {
+      "source_frame": 2,
+      "time": 119
     },
     {
       "source_frame": 2,
@@ -85,11 +117,14 @@
     ]
   ],
   "preview_keys": [
-    2,
     8,
-    114,
-    120
+    12,
+    13,
+    114
   ],
   "reference_height": 417,
-  "exclude_iris_from_material": true
+  "exclude_iris_from_material": true,
+  "absolute_material": true,
+  "neutral_fur_material": true,
+  "temporal_mode": "bracketing"
 }

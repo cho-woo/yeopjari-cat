@@ -17,7 +17,7 @@ inline constexpr std::array<Atlas,16> kStyledAtlases{{
     Atlas{8,118,505,2304,2772,"c2bd228564746f20fcd8f8a02f9f7a20424751099a537b7fcd59533e8971f34e","assets/styled-sprites/c8-r118.png",nullptr,0,0},
     Atlas{8,119,506,1254,1254,"1fd1b3f1b5b8025b6dd44ee3dbfea1f03d3cb1aad3e18cfb60a2f1f20727bd0a","assets/styled-sprites/c8-r119.png",nullptr,0,0},
     Atlas{8,120,507,1536,1024,"7fe4e30db5b67d05eb4f8508a904bf65388db6c759cbbc64a9a54b443d070a2b","assets/styled-sprites/c8-r120.png",nullptr,0,0},
-    Atlas{8,400,508,2408,1904,"1ed781a6b9e26a12ce7bff092f0d300c108e7de4b1d82253e455299031329c1a","assets/styled-sprites/c8-r400.png",nullptr,0,0},
+    Atlas{8,400,508,2408,1904,"9fbd42688410f772ba9c85bfb3bd4bee34214715cb4a9b79e31ae5fc140cae4f","assets/styled-sprites/c8-r400.png",nullptr,0,0},
     Atlas{8,401,516,1485,732,"da4657a3fbc3cbb148677482d46225ff85475cb14389a8565f45e2d9a7e67f2c","assets/styled-sprites/c8-r401.png",nullptr,0,0},
 }};
 static_assert(ValidSet(kStyledAtlases), "Invalid authored appearance atlases");

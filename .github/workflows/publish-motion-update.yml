@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       validation_run:
-        description: Successful Validate run for v2.0.22 with native Windows save and render tests
+        description: Successful Validate run for v2.0.23 with native Windows save and render tests
         required: true
         type: string
 permissions:

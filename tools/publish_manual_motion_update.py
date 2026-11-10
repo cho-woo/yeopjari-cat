@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Publish the exact Windows-validated v2.0.22 source-video gait update as stable.
+"""Publish the exact Windows-validated v2.0.23 source-video appearance hotfix as stable.
 
 CI-only. Uses a draft/tag prepared at the validated source commit. It never
 rebuilds, replaces a public release, or promotes the opt-in mesh walking study.
@@ -23,7 +23,7 @@ import release
 from verify_silent_exe import verify_silent_exe
 
 REPO = 'cho-woo/yeopjari-cat'
-VERSION = '2.0.22'
+VERSION = '2.0.23'
 TAG = 'v' + VERSION
 PREVIOUS_STABLE = 'v2.0.21'
 ROOT = Path(__file__).resolve().parents[1]

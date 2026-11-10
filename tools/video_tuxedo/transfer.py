@@ -2,7 +2,7 @@
 """Transfer authored Tuxedo appearance fields through the unchanged user video.
 
 Image-gen key paintings author appearance only. Dense correspondence is computed
-between original cream video frames; it transports Lab material offsets, never
+between original cream video frames; it transports Lab material colors/offsets, never
 cat geometry or alpha. Every output uses the exact original frame/matte canvas.
 This is offline asset authoring, not runtime processing or frame interpolation.
 """
@@ -62,7 +62,9 @@ def main():
             # Do not transport a key painting's iris into fur during a turn.
             painted_iris=(painted_hsv[:,:,0]>=20)&(painted_hsv[:,:,0]<=50)&(painted_hsv[:,:,1]>50)&(painted_hsv[:,:,2]>45)
             valid&=~painted_iris
-        field=lab(target[:,:,:3])-lab(s[:,:,:3]);field=nearest_fill(field,valid)
+        field=lab(target[:,:,:3])
+        if not config.get('absolute_material',False):field-=lab(s[:,:,:3])
+        field=nearest_fill(field,valid)
         field=cv2.GaussianBlur(field,(5,5),.9)
         # No geometry from this generated painting is used below.
         Image.fromarray(target).save(args.output/'keys'/f'aligned-{i:03d}.png')
@@ -74,12 +76,20 @@ def main():
     reports=[]
     for i,s in source.items():
         gray=flow_gray(s);slab=lab(s[:,:,:3]);acc=np.zeros_like(slab);total=np.zeros((h,w),np.float32)
+        bracket={}
+        if config.get('temporal_mode')=='bracketing':
+            times=sorted(set(k[0] for k in prepared));lo=max((t for t in times if t<=i),default=times[0]);hi=min((t for t in times if t>=i),default=times[-1])
+            if lo==hi:bracket[lo]=1.0
+            else:
+                u=(i-lo)/(hi-lo);u=u*u*(3-2*u)
+                bracket={lo:1-u,hi:u}
         for k,ks,field,kgray in prepared:
             # Timing chooses the closest appearance reference. Nonperiodic
             # actions use linear time; aliases can reuse a material reference
             # at another time without repeating or altering a motion frame.
             phase_distance=abs((i-k+period/2)%period-period/2) if period else abs(i-k)
-            temporal=math.exp(-(phase_distance/temporal_sigma)**2/2)
+            temporal=bracket.get(k,0) if bracket else math.exp(-(phase_distance/temporal_sigma)**2/2)
+            if temporal<=1e-8:continue
             flow=dis.calc(gray,kgray,None)
             mapx=xx+flow[:,:,0];mapy=yy+flow[:,:,1]
             delta=cv2.remap(field,mapx,mapy,cv2.INTER_LINEAR,borderMode=cv2.BORDER_REPLICATE)
@@ -89,7 +99,15 @@ def main():
             confidence=np.exp(-error/32)*k_alpha
             weight=temporal*np.maximum(.04,confidence)
             acc+=delta*weight[:,:,None];total+=weight
-        result=rgb(slab+acc/np.maximum(total[:,:,None],1e-6))
+        material=acc/np.maximum(total[:,:,None],1e-6)
+        if config.get('absolute_material',False):
+            # Cross-view disocclusion must not retain the ginger source's
+            # low-frequency stripes as gray patches in the black coat.
+            detail=slab[:,:,0]-cv2.GaussianBlur(slab[:,:,0],(7,7),1.4)
+            material[:,:,0]+=detail*.25
+        else:material+=slab
+        if config.get('neutral_fur_material',False):material[:,:,1:]*=.12
+        result=rgb(material)
         # Retain original true pink skin and its detail. This is photometric
         # skin detection, not a geometric fur pattern or a posed limb mask.
         sr=s[:,:,:3].astype(np.float32);r,g,b=sr[:,:,0],sr[:,:,1],sr[:,:,2]
@@ -135,7 +153,7 @@ def main():
         assert np.array_equal(rgba[:,:,:3][protected&(s[:,:,3]>0)],s[:,:,:3][protected&(s[:,:,3]>0)])
         reports.append({'source_frame_index':i,'source_alpha_sha256':hashlib.sha256(s[:,:,3].tobytes()).hexdigest(),'output_alpha_sha256':hashlib.sha256(rgba[:,:,3].tobytes()).hexdigest(),'protected_prop_rgb_pixel_count':int((protected&(s[:,:,3]>0)).sum()),'output_sha256':sha(out)})
         print(i,flush=True)
-    (args.output/'transfer-proof.json').write_text(json.dumps({'schema':1,'method':'authored_material_fields_over_original_video_geometry','geometry_source':'unchanged input video; optical flow transports appearance fields only','alpha_source':str(args.matte_dir),'pose_interpolation':False,'runtime_image_processing':False,'temporal_period':period,'temporal_sigma':temporal_sigma,'config':config,'selected_source_indices':list(source),'key_paintings':proofkeys,'frames':reports},indent=2)+'\n')
+    (args.output/'transfer-proof.json').write_text(json.dumps({'schema':1,'method':'authored_material_fields_over_original_video_geometry','appearance_field':'absolute_Lab_plus_source_fine_detail' if config.get('absolute_material',False) else 'Lab_offset_from_source','geometry_source':'unchanged input video; optical flow transports appearance fields only','alpha_source':str(args.matte_dir),'pose_interpolation':False,'runtime_image_processing':False,'temporal_period':period,'temporal_sigma':temporal_sigma,'config':config,'selected_source_indices':list(source),'key_paintings':proofkeys,'frames':reports},indent=2)+'\n')
     # Actual110px review. One fixed source reference, no per-frame fitting.
     board=Image.new('RGB',(1000,480),'#d8dfe4');draw=ImageDraw.Draw(board)
     for col,i in enumerate(config.get('preview_keys',[50,55,60,65])):

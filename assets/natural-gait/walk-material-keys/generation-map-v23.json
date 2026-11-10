@@ -1,0 +1,40 @@
+{
+  "new_motion_poses": 0,
+  "new_material_keys": [
+    {
+      "source_frame": 13,
+      "authored_key": "build/user-walk-video/tuxedo/authored-keys/0014.png",
+      "original_generation": "exec-b61f59e7-3b86-4ee7-a1aa-3fe32a50775f.png"
+    },
+    {
+      "source_frame": 6,
+      "authored_key": "build/user-walk-video/tuxedo/authored-keys/0007.png",
+      "original_generation": "exec-f7ed0e15-1a02-4a06-8a65-7315d65152db.png"
+    },
+    {
+      "source_frame": 18,
+      "authored_key": "build/user-walk-video/tuxedo/authored-keys/0019.png",
+      "original_generation": "exec-4c99408c-d41e-4f94-8e44-2b86bcf352f2.png"
+    },
+    {
+      "source_frame": 26,
+      "authored_key": "build/user-walk-video/tuxedo/authored-keys/0027.png",
+      "original_generation": "exec-4453d411-ffcc-4c14-98aa-0ec55aef2557.png"
+    },
+    {
+      "source_frame": 110,
+      "authored_key": "build/user-walk-video/tuxedo/authored-keys/0111.png",
+      "original_generation": "exec-cd38edeb-6cf3-4dd8-b547-f4d6d74194b2.png"
+    },
+    {
+      "source_frame": 116,
+      "authored_key": "build/user-walk-video/tuxedo/authored-keys/0117.png",
+      "original_generation": "exec-b49eb415-1688-4453-a6e5-886531bda599.png"
+    },
+    {
+      "source_frame": 118,
+      "authored_key": "build/user-walk-video/tuxedo/authored-keys/0119.png",
+      "original_generation": "exec-7843bf40-d1cc-49d0-bf43-cc87a55131db.png"
+    }
+  ]
+}

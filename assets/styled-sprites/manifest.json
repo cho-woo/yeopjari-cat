@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "design": "tuxedo-video-walk-run-meal-20261110",
+  "design": "tuxedo-video-bridge-correction-20261110-v23",
   "atlases": [
     {
       "character": 8,
@@ -163,7 +163,7 @@
       "source": "c8-r400.png",
       "image_width": 2408,
       "image_height": 1904,
-      "sha256": "1ed781a6b9e26a12ce7bff092f0d300c108e7de4b1d82253e455299031329c1a",
+      "sha256": "9fbd42688410f772ba9c85bfb3bd4bee34214715cb4a9b79e31ae5fc140cae4f",
       "base_source": "assets/natural-gait/cream-video-walk.png",
       "base_sha256": "1c1e5112d9be836fbc7786c60648796dcbf9b4f997e68de5d9e4b16450297d5d"
     },
