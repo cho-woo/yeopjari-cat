@@ -6,7 +6,7 @@
 
 namespace cat::environment {
 
-enum class CursorAction { None, Watch, Hunt, Sniff, Paw, Abandon, ApproachSit, Sit, Punch, Chase, Pounce, Sneak };
+enum class CursorAction { None, Watch, Hunt, Sniff, Paw, Abandon, ApproachSit, Sit, Punch, Chase, Pounce, Sneak, Tiptoe, BothPaws, Rest };
 
 struct CursorInput {
     std::uint64_t nowMs = 0;
@@ -26,6 +26,8 @@ struct CursorInput {
     // one. Legacy pointer animations keep their original timings by default.
     std::uint64_t pawDurationMs = 850, punchDurationMs = 650;
     std::uint64_t pouncePreparationMs = 240;
+    bool repeatNearby=false,canApproach=true;
+    std::uint64_t landingRecoveryMs=1240,tiptoeDurationMs=1400,bothPawsDurationMs=1550;
 };
 
 inline std::uint64_t CursorAttackDuration(CursorAction action,const CursorInput& input) {
@@ -58,6 +60,7 @@ public:
     bool InFlight() const { return action_ == CursorAction::Pounce && launched_; }
     bool ContactAllowed() const { return contactAllowed_; }
     double TargetX() const { return pounceX_; }
+    double TargetHeight() const { return pounceHeight_; }
     double Excitement() const { return excitement_; }
     void ConfirmLaunch(bool launched) { launchAnswered_ = true; launched_ = launched; }
     void Pause(std::uint64_t elapsedMs) {
@@ -67,9 +70,9 @@ public:
         fastMs_ = 0;
         if (lastTease_) lastTease_ += elapsedMs;
     }
-    void Cancel(std::uint64_t nowMs) {
+    void Cancel(std::uint64_t nowMs,std::uint64_t cooldownMs=12000) {
         action_ = CursorAction::None;
-        nextStart_ = nowMs + 12000;
+        nextStart_ = nowMs + cooldownMs;
         sampled_ = false;
         stillTracked_ = false;
         fastMs_ = 0;
@@ -79,6 +82,7 @@ public:
     }
 
     CursorOutput Step(const CursorInput& input) {
+        if(input.repeatNearby)return StepNearby(input);
         const auto before = action_;
         const double sampledHeight = input.cursorHeight + input.supportHeight;
         if (input.enabled && !enabled_) nextStart_ = input.nowMs;
@@ -257,13 +261,109 @@ private:
     double lastX_ = 0, lastHeight_ = 0;
     double stillX_ = 0, stillHeight_ = 0, seatX_ = 0, seatHeight_ = 0;
     double episodeInterest_ = .5;
-    double excitement_ = 0, pounceX_ = 0;
+    double excitement_ = 0, pounceX_ = 0,pounceHeight_=0;
     std::uint64_t lastTease_ = 0;
     std::uint64_t huntBudget_ = 3300, episodeBudget_ = 7000;
     bool launchAnswered_ = false, launched_ = false, contactAllowed_ = false;
     bool sampled_ = false, stillTracked_ = false, enabled_ = false;
     bool cautiousEpisode_ = false, sneaked_ = false;
     int direction_ = 1;
+    unsigned nearbyAttempt_=0;
+    std::uint64_t nearbyRestMs_=1000;
+
+    void CancelNearby(std::uint64_t now) {
+        Cancel(now);nextStart_=now+400;
+    }
+    void NearbyRest(const CursorInput& input,bool landed=false) {
+        contactAllowed_=false;launchAnswered_=launched_=false;
+        nearbyRestMs_=900+(nearbyAttempt_*173u)%601;
+        if(landed)nearbyRestMs_+=std::min<std::uint64_t>(input.landingRecoveryMs,86400000);
+        Change(CursorAction::Rest,input.nowMs);
+    }
+    void NearbyAttempt(const CursorInput& input,double height) {
+        ++nearbyAttempt_;contactAllowed_=true;launchAnswered_=launched_=false;
+        if(height>155 || (height>75 && nearbyAttempt_%3==0)) {
+            if(input.maxX-input.minX<=16){NearbyRest(input);return;}
+            pounceX_=input.canApproach?std::clamp(input.cursorX,input.minX+8,input.maxX-8):input.catX;
+            pounceHeight_=input.cursorHeight;
+            Change(CursorAction::Pounce,input.nowMs);
+        } else if(height>115 || (height>35 && nearbyAttempt_%4==3))Change(CursorAction::BothPaws,input.nowMs);
+        else if(height>55)Change(CursorAction::Tiptoe,input.nowMs);
+        else Change(CursorAction::Paw,input.nowMs);
+    }
+    CursorOutput StepNearby(const CursorInput& input) {
+        const auto before=action_;
+        const double scale=std::clamp(input.sizeScale,.5,2.);
+        const bool valid=Valid(input);
+        const double distance=valid?std::abs(input.cursorX-input.catX):100000;
+        const bool nearby=valid&&distance<=225*scale&&input.cursorHeight>=-8*scale&&input.cursorHeight<=245*scale;
+        if(input.enabled&&!enabled_)nextStart_=input.nowMs;
+        enabled_=input.enabled;
+        if(InFlight()) {
+            if(!valid||!input.enabled||!input.available||!input.canContinue||!nearby)contactAllowed_=false;
+            const double worldHeight=input.cursorHeight+input.supportHeight;
+            if(sampled_&&input.nowMs>lastSample_) {
+                const auto dt=input.nowMs-lastSample_;
+                if(dt>250||std::hypot(input.cursorX-lastX_,worldHeight-lastHeight_)*1000/dt>900)contactAllowed_=false;
+            }
+            sampled_=valid;lastSample_=input.nowMs;lastX_=input.cursorX;lastHeight_=worldHeight;
+            if(input.grounded) {
+                if(input.enabled&&input.available&&input.canContinue&&nearby)NearbyRest(input,true);
+                else CancelNearby(input.nowMs);
+            }
+            return Result(input,before);
+        }
+        if(!valid||!input.enabled||!input.available||!input.canContinue||!nearby) {
+            if(Active())CancelNearby(input.nowMs);
+            sampled_=false;return Result(input,before);
+        }
+        if(sampled_&&(input.nowMs<lastSample_||input.nowMs-lastSample_>250)) {
+            CancelNearby(input.nowMs);return Result(input,before);
+        }
+        sampled_=true;lastSample_=input.nowMs;lastX_=input.cursorX;lastHeight_=input.cursorHeight+input.supportHeight;
+        if(!Active()) {
+            if(input.canStart&&input.grounded&&input.nowMs>=nextStart_) {
+                episodeInterest_=std::clamp(input.interest,0.,1.);contactAllowed_=false;
+                began_=input.nowMs;Change(CursorAction::Watch,input.nowMs);
+            }
+            return Result(input,before);
+        }
+        const auto elapsed=input.nowMs-changedAt_;
+        const double reachDistance=std::max(40.,input.pawStandOff+20)*scale;
+        switch(action_) {
+        case CursorAction::Watch:
+            if(elapsed>=static_cast<std::uint64_t>(350+250*(1-episodeInterest_))) {
+                if(distance>reachDistance) {
+                    if(input.canApproach)Change(CursorAction::Hunt,input.nowMs);
+                    else NearbyRest(input);
+                } else NearbyAttempt(input,input.cursorHeight/scale);
+            }
+            break;
+        case CursorAction::Hunt:
+            if(!input.canApproach)NearbyRest(input);
+            else if(distance<=reachDistance)NearbyAttempt(input,input.cursorHeight/scale);
+            else if(elapsed>=huntBudget_)NearbyRest(input);
+            break;
+        case CursorAction::Paw:case CursorAction::Punch:
+            if(elapsed>=CursorAttackDuration(action_,input))NearbyRest(input);
+            break;
+        case CursorAction::Tiptoe:
+            if(elapsed>=std::min<std::uint64_t>(input.tiptoeDurationMs?input.tiptoeDurationMs:1400,86400000))NearbyRest(input);
+            break;
+        case CursorAction::BothPaws:
+            if(elapsed>=std::min<std::uint64_t>(input.bothPawsDurationMs?input.bothPawsDurationMs:1550,86400000))NearbyRest(input);
+            break;
+        case CursorAction::Pounce:
+            if((launchAnswered_&&!launched_)||std::abs(input.cursorX-pounceX_)>90*scale||
+                    elapsed>=CursorPounceTimeout(input))NearbyRest(input);
+            break;
+        case CursorAction::Rest:
+            if(elapsed>=nearbyRestMs_&&input.grounded)Change(CursorAction::Watch,input.nowMs);
+            break;
+        default:NearbyRest(input);break;
+        }
+        return Result(input,before);
+    }
 
     static bool Valid(const CursorInput& input) {
         return std::isfinite(input.cursorX) && std::isfinite(input.cursorHeight) &&
@@ -287,7 +387,8 @@ private:
         output.action = action_; output.changed = before != action_;
         if (std::isfinite(input.cursorX) && std::isfinite(input.catX) &&
                 std::abs(input.cursorX - input.catX) > 2 &&
-                (before != action_ || (action_ != CursorAction::Paw && action_ != CursorAction::Punch && action_ != CursorAction::Pounce)))
+                (before != action_ || (action_ != CursorAction::Paw && action_ != CursorAction::Punch && action_ != CursorAction::Pounce &&
+                    action_!=CursorAction::Tiptoe&&action_!=CursorAction::BothPaws)))
             direction_ = input.cursorX < input.catX ? -1 : 1;
         output.direction = direction_;
         output.targetX = pounceX_;
@@ -330,6 +431,7 @@ public:
     bool ContactAllowed() const { return planner_.ContactAllowed(); }
     bool OwnsSerial(std::uint64_t serial) const { return serial == serial_; }
     double TargetX() const { return planner_.TargetX(); }
+    double TargetHeight() const { return planner_.TargetHeight(); }
     double Excitement() const { return planner_.Excitement(); }
     void ConfirmLaunch(bool succeeded) { planner_.ConfirmLaunch(succeeded); }
     double Velocity() const { return velocity_; }
@@ -338,19 +440,20 @@ public:
     }
     void Pause(std::uint64_t elapsedMs, const CursorMotionState& motion) {
         if (Active() && (!motion.ownsMotion || motion.serial != serial_)) {
-            planner_.Cancel(motion.motionStarted); velocity_ = 0; wasWaiting_ = false;
+            planner_.Cancel(motion.motionStarted,repeatNearby_?600:12000); velocity_ = 0; wasWaiting_ = false;
             return;
         }
         planner_.Pause(elapsedMs); velocity_ = 0;
         AdoptMotion(motion.motionStarted, motion.waitingForStop, motion.serial);
     }
     CursorOutput Step(CursorInput input, std::uint64_t elapsedMs, const CursorMotionState& motion) {
+        repeatNearby_=input.repeatNearby;
         if (Active() && wasWaiting_ && !motion.waitingForStop && motion.ownsMotion)
             motionStarted_ = motion.motionStarted;
         const bool owns = motion.ownsMotion && motion.serial == serial_ && (motion.motionStarted == motionStarted_ ||
             (wasWaiting_ && motion.waitingForStop));
         if (Active() && !owns) {
-            planner_.Cancel(input.nowMs); velocity_ = 0; wasWaiting_ = false;
+            planner_.Cancel(input.nowMs,input.repeatNearby?600:12000); velocity_ = 0; wasWaiting_ = false;
             return {}; // Keep the interrupting action, including the same named action.
         }
         // OFF, missing cursor and manual/busy states are checked before the
@@ -374,6 +477,7 @@ private:
     CursorReaction planner_;
     std::uint64_t motionStarted_ = 0, serial_ = 0;
     bool wasWaiting_ = false;
+    bool repeatNearby_=false;
     double velocity_ = 0;
     int direction_ = 1;
 };

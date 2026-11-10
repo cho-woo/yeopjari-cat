@@ -99,7 +99,7 @@ jobs:
       - name: Execute Windows save, cursor and moving-window regression tests
         if: ${{ !cancelled() }}
         id: selftest
-        timeout-minutes: 2
+        timeout-minutes: 4
         shell: pwsh
         run: |
           $process = Start-Process -FilePath $env:TEST_EXE -ArgumentList '--self-test' -PassThru -Wait
@@ -171,6 +171,45 @@ jobs:
             $detail = $report.Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
             Write-Host "::error::$detail"
             throw "Windows cute idle capture failed: $($process.ExitCode)"
+          }
+      - name: Capture nearby cursor play through Windows GDI+ and Box2D at 60 FPS
+        if: ${{ !cancelled() && steps.selftest.outcome == 'success' }}
+        timeout-minutes: 6
+        shell: pwsh
+        run: |
+          $process = Start-Process -FilePath $env:TEST_EXE -ArgumentList '--render-cursor-play-video' -PassThru -Wait
+          $report = if (Test-Path render-self-test/cursor-play-report.txt) { Get-Content render-self-test/cursor-play-report.txt -Raw } else { 'No native nearby cursor play capture report produced.' }
+          Write-Host $report
+          if ($process.ExitCode -ne 0) {
+            $detail = $report.Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
+            Write-Host "::error::$detail"
+            throw "Windows nearby cursor play capture failed: $($process.ExitCode)"
+          }
+      - name: Review connected grooming through Windows GDI+ and Box2D
+        if: ${{ !cancelled() && steps.selftest.outcome == 'success' }}
+        timeout-minutes: 3
+        shell: pwsh
+        run: |
+          $process = Start-Process -FilePath $env:TEST_EXE -ArgumentList '--render-groom-review' -PassThru -Wait
+          $report = if (Test-Path render-self-test/groom-review-report.txt) { Get-Content render-self-test/groom-review-report.txt -Raw } else { 'No native connected grooming review produced.' }
+          Write-Host $report
+          if ($process.ExitCode -ne 0) {
+            $detail = $report.Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
+            Write-Host "::error::$detail"
+            throw "Windows connected grooming review failed: $($process.ExitCode)"
+          }
+      - name: Capture ball play through Windows GDI+ and Box2D at 60 FPS
+        if: ${{ !cancelled() && steps.selftest.outcome == 'success' }}
+        timeout-minutes: 7
+        shell: pwsh
+        run: |
+          $process = Start-Process -FilePath $env:TEST_EXE -ArgumentList '--render-ball-play' -PassThru -Wait
+          $report = if (Test-Path render-self-test/ball-play-report.txt) { Get-Content render-self-test/ball-play-report.txt -Raw } else { 'No native ball play capture report produced.' }
+          Write-Host $report
+          if ($process.ExitCode -ne 0) {
+            $detail = $report.Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
+            Write-Host "::error::$detail"
+            throw "Windows ball play capture failed: $($process.ExitCode)"
           }
       - uses: actions/upload-artifact@v4
         if: always()

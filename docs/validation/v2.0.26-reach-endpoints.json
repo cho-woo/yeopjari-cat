@@ -1,0 +1,23 @@
+[
+  {
+    "coat": "Cream",
+    "proxy_pixels_changed_over16": 0,
+    "largest_channel_delta": 1,
+    "changed_bbox_proxy": null,
+    "head_area_changed_over16": 0
+  },
+  {
+    "coat": "Tuxedo",
+    "proxy_pixels_changed_over16": 0,
+    "largest_channel_delta": 1,
+    "changed_bbox_proxy": null,
+    "head_area_changed_over16": 0
+  },
+  {
+    "coat": "OddEye",
+    "proxy_pixels_changed_over16": 0,
+    "largest_channel_delta": 1,
+    "changed_bbox_proxy": null,
+    "head_area_changed_over16": 0
+  }
+]

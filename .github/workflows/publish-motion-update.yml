@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       validation_run:
-        description: Successful Validate run for v2.0.25 with native idle, menu, jump and rendering tests
+        description: Successful Validate run for v2.0.26 with native cursor play, keyboard, coat, jump and rendering tests
         required: true
         type: string
       stage_only:
@@ -55,6 +55,9 @@ jobs:
                            'Capture source-video meal, walk and run through Windows GDI+ and Box2D at 60 FPS',
                            'Verify real Windows right-click menu visibility through UI Automation',
                            'Capture cute idle gestures through Windows GDI+ and Box2D at 60 FPS',
+                           'Capture nearby cursor play through Windows GDI+ and Box2D at 60 FPS',
+                           'Review connected grooming through Windows GDI+ and Box2D',
+                           'Capture ball play through Windows GDI+ and Box2D at 60 FPS',
                            'Compare baseline and candidate on the same Windows desktop']:
                   if not any(s['name']==name and s['status']=='completed' and s['conclusion']=='success'
                              for s in native['steps']):

@@ -6,7 +6,7 @@
 namespace cat::belly {
 
 inline bool SpeciesRig(Character character) {
-    return IsValid(character) && static_cast<int>(character) >= 2;
+    return character!=Character::OddEye && IsValid(character) && static_cast<int>(character) >= 2;
 }
 inline deform::Point HeadAnchor(Character character) {
     return SpeciesRig(character) ? deform::Point{.70,.42} : deform::Point{.57,.40};

@@ -11,6 +11,9 @@
 107 RCDATA "../assets/cream-recline.png"
 110 RCDATA "../assets/cream-hang.png"
 112 RCDATA "../assets/cream-sleep.png"
+130 RCDATA "../assets/cursor-rig/forelimbs.png"
+131 RCDATA "../assets/cursor-rig/forelimbs-tuxedo.png"
+132 RCDATA "../assets/cursor-rig/forelimbs-odd-eye.png"
 193 RCDATA "../assets/care-sprites/box-prop.png"
 1 RT_MANIFEST "app.manifest"
 

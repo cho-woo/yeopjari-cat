@@ -108,7 +108,7 @@ bool Supported(const cat::animation::Pose& pose) {
 }
 int Simulate(Row& row,std::string& context) {
     native_manual_motion_tests::Host host;host.Reset(row.character,true);
-    g.workInterference=false;g.facing=g.direction=1;
+    g.workInterference=false;g.cursorPlay=false;g.facing=g.direction=1;
     SetMotion(Motion::Idle,60000,host.now);host.Rebase();g.groundArtBridge.Reset(host.now);
     const auto saved=host.Saved();const auto start=host.now;
     row.startX=g.physics.RenderPose().x;

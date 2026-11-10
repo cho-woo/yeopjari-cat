@@ -30,7 +30,7 @@ struct Schedule {
 
 int Simulate(Row& row,const Schedule& schedule,std::string& context) {
     native_manual_motion_tests::Host host;
-    host.Reset(row.character,true);g.workInterference=false;
+    host.Reset(row.character,true);g.workInterference=false;g.cursorPlay=false;
     // CareFood deliberately persists accepted meals. Its real dispatcher is
     // exercised against an isolated fixture, without loading a user profile.
     g.directory=L"render-self-test/motion-video/fixture-"+std::to_wstring(static_cast<unsigned>(row.character));

@@ -43,7 +43,7 @@ inline expression::Landmarks FaceFor(Character character,int frame) {
         {{.655,.356},{.762,.546},{.679,.566}},
         {{.664,.385},{.775,.573},{.690,.577}}
     }};
-    const auto index=IsValid(character)?static_cast<std::size_t>(character):0u;
+    const auto index=IsValid(character)&&character!=Character::OddEye?static_cast<std::size_t>(character):0u;
     return frame==24?side[index]:back[index];
 }
 struct Geometry { double width=0,height=0; };
@@ -75,7 +75,7 @@ inline std::array<Point,2> EarsFor(Character character,int frame) {
         {{{.79167,.05030},{.86425,.12722}}}, {{{.79380,.03333},{.97978,.35641}}},
         {{{.77520,.02895},{.97684,.40263}}}, {{{.76685,.02850},{.97709,.39637}}}
     }};
-    const auto c=IsValid(character)?static_cast<std::size_t>(character):0;
+    const auto c=IsValid(character)&&character!=Character::OddEye?static_cast<std::size_t>(character):0;
     return frame==4?sitting[c]:frame==24?side[c]:back[c];
 }
 struct Triangle { int a=0,b=0,c=0; };

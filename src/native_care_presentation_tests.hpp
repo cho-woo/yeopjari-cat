@@ -28,12 +28,14 @@ int NativeCarePresentationRenderTest(std::string& context) {
     auto& primary=PrimaryCarePresentation();primary.Reset();
     context="single-drawing care boundaries: no ghosting or canvas capture allocation";
     for(auto character:cat::kAvailableCharacters) {
+        if(!EnsureCareCoats(character))return 330;
         for(const auto& pose:{idle,groom,neutral,idle,groom}) {
             const auto actual=draw(pose,&primary,1126,0,false,character);
             if(actual!=draw(pose,nullptr,1126,0,false,character))return 331;
             if(primary.previous.image||primary.from.image||primary.target.image)return 332;
         }
     }
+    if(!EnsureCareCoats(cat::Character::Cream,cat::Character::Tuxedo))return 330;
     // Contact, flight and locomotion take the exact direct path, without a
     // transparent trailing face/paw or delayed physical impact.
     for(const auto motion:{Motion::Punch,Motion::Walk,Motion::Jump}) {

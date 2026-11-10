@@ -317,8 +317,9 @@ int NativeWalkingRenderTest(std::string& context) {
     }
     // The later eight animals retain their existing inverse-warp fallback.
     // Their real source/head/nutrition regressions remain independent below.
-    for(int c=2;c<static_cast<int>(cat::kAvailableCharacters.size());++c)for(int facing:{-1,1}) {
-        const auto character=static_cast<cat::Character>(c);
+    for(const auto character:cat::kAvailableCharacters)for(int facing:{-1,1}) {
+        if(!cat::species::UsesNewArt(character))continue; // Available coats share the original actor, not this retired path.
+        const int c=static_cast<int>(character);
         auto& art=CurrentArt(character);
         const auto& source=art.base.skins[cat::species::UsesNewArt(character)?2:1];
         const double reference=110.0/std::max(1,art.base.standingHeight);

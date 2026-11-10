@@ -12,7 +12,7 @@ bool Near(double a,double b) { return std::abs(a-b)<1e-10; }
 int main() {
     try {
         using namespace cat;
-        for (auto character:{Character::Cream,Character::SilverTabby}) {
+        for (auto character:{Character::Cream,Character::SilverTabby,Character::OddEye}) {
             for (int frame:{4,24,25}) {
                 for (deform::Point point:std::array<deform::Point,4>{{{.15,.55},{.5,.1},{.7,.45},{.9,.95}}})
                     Require(belly::HeadCoverage(character,frame,point)==belly::HeadCoverage(frame,point),"legacy mask changed");
@@ -22,6 +22,7 @@ int main() {
         }
         for (int index=2;index<kCharacterCount;++index) {
             const auto character=static_cast<Character>(index);
+            if(character==Character::OddEye)continue; // White coat shares the exact original Cream geometry.
             Require(belly::HeadCoverage(character,4,{.4,.08})>.99,"canonical ear tip left in body");
             Require(belly::HeadCoverage(character,4,{.72,.45})>.99,"canonical face clipped");
             Require(belly::HeadCoverage(character,24,{.5,.10})>.99,"side ear left behind");

@@ -6,7 +6,9 @@
 namespace native_manual_motion_tests {
 struct Host {
     ULONGLONG now = 0;
+    bool artworkReady=false;
     void Reset(cat::Character character = cat::Character::Cream, bool paused = false) {
+        artworkReady=EnsureCareCoats(character);
         g.window = nullptr; g.initialized = true;
         g.hidden = g.menuOpen = g.dragging = g.closing = false;
         updates.applying = false;
@@ -27,7 +29,7 @@ struct Host {
         g.nutrition.bodyCondition = 50;
         g.work = {120, -180, 2040, 1170}; g.dpiScale = 1.5;
         g.centerX = g.work.left + 400*g.dpiScale; g.direction = g.facing = 1;
-        g.workInterference = true; g.lifeInteractionUntil = 0;
+        g.workInterference = true; g.cursorPlay=false;g.lifeInteractionUntil = 0;
         cursorInteraction = {}; ResetMovement();
         for (int i = 0; i < 12; ++i) g.physics.Update(1./60);
         now = GetTickCount64(); SetMotion(Motion::Idle, 8000); Rebase();
@@ -67,6 +69,7 @@ struct Host {
 
 #include "native_jump_continuity_tests.hpp"
 #include "native_random_zoomies_tests.hpp"
+#include "native_keyboard_super_tests.hpp"
 
 bool MenuCommands(bool enabled) {
     HMENU menu = BuildPetMenu(); if (!menu) return false;
@@ -88,6 +91,8 @@ bool MenuCommands(bool enabled) {
 }
 
 int Run(std::string& proof) {
+    if(const int keyboardSuper=keyboard_native::Run())return keyboardSuper;
+    if(!EnsureCareCoats(cat::Character::Cream,cat::Character::Tuxedo))return 520;
     if(const int randomZoomies=random_zoomies_native::Run())return randomZoomies;
     if(const int jumpContinuity=jump_continuity::Run())return jumpContinuity;
     Host host;
@@ -105,6 +110,7 @@ int Run(std::string& proof) {
     std::ostringstream characters;
     bool first = true;
     for (const auto character : cat::kAvailableCharacters) {
+        if(!EnsureCareCoats(character))return 520;
         double distances[2]{}, peaks[2]{};
         for (unsigned action = 0; action < 2; ++action) {
             host.Reset(character,true);
@@ -244,6 +250,7 @@ int Run(std::string& proof) {
                 before.velocityX != after.velocityX || before.velocityY != after.velocityY) return 534;
         ++unsafe;
     }
+    if(!EnsureCareCoats(cat::Character::Cream,cat::Character::Tuxedo))return 520;
     proof = "{\"schema\":1,\"test\":\"manual-motion-native\",\"status\":\"passed\",\"version\":\""
         YEOPJARI_VERSION_STRING "\",\"mesh_walk_default\":false,\"approved_walk_frames\":" +
         std::to_string(approvedWalkFrames) + ",\"menu_commands\":[2800,2801,2802],\"menu_labels_checked\":true,\"unsafe_states_checked\":" +

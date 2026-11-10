@@ -20,15 +20,14 @@ struct JumpTurnProfile {
     std::uint64_t entryMs=0,exitOffsetMs=0,sideEntryMs=0;
 };
 inline JumpTurnProfile JumpTurns(const cat::sprite_assets::Descriptor& walk) {
-    // This profile names existing source-video poses, not generated frames:
-    // source2..11 turns toward the three-quarter jump drawing; source117..120
-    // continues the recovered jump's slight three-quarter face back to front.
+    // Front20..29 reaches the rig's exact painted source29. From a side gait
+    // reverse47..30 instead of sitting/front-turning48..55 before a jump.
     if(walk.clip!=cat::sprite_sequence::Clip::Walk || walk.nominalFramesPerSecond!=24 ||
             walk.frameCount!=61 || walk.program.intro.count!=28 || walk.program.outro.count!=13 ||
             !walk.sourcePath || std::string_view(walk.sourcePath).find("assets/natural-gait/")!=0)return {};
     return {true,cat::sprite_sequence::Duration(walk.program,{walk.program.intro.first,10}),
         cat::sprite_sequence::Duration(walk.program,{walk.program.outro.first,9}),
-        cat::sprite_sequence::Duration(walk.program,{walk.program.outro.first,8})};
+        cat::sprite_sequence::Duration(walk.program,{walk.program.intro.first+10,18})};
 }
 
 // Presentation-only ground bridge. Box2D still owns displacement/contact and
@@ -37,7 +36,7 @@ class GroundBridge {
 public:
     bool Configure(std::uint64_t introMs,std::uint64_t outroMs,std::uint64_t movementDelayMs=0,
                    std::uint64_t jumpSideEntryMs=0) {
-        if(introMs>86400000||outroMs>86400000||movementDelayMs>introMs||jumpSideEntryMs>outroMs)return false;
+        if(introMs>86400000||outroMs>86400000||movementDelayMs>introMs||jumpSideEntryMs>std::max(introMs,outroMs))return false;
         introMs_=introMs;outroMs_=outroMs;movementDelayMs_=movementDelayMs;jumpSideEntryMs_=jumpSideEntryMs;
         return true;
     }
@@ -46,6 +45,7 @@ public:
         startForSide_=sideAction_=loopReady_=completedOutro_=false;
         jumpAction_=jumpTurnReady_=preparingJump_=startFromSide_=false;
         jumpReturn_=false;
+        connectedReturnMs_=0;
     }
     void Freeze(std::uint64_t milliseconds) {
         started_=Add(started_,milliseconds);lastTick_=Add(lastTick_,milliseconds);
@@ -54,11 +54,17 @@ public:
         carriedAge_=Age();started_=lastTick_=ticks;clockReady_=true;
     }
     void BeginExit(std::uint64_t ticks,std::uint64_t offsetMs=0,bool jumpReturn=false) {
+        connectedReturnMs_=0;
         clockReady_=true;lastTick_=ticks;Begin(Phase::Stopping,ticks);
         carriedAge_=std::min(offsetMs,outroMs_);
         completedOutro_=loopReady_=sideAction_=false;
         jumpReturn_=jumpReturn;
         if(carriedAge_>=outroMs_)FinishExit();
+    }
+    void BeginConnectedJumpExit(std::uint64_t ticks,const cat::sprite_assets::Descriptor& layout) {
+        BeginExit(ticks,0,true);
+        const auto turn=JumpTurns(layout);
+        if(turn.valid)connectedReturnMs_=turn.entryMs;
     }
     bool Update(std::uint64_t ticks,bool requestedTravel,bool grounded,double relativeVelocity,
                 bool allowStart=true,bool sideAction=false,bool jumpAction=false) {
@@ -119,9 +125,9 @@ public:
                 if(outroMs_==0)FinishExit();
             }
         } else if(phase_==Phase::Stopping) {
-            if(requestedSide){phase_=Phase::Side;jumpReturn_=false;}
+            if(requestedSide){phase_=Phase::Side;jumpReturn_=false;connectedReturnMs_=0;}
             else if(moving)Begin(Phase::Braking,ticks);
-            else if(Age()>=outroMs_)FinishExit();
+            else if(Age()>=(connectedReturnMs_?connectedReturnMs_:outroMs_))FinishExit();
         }
         return phase_!=prior;
     }
@@ -143,6 +149,18 @@ public:
         using namespace cat::sprite_sequence;
         if(!cat::sprite_assets::Valid(layout))return {};
         Range range{};std::uint64_t elapsed=Age();
+        const bool reverseEntry=JumpTurns(layout).valid &&
+            ((Starting()&&startFromSide_&&jumpAction_) || (JumpReturning()&&connectedReturnMs_));
+        if(reverseEntry) {
+            range=Starting()?Range{layout.program.intro.first+10,18}:Range{layout.program.intro.first,10};
+            std::uint64_t offset=0;
+            for(unsigned i=0;i<range.count;++i) {
+                const unsigned step=range.first+range.count-1-i;const auto& pose=layout.program.steps[step];
+                if(elapsed<offset+pose.durationMs)return {true,pose.frame,step,elapsed-offset,false};
+                offset+=pose.durationMs;
+            }
+            return {true,layout.program.steps[range.first].frame,range.first,0,true};
+        }
         if(Starting())range=startFromSide_?layout.program.outro:layout.program.intro;
         else if(phase_==Phase::Stopping)range=layout.program.outro;
         else if(Neutral()) {
@@ -175,11 +193,12 @@ private:
         startForSide_=startFromSide_=true;preparingJump_=false;Begin(Phase::Starting,ticks);
     }
     void ReleaseEntrance() {phase_=Phase::Side;if(jumpAction_)jumpTurnReady_=true;else if(!startForSide_)loopReady_=true;}
-    void FinishExit() {phase_=Phase::Neutral;completedOutro_=true;loopReady_=jumpReturn_=false;}
+    void FinishExit() {phase_=Phase::Neutral;completedOutro_=true;loopReady_=jumpReturn_=false;connectedReturnMs_=0;}
     Phase phase_=Phase::Neutral;
     std::uint64_t introMs_=0,outroMs_=0,movementDelayMs_=0,jumpSideEntryMs_=0,started_=0,lastTick_=0,carriedAge_=0;
     bool clockReady_=false,startForSide_=false,sideAction_=false,loopReady_=false,completedOutro_=false;
     bool jumpAction_=false,jumpTurnReady_=false,preparingJump_=false,startFromSide_=false;
     bool jumpReturn_=false;
+    std::uint64_t connectedReturnMs_=0;
 };
 } // namespace cat::video_ground_bridge

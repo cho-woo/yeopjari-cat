@@ -12,6 +12,9 @@ int NativeGroundDriveReview(std::string& context) {
     context="Box2D walking start/speed/stop/reversal at 100/125/150 percent (synthetic DPI)";
     CreateDirectoryW(L"render-self-test/ground-drive",nullptr);
     std::string trace="dpi,tick,lane,x,velocity,travel,phase,frame,facing,waiting,action_elapsed,settled\n";
+    // This established two-column comparison intentionally remains two coats.
+    // Third-coat physical drive is exercised by the shared manual/key fixtures.
+    if(!EnsureCareCoats(cat::Character::Cream,cat::Character::Tuxedo))return 480;
     const auto beforeCache=careSpriteMemory;
     for(double dpi:{1.,1.25,1.5}) {
         Surface canvas,from,to;
@@ -81,7 +84,7 @@ int NativeGroundDriveReview(std::string& context) {
                     const REAL floor=static_cast<REAL>((lane?470:235)*dpi);
                     Pen ground(Color(255,160,170,180),1);graphics.DrawLine(&ground,0.f,floor,static_cast<REAL>(width),floor);
                     graphics.DrawString(lane?L"Current: shared request / stop / display":L"Prior diagnostic: no stop wait",-1,&font,PointF(12*dpi,(lane?265:45)*dpi),&ink);
-                    for(auto character:cat::kAvailableCharacters) {
+                    for(const auto character:{cat::Character::Cream,cat::Character::Tuxedo}) {
                         const REAL center=static_cast<REAL>((physical.x+(character==cat::Character::Tuxedo?360:0))*dpi);
                         const REAL scale=static_cast<REAL>(110*dpi/CurrentArt(character).base.standingHeight);
                         DrawStyledAnimationDirect(graphics,drawing,center,floor,scale,character,cat::Outfit::None,

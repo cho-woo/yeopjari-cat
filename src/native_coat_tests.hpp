@@ -56,6 +56,11 @@ std::uint64_t PixelsHash(const std::vector<std::uint32_t>& pixels) {
 // physical support do not require the same pixels or silhouette.
 int NativeCoatRenderTest(std::string& context) {
     using C=cat::Character;
+    context="three-character availability contract";
+    if(cat::kAvailableCharacters.size()!=3 || cat::kAvailableCharacters[0]!=C::Cream ||
+            cat::kAvailableCharacters[1]!=C::Tuxedo || cat::kAvailableCharacters[2]!=C::OddEye ||
+            !cat::CharacterAvailable(C::OddEye))return 453;
+    if(!EnsureCareCoats(C::Cream,C::Tuxedo))return 453;
     Surface cream,tuxedo,from,to,review;
     if(!cream.Create(420,340)||!tuxedo.Create(420,340)||!from.Create(420,340)||
             !to.Create(420,340)||!review.Create(1200,2400))return 440;
@@ -119,7 +124,7 @@ int NativeCoatRenderTest(std::string& context) {
                     !native_coat_tests::ValidPixels(b.data(),r.width,r.height))return 443;
             // The independently decoded declared PNG must supply these cached
             // pixels; correct metadata alone cannot prove the loader used it.
-            if(b!=expected.framePixels[frame])return 444;
+            if(b!=expected.framePixels[frame]||native_coat_tests::PixelsHash(a)==native_coat_tests::PixelsHash(b))return 444;
             coatPixels+=b.size();
             const auto* creamBuffer=a.data();const auto* tuxedoBuffer=b.data();
             const auto* creamImage=asset->frames[frame].get();const auto* tuxedoImage=asset->tuxedoFrames[frame].get();
@@ -191,5 +196,96 @@ int NativeCoatRenderTest(std::string& context) {
     }
     if(!SaveNativeWalkingReview(*proportions.image,L"render-self-test/reference-proportions-gdi.png"))return 452;
     if(!SaveNativeWalkingReview(*review.image,L"render-self-test/two-cats-gdi.png"))return 450;
-    return 0;
+    // Keep the established two-coat artifacts, then exercise a real cache
+    // rotation. All three textures must never be resident just for this board.
+    Surface three;
+    if(!three.Create(900,2200))return 453;
+    {Graphics graphics(three.image.get());graphics.Clear(Color(255,239,241,242));}
+    struct Acting {const wchar_t* title;cat::animation::Pose pose;};
+    std::array<Acting,10> samples{};
+    samples[0].title=L"Neutral";samples[0].pose.frame=4;
+    const auto authored=[&](unsigned row,cat::sprite_sequence::Clip clip,const wchar_t* name) {
+        samples[row].title=name;samples[row].pose.spriteClip=clip;
+        if(const auto* atlas=LoadedCareSprite(clip,C::Cream))samples[row].pose.spriteFrame=atlas->layout->frameCount/2;
+    };
+    authored(1,cat::sprite_sequence::Clip::Walk,L"Walk");
+    authored(2,cat::sprite_sequence::Clip::Run,L"Run");
+    authored(3,cat::sprite_sequence::Clip::Jump,L"Connected jump400/29");
+    samples[3].pose.jumpRig=true;samples[3].pose.jumpControls={0,.84,.70,.22};
+    samples[4].title=L"Connected groom";samples[4].pose=cat::cursor::GroomPose(1700,1);
+    authored(5,cat::sprite_sequence::Clip::Eat,L"Meal");
+    authored(6,cat::sprite_sequence::Clip::Treat,L"Treat");
+    authored(7,cat::sprite_sequence::Clip::Fish,L"Fish");
+    authored(8,cat::sprite_sequence::Clip::Punch,L"Paw play");
+    samples[9].title=L"Reference nap";samples[9].pose.frame=cat::animation::kReferenceSleepFrame;
+    const auto drawColumn=[&](C character,unsigned column) {
+        for(unsigned row=0;row<samples.size();++row) {
+            if(!draw(cream,character,samples[row].pose) ||
+                    !native_coat_tests::ValidPixels(reinterpret_cast<const std::uint32_t*>(cream.pixels),420,340,true))return false;
+            Graphics graphics(three.image.get());
+            graphics.DrawImage(cream.image.get(),Rect(column*300,row*220+20,300,200),60,110,300,200,UnitPixel);
+            Font font(L"Segoe UI",12,FontStyleRegular,UnitPixel);SolidBrush ink(Color(255,35,45,55));
+            const std::wstring label=std::wstring(cat::CharacterName(character))+L" / "+samples[row].title;
+            graphics.DrawString(label.c_str(),-1,&font,PointF(static_cast<REAL>(column*300+6),static_cast<REAL>(row*220+4)),&ink);
+        }
+        return true;
+    };
+    if(!drawColumn(C::Cream,0)||!drawColumn(C::Tuxedo,1))return 453;
+    context="OddEye native authored-coat cache and SHA256";
+    if(!EnsureCareCoats(C::OddEye,C::Cream))return 453;
+    const auto* oddBase=cat::styled_assets::Find(10,101,cat::styled_assets::kStyledAtlases);
+    const auto* oddActions=cat::styled_assets::Find(10,102,cat::styled_assets::kStyledAtlases);
+    if(!oddBase||!oddActions||CurrentArt(C::OddEye).base.resourceId!=oddBase->resourceId||
+            CurrentArt(C::OddEye).actions.resourceId!=oddActions->resourceId)return 454;
+    unsigned oddFrames=0;std::size_t oddPixels=0;
+    for(const auto& asset:g.careSprites) {
+        const auto& d=*asset->layout;
+        if(d.clip==cat::sprite_sequence::Clip::Box)continue;
+        if(LoadedCareSprite(d.clip,C::OddEye)!=asset.get())return 454;
+        const auto* style=cat::styled_assets::Find(10,d.resourceId,cat::styled_assets::kStyledAtlases);
+        if(!style||CareStyle(*asset,C::OddEye)!=style||!cat::styled_assets::Fits(*style,d))return 454;
+        native_coat_tests::Resource declared;
+        if(!declared.Open(style->resourceId,style->sha256))return 454;
+        CareSpriteAtlas expected;expected.layout=&d;std::size_t pixels=0;
+        if(!PrepareCareSpriteFrames(expected,*declared.image,pixels))return 454;
+        for(unsigned frame=0;frame<d.frameCount;++frame) {
+            context="OddEye native clip="+std::to_string(static_cast<unsigned>(d.clip))+" frame="+std::to_string(frame);
+            const auto& cached=CarePixels(*asset,C::OddEye,frame);const auto& r=d.frames[frame].rect;
+            auto* image=CareFrame(*asset,C::OddEye,frame);
+            if(cached!=expected.framePixels[frame]||!image||
+                    !native_coat_tests::ValidPixels(cached.data(),r.width,r.height)||
+                    native_coat_tests::PixelsHash(cached)==native_coat_tests::PixelsHash(asset->framePixels[frame]))return 455;
+            const auto* address=cached.data();const auto capacity=cached.capacity(),hash=native_coat_tests::PixelsHash(cached);
+            cat::animation::Pose pose;pose.spriteClip=d.clip;pose.spriteFrame=frame;
+            for(bool flip:{false,true}) {
+                pose.flip=flip;
+                if(!draw(cream,C::OddEye,pose)||
+                        !native_coat_tests::ValidPixels(reinterpret_cast<const std::uint32_t*>(cream.pixels),420,340,true)||
+                        cached.data()!=address||cached.capacity()!=capacity||native_coat_tests::PixelsHash(cached)!=hash||
+                        CareFrame(*asset,C::OddEye,frame)!=image)return 455;
+            }
+            ++oddFrames;oddPixels+=cached.size();
+        }
+    }
+    if(oddPixels+careSpriteMemory.residentPixels>cat::sprite_assets::kMaxResidentPixels||!drawColumn(C::OddEye,2))return 456;
+    for(int frame:{0,1,2,3,4,5,6,7,8,12,24,25,26,27,28}) {
+        cat::animation::Pose pose;pose.frame=frame;
+        if(!draw(cream,C::OddEye,pose)||
+                !native_coat_tests::ValidPixels(reinterpret_cast<const std::uint32_t*>(cream.pixels),420,340,true))return 456;
+    }
+    if(!SaveNativeWalkingReview(*three.image,L"render-self-test/three-cats-gdi.png"))return 456;
+    if(!EnsureCareCoats(C::Cream,C::Tuxedo))return 457;
+    for(const auto& asset:g.careSprites) {
+        if(asset->layout->clip==cat::sprite_sequence::Clip::Box)continue;
+        for(unsigned frame=0;frame<asset->layout->frameCount;++frame)
+            if(!CarePixels(*asset,C::OddEye,frame).empty()||CareFrame(*asset,C::OddEye,frame)||
+                    !CareFrame(*asset,C::Tuxedo,frame))return 457;
+    }
+    std::ostringstream result;
+    result<<"{\"schema\":1,\"test\":\"three-coats-native\",\"status\":\"passed\","
+        "\"characters\":[0,8,10],\"render_source\":\"Windows GDI+\",\"desktop_recording\":false,"
+        "\"odd_eye_authored_frames_verified\":"<<oddFrames<<",\"odd_eye_authored_pixels\":"<<oddPixels
+        <<",\"all_frame_sha_and_render_checked\":true,\"cache_rotation_restored_two_live_coats\":true,"
+        "\"connected_jump_source\":[400,29],\"board\":\"three-cats-gdi.png\"}\n";
+    return WriteBytes(L"render-self-test/three-cats-gdi.json",result.str())?0:457;
 }

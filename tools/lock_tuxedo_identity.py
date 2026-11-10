@@ -13,10 +13,10 @@ from PIL import Image,ImageChops,ImageFilter,ImageMath
 ROOT=Path(__file__).resolve().parents[1]
 
 CURVE_INPUT=[0,10,25,50,80,110,145,175,195,220,255]
-CURVE_OUTPUT=[0,15,29,43,55,67,125,211,229,238,250]
+CURVE_OUTPUT=[38,42,54,70,84,98,149,206,229,239,248]
 
 def sha(path):return hashlib.sha256(Path(path).read_bytes()).hexdigest()
-def spec():return {'schema':1,'method':'shared_neutral_fur_palette_rgb_only','curve_input':CURVE_INPUT,'curve_output':CURVE_OUTPUT,'preserve':'semantic props; original pink skin/blush; original olive-gold iris and eye ink; all original alpha','new_motion_poses':0}
+def spec():return {'schema':1,'method':'shared_soft_charcoal_cream_fur_rgb_only','curve_input':CURVE_INPUT,'curve_output':CURVE_OUTPUT,'dark_fur_rgb':[69,75,86],'light_fur_rgb':[241,232,219],'preserve':'semantic props; original pink skin/blush; original olive-gold iris and eye ink; all original alpha','new_motion_poses':0}
 
 def tone(value):
     for i in range(1,len(CURVE_INPUT)):
@@ -43,7 +43,14 @@ def material_masks(image,prop_mask=None):
     skin=both(both(skin,r.point(lambda v:255 if v>90 else 0)),chroma.point(lambda v:255 if v>25 else 0))
     h,s,v=rgb.convert('HSV').split()
     iris=both(both(h.point(lambda x:255 if 28<=x<=85 else 0),s.point(lambda x:255 if x>65 else 0)),v.point(lambda x:255 if x>35 else 0)).filter(ImageFilter.MaxFilter(9))
-    ink=maximum.point(lambda x:255 if x<25 else 0)
+    # Near-black tail/back material is fur, not eye ink. Protect dark pixels
+    # only around the authored iris and pink facial features; otherwise the
+    # old coat's almost-black flecks survive as harsh spots on blue charcoal.
+    # A thresholded Gaussian support provides the same feather-safe facial
+    # guard without an expensive 51x51 rank filter in every offline check.
+    facial=either(iris.filter(ImageFilter.GaussianBlur(8)).point(lambda x:255 if x else 0),
+                  skin.filter(ImageFilter.GaussianBlur(3)).point(lambda x:255 if x else 0))
+    ink=both(maximum.point(lambda x:255 if x<25 else 0),facial)
     props=Image.new('L',image.size)
     if prop_mask is not None:
         if prop_mask.size!=image.size:raise ValueError('Prop preservation mask canvas mismatch')
@@ -54,7 +61,14 @@ def material_masks(image,prop_mask=None):
 
 def apply_palette(image:Image.Image,prop_mask:Image.Image|None=None):
     masks=material_masks(image,prop_mask);source=masks['source'];rgb=masks['rgb']
-    y=rgb.convert('L',(.2126,.7152,.0722,0));neutral=y.point([tone(x) for x in range(256)]).convert('RGB')
+    y=rgb.convert('L',(.2126,.7152,.0722,0))
+    # Blue charcoal shadows and warm ivory highlights soften the old pure
+    # black/white contrast. One shared material curve is baked offline.
+    values=[tone(x) for x in range(256)]
+    def channel(offset_low,offset_high):
+        return y.point([max(0,min(255,round(value+(offset_low*(1-min(1,max(0,(value-105)/105)))+
+            offset_high*min(1,max(0,(value-105)/105)))))) for value in values])
+    neutral=Image.merge('RGB',(channel(0,0),channel(6,-7),channel(17,-18)))
     result=Image.composite(neutral,rgb,masks['fur']).convert('RGBA');result.putalpha(source.getchannel('A'))
     assert result.getchannel('A').tobytes()==source.getchannel('A').tobytes()
     assert not both(maxdiff(result.convert('RGB'),rgb),masks['protected']).getbbox()

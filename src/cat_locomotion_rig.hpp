@@ -17,7 +17,7 @@ struct Profile {
     bool fourLegs=false;
 };
 inline Profile ProfileFor(Character c) {
-    if(c==Character::Cream||c==Character::SilverTabby)return {.72,.81,.72,.82,.12,.10,.53,.085,true};
+    if(c==Character::Cream||c==Character::SilverTabby||c==Character::OddEye)return {.72,.81,.72,.82,.12,.10,.53,.085,true};
     if(c==Character::Rabbit)return {.77,.82,.76,.86,.10};
     if(c==Character::Munchkin)return {.74,.82,.72,.84};
     return {};

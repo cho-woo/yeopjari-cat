@@ -11,6 +11,9 @@ namespace cat::toy {
 // Transient interaction state only; this module never changes pet save records.
 enum class Kind { None, Ball, Box, PaperBag, Catnip, FishingRod, Cushion };
 
+// Keep the stored IDs and archived container geometry readable, while runtime
+// placement and automatic selection exclude both retired container events.
+inline bool Retired(Kind kind) { return kind==Kind::Box||kind==Kind::PaperBag; }
 inline bool IsContainer(Kind kind) { return kind == Kind::Box || kind == Kind::PaperBag; }
 inline bool UsesCenter(Kind kind) {
     return IsContainer(kind) || kind == Kind::Catnip || kind == Kind::Cushion;
@@ -235,9 +238,8 @@ public:
     double ActiveSeconds() const { return activeSeconds_; }
 
     static Kind Choose(std::uint32_t entropy) {
-        constexpr Kind catalog[]{Kind::Ball, Kind::PaperBag,
-                                 Kind::Catnip, Kind::FishingRod, Kind::Cushion};
-        return catalog[entropy % 5];
+        constexpr Kind catalog[]{Kind::Ball,Kind::Catnip,Kind::FishingRod,Kind::Cushion};
+        return catalog[entropy % 4];
     }
     static double Delay(bool first, std::uint32_t entropy) {
         const double fraction = static_cast<double>(entropy) / 4294967295.0;

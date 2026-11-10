@@ -419,7 +419,7 @@ int main(){return 0;}
 
     def test_invalid_manifest_is_rejected_before_any_output_changes(self):
         good=self.entry();baseline={name:(self.root/name).read_bytes() for name in (importer.HEADER,importer.RC)}
-        bad_entries=[dict(good,columns=3),dict(good,rows=5),dict(good,character=10),dict(good,character=True),
+        bad_entries=[dict(good,columns=3),dict(good,rows=5),dict(good,character=11),dict(good,character=True),
                      dict(good,reference_height=0),dict(good,reference_height=float('nan')),dict(good,reference_height=True),
                      dict(good,reference_height=10**400),dict(good,source='missing.png'),dict(good,clip='walk'),
                      dict(good,frames=[]),dict(good,anchor=[17,16]),dict(good,anchor=[-1,16]),dict(good,anchor=[0,float('inf')])]

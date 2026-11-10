@@ -120,7 +120,7 @@ void RebasedHostClockRetainsTheWholeEntrance() {
 }
 void JumpUsesMatchingRealTurnEndpoints() {
     const auto d=Layout();const auto turn=cat::video_ground_bridge::JumpTurns(d);
-    CHECK(turn.valid&&turn.entryMs==417&&turn.exitOffsetMs==375&&turn.sideEntryMs==333);
+    CHECK(turn.valid&&turn.entryMs==417&&turn.exitOffsetMs==375&&turn.sideEntryMs==750);
     Bridge b;b.Configure(1167,542,turn.entryMs,turn.sideEntryMs);
     b.Update(1000,false,true,0,true,true,true);CHECK(b.StartingForSideAction()&&b.Sample(d).frame==20);
     b.Update(1416,false,true,0,true,true,true);CHECK(b.Starting()&&b.Sample(d).frame==29&&b.HoldMotor());
@@ -128,14 +128,18 @@ void JumpUsesMatchingRealTurnEndpoints() {
     b.Update(1500,false,true,0,true,true,true);CHECK(b.Side()); // Crouch cannot restart its turn.
     b.Reset();b.Update(2000,true,true,81.6);CHECK(b.Side());
     b.Update(2100,false,true,81.6,true,true,true);CHECK(b.Braking()&&!b.Sample(d).valid);
-    b.Update(2200,false,true,.4,true,true,true);CHECK(b.StartingForSideAction()&&b.Sample(d).frame==48);
-    b.Update(2532,false,true,0,true,true,true);CHECK(b.Starting()&&b.Sample(d).frame==55);
-    b.Update(2533,false,true,0,true,true,true);CHECK(b.Side()&&!b.ConsumeLoopReady());
-    b.Update(2633,false,true,0,true,true,true);CHECK(b.Side());
+    b.Update(2200,false,true,.4,true,true,true);CHECK(b.StartingForSideAction()&&b.Sample(d).frame==47);
+    b.Update(2949,false,true,0,true,true,true);CHECK(b.Starting()&&b.Sample(d).frame==30);
+    b.Update(2950,false,true,0,true,true,true);CHECK(b.Side()&&!b.ConsumeLoopReady());
+    b.Update(3050,false,true,0,true,true,true);CHECK(b.Side());
     b.Reset();b.Configure(1167,542,500);b.BeginExit(5000,turn.exitOffsetMs,true);
     CHECK(b.Stopping()&&b.JumpReturning()&&b.Sample(d).frame==57&&b.HoldMotor());
     b.Update(5166,false,true,0);CHECK(b.Stopping()&&b.Sample(d).frame==60);
     b.Update(5167,false,true,0);CHECK(b.Neutral()&&!b.JumpReturning()&&b.Sample(d).frame==60);
+    b.Reset();b.Configure(1167,542,500);b.BeginConnectedJumpExit(6000,d);
+    CHECK(b.JumpReturning()&&b.Sample(d).frame==29);
+    b.Update(6416,false,true,0);CHECK(b.Stopping()&&b.Sample(d).frame==20);
+    b.Update(6417,false,true,0);CHECK(b.Neutral()&&!b.JumpReturning());
     auto legacy=d;legacy.nominalFramesPerSecond=0;CHECK(!cat::video_ground_bridge::JumpTurns(legacy).valid);
 }
 }

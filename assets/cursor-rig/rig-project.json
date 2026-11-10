@@ -1,0 +1,81 @@
+{
+  "schema": 1,
+  "source": "assets/cursor-rig/source-parts.png",
+  "output": "assets/cursor-rig/forelimbs.png",
+  "purpose": "Purpose-painted arm palm surfaces and concealed chest fur. Original source4 head, tail, outer hips and supporting hind soles stay in use.",
+  "new_original_art": "Two purpose-painted component boards, no independently painted full-cat animation frames",
+  "canonical_size": [
+    329,
+    366
+  ],
+  "reference_height": 367,
+  "forelimbs": [
+    {
+      "id": "left",
+      "painted_joint_path": [
+        [
+          1000,
+          170
+        ],
+        [
+          1040,
+          480
+        ],
+        [
+          1320,
+          315
+        ]
+      ],
+      "painted_half_width": 185,
+      "painted_length": 780
+    },
+    {
+      "id": "right",
+      "painted_joint_path": [
+        [
+          1990,
+          170
+        ],
+        [
+          1950,
+          480
+        ],
+        [
+          1660,
+          315
+        ]
+      ],
+      "painted_half_width": 185,
+      "painted_length": 780
+    }
+  ],
+  "runtime_controls": [
+    "rise",
+    "leftLift",
+    "rightLift",
+    "aimX",
+    "groom",
+    "lowReach"
+  ],
+  "grounded_support_uv": [
+    [
+      0.33,
+      0.98
+    ],
+    [
+      0.81,
+      0.98
+    ]
+  ],
+  "maximum_rise_of_head_fraction": 0.1,
+  "rebuild": "python3 tools/author_cursor_parts.py",
+  "status": "Render and inspect source seam, coat, paw and contact proofs before visual approval",
+  "body_source": "assets/cursor-rig/source-torso.png",
+  "atlas_cells": 3,
+  "cells": {
+    "left_arm": 0,
+    "right_arm": 1,
+    "connected_torso": 2
+  },
+  "original_support_preserved": true
+}

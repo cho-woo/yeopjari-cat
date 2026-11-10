@@ -11,14 +11,14 @@ namespace cat {
 
 // Appearance is independent of birthday and care records. Schema 2 adds outfits
 // while remaining fully compatible with schema-1 character-only saves.
-enum class Character { Cream = 0, SilverTabby = 1, Black = 2, Calico = 3, Siamese = 4, Munchkin = 5, Dog = 6, Rabbit = 7, Tuxedo = 8, British = 9 };
-constexpr int kCharacterCount = 10; // Serialized ID range, not available menu entries.
+enum class Character { Cream = 0, SilverTabby = 1, Black = 2, Calico = 3, Siamese = 4, Munchkin = 5, Dog = 6, Rabbit = 7, Tuxedo = 8, British = 9, OddEye = 10 };
+constexpr int kCharacterCount = 11; // Serialized ID range, not available menu entries.
 constexpr int kLegacyCharacterCount = kCharacterCount;
-// Stable retired IDs remain readable in old records. Only Cream/Tuxedo are offered
+// Stable retired IDs remain readable in old records. Only the three available coats are offered
 // or loaded by the application; changing appearance never replaces a pet.
-constexpr std::array<Character,2> kAvailableCharacters{{Character::Cream,Character::Tuxedo}};
-inline bool CharacterAvailable(Character c) noexcept { return c==Character::Cream || c==Character::Tuxedo; }
-inline Character AvailableCharacter(Character c) noexcept { return c==Character::Tuxedo?c:Character::Cream; }
+constexpr std::array<Character,3> kAvailableCharacters{{Character::Cream,Character::Tuxedo,Character::OddEye}};
+inline bool CharacterAvailable(Character c) noexcept { return c==Character::Cream || c==Character::Tuxedo || c==Character::OddEye; }
+inline Character AvailableCharacter(Character c) noexcept { return CharacterAvailable(c)?c:Character::Cream; }
 enum class Outfit { None = 0, BowTie = 1, Scarf = 2, Crown = 3, Santa = 4, FishHat = 5, Tie = 6, Hoodie = 7, Sunglasses = 8, Shark = 9, Dinosaur = 10, Pumpkin = 11, Birthday = 12 };
 constexpr int kOutfitCount = 13;
 struct Preferences { Character character = Character::Cream; Outfit outfit = Outfit::None; };
@@ -42,6 +42,7 @@ inline const wchar_t* CharacterName(Character character) noexcept {
         case Character::Rabbit: return L"옆자리 토끼";
         case Character::Tuxedo: return L"턱시도냥";
         case Character::British: return L"브리티시냥";
+        case Character::OddEye: return L"오드아이 눈꽃냥";
         default: return L"알 수 없는 고양이";
     }
 }
@@ -64,7 +65,7 @@ inline const wchar_t* OutfitName(Outfit outfit) noexcept {
     }
 }
 inline const char* CharacterKey(Character c) noexcept {
-    static constexpr std::array<const char*, kLegacyCharacterCount> keys{{"cream", "silver_tabby", "black", "calico", "siamese", "munchkin", "dog", "rabbit", "tuxedo", "british"}};
+    static constexpr std::array<const char*, kLegacyCharacterCount> keys{{"cream", "silver_tabby", "black", "calico", "siamese", "munchkin", "dog", "rabbit", "tuxedo", "british", "odd_eye"}};
     return IsValid(c) ? keys[static_cast<std::size_t>(c)] : "cream";
 }
 inline const char* OutfitKey(Outfit o) noexcept {

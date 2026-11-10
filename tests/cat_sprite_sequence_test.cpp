@@ -618,7 +618,7 @@ void ProgramAndAtlasValidationRejectUnsafeInputs() {
         CHECK(!(walkId>=301&&walkId<=314));CHECK(!(runId>=301&&runId<=314));
         CHECK(walkId!=193&&runId!=193); // Existing empty-box prop remains separate.
     }
-    CHECK(ResourceId(Clip::None,0)==0&&ResourceId(Clip::Walk,10)==0);
+    CHECK(ResourceId(Clip::None,0)==0&&ResourceId(Clip::Walk,11)==0);
 }
 
 void ToyPawUsesTheCommonActorAndThePhysicalContactWindow() {

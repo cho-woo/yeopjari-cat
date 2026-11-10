@@ -6,10 +6,12 @@
 #include "cat_deformation.hpp"
 #include "cat_expression.hpp"
 #include "cat_idle_gestures.hpp"
+#include "cat_cursor_reach_rig.hpp"
 #include "cat_gait.hpp"
 #include "cat_walk_dynamics.hpp"
 #include "cat_sprite_sequence.hpp"
 #include "cat_authored_locomotion.hpp"
+#include "cat_jump_animation.hpp"
 
 namespace cat::animation {
 
@@ -51,7 +53,10 @@ struct Pose {
     bool groundContact = true;
     bool bellyRig = false;
     cat::expression::Face face;
+    cat::cursor_rig::Controls cursorReach{}; // Grounded, connected two-paw reach.
     bool idleActing=false; // Only the connected microgesture renderer may use its bounded display-size raster cache.
+    bool jumpRig=false;
+    cat::jump_animation::Controls jumpControls{};
     bool walkingRig=false;
     bool originalWalk=false;
     bool jointWalk=false;
@@ -78,7 +83,7 @@ inline void UseAuthoredSprite(Pose& pose) {
     pose.x=pose.lift=pose.angle=0;pose.scaleX=pose.scaleY=1;
     pose.centerPivot=pose.bellyRig=false;pose.blendFrame=-1;pose.blend=0;
     pose.joints={};pose.face={};
-    pose.idleActing=false;
+    pose.idleActing=false;pose.cursorReach={};
 }
 
 inline std::uint64_t ReferenceSleepIntroMs(const cat::sprite_sequence::Program* program=nullptr,unsigned sheetFrames=0) {

@@ -9,7 +9,7 @@ int NativeReferenceSleepTest(std::string& context) {
     constexpr int width=260,height=240;
     constexpr REAL center=130,floor=220,desiredHeight=110;
     Surface canvas,review,neutralReview;
-    if(!canvas.Create(width,height)||!review.Create(width*7,height*2)||!neutralReview.Create(width*3,height*2))return 650;
+    if(!canvas.Create(width,height)||!review.Create(width*7,height*static_cast<int>(cat::kAvailableCharacters.size()))||!neutralReview.Create(width*3,height*static_cast<int>(cat::kAvailableCharacters.size())))return 650;
     {Graphics graphics(review.image.get());graphics.Clear(Color(255,241,242,243));}
     {Graphics graphics(neutralReview.image.get());graphics.Clear(Color(255,241,242,243));}
     std::ostringstream report;report.imbue(std::locale::classic());
@@ -18,9 +18,10 @@ int NativeReferenceSleepTest(std::string& context) {
         "\"source_asset\":\"assets/cat.png\",\"base_resource_id\":101,\"source_frame\":6,\"neutral_source_frame\":4,\"new_motion_drawings\":0,\"characters\":[";
     unsigned row=0;
     for(const auto character:cat::kAvailableCharacters) {
+        if(!EnsureCareCoats(character))return 650;
         context="native exact curled sleep character="+std::to_string(static_cast<unsigned>(character));
         g.preferences={character,cat::Outfit::None};g.waitingForStop=false;g.jumpPending=g.jumpLaunched=false;
-        g.facing=g.direction=1;g.landedAt=0;g.perch={};g.workInterference=false;cursorInteraction={};
+        g.facing=g.direction=1;g.landedAt=0;g.perch={};g.workInterference=false;g.cursorPlay=false;cursorInteraction={};
         g.toyEngaged=g.approachingToy=g.approachingUser=false;g.pendingCare=-1;
         const auto utc=UtcNow();g.pet=cat::NewPet(utc-366*cat::life::Day);g.pet.updatedUtc=utc;
         g.nutrition=cat::nutrition::NewState(g.pet.bornUtc,utc,80);g.nutrition.bodyCondition=50;
@@ -55,7 +56,7 @@ int NativeReferenceSleepTest(std::string& context) {
         };
         paintReference(6);
         const std::vector<BYTE> reference(canvas.pixels,canvas.pixels+width*height*4);
-        const std::string coat=character==cat::Character::Cream?"cream":"tuxedo";
+        const std::string coat=character==cat::Character::Cream?"cream":character==cat::Character::OddEye?"odd_eye":"tuxedo";
         const std::wstring wideCoat(coat.begin(),coat.end());
         const auto save=[&](const std::wstring& file,unsigned column) {
             if(!SaveNativeWalkingReview(*canvas.image,(L"render-self-test/sleep-reference/"+file).c_str()))return false;
@@ -149,5 +150,6 @@ int NativeReferenceSleepTest(std::string& context) {
     if(!SaveNativeWalkingReview(*review.image,L"render-self-test/sleep-reference/sleep-reference-hold.png")||
             !SaveNativeWalkingReview(*neutralReview.image,L"render-self-test/sleep-reference/reference-neutral-hold.png")||
             !WriteBytes(L"render-self-test/sleep-reference/report.json",report.str()))return 651;
-    context="primary and companion retain exact curled base6 for both coats at registered scale/support";return 0;
+    if(!EnsureCareCoats(cat::Character::Cream,cat::Character::Tuxedo))return 650;
+    context="primary and companion retain exact curled base6 for all three coats at registered scale/support";return 0;
 }

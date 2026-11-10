@@ -104,7 +104,7 @@ def prepare_import(root,manifest_path=None,check=False,require_character=None):
         name=f'atlases[{index}]'
         require(isinstance(item,dict) and set(item)<=fields and
                 {'character','base_resource_id','resource_id','source'}<=set(item),f'{name}: invalid fields')
-        character=integer(item['character'],name+'.character',1,9)
+        character=integer(item['character'],name+'.character',1,10)
         base=integer(item['base_resource_id'],name+'.base_resource_id',1,499)
         resource=integer(item['resource_id'],name+'.resource_id',500,9999)
         require(base in originals,f'{name}: unknown base atlas {base}')
@@ -144,7 +144,7 @@ def prepare_import(root,manifest_path=None,check=False,require_character=None):
         resources.add(resource);pairs.add((character,base))
     entries.sort(key=lambda atlas:(atlas['character'],atlas['base_resource_id']))
     if require_character is not None:
-        integer(require_character,'required character',1,9)
+        integer(require_character,'required character',1,10)
         missing=sorted(set(originals)-{base for character,base in pairs if character==require_character})
         require(not missing,f'Incomplete character {require_character}; missing base atlases {missing}')
     canonical={'schema':1,'design':manifest['design'],'atlases':entries}

@@ -213,9 +213,10 @@ void AutomaticTimingAndArbitration() {
     CHECK(Automatic::Delay(false,UINT32_MAX)==420);
     std::vector<Kind> catalog;
     static_assert(static_cast<int>(Kind::Box)==2 && static_cast<int>(Kind::PaperBag)==3);
-    for (unsigned entropy=0;entropy<5;++entropy) catalog.push_back(Automatic::Choose(entropy));
-    CHECK((catalog==std::vector<Kind>{Kind::Ball,Kind::PaperBag,Kind::Catnip,Kind::FishingRod,Kind::Cushion}));
-    for (unsigned entropy=0;entropy<1000;++entropy) CHECK(Automatic::Choose(entropy)!=Kind::Box);
+    for (unsigned entropy=0;entropy<4;++entropy) catalog.push_back(Automatic::Choose(entropy));
+    CHECK((catalog==std::vector<Kind>{Kind::Ball,Kind::Catnip,Kind::FishingRod,Kind::Cushion}));
+    CHECK(Retired(Kind::Box)&&Retired(Kind::PaperBag)&&!Retired(Kind::Cushion));
+    for (unsigned entropy=0;entropy<1000;++entropy) CHECK(!Retired(Automatic::Choose(entropy)));
     Automatic automatic;
     AutoInput input; input.eligible=true;
     CHECK(AdvanceAutomatic(automatic,input,45).action==AutoAction::None);
@@ -350,15 +351,15 @@ void LongAuthoredBoxProgramsKeepTheirCompleteDuration() {
 void AutomaticWatchdog() {
     using namespace cat::toy;
     Automatic automatic; AutoInput input; input.eligible=true;
-    CHECK(AdvanceAutomatic(automatic,input,91,1).kind==Kind::PaperBag);
-    input.visibleKind=Kind::PaperBag; input.phase=Phase::Approach; input.protectedUse=true;
+    CHECK(AdvanceAutomatic(automatic,input,91,1).kind==Kind::Catnip);
+    input.visibleKind=Kind::Catnip; input.phase=Phase::Approach; input.protectedUse=true;
     CHECK(AdvanceAutomatic(automatic,input,120).action==AutoAction::None);
     CHECK(automatic.WaitingToRetire());
     input.paused=true; input.protectedUse=false;
     CHECK(automatic.Advance(.25,input,0).action==AutoAction::None);
     input.paused=false;
     const auto result=automatic.Advance(.25,input,0);
-    CHECK(result.action==AutoAction::Retire && result.kind==Kind::PaperBag && result.timedOut);
+    CHECK(result.action==AutoAction::Retire && result.kind==Kind::Catnip && result.timedOut);
     CHECK(automatic.ActiveKind()==Kind::None);
 }
 }

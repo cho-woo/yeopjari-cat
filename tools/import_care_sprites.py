@@ -212,7 +212,7 @@ def load_entries(manifest_path):
         require(isinstance(entry,dict) and required<=set(entry) and set(entry)<=required|optional,f'{label}: unsupported or missing fields')
         name=entry['clip'];require(isinstance(name,str) and name in LAYOUT,f'{label}: unknown clip')
         require(schema==2 or name not in ('walk','run'),f'{label}: locomotion requires schema2 and a sequence')
-        clip_index,enum,columns,rows=LAYOUT[name];character=integer(entry['character'],label+'.character',0,9)
+        clip_index,enum,columns,rows=LAYOUT[name];character=integer(entry['character'],label+'.character',0,10)
         require((name,character) not in seen,f'{label}: duplicate character/clip')
         seen.add((name,character))
         permitted={(columns,rows)}|({(4,2)} if name=='sleep' else set())

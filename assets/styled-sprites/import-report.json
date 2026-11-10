@@ -1,9 +1,10 @@
 {
   "schema": 1,
-  "design": "tuxedo-unified-identity-20261110-v24",
-  "atlases": 16,
+  "design": "soft-charcoal-tuxedo-and-snowdrop-odd-eye-v26",
+  "atlases": 32,
   "characters": [
-    8
+    8,
+    10
   ],
   "resource_ids": [
     500,
@@ -21,12 +22,29 @@
     513,
     514,
     515,
-    516
+    516,
+    600,
+    601,
+    602,
+    603,
+    604,
+    605,
+    606,
+    607,
+    608,
+    609,
+    610,
+    611,
+    612,
+    613,
+    614,
+    615
   ],
   "complete_characters": [
-    8
+    8,
+    10
   ],
-  "sheet_pixels": 26500459,
+  "sheet_pixels": 53000918,
   "largest_decoded_atlas_bytes": 25546752,
   "sources": [
     {
@@ -36,7 +54,7 @@
       "source": "c8-r101.png",
       "image_width": 1774,
       "image_height": 887,
-      "sha256": "6b449bb6ba56e84aa0be4b33c4f6f35e48bfc443286c8ba6ede43978d556bbfe",
+      "sha256": "7eb2ebc90106cfd67e6dafb3177b1b35a6269b6283b5916e3aea434932b5f42a",
       "base_source": "assets/cat.png",
       "base_sha256": "f92c5b30167b8978252c812af65ac99ec5be1e7c79fffa1bf3d94810b25d9803"
     },
@@ -47,7 +65,7 @@
       "source": "c8-r102.png",
       "image_width": 1774,
       "image_height": 887,
-      "sha256": "b56749ab4e5ccbd8f4a2d327aab76d687d2e43aa8422c50cbdf9464f152aaec6",
+      "sha256": "179c719f36fd4ed17daa3b7b2709ff41e21fd4e954551eb971eb7ee0dc3269fa",
       "base_source": "assets/cat-actions.png",
       "base_sha256": "01d3cb47c255b2e6394c154419c1a18719815135856eb7585e60153aab437bc5"
     },
@@ -58,7 +76,7 @@
       "source": "c8-r105.png",
       "image_width": 738,
       "image_height": 714,
-      "sha256": "39245e101df791daee730d88cb31c0ddf4be4cc06a91fc6f459b82fa23d41d82",
+      "sha256": "837b9de4826df664381c297f440a00b3e2093b21ac66d63e6b7f0c027b162d74",
       "base_source": "assets/cream-extra.png",
       "base_sha256": "c41e7894a60299a816d239a8bfe1233860768acb2039278d0eea26cd73f1c295"
     },
@@ -69,7 +87,7 @@
       "source": "c8-r106.png",
       "image_width": 744,
       "image_height": 762,
-      "sha256": "64d17a4990a34cd3a5d7e97fb2f4b1c69baca09ca7a62937a330519c363a4d23",
+      "sha256": "0774d1f9ce1f3f32798032cbcfb010aa56b88566d579f2a7f877cc24c3783884",
       "base_source": "assets/cream-gestures.png",
       "base_sha256": "89fd56d111734cab662099f053a8892189f19d406089f067db99d7ed3fba773a"
     },
@@ -80,7 +98,7 @@
       "source": "c8-r107.png",
       "image_width": 1422,
       "image_height": 370,
-      "sha256": "7eae39e26515639323f6002144cec786c3b5fc9871b023d3a44559ca70325287",
+      "sha256": "d5ec4f049406bcb650a6a3c36501c62975c85d28bcd27a90b25489568598360b",
       "base_source": "assets/cream-recline.png",
       "base_sha256": "4f5daddeb2c0f3006cec433b12f51267a2546f507bd6df17cdac8468c0a09439"
     },
@@ -91,7 +109,7 @@
       "source": "c8-r110.png",
       "image_width": 243,
       "image_height": 487,
-      "sha256": "c821fa1d72d7f6ea97e477ead897478f5e456381fcc3a9c2f33c083909b7aed3",
+      "sha256": "5e6896cd1469aa42f4de7e44c52665daecad8e5c64f9ddc5fc5460713a39b954",
       "base_source": "assets/cream-hang.png",
       "base_sha256": "37919d0c3626a22aa8ba59594f54a6baec677ab91638c31a04fe7f65a3b9d039"
     },
@@ -102,7 +120,7 @@
       "source": "c8-r112.png",
       "image_width": 598,
       "image_height": 199,
-      "sha256": "e3db7b19ccd30aa16e462fe566fde2de6f0c178af616c8b52f71728305069fb5",
+      "sha256": "03248fbdd0d69981a3d654c2cfaca0f3a04c19b911725c7922af2d39e4c48f29",
       "base_source": "assets/cream-sleep.png",
       "base_sha256": "89ecbbe67fc06c7c1593f6ce34162a823d1151730082855e39a4db12f96fec3a"
     },
@@ -113,7 +131,7 @@
       "source": "c8-r113.png",
       "image_width": 1254,
       "image_height": 1254,
-      "sha256": "590ab728ea5733516744835c1ec9be7c71161c44f817a8901b4cce07895284bc",
+      "sha256": "e6500a5a83f3d0d63921a3dade99ce8391f697af5cae1bc8d1d9c9ece603c312",
       "base_source": "assets/care-sprites/c0-groom.png",
       "base_sha256": "d26e8495f42da710c4f9a0b9488ecc4666513146dcc5268ef5311e253cd654f4"
     },
@@ -124,7 +142,7 @@
       "source": "c8-r114.png",
       "image_width": 1774,
       "image_height": 887,
-      "sha256": "606358708df5b76cb68a8da36608dea7ee151509fc2c42ae6b285ce0074c7506",
+      "sha256": "87190b206648541e478f72e7d05484671cc1ef4b7a869145d49ebe4f226c7244",
       "base_source": "assets/care-sprites/c0-sleep.png",
       "base_sha256": "76560182751c11b45ff87cea4f30904a48a014c0000f2fffef4d883b2aaeab7a"
     },
@@ -135,7 +153,7 @@
       "source": "c8-r116.png",
       "image_width": 1774,
       "image_height": 887,
-      "sha256": "de8bc43d77ca3e46e8d634592ef097c5692a6cdc28afc23046fbcc16087c60e8",
+      "sha256": "a8aeb93f58cc6c15806f92a50ea50ec1e90c557adb2c020773bb25941b7de75b",
       "base_source": "assets/care-sprites/c0-fish.png",
       "base_sha256": "5577d90a87569acab3a20046e34df40651dca4172092a29c81c2f7e95b2f3697"
     },
@@ -146,7 +164,7 @@
       "source": "c8-r117.png",
       "image_width": 1448,
       "image_height": 1086,
-      "sha256": "dda872598d35a9601b1c74da29a801b977f9c00c291df5f80fcb8034b47b4fb9",
+      "sha256": "d6f7aa4c8f300a4ab9c9437e6ef434d999cc72b094678b9420ed3770f380ebf4",
       "base_source": "assets/care-sprites/c0-punch.png",
       "base_sha256": "580e91c043ace82a4f04ba8de95b2511b3a6fe764e5def82b91b3da95b9b00c0"
     },
@@ -157,7 +175,7 @@
       "source": "c8-r118.png",
       "image_width": 2304,
       "image_height": 2772,
-      "sha256": "97832c64611018ed658dba2fdebc2399283be2078822ed3d52fbb3ddd1d4721e",
+      "sha256": "85593b1a6fccc65fbfe70426e79390e40daab64b815c6a9f1705301d2f3f09eb",
       "base_source": "assets/natural-gait/cream-video-eat.png",
       "base_sha256": "cccf5dd255a8d4957794bd334306b7e395ce013c7ad919a786683483fffd5214"
     },
@@ -168,7 +186,7 @@
       "source": "c8-r119.png",
       "image_width": 1254,
       "image_height": 1254,
-      "sha256": "1f7995222f78772fa3ccbe3bd3a9b7192bd2b441dd4981f8a9f631a5c358ec0d",
+      "sha256": "d8d2776163884531e0023f3ca0a98dcfe13d74aa24cf5ae098859fa08c9978ca",
       "base_source": "assets/care-sprites/c0-jump.png",
       "base_sha256": "8d1f2bf8e3502381061df15a28f0fca85ee2db57ef963cf72554ec44ff6b4fd7"
     },
@@ -179,7 +197,7 @@
       "source": "c8-r120.png",
       "image_width": 1536,
       "image_height": 1024,
-      "sha256": "25eaa525002355b4047f8b9d4197cd438f099d14b3c31315c3ff8120a0b47cd4",
+      "sha256": "f773b3f9f9ad0989ad549355a7d3029b14b73fc6a07baf95c8f08de59a9fdf76",
       "base_source": "assets/care-sprites/c0-treat.png",
       "base_sha256": "1cc0d92d56fc3b55b85a2ed1d90a29b4e00a3d1c9a8695a7e3af4be1d3044e8e"
     },
@@ -190,7 +208,7 @@
       "source": "c8-r400.png",
       "image_width": 2408,
       "image_height": 1904,
-      "sha256": "38611f5c38265a8d5004a7ffaa7efc8bb217cbbeb6ad078a22ce8741fdf83aa4",
+      "sha256": "da817abaed5622ba4cbd7a811ec066208a5ee3d891533b32605d3d1a817ad7b7",
       "base_source": "assets/natural-gait/cream-video-walk.png",
       "base_sha256": "1c1e5112d9be836fbc7786c60648796dcbf9b4f997e68de5d9e4b16450297d5d"
     },
@@ -201,7 +219,183 @@
       "source": "c8-r401.png",
       "image_width": 1485,
       "image_height": 732,
-      "sha256": "f8e3bb26f263a1ba25fecf2e9e82fe531a61849f44d9f55c3695922b2be3ad94",
+      "sha256": "3ec80971d9bdbd2fa45a1972f48f6162f23ac9332d32a4a0cd9bef4c8327a42f",
+      "base_source": "assets/natural-gait/cream-video-run.png",
+      "base_sha256": "a129327846b8e6146c04db0bd65d7631bc7219440313647b09c95d041282cfad"
+    },
+    {
+      "character": 10,
+      "base_resource_id": 101,
+      "resource_id": 600,
+      "source": "c10-r101.png",
+      "image_width": 1774,
+      "image_height": 887,
+      "sha256": "af7b4edf5262e57b972fe4ec0032a87fa47a05eabed9562a3c23000a9ba45dc8",
+      "base_source": "assets/cat.png",
+      "base_sha256": "f92c5b30167b8978252c812af65ac99ec5be1e7c79fffa1bf3d94810b25d9803"
+    },
+    {
+      "character": 10,
+      "base_resource_id": 102,
+      "resource_id": 601,
+      "source": "c10-r102.png",
+      "image_width": 1774,
+      "image_height": 887,
+      "sha256": "f0cfce6deb339280fb1f5a7f06a637cec096430965cfa52436f3392ee6528ed3",
+      "base_source": "assets/cat-actions.png",
+      "base_sha256": "01d3cb47c255b2e6394c154419c1a18719815135856eb7585e60153aab437bc5"
+    },
+    {
+      "character": 10,
+      "base_resource_id": 105,
+      "resource_id": 602,
+      "source": "c10-r105.png",
+      "image_width": 738,
+      "image_height": 714,
+      "sha256": "4a70f3717f85f6de4721337787068ff4b51a5a68c9042f8248dda2449b86029d",
+      "base_source": "assets/cream-extra.png",
+      "base_sha256": "c41e7894a60299a816d239a8bfe1233860768acb2039278d0eea26cd73f1c295"
+    },
+    {
+      "character": 10,
+      "base_resource_id": 106,
+      "resource_id": 603,
+      "source": "c10-r106.png",
+      "image_width": 744,
+      "image_height": 762,
+      "sha256": "e02d52b167ee03b52559ca2005d64fbae868fa6fccee3b44d6deff64758db2ac",
+      "base_source": "assets/cream-gestures.png",
+      "base_sha256": "89fd56d111734cab662099f053a8892189f19d406089f067db99d7ed3fba773a"
+    },
+    {
+      "character": 10,
+      "base_resource_id": 107,
+      "resource_id": 604,
+      "source": "c10-r107.png",
+      "image_width": 1422,
+      "image_height": 370,
+      "sha256": "00c4173dddfaa75043de916e63f8d31f3a4979ff95b366692c3f0eea69a5d98d",
+      "base_source": "assets/cream-recline.png",
+      "base_sha256": "4f5daddeb2c0f3006cec433b12f51267a2546f507bd6df17cdac8468c0a09439"
+    },
+    {
+      "character": 10,
+      "base_resource_id": 110,
+      "resource_id": 605,
+      "source": "c10-r110.png",
+      "image_width": 243,
+      "image_height": 487,
+      "sha256": "fb3c62b4599f2585d267cd7a63988d09829e4cd4a0b676dd853fd7c923a558ef",
+      "base_source": "assets/cream-hang.png",
+      "base_sha256": "37919d0c3626a22aa8ba59594f54a6baec677ab91638c31a04fe7f65a3b9d039"
+    },
+    {
+      "character": 10,
+      "base_resource_id": 112,
+      "resource_id": 606,
+      "source": "c10-r112.png",
+      "image_width": 598,
+      "image_height": 199,
+      "sha256": "012bb806dcc854e24cd142aaeec7f2a8348a0539900f3823113bdd79395de227",
+      "base_source": "assets/cream-sleep.png",
+      "base_sha256": "89ecbbe67fc06c7c1593f6ce34162a823d1151730082855e39a4db12f96fec3a"
+    },
+    {
+      "character": 10,
+      "base_resource_id": 113,
+      "resource_id": 607,
+      "source": "c10-r113.png",
+      "image_width": 1254,
+      "image_height": 1254,
+      "sha256": "d925435d12ee883b34d5657a7f0ea911478924b58d04c51291f6360c0b236ccb",
+      "base_source": "assets/care-sprites/c0-groom.png",
+      "base_sha256": "d26e8495f42da710c4f9a0b9488ecc4666513146dcc5268ef5311e253cd654f4"
+    },
+    {
+      "character": 10,
+      "base_resource_id": 114,
+      "resource_id": 608,
+      "source": "c10-r114.png",
+      "image_width": 1774,
+      "image_height": 887,
+      "sha256": "e09640a299d329bb0506e48de9a54a18fd68f164f697aeff3eb14b425c2d28a3",
+      "base_source": "assets/care-sprites/c0-sleep.png",
+      "base_sha256": "76560182751c11b45ff87cea4f30904a48a014c0000f2fffef4d883b2aaeab7a"
+    },
+    {
+      "character": 10,
+      "base_resource_id": 116,
+      "resource_id": 609,
+      "source": "c10-r116.png",
+      "image_width": 1774,
+      "image_height": 887,
+      "sha256": "06b3c7af11f1e79bcd72e298dc82d7085bb39bd303f7e158304770a4c16d307b",
+      "base_source": "assets/care-sprites/c0-fish.png",
+      "base_sha256": "5577d90a87569acab3a20046e34df40651dca4172092a29c81c2f7e95b2f3697"
+    },
+    {
+      "character": 10,
+      "base_resource_id": 117,
+      "resource_id": 610,
+      "source": "c10-r117.png",
+      "image_width": 1448,
+      "image_height": 1086,
+      "sha256": "81d57d6db8b0a0dc4e118d89b6023cbf331e40efcc2a4555c2f4f6ad40035e41",
+      "base_source": "assets/care-sprites/c0-punch.png",
+      "base_sha256": "580e91c043ace82a4f04ba8de95b2511b3a6fe764e5def82b91b3da95b9b00c0"
+    },
+    {
+      "character": 10,
+      "base_resource_id": 118,
+      "resource_id": 611,
+      "source": "c10-r118.png",
+      "image_width": 2304,
+      "image_height": 2772,
+      "sha256": "46e1e4a1a11459c67ad8aaaea6cd337622f41c729af4a448ff1b343a45715e82",
+      "base_source": "assets/natural-gait/cream-video-eat.png",
+      "base_sha256": "cccf5dd255a8d4957794bd334306b7e395ce013c7ad919a786683483fffd5214"
+    },
+    {
+      "character": 10,
+      "base_resource_id": 119,
+      "resource_id": 612,
+      "source": "c10-r119.png",
+      "image_width": 1254,
+      "image_height": 1254,
+      "sha256": "95ebd149c634e54232a81dd0843bb992db92e8b0faf5755412dfed277cfe1763",
+      "base_source": "assets/care-sprites/c0-jump.png",
+      "base_sha256": "8d1f2bf8e3502381061df15a28f0fca85ee2db57ef963cf72554ec44ff6b4fd7"
+    },
+    {
+      "character": 10,
+      "base_resource_id": 120,
+      "resource_id": 613,
+      "source": "c10-r120.png",
+      "image_width": 1536,
+      "image_height": 1024,
+      "sha256": "edfd4c106c5c050131673ac0265887a5fa01a0bb7ba7927e44114c9a3e915e96",
+      "base_source": "assets/care-sprites/c0-treat.png",
+      "base_sha256": "1cc0d92d56fc3b55b85a2ed1d90a29b4e00a3d1c9a8695a7e3af4be1d3044e8e"
+    },
+    {
+      "character": 10,
+      "base_resource_id": 400,
+      "resource_id": 614,
+      "source": "c10-r400.png",
+      "image_width": 2408,
+      "image_height": 1904,
+      "sha256": "4c82959dd61405bd8f53f158efddff398160596188c6f6b86bc613047c587506",
+      "base_source": "assets/natural-gait/cream-video-walk.png",
+      "base_sha256": "1c1e5112d9be836fbc7786c60648796dcbf9b4f997e68de5d9e4b16450297d5d"
+    },
+    {
+      "character": 10,
+      "base_resource_id": 401,
+      "resource_id": 615,
+      "source": "c10-r401.png",
+      "image_width": 1485,
+      "image_height": 732,
+      "sha256": "3c100b8c3c1f93c7817329dad5d8f9970f51e74100a56108dafe327115ab980d",
       "base_source": "assets/natural-gait/cream-video-run.png",
       "base_sha256": "a129327846b8e6146c04db0bd65d7631bc7219440313647b09c95d041282cfad"
     }

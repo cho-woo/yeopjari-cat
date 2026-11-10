@@ -122,8 +122,10 @@ void ShowCompanionMenu(POINT point) {
     } else if (command >= kCompanionCharacterFirst && command < kCompanionCharacterFirst+cat::kCharacterCount) {
         if(!cat::CharacterAvailable(static_cast<cat::Character>(command-kCompanionCharacterFirst)))return;
         auto& p = g.companionStore.state.preferences; const auto old = p;
-        p.character = static_cast<cat::Character>(command-kCompanionCharacterFirst);
-        if (!SaveCompanion()) p = old;
+        const auto character=static_cast<cat::Character>(command-kCompanionCharacterFirst);
+        if(!EnsureCareCoats(g.preferences.character,character))return;
+        p.character=character;
+        if (!SaveCompanion()) {p=old;EnsureCareCoats(g.preferences.character,old.character);}
     }
 }
 bool EnsureCompanionWindow() {
@@ -156,11 +158,16 @@ void ToggleCompanion() {
     }
     const bool adopting = g.companionStore.outcome == cat::companion::Outcome::Missing;
     const bool previous = g.companionStore.available() && g.companionStore.state.enabled;
+    const auto previousCoat=previous?g.companionStore.state.preferences.character:cat::Character::Cream;
+    const auto nextCoat=(adopting||!previous)?
+        (adopting?cat::companion::State{}.preferences.character:g.companionStore.state.preferences.character):cat::Character::Cream;
+    if(!EnsureCareCoats(g.preferences.character,nextCoat))return;
     if (adopting) {
-        if (!g.companionStore.Adopt(UtcNow())) return;
+        if (!g.companionStore.Adopt(UtcNow())) {EnsureCareCoats(g.preferences.character,previousCoat);return;}
     } else g.companionStore.state.enabled = !previous;
     if (!SaveCompanion()) {
         if (adopting) LoadCompanion(); else g.companionStore.state.enabled = previous;
+        EnsureCareCoats(g.preferences.character,previousCoat);
         return;
     }
     if (adopting) { g.companionModel.Bind(g.companionStore.state); g.companionDpi = 0; }

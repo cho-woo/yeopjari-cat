@@ -7,15 +7,17 @@
 
 int main() {
     using namespace cat;using namespace cat::sprite_sequence;
-    static_assert(kAvailableCharacters.size()==2);
+    static_assert(kAvailableCharacters.size()==3);
     assert(AvailableCharacter(Character::Tuxedo)==Character::Tuxedo);
+    assert(AvailableCharacter(Character::OddEye)==Character::OddEye);
+    assert(!species::UsesNewArt(Character::OddEye));
     assert(!CharacterAvailable(Character::SilverTabby));
     assert(!species::UsesNewArt(Character::Tuxedo));
     assert(species::ProfileFor(Character::Cream).movementSpeedMultiplier==species::ProfileFor(Character::Tuxedo).movementSpeedMultiplier);
     for(auto clip:kAuthoredClips) {
         const auto* cream=sprite_assets::Find(clip,0,sprite_assets::kCareSprites);
         const auto* tuxedo=sprite_assets::Find(clip,8,sprite_assets::kCareSprites);
-        assert(cream&&cream==tuxedo); // Same sequence, event times, anchors and stride.
+        assert(cream&&cream==tuxedo&&cream==sprite_assets::Find(clip,10,sprite_assets::kCareSprites)); // Same sequence, event times, anchors and stride.
         assert(!sprite_assets::Find(clip,1,sprite_assets::kCareSprites));
     }
     for(unsigned a=0;a<=255;++a)for(unsigned c=0;c<=a;c+=7) {

@@ -35,6 +35,7 @@ int NativePostureRenderTest(std::string& context) {
     };
     for(int c=0;c<static_cast<int>(cat::kAvailableCharacters.size());++c)for(int facing:{-1,1}) {
         const auto character=cat::kAvailableCharacters[c];
+        if(!EnsureCareCoats(character))return 141;
         auto loaf=cat::animation::Evaluate(Motion::Loaf,6000,500000,facing);
         auto idle=cat::animation::Evaluate(Motion::Idle,0,500000,facing);
         // Compare the posture itself, without an unrelated blinking/breathing
@@ -50,10 +51,10 @@ int NativePostureRenderTest(std::string& context) {
             const auto standing=copy();int standingTop=0;
             if(!inspect(standingTop))return 143;
             cat::animation::PoseTransition transition;
-            transition.Apply(loaf,1000,1,static_cast<unsigned>(c));
-            const auto first=transition.Apply(idle,1016,2,static_cast<unsigned>(c));
+            transition.Apply(loaf,1000,1,static_cast<unsigned>(character));
+            const auto first=transition.Apply(idle,1016,2,static_cast<unsigned>(character));
             if(!draw(character,outfit,first) || copy()!=folded)return 144;
-            const auto middle=transition.Apply(idle,1106,2,static_cast<unsigned>(c));
+            const auto middle=transition.Apply(idle,1106,2,static_cast<unsigned>(character));
             if(middle.frame!=4 || middle.blendFrame!=-1 || middle.bellyRig ||
                     middle.x!=0 || middle.lift!=0 || middle.angle!=0 ||
                     middle.scaleX!=1 || middle.scaleY!=1)return 145;
@@ -63,13 +64,14 @@ int NativePostureRenderTest(std::string& context) {
             // The one-source head rises with the local supported crouch. This
             // checks actual raster placement without guessing face landmarks.
             if(outfit==cat::Outfit::None && !(foldedTop>halfwayTop && halfwayTop>standingTop))return 147;
-            const auto last=transition.Apply(idle,1196,2,static_cast<unsigned>(c));
+            const auto last=transition.Apply(idle,1196,2,static_cast<unsigned>(character));
             if(!draw(character,outfit,last) || copy()!=standing)return 148;
             // Reuse the same native cached skin in reverse to catch stale
             // joint controls or a transition accidentally mutating its source.
             if(!draw(character,outfit,loaf) || copy()!=folded)return 149;
         }
     }
+    if(!EnsureCareCoats(cat::Character::Cream,cat::Character::Tuxedo))return 141;
     if(cat::Serialize(g.pet)!=savedPet || cat::SerializePreferences(g.preferences)!=savedPreferences ||
             cat::nutrition::Serialize(g.nutrition)!=savedNutrition || cat::memory::Serialize(g.memory.state)!=savedMemory ||
             cat::life::Serialize(g.life.state)!=savedLife)return 150;

@@ -35,7 +35,7 @@ struct Row {
 int Simulate(Row& row,std::string& context) {
     native_manual_motion_tests::Host host;
     host.Reset(row.character,true);
-    g.workInterference=false;
+    g.workInterference=false;g.cursorPlay=false;
     const auto saved=host.Saved();
     const auto start=host.now;
     row.startX=g.physics.RenderPose().x;

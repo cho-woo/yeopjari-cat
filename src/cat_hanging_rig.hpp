@@ -6,7 +6,7 @@ inline double BodyWidthScale(Character character) {
     // Hanging length and paw grip stay fixed; the painted narrow torso should
     // not lose roughly half its volume when the full-size head is registered.
     constexpr double widths[]{1.20,1.25,1.45,1.40,1.40,1.35,1.25,1.00,1.40,1.45};
-    return IsValid(character)?widths[static_cast<int>(character)]:1.0;
+    return IsValid(character)?widths[character==Character::OddEye?0:static_cast<int>(character)]:1.0;
 }
 inline double HeadCoverage(Character character,deform::Point uv) {
     const double coverage=belly::HeadCoverage(character,4,uv);

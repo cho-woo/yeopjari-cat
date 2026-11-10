@@ -17,18 +17,18 @@ inline Profile ProfileFor(Character character) noexcept {
     case Character::Munchkin: return {.78,.90,1.04,1.0,1.05};
     case Character::Dog: return {.90,1.08,1.15,1.10,1.18};
     case Character::Rabbit: return {1.18,1.10,.95,.55,1.10};
-    case Character::Tuxedo: return {}; // Same motion/physics profile as Cream.
+    case Character::OddEye: case Character::Tuxedo: return {}; // Same motion/physics profile as Cream.
     case Character::British: return {.88,.88,1.06,.75,.85};
     default: return {};
     }
 }
-inline bool UsesNewArt(Character character) noexcept { return character!=Character::Tuxedo && IsValid(character) && static_cast<int>(character) >= 2; }
+inline bool UsesNewArt(Character character) noexcept { return character!=Character::Tuxedo && character!=Character::OddEye && IsValid(character) && static_cast<int>(character) >= 2; }
 inline int ArtCell(Character character) noexcept { return UsesNewArt(character) ? static_cast<int>(character)-2 : 0; }
 // Measured against alpha-cropped canonical cells, including rabbit ears and
 // the puppy's shorter muzzle. Reusing cat eye coordinates would blink a nose.
 inline expression::Landmarks FaceFor(Character character) noexcept {
     switch(character){
-    case Character::Cream:return {{.415,.475},{.735,.445},{.57,.60}};
+    case Character::OddEye: case Character::Cream:return {{.415,.475},{.735,.445},{.57,.60}};
     case Character::Black:return {{.59,.39},{.839,.344},{.74,.52}};
     case Character::Calico:return {{.607,.409},{.835,.377},{.74,.53}};
     case Character::Siamese:return {{.598,.364},{.839,.330},{.75,.49}};
@@ -42,7 +42,7 @@ inline expression::Landmarks FaceFor(Character character) noexcept {
 }
 inline expression::Landmarks ClosedFaceFor(Character character) noexcept {
     switch(character){
-    case Character::Cream:return {{.413,.481},{.760,.424},{.57,.60}};
+    case Character::OddEye: case Character::Cream:return {{.413,.481},{.760,.424},{.57,.60}};
     case Character::SilverTabby:return {{.389,.471},{.756,.414},{.57,.60}};
     case Character::Black:return {{.50,.47},{.82,.39},{.74,.52}};
     case Character::Calico:return {{.55,.467},{.83,.386},{.74,.53}};

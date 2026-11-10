@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Publish the exact Windows-validated v2.0.25 cute idle and motion update as stable.
+"""Publish the exact Windows-validated v2.0.26 play and appearance update as stable.
 
 CI-only. Uses a draft/tag prepared at the validated source commit. It never
 rebuilds, replaces a public release, or promotes the opt-in mesh walking study.
@@ -25,9 +25,9 @@ import release
 from verify_silent_exe import verify_silent_exe
 
 REPO = 'cho-woo/yeopjari-cat'
-VERSION = '2.0.25'
+VERSION = '2.0.26'
 TAG = 'v' + VERSION
-PREVIOUS_STABLE = 'v2.0.24'
+PREVIOUS_STABLE = 'v2.0.25'
 ROOT = Path(__file__).resolve().parents[1]
 FEED_URL = f'https://github.com/{REPO}/releases/latest/download/latest.txt'
 BASE_URL = f'https://github.com/{REPO}/releases/download/{TAG}/'
@@ -37,6 +37,9 @@ CAPTURE_STEP = 'Capture source-video walking through Windows GDI+ and Box2D at 6
 MOTION_CAPTURE_STEP = 'Capture source-video meal, walk and run through Windows GDI+ and Box2D at 60 FPS'
 MENU_STEP = 'Verify real Windows right-click menu visibility through UI Automation'
 IDLE_CAPTURE_STEP = 'Capture cute idle gestures through Windows GDI+ and Box2D at 60 FPS'
+CURSOR_CAPTURE_STEP = 'Capture nearby cursor play through Windows GDI+ and Box2D at 60 FPS'
+GROOM_REVIEW_STEP = 'Review connected grooming through Windows GDI+ and Box2D'
+BALL_CAPTURE_STEP = 'Capture ball play through Windows GDI+ and Box2D at 60 FPS'
 BENCHMARK_STEP = 'Compare baseline and candidate on the same Windows desktop'
 
 
@@ -85,7 +88,8 @@ def validated_source(run_id, head):
                 f'Missing successful {name} job')
         if name == 'windows-smoke':
             for step_name in (SAVE_STEP, RENDER_STEP, CAPTURE_STEP, MOTION_CAPTURE_STEP,
-                              MENU_STEP, IDLE_CAPTURE_STEP, BENCHMARK_STEP):
+                              MENU_STEP, IDLE_CAPTURE_STEP, CURSOR_CAPTURE_STEP, GROOM_REVIEW_STEP,
+                              BALL_CAPTURE_STEP, BENCHMARK_STEP):
                 step = exactly_one((s for s in job['steps'] if s['name'] == step_name), step_name)
                 require(step.get('status') == 'completed' and step.get('conclusion') == 'success',
                         f'Native Windows step did not pass: {step_name}')
@@ -263,13 +267,19 @@ def authored_appearance_contract():
     # This checks actual authored PNG hashes, base registration, complete
     # Tuxedo coverage, and exact generated header/RC/report bytes together.
     report = prepare_import(ROOT, check=True, require_character=8)
+    prepare_import(ROOT, check=True, require_character=10)
     manifest_path = ROOT / 'assets/styled-sprites/manifest.json'
     report_path = ROOT / 'assets/styled-sprites/import-report.json'
     atlases = [atlas for atlas in report['sources'] if atlas['character'] == 8]
+    odd_atlases = [atlas for atlas in report['sources'] if atlas['character'] == 10]
+    require(len(odd_atlases) == 16 and {8, 10}.issubset(set(report['complete_characters'])),
+            'Both styled characters must have complete all-action textures')
     return {'manifest': str(manifest_path.relative_to(ROOT)), 'manifest_sha256': sha(manifest_path),
             'import_report_sha256': sha(report_path), 'design': report['design'],
             'complete_characters': report['complete_characters'],
             'atlases': atlases, 'identity_palette': identity_palette_contract(atlases),
+            'odd_eye_atlases': odd_atlases,
+            'odd_eye_identity': odd_eye_identity_contract(odd_atlases),
             'cream_reference': cream_reference_contract()}
 
 
@@ -295,7 +305,8 @@ def identity_palette_contract(atlases):
             'The all-action Tuxedo palette policy is missing or unbounded')
     policy = json.loads(path.read_text(encoding='utf-8-sig'))
     records = policy.get('atlases', [])
-    require(policy.get('schema') == 1 and policy.get('method') == 'shared_neutral_fur_palette_rgb_only' and
+    require(policy.get('schema') == 1 and policy.get('method') == 'shared_soft_charcoal_cream_fur_rgb_only' and
+            policy.get('dark_fur_rgb') == [69, 75, 86] and policy.get('light_fur_rgb') == [241, 232, 219] and
             policy.get('new_motion_poses') == 0 and len(records) == len(atlases) == 16 and
             {a.get('base_resource_id') for a in records} == {a['base_resource_id'] for a in atlases},
             'The Tuxedo identity policy must cover all 16 current authored textures')
@@ -310,6 +321,26 @@ def identity_palette_contract(atlases):
             'atlas_output_sha256': {str(a['base_resource_id']): a['output_sha256'] for a in records},
             'preservation_scope': policy.get('preserve'),
             'scope': 'Policy and output PNG hashes bound here; pixel preservation is checked by the authoring validator'}
+
+
+def odd_eye_identity_contract(atlases):
+    path = ROOT / 'assets/styled-sprites/odd-eye-policy.json'
+    policy = json.loads(path.read_text(encoding='utf-8-sig'))
+    records = policy.get('atlases', [])
+    require(policy.get('schema') == 1 and policy.get('new_motion_poses') == 0 and
+            policy.get('eye_identity') == {'left': 'blue', 'right': 'gold'} and
+            len(records) == len(atlases) == 16, 'Odd-eye identity policy must cover every actual texture')
+    for atlas in atlases:
+        record = exactly_one((r for r in records if r.get('base_resource_id') == atlas['base_resource_id']),
+                             'Odd-eye identity output binding')
+        mask = repository_file(path.parent, record.get('iris_mask'), 'registered iris mask')
+        require(record.get('source') == atlas['source'] and record.get('output_sha256') == atlas['sha256'] and
+                record.get('iris_mask_sha256') == sha(mask) and
+                all(record.get(k) is True for k in ('alpha_exact', 'props_rgb_exact', 'skin_rgb_exact')),
+                'Odd-eye output does not match its actual iris and preservation registration')
+    return {'policy': path.relative_to(ROOT).as_posix(), 'sha256': sha(path),
+            'eye_identity': policy['eye_identity'], 'new_motion_poses': 0,
+            'scope': 'Same source geometry and alpha; offline white fur material and per-frame registered irises'}
 
 
 def manual_motion_contract(path, expected_walk_frames=None, expected_walk_speed=None, expected_run_speed=None):
@@ -330,8 +361,8 @@ def manual_motion_contract(path, expected_walk_frames=None, expected_walk_speed=
     for key in ('pause_preference_preserved', 'suspension_clock_preserved'):
         require(report.get(key) is True, f'Native manual-motion check failed: {key}')
     characters = report.get('characters', [])
-    require(len(characters) == 2 and {c.get('character') for c in characters} == {0, 8},
-            'Native manual-motion report must cover both characters')
+    require(len(characters) == 3 and {c.get('character') for c in characters} == {0, 8, 10},
+            'Native manual-motion report must cover all three characters')
     for character in characters:
         for key in ('walk_distance', 'run_distance', 'walk_peak_speed', 'run_peak_speed', 'jump_max_lift'):
             value = character.get(key)
@@ -669,6 +700,262 @@ def native_idle_capture_contract(native_root, reference):
                          'visual_quality': 'Native pixel changes and gesture coverage require separate visual review'}
 
 
+def native_cursor_capture_contract(native_root):
+    path = exactly_one((p for p in native_root.rglob('capture.json') if p.parent.name == 'cursor-play'),
+                       'native nearby-pointer capture')
+    data = json.loads(path.read_text(encoding='utf-8-sig'))
+    require(data.get('schema') == 1 and data.get('test') == 'cursor-play-native' and
+            data.get('status') == 'passed' and data.get('version') == VERSION and
+            data.get('render_source') == 'Windows GDI+ / Box2D' and
+            data.get('desktop_recording') is False and data.get('os_input_injected') is False and
+            data.get('fps') == 60 and data.get('frame_count') == 1800 and
+            data.get('canvas') == [800, 720] and data.get('reference_height_px') == 110 and
+            data.get('app_active_timer_ms') == 16,
+            'Cursor play must use the real production renderer and physics at the declared 60 Hz clock')
+    rows = data.get('characters', [])
+    require(len(rows) == 2 and {r.get('character') for r in rows} == {0, 8},
+            'Cursor play requires both existing characters')
+    guards = ('menu_pixels_held', 'drag_pixels_held', 'care_interrupted_active_cursor',
+              'care_ownership_preserved', 'far_cancelled', 'source_immutable',
+              'all_actor_pixels_inside_canvas', 'profile_unchanged')
+    for row in rows:
+        entries = row.get('action_entries', {})
+        require(entries.get('paw', 0) >= 3 and entries.get('tiptoe', 0) >= 1 and
+                entries.get('both_paws', 0) >= 1 and row.get('hops', 0) >= 1 and
+                row.get('landings', 0) >= 1 and row.get('peak_lift', 0) > 5 and
+                row.get('duplicate_contact_awards') == 0 and
+                type(row.get('roaming_paused_root_delta')) in (int, float) and
+                0 <= row['roaming_paused_root_delta'] <= .05 and
+                all(row.get(k, 0) > 0 for k in ('roaming_paused_airborne_frames',
+                    'menu_pause_frames', 'drag_pause_frames', 'care_protected_frames', 'resume_paw_attempts')) and
+                all(row.get(key) is True for key in guards),
+                'Cursor reach repetition, physical hop, contact deduplication or ownership guard failed')
+    trace_path = path.parent / 'trace.json'
+    trace = json.loads(trace_path.read_text(encoding='utf-8-sig'))
+    require(trace.get('schema') == 1 and trace.get('fps') == 60 and
+            len(trace.get('frames', [])) == 1800, 'Cursor play trace must cover every capture frame')
+    expected = {'review-paw.png', 'review-tiptoe.png', 'review-both-paws.png', 'review-hop.png',
+                'review-care.png', 'review-resume.png', 'review-menu.png', 'review-drag.png'}
+    require(set(data.get('review_images', [])) == expected, 'Cursor play mode snapshots are incomplete')
+    files = [(path, 'cursor-play/capture.json'), (trace_path, 'cursor-play/trace.json')]
+    images = {}
+    for name in sorted(expected):
+        image = path.parent / name
+        images[name] = png_evidence(image, name)
+        files.append((image, 'cursor-play/' + name))
+    report = exactly_one(native_root.rglob('cursor-play-report.txt'), 'cursor capture exit report')
+    require(report.read_text(encoding='utf-8-sig').startswith('exit=0 '), 'Cursor capture did not exit successfully')
+    return path.parent, files, {'capture': data, 'capture_sha256': sha(path),
+        'trace_sha256': sha(trace_path), 'native_capture_step': CURSOR_CAPTURE_STEP, 'images': images,
+        'visual_quality': 'Native mode snapshots require separate visual review'}
+
+
+def native_keyboard_contract(native_root):
+    path = exactly_one(native_root.rglob('keyboard-super-report.json'), 'native keyboard and power-mode report')
+    data = json.loads(path.read_text(encoding='utf-8-sig'))
+    require(data.get('schema') == 1 and data.get('test') == 'keyboard-super-native' and
+            data.get('version') == VERSION and data.get('status') == 'passed' and
+            data.get('exit_code') == 0 and data.get('safety_cases') == 8 and
+            data.get('input') == 'fake key edges, no OS injection' and
+            data.get('aura_click_through_characters') == 3 and
+            all(data.get(key) is True for key in ('pause_preference_preserved', 'real_box2d_jump',
+                'planted_reversal', 'same_coat_source_hash')),
+            'Keyboard controls, ownership cancellation, physics or aura hit-testing failed')
+    rows = data.get('characters', [])
+    require(len(rows) == 3 and {r.get('character') for r in rows} == {0, 8, 10},
+            'Keyboard and power mode must cover all three available characters')
+    files = [(path, 'keyboard-super/report.json')]
+    images = {}
+    for row in rows:
+        require(all(type(row.get(key)) in (int, float) and math.isfinite(row[key]) and row[key] > 0
+                    for key in ('walk_speed', 'run_speed', 'super_run_speed', 'normal_jump_peak', 'super_jump_peak')) and
+                row['run_speed'] > row['walk_speed'] * 1.4 and
+                row['super_run_speed'] > row['run_speed'] * 1.24 and
+                row['super_jump_peak'] > row['normal_jump_peak'] * 1.16,
+                'Manual physical walk, run or powered jump did not run')
+        for suffix in ('aura', 'unchanged-body'):
+            name = f"character{row['character']}-{suffix}.png"
+            image = path.parent / 'keyboard-super' / name
+            images[name] = png_evidence(image, name)
+            files.append((image, 'keyboard-super/' + name))
+    return files, {'report': data, 'sha256': sha(path), 'images': images,
+        'scope': 'Real production host and renderer driven by fake key edges; no OS key injection or desktop recording'}
+
+
+def native_groom_contract(native_root):
+    path = exactly_one((p for p in native_root.rglob('report.json') if p.parent.name == 'groom-review'),
+                       'native connected grooming review')
+    data = json.loads(path.read_text(encoding='utf-8-sig'))
+    require(data.get('schema') == 1 and data.get('test') == 'connected-groom-native' and
+            data.get('status') == 'passed' and data.get('version') == VERSION and
+            data.get('render_source') == 'Windows GDI+ / Box2D' and data.get('desktop_recording') is False and
+            data.get('fps') == 60 and data.get('app_active_timer_ms') == 16 and data.get('reference_height_px') == 110 and
+            data.get('base_resource_id') == 101 and data.get('source_frame') == 4 and data.get('closed_eye_source_frame') == 5 and
+            data.get('unique_new_full_cat_paintings') == 0 and data.get('board') == 'groom-board.png' and data.get('trace') == 'trace.json',
+            'Connected grooming requires actual same-source3-coat native output')
+    rows = data.get('characters', [])
+    require(len(rows) == 3 and {r.get('character') for r in rows} == {0, 8, 10}, 'Grooming must cover all three coats')
+    trace_path = path.parent / 'trace.json'
+    trace = json.loads(trace_path.read_text(encoding='utf-8-sig'))
+    require(trace.get('schema') == 1 and trace.get('fps') == 60 and len(trace.get('frames', [])) == 1407,
+            'Native grooming trace must contain469 samples for each7500ms action and300ms completion')
+    files = [(path, 'groom-review/report.json'), (trace_path, 'groom-review/trace.json')]
+    images = {}
+    flags = ('source_immutable', 'source_geometry_unchanged', 'profile_unchanged', 'completed_to_idle',
+             'api_endpoint5900_neutral', 'end_pixels_match_start', 'all_actor_pixels_inside_canvas')
+    for index, row in enumerate(rows):
+        require(row.get('product_action_duration_ms') == 7500 and row.get('trace_frames') == 469 and
+                all(row.get(flag) is True for flag in flags) and
+                all(type(row.get(key)) in (int, float) and math.isfinite(row[key]) for key in
+                    ('max_root_dx', 'max_physical_lift', 'max_blink', 'max_right_paw_lift', 'max_control_delta',
+                     'max_adjacent_pixel_mae', 'max_adjacent_alpha_centroid_delta', 'source_reference_height')) and
+                0 <= row['max_root_dx'] <= .01 and 0 <= row['max_physical_lift'] <= .01 and
+                .7 <= row['max_blink'] <= 1 and .9 <= row['max_right_paw_lift'] <= 1 and
+                0 <= row['max_control_delta'] <= .15 and row['source_reference_height'] > 0 and
+                type(row.get('actual_texture_resource')) is int and row['actual_texture_resource'] > 0 and
+                all(isinstance(row.get(key), str) and re.fullmatch(r'[0-9]{1,20}', row[key]) for key in
+                    ('source_base4_hash', 'closed_eye_base5_hash')),
+                'Groom source preservation, endpoint or continuous control evidence failed')
+        expected = [f'character-{row["character"]}-sample-{i}.png' for i in range(8)]
+        require(row.get('samples') == expected, 'Groom review must expose eight actual snapshots per coat')
+        for name in expected:
+            image = path.parent / name;images[name] = png_evidence(image, 'connected Groom ' + name)
+            require(images[name]['canvas'] == [260, 240], 'Groom snapshot changed actual display canvas')
+            files.append((image, 'groom-review/' + name))
+        frames = trace['frames'][index*469:(index+1)*469]
+        maximum = {'root': 0, 'lift': 0, 'blink': 0, 'reach': 0, 'delta': 0, 'mae': 0, 'centroid': 0}
+        active = closed = 0;prior = None
+        for number, frame in enumerate(frames):
+            require(frame.get('character') == row['character'] and frame.get('frame') == number and
+                    frame.get('elapsed_ms') == number*1000//60 and frame.get('source_resource') == 101 and
+                    frame.get('source_frame') == 4 and frame.get('actual_texture_resource') == row['actual_texture_resource'] and
+                    frame.get('source_reference_height') == row['source_reference_height'] and
+                    frame.get('requested_motion') == (4 if number*1000//60 < 7500 else 0),
+                    'Groom trace must preserve the real clock, actual source and Groom-to-Idle ownership')
+            require(all(type(frame.get(key)) in (int, float) and math.isfinite(frame[key]) for key in
+                        ('root_x', 'physical_lift', 'blink', 'tail_raise', 'adjacent_pixel_mae')) and
+                    0 <= frame['blink'] <= 1 and 0 <= frame['adjacent_pixel_mae'] <= 1,
+                    'Invalid native grooming coordinates or pixel measurements')
+            controls = frame.get('cursor_reach');centroid = frame.get('alpha_centroid');geometry = frame.get('frame_geometry')
+            require(isinstance(controls, list) and len(controls) == 6 and
+                    all(type(v) in (int, float) and math.isfinite(v) for v in controls) and
+                    all(0 <= controls[i] <= 1 for i in (0, 1, 2, 4, 5)) and -1 <= controls[3] <= 1 and
+                    isinstance(centroid, list) and len(centroid) == 2 and
+                    all(type(v) in (int, float) and math.isfinite(v) for v in centroid) and
+                    isinstance(geometry, list) and len(geometry) == 4 and geometry == frames[0].get('frame_geometry') and
+                    all(type(v) is int and v >= 0 for v in geometry) and geometry[2] > 0 and geometry[3] > 0 and
+                    isinstance(frame.get('actor_hash'), str) and re.fullmatch(r'[0-9]{1,20}', frame['actor_hash']),
+                    'Grooming changed its registered drawing or supplied invalid rig controls')
+            maximum['root'] = max(maximum['root'], abs(frame['root_x']-frames[0]['root_x']))
+            maximum['lift'] = max(maximum['lift'], abs(frame['physical_lift']))
+            maximum['blink'] = max(maximum['blink'], frame['blink']);maximum['reach'] = max(maximum['reach'], controls[2])
+            maximum['mae'] = max(maximum['mae'], frame['adjacent_pixel_mae'])
+            active += any(controls[i] != 0 for i in (0, 1, 2));closed += frame['blink'] >= .7
+            measured = (controls[2], controls[3]*controls[2], frame['blink'], frame['tail_raise'])
+            if prior is not None:
+                maximum['delta'] = max(maximum['delta'], *(abs(a-b) for a, b in zip(measured, prior)))
+                maximum['centroid'] = max(maximum['centroid'], math.dist(centroid, frames[number-1]['alpha_centroid']))
+            prior = measured
+            if frame['elapsed_ms'] >= 7500:
+                require(frame['actor_hash'] == frames[0]['actor_hash'] and frame['blink'] == 0 and
+                        all(controls[i] == 0 for i in (0, 1, 2)), 'Groom did not return the paw and retain its exact starting cat')
+        require(row.get('active_groom_frames') == active and active > 0 and row.get('closed_eye_frames') == closed and closed > 0 and
+                all(abs(maximum[a]-row[b]) < (.003 if a == 'centroid' else .00003) for a, b in
+                    (('root', 'max_root_dx'), ('lift', 'max_physical_lift'), ('blink', 'max_blink'),
+                     ('reach', 'max_right_paw_lift'), ('delta', 'max_control_delta'),
+                     ('mae', 'max_adjacent_pixel_mae'), ('centroid', 'max_adjacent_alpha_centroid_delta'))),
+                'Native Groom summary differs from its complete actual pose/pixel trace')
+    board = path.parent / 'groom-board.png';images[board.name] = png_evidence(board, 'three-coat Groom board')
+    require(images[board.name]['canvas'] == [2080, 720], 'Groom board does not retain all24 actual-size snapshots')
+    files.append((board, 'groom-review/' + board.name))
+    text = exactly_one(native_root.rglob('groom-review-report.txt'), 'native grooming exit report')
+    require(text.read_text(encoding='utf-8-sig').startswith('exit=0 '), 'Native connected grooming review failed')
+    return path, files, {'report': data, 'report_sha256': sha(path), 'trace_sha256': sha(trace_path),
+        'native_step': GROOM_REVIEW_STEP, 'images': images, 'visual_quality': 'Actual-size boards require separate visual approval'}
+
+
+def native_ball_capture_contract(native_root):
+    path = exactly_one((p for p in native_root.rglob('capture.json') if p.parent.name == 'ball-play'), 'native ball-play capture')
+    data = json.loads(path.read_text(encoding='utf-8-sig'))
+    require(data.get('schema') == 1 and data.get('test') == 'ball-play-native' and data.get('status') == 'passed' and
+            data.get('version') == VERSION and data.get('render_source') == 'Windows GDI+ / Box2D' and
+            data.get('desktop_recording') is False and data.get('os_input_injected') is False and data.get('fps') == 60 and
+            data.get('frame_count') == 1500 and data.get('canvas') == [900, 620] and data.get('duration_seconds') == 25 and
+            data.get('reference_height_px') == 110 and data.get('app_active_timer_ms') == 16,
+            'Ball play requires actual production physics/rendering for25seconds at60Hz')
+    rows = data.get('characters', [])
+    require(len(rows) == 2 and {r.get('character') for r in rows} == {0, 8}, 'Ball play must cover Cream and Tuxedo')
+    require(all(data.get('guard_cases', {}).get(key) is True for key in
+                ('circle_threshold', 'contact_once', 'late_window_no_kick', 'body_near_paw_far_no_kick', 'airborne_no_kick', 'profile_preserved')),
+            'Real paw/ball circle contact and ownership guard checks did not pass')
+    trace_path = path.parent / 'trace.json';trace = json.loads(trace_path.read_text(encoding='utf-8-sig'))
+    require(trace.get('schema') == 1 and trace.get('fps') == 60 and len(trace.get('frames', [])) == 1500,
+            'Ball play trace must cover every actual capture frame')
+    stats = {row['character']: {'contacts': 0, 'prior': None, 'travel': 0, 'ball_travel': 0, 'max_delta': 0,
+        'walk': 0, 'brake': 0, 'turns': 0, 'reversals': 0, 'ball_direction': 0, 'max_contact': 0} for row in rows}
+    for number, frame in enumerate(trace['frames']):
+        require(frame.get('frame') == number and frame.get('elapsed_ms') == number*1000//60 and
+                isinstance(frame.get('characters'), list) and len(frame['characters']) == 2 and
+                {r.get('character') for r in frame['characters']} == {0, 8}, 'Ball trace clock or character rows differ from capture')
+        for actor in frame['characters']:
+            row = next(r for r in rows if r['character'] == actor['character']);stat = stats[actor['character']]
+            keys = ('root_x', 'physical_lift', 'velocity_x', 'ball_x', 'ball_lift', 'ball_velocity', 'ball_angle',
+                    'current_ball_x', 'current_ball_lift', 'paw_world_x', 'paw_world_height', 'last_contact_distance', 'contact_threshold')
+            require(all(type(actor.get(key)) in (int, float) and math.isfinite(actor[key]) for key in keys) and
+                    actor['last_contact_distance'] >= 0 and abs(actor['contact_threshold']-16) < .00001 and
+                    abs(actor['contact_threshold']-row.get('contact_threshold', 0)) < .00001 and
+                    all(type(actor.get(key)) is bool for key in ('contact_this_frame', 'braking', 'waiting_for_stop')) and
+                    type(actor.get('contact_count')) is int and actor['contact_count'] >= 0 and
+                    actor.get('reference_height_px') == 110 and actor.get('facing') in (-1, 1),
+                    'Ball play supplied invalid physical paw/ball coordinates or threshold')
+            if actor['contact_this_frame']:
+                stat['contacts'] += 1
+                distance = math.hypot(actor['current_ball_x']-actor['paw_world_x'],
+                    actor['current_ball_lift']+12-actor['paw_world_height'])
+                # Native ostream stores six significant digits. At world
+                # x~1000 two rounded positions carry up to .02px error; the
+                # actual recorded contact distance/threshold stay strict.
+                require(distance <= actor['contact_threshold']+.03 and
+                        abs(distance-actor['last_contact_distance']) < .03 and not actor['waiting_for_stop'],
+                        'A native ball impulse was not within the actual paw/ball circle threshold')
+                stat['max_contact'] = max(stat['max_contact'], actor['last_contact_distance'])
+            require(actor['contact_count'] == stat['contacts'], 'Ball contact was skipped, duplicated or relabelled in the trace')
+            stat['walk'] += abs(actor['velocity_x']) > 2;stat['brake'] += actor['braking']
+            direction = 1 if actor['ball_velocity'] > 1 else -1 if actor['ball_velocity'] < -1 else 0
+            if direction and stat['ball_direction'] and direction != stat['ball_direction']:stat['reversals'] += 1
+            if direction:stat['ball_direction'] = direction
+            if stat['prior'] is not None:
+                prior = stat['prior'];delta = abs(actor['root_x']-prior['root_x'])
+                stat['max_delta'] = max(stat['max_delta'], delta);stat['travel'] += delta
+                stat['ball_travel'] += abs(actor['ball_x']-prior['ball_x']);stat['turns'] += actor['facing'] != prior['facing']
+            stat['prior'] = actor
+    for row in rows:
+        stat = stats[row['character']]
+        require(all(row.get(key) is True for key in ('duplicate_contact_rejected', 'source_immutable', 'profile_unchanged')) and
+                row.get('contacts') == stat['contacts'] >= 3 and type(row.get('paw_entries')) is int and
+                row['paw_entries'] >= row['contacts'] and row.get('walking_frames') == stat['walk'] >= 60 and
+                row.get('braking_frames') == stat['brake'] > 0 and row.get('turns') == stat['turns'] > 0 and
+                row.get('ball_reversals') == stat['reversals'] > 0 and stat['travel'] > 40 and stat['ball_travel'] > 80 and
+                all(type(row.get(key)) in (int, float) and math.isfinite(row[key]) for key in
+                    ('contact_threshold', 'max_contact_distance', 'max_frame_root_delta', 'cat_travel', 'ball_travel')) and
+                abs(row['contact_threshold']-16) < .00001 and 0 <= row['max_contact_distance'] <= row['contact_threshold']+.0001 and
+                0 <= row['max_frame_root_delta'] <= 4 and abs(row['max_contact_distance']-stat['max_contact']) < .0001 and
+                abs(row['max_frame_root_delta']-stat['max_delta']) < .03 and
+                abs(row['cat_travel']-stat['travel']) < .25 and abs(row['ball_travel']-stat['ball_travel']) < .25,
+                'Ball-play trace does not support the reported impulses, pursuit, braking or repeated turns')
+    expected = {'review-bat.png', 'review-pursue.png', 'review-brake.png', 'review-turn.png', 'review-repeat.png'}
+    require(set(data.get('review_images', [])) == expected, 'Ball play review snapshots are incomplete')
+    files = [(path, 'ball-play/capture.json'), (trace_path, 'ball-play/trace.json')];images = {}
+    for name in sorted(expected):
+        image = path.parent / name;images[name] = png_evidence(image, 'ball play ' + name)
+        require(images[name]['canvas'] == [900, 620], 'Native ball review canvas differs from the movie')
+        files.append((image, 'ball-play/' + name))
+    text = exactly_one(native_root.rglob('ball-play-report.txt'), 'native ball play exit report')
+    require(text.read_text(encoding='utf-8-sig').startswith('exit=0 '), 'Native ball capture did not exit successfully')
+    return path.parent, files, {'capture': data, 'capture_sha256': sha(path), 'trace_sha256': sha(trace_path),
+        'native_capture_step': BALL_CAPTURE_STEP, 'images': images, 'visual_quality': 'Actual ball-play snapshots require separate visual approval'}
+
+
 def png_evidence(path, description):
     require(path.is_file() and not path.is_symlink(), 'Missing native image evidence: ' + description)
     require(0 < path.stat().st_size <= 64 * 1024 * 1024, 'Unbounded native image evidence: ' + description)
@@ -689,6 +976,25 @@ def native_coat_evidence(native_root):
     return path, {**evidence, 'render_source': 'Windows GDI+ / Box2D',
                   'archive_path': 'native-render/two-cats-gdi.png',
                   'visual_quality': 'Requires separate visual review; image presence is not visual approval'}
+
+
+def native_three_coat_evidence(native_root):
+    path = exactly_one(native_root.rglob('three-cats-gdi.json'), 'three-character native appearance report')
+    data = json.loads(path.read_text(encoding='utf-8-sig'))
+    require(data.get('schema') == 1 and data.get('test') == 'three-coats-native' and
+            data.get('status') == 'passed' and data.get('characters') == [0, 8, 10] and
+            data.get('render_source') == 'Windows GDI+' and data.get('desktop_recording') is False and
+            data.get('all_frame_sha_and_render_checked') is True and
+            data.get('cache_rotation_restored_two_live_coats') is True and
+            data.get('connected_jump_source') == [400, 29] and
+            data.get('odd_eye_authored_frames_verified', 0) > 200 and
+            data.get('odd_eye_authored_pixels', 0) > 0 and data.get('board') == 'three-cats-gdi.png',
+            'The new character must use independently checked painted frames and bounded cache rotation')
+    image = path.parent / data['board']
+    evidence = png_evidence(image, 'all three characters through the actual action renderer')
+    return [(path, 'native-render/three-cats-gdi.json'), (image, 'native-render/three-cats-gdi.png')], {
+        'report': data, 'report_sha256': sha(path), 'image': evidence,
+        'visual_quality': 'Requires separate visual review; decoding and hash checks alone are not visual approval'}
 
 
 def native_benchmark_contract(native_root, exe):
@@ -846,8 +1152,8 @@ def native_rest_contract(native_root, reference):
             report.get('neutral_source_frame') == reference['neutral_frame'] and report.get('new_motion_drawings') == 0,
             'The native rest report must select the exact original neutral and curled-sleep poses')
     characters = report.get('characters', [])
-    require(len(characters) == 2 and {c.get('character') for c in characters} == {0, 8},
-            'Native rest pose equality must cover both characters')
+    require(len(characters) == 3 and {c.get('character') for c in characters} == {0, 8, 10},
+            'Native rest pose equality must cover all three characters')
     files = [(path, 'sleep-reference/report.json')]
     images = {}
     def image(key, value, expected, canvas):
@@ -858,7 +1164,7 @@ def native_rest_contract(native_root, reference):
         images[expected] = metadata
         files.append((png, 'sleep-reference/' + expected))
     for character in characters:
-        coat = 'cream' if character['character'] == 0 else 'tuxedo'
+        coat = {0: 'cream', 8: 'tuxedo', 10: 'odd_eye'}[character['character']]
         require(type(character.get('intro_ms')) is int and character['intro_ms'] > 0 and
                 all(character.get(key) is True for key in ('entrance_preserved', 'waking_preserved',
                                                          'neutral_matches_reference')) and
@@ -878,9 +1184,9 @@ def native_rest_contract(native_root, reference):
                 image(owner + '_png', sample, coat + '-' + owner + '-' + str(sample['elapsed_ms']) + '.png', [260, 240])
         for owner in ('reference', 'primary', 'companion'):
             image('neutral_' + owner + '_png', character, coat + '-neutral-' + owner + '.png', [260, 240])
-    image('comparison_png', report, 'sleep-reference-hold.png', [1820, 480])
-    image('neutral_comparison_png', report, 'reference-neutral-hold.png', [780, 480])
-    require(len(images) == 22, 'The native rest report must retain all 22 source and owner comparisons')
+    image('comparison_png', report, 'sleep-reference-hold.png', [1820, 720])
+    image('neutral_comparison_png', report, 'reference-neutral-hold.png', [780, 720])
+    require(len(images) == 32, 'The native rest report must retain all 32 source and owner comparisons')
     return path, files, {'report': report, 'report_sha256': sha(path), 'native_step': RENDER_STEP,
                          'images': images, 'visual_quality': 'Pixel-equality checks are separate from visual review'}
 
@@ -913,6 +1219,16 @@ def native_jump_contract(native_root, artwork, reference):
                 type(case.get('entry_from_side_turn_seen')) is bool and
                 (case['scenario'] != 'walk-jump' or case['entry_from_side_turn_seen']) and
                 case.get('reference_neutral_seen') is True and
+                case.get('connected_jump_source') == [400, 29] and
+                case.get('unique_new_painted_frames') == 0 and
+                case.get('continuous_joint_deformation') is True and
+                all(type(case.get(key)) in (int, float) and math.isfinite(case[key]) for key in
+                    ('max_preparation_compression', 'max_flight_tuck',
+                     'max_contact_compression', 'max_joint_control_delta')) and
+                .70 <= case['max_preparation_compression'] <= 1 and
+                .70 <= case['max_flight_tuck'] <= 1 and
+                .10 <= case['max_contact_compression'] <= 1 and
+                0 <= case['max_joint_control_delta'] <= .26 and
                 type(case.get('png_count')) is int and case['png_count'] >= 14,
                 'Native jump continuity invariants or physical metrics failed')
         snapshots = list(path.parent.glob(f'case-{index}-*.png'))
@@ -921,9 +1237,23 @@ def native_jump_contract(native_root, artwork, reference):
             match = re.fullmatch(r'case-' + str(index) + r'-(\d+)\.png', image.name)
             require(match is not None and int(match[1]) < 420, 'Invalid native jump snapshot index')
             images[image.name] = png_evidence(image, 'jump continuity ' + image.name)
+            require(images[image.name]['canvas'] == [420, 320], 'Native jump actor canvas changed size')
             files.append((image, 'jump-continuity/' + image.name))
+        if index in (0, 4):
+            # Old artwork on the current body's physical path is labelled as
+            # such. It is never presented as footage of a prior app release.
+            baseline = list(path.parent.glob(f'before-case-{index}-*.png'))
+            require({p.name for p in baseline} == {f'before-case-{index}-{frame}.png' for frame in range(0, 420, 2)},
+                    'Native jump artwork comparison must contain all 210 actual baseline samples')
+            require(all((path.parent / f'case-{index}-{frame}.png').is_file() for frame in range(0, 420, 2)),
+                    'Native connected-jump comparison has a missing actual output sample')
+            for image in baseline:
+                images[image.name] = png_evidence(image, 'controlled old-artwork comparison ' + image.name)
+                require(images[image.name]['canvas'] == [420, 320], 'Native baseline actor canvas changed size')
+                files.append((image, 'jump-continuity/' + image.name))
     board = path.parent / report['board']
     images[board.name] = png_evidence(board, 'jump entry and exit board')
+    require(images[board.name]['canvas'] == [2420, 760], 'Native jump review board dimensions changed')
     files.append((board, 'jump-continuity/' + board.name))
     trace_path = path.parent / report['trace']
     trace = json.loads(trace_path.read_text(encoding='utf-8-sig'))
@@ -931,7 +1261,8 @@ def native_jump_contract(native_root, artwork, reference):
             isinstance(trace.get('frames'), list) and len(trace['frames']) == 3360,
             'Native jump trace must contain all eight seven-second cases')
     stats = [{'entry': False, 'side_entry': False, 'air': False, 'return': False, 'neutral': False,
-              'peak': 0, 'origin': None, 'max_delta': 0, 'max_error': 0} for _ in cases]
+              'peak': 0, 'origin': None, 'max_delta': 0, 'max_error': 0, 'rig_frames': 0,
+              'preparation': 0, 'tuck': 0, 'contact': 0, 'joint_delta': 0, 'prior_controls': None} for _ in cases]
     registrations = {9: artwork['video_action_artwork']['walk'], 6: artwork['jump_artwork'],
                      8: {'resource_id': reference['resource_id'], 'registered_frames': reference['frames'],
                          'reference_height': reference['reference_height']}}
@@ -947,13 +1278,29 @@ def native_jump_contract(native_root, artwork, reference):
                     for key in ('physical_x', 'physical_lift', 'rendered_x', 'rendered_lift',
                                 'reference_height', 'root_delta_x', 'predicted_delta_x')) and
                 all(type(frame.get(key)) is bool for key in ('grounded', 'jump_pending', 'entry_turn',
-                                                           'return_turn', 'jump_root_locked', 'reference_neutral')),
+                                                           'return_turn', 'jump_root_locked', 'reference_neutral', 'jump_rig')),
                 'Native jump trace contains invalid physical coordinates or states')
         registration = registrations.get(frame.get('sprite_clip'))
         require(registration is not None and frame.get('sprite_resource') == registration['resource_id'] and
                 type(frame.get('sprite_frame')) is int and 0 <= frame['sprite_frame'] < registration['registered_frames'] and
                 frame['reference_height'] == registration['reference_height'],
                 'Native jump trace does not select the registered turn or jump artwork')
+        controls = frame.get('jump_controls')
+        require(isinstance(controls, list) and len(controls) == 4 and
+                all(type(value) in (int, float) and math.isfinite(value) and 0 <= value <= 1 for value in controls),
+                'Native connected-jump controls must be finite, bounded and explicit')
+        require(type(frame.get('logical_clip')) is int and type(frame.get('logical_frame')) is int,
+                'Native jump trace must distinguish logical action from the actual painted drawing')
+        if frame['jump_rig']:
+            require(frame['logical_clip'] == 6 and frame['sprite_clip'] == 9 and
+                    frame['sprite_resource'] == 400 and frame['sprite_frame'] == 29 and
+                    0 <= frame['logical_frame'] < artwork['jump_artwork']['registered_frames'] and
+                    not frame['entry_turn'] and not frame['return_turn'] and not frame['reference_neutral'],
+                    'Connected jump must deform the actual registered400/29 painting, not relabel old16 poses')
+        else:
+            require(frame['logical_clip'] == frame['sprite_clip'] and frame['logical_frame'] == frame['sprite_frame'] and
+                    frame['logical_clip'] != 6 and controls == [0, 0, 0, 0],
+                    'A turn or neutral pose was incorrectly labelled as a connected jump')
         if frame['sprite_clip'] == 8:
             require(frame['sprite_frame'] == reference['neutral_frame'] and frame['grounded'] and
                     frame['reference_neutral'] and not frame['jump_pending'] and
@@ -970,6 +1317,20 @@ def native_jump_contract(native_root, artwork, reference):
                 left <= frame['alpha_centroid'][0] <= right and top <= frame['alpha_centroid'][1] <= bottom,
                 'Native jump image is empty, clipped or has inconsistent alpha bounds')
         stat = stats[index]
+        if frame['jump_rig']:
+            stat['rig_frames'] += 1
+            if not frame['grounded']:
+                stat['tuck'] = max(stat['tuck'], controls[1])
+            elif frame['jump_pending']:
+                stat['preparation'] = max(stat['preparation'], controls[0])
+            else:
+                stat['contact'] = max(stat['contact'], controls[0])
+            if stat['prior_controls'] is not None:
+                stat['joint_delta'] = max(stat['joint_delta'],
+                    *(abs(a-b) for a, b in zip(controls[:3], stat['prior_controls'][:3])))
+            stat['prior_controls'] = controls
+        else:
+            stat['prior_controls'] = None
         if frame['jump_root_locked'] and stat['origin'] is None:
             stat['origin'] = frame['rendered_x']
         if stat['origin'] is not None:
@@ -981,7 +1342,7 @@ def native_jump_contract(native_root, artwork, reference):
         stat['peak'] = max(stat['peak'], frame['physical_lift'])
         stat['entry'] |= frame['entry_turn']
         stat['neutral'] |= frame['reference_neutral']
-        stat['side_entry'] |= frame['entry_turn'] and 48 <= frame['sprite_frame'] <= 55
+        stat['side_entry'] |= frame['entry_turn'] and 30 <= frame['sprite_frame'] <= 47
         stat['air'] |= not frame['grounded']
         stat['return'] |= frame['return_turn']
         if frame['entry_turn'] or frame['return_turn']:
@@ -992,11 +1353,17 @@ def native_jump_contract(native_root, artwork, reference):
                     stat['side_entry'] == case['entry_from_side_turn_seen'] and
                     abs(stat['peak'] - case['max_lift']) < .02 and
                     abs(stat['max_delta'] - case['max_frame_root_delta']) < .002 and
-                    abs(stat['max_error'] - case['max_integration_error']) < .002,
+                    abs(stat['max_error'] - case['max_integration_error']) < .002 and
+                    stat['rig_frames'] >= 20 and
+                    all(abs(stat[measured] - case[reported]) < .00002 for measured, reported in
+                        (('preparation', 'max_preparation_compression'), ('tuck', 'max_flight_tuck'),
+                         ('contact', 'max_contact_compression'), ('joint_delta', 'max_joint_control_delta'))),
                     'Native jump trace did not complete entry, flight, landing and grounded return')
     files.append((trace_path, 'jump-continuity/trace.json'))
     return path, files, {'report': report, 'report_sha256': sha(path), 'trace_sha256': sha(trace_path),
                          'native_step': SAVE_STEP, 'images': images,
+                         'connected_jump_source': [400, 29], 'unique_new_painted_frames': 0,
+                         'comparison': 'Old16 artwork on the current native physical path; not prior-release footage',
                          'visual_quality': 'Capture boards and phase images require separate visual review'}
 
 
@@ -1108,6 +1475,10 @@ def main(stage_only=False):
     motion_directory, motion_capture_contract = native_motion_capture_contract(native_root, walk_contract)
     idle_directory, idle_capture_contract = native_idle_capture_contract(native_root,
         walk_contract['authored_appearance']['cream_reference'])
+    cursor_directory, cursor_files, cursor_contract = native_cursor_capture_contract(native_root)
+    ball_directory, ball_files, ball_contract = native_ball_capture_contract(native_root)
+    groom_report, groom_files, groom_contract = native_groom_contract(native_root)
+    keyboard_files, keyboard_contract = native_keyboard_contract(native_root)
     menu_report, menu_files, menu_contract = native_menu_contract(native_root)
     jump_report, jump_files, jump_contract = native_jump_contract(native_root, walk_contract,
         walk_contract['authored_appearance']['cream_reference'])
@@ -1115,6 +1486,7 @@ def main(stage_only=False):
     rest_report, rest_files, rest_contract = native_rest_contract(native_root,
         walk_contract['authored_appearance']['cream_reference'])
     coat_board, coat_contract = native_coat_evidence(native_root)
+    three_coat_files, three_coat_contract = native_three_coat_evidence(native_root)
     reference_board, reference_contract = native_reference_evidence(native_root)
     benchmark_files, benchmark_contract = native_benchmark_contract(native_root, exe)
 
@@ -1151,12 +1523,13 @@ def main(stage_only=False):
         files.append(native_manual_report)
         for source, name in ((menu_report, 'menu-visibility-report.json'),
                              (jump_report, 'jump-continuity-report.json'),
+                             (groom_report, 'groom-continuity-report.json'),
                              (zoomies_report, 'random-zoomies-report.json'),
                              (rest_report, 'reference-rest-report.json')):
             destination = stage / name
             shutil.copyfile(source, destination)
             files.append(destination)
-        interaction_files = menu_files + jump_files + zoomies_files + rest_files + benchmark_files + [
+        interaction_files = menu_files + jump_files + zoomies_files + rest_files + benchmark_files + cursor_files + keyboard_files + three_coat_files + ball_files + groom_files + [
             (coat_board, coat_contract['archive_path']), (reference_board, reference_contract['archive_path'])]
         interaction_hashes = {name: sha(path) for path, name in interaction_files}
         interaction_archive = stage / 'interaction-evidence.zip'
@@ -1168,7 +1541,9 @@ def main(stage_only=False):
         for directory, basename, contract in (
                 (capture_directory, 'walking-native', capture_contract),
                 (motion_directory, 'motions-native', motion_capture_contract),
-                (idle_directory, 'idle-native', idle_capture_contract)):
+                (idle_directory, 'idle-native', idle_capture_contract),
+                (cursor_directory, 'cursor-play-native', cursor_contract),
+                (ball_directory, 'ball-play-native', ball_contract)):
             native_video = stage / (basename + '.mp4')
             contract['encoding'] = encode(directory, native_video)
             contract['video_sha256'] = sha(native_video)
@@ -1177,6 +1552,15 @@ def main(stage_only=False):
                 destination = stage / (basename + suffix)
                 shutil.copyfile(directory / source_name, destination)
                 files.append(destination)
+        # A controlled old16-artwork comparison on the identical current
+        # physical path, not an old app recording. Original actor pixels stay
+        # at110 logical px; selecting alternate native samples gives30 FPS.
+        from encode_jump_review import encode as encode_jump
+        jump_video = stage / 'jump-native.mp4'
+        encode_jump(jump_report.parent, jump_video)
+        jump_contract['encoding'] = json.loads(jump_video.with_suffix('.json').read_text(encoding='utf-8'))
+        jump_contract['video_sha256'] = sha(jump_video)
+        files += [jump_video, jump_video.with_suffix('.json')]
         # Include actual command evidence when the native test emitted it; no
         # encoder or unrelated mesh-review media is needed for this release.
         command_roots = [p for p in native_root.rglob('*')
@@ -1203,11 +1587,16 @@ def main(stage_only=False):
             'native_walk_capture': capture_contract,
             'native_motion_capture': motion_capture_contract,
             'native_idle_capture': idle_capture_contract,
+            'native_cursor_play': cursor_contract,
+            'native_ball_play': ball_contract,
+            'native_connected_groom': groom_contract,
+            'native_keyboard_super': keyboard_contract,
             'native_menu_visibility': menu_contract,
             'native_jump_continuity': jump_contract,
             'native_random_zoomies': zoomies_contract,
             'native_reference_rest': rest_contract,
             'native_coat_review': coat_contract,
+            'native_three_coat_review': three_coat_contract,
             'native_reference_review': reference_contract,
             'native_performance_comparison': benchmark_contract,
             'interaction_evidence': {'archive': interaction_archive.name,
@@ -1242,10 +1631,14 @@ def main(stage_only=False):
                          f'- [실제 앱 렌더링으로 보는 걷기 영상]({BASE_URL}walking-native.mp4)\n'
                          f'- [밥 먹기·걷기·달리기 영상]({BASE_URL}motions-native.mp4)\n'
                          f'- [눈·귀·꼬리·앞발 대기 동작 영상]({BASE_URL}idle-native.mp4)\n'
+                         f'- [가까운 커서와 앞발·까치발·도약 놀이]({BASE_URL}cursor-play-native.mp4)\n'
+                         f'- [공을 건드리고 굴러가는 공을 따라가는 놀이]({BASE_URL}ball-play-native.mp4)\n'
+                         f'- [같은 그림으로 이어지는 점프 비교]({BASE_URL}jump-native.mp4)\n'
                          f'- [메뉴·점프·동작별 캐릭터 확인 자료]({BASE_URL}interaction-evidence.zip)\n'
                          f'- [검증 출처와 SHA-256]({BASE_URL}windows-validation.json)\n\n'
                          '눈 깜빡임과 귀·꼬리·앞발 움직임으로 대기 동작을 보강했습니다.\n'
-                         '미리보기는 실제 앱 그리기로 출력한 60FPS 영상이며, 바탕화면 녹화는 아닙니다.\n'
+                         '미리보기는 실제 앱 그리기와 물리 경로로 출력한 영상이며 바탕화면 녹화는 아닙니다. '
+                         '걷기·놀이 영상은60FPS, 점프 비교는60Hz 출력에서 매 두 번째 표본을 고른30FPS입니다.\n'
                          f'검증 소스: `{head}` · [Windows 실행 검사](https://github.com/{REPO}/actions/runs/{run_id}).\n',
                          encoding='utf-8')
         if already_public:

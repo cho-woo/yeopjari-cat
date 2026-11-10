@@ -125,6 +125,17 @@ void RequireMoving(Model& model,Context& c,double minimumSpeed) {
 }
 void RequireCareStarts(Model& model,Context& c,cat::sprite_sequence::Clip clip) {
     const auto began=c.ticks;
+    if(clip==cat::sprite_sequence::Clip::Groom) {
+        while((model.View(c.ticks).motion!=cat::animation::Motion::Groom ||
+                model.View(c.ticks).animation.cursorReach.groom!=1) &&
+                c.ticks-began<RegisteredGroundTransitionBudget())Step(model,c,1);
+        const auto view=model.View(c.ticks);
+        CHECK(view.motion==cat::animation::Motion::Groom && view.animation.cursorReach.groom==1);
+        CHECK(view.animation.frame==4 && view.animation.spriteClip==cat::sprite_sequence::Clip::None && !view.animation.spriteTimed);
+        CHECK(view.animation.cursorReach.rightLift==0); // connected arm starts at its exact resting source
+        CHECK(std::abs(view.physical.velocityX-view.physical.supportVelocityX)<cat::motion::kStoppedSpeed);
+        return;
+    }
     while(model.View(c.ticks).animation.spriteClip!=clip &&
             c.ticks-began<RegisteredGroundTransitionBudget())Step(model,c,1);
     const auto view=model.View(c.ticks);
@@ -750,7 +761,7 @@ void RegisteredCompanionCareFinishesItsWholeProgram() {
         CHECK(grooming.motion==cat::animation::Motion::Groom);
         const auto* groom=cat::sprite_assets::Find(Clip::Groom,0,cat::sprite_assets::kCareSprites);
         const auto groomDuration=cat::sprite_sequence::ProgramDuration(groom->program);
-        CHECK(grooming.animation.spriteOptions.durationMs==groomDuration);
+        CHECK(grooming.animation.cursorReach.groom==1 && grooming.animation.spriteClip==Clip::None);
         c.ticks+=groomDuration;c.nowUtc=born+static_cast<std::int64_t>(c.ticks/1000);model.Tick(c);
         const auto neutral=model.View(c.ticks);
         CHECK(neutral.motion==cat::animation::Motion::Idle);
@@ -800,7 +811,7 @@ void CompanionJumpReturnOwnsTheCompletedRecoveryBoundary() {
     CHECK(jump&&walk);
     const auto profile=cat::video_ground_bridge::JumpTurns(*walk);CHECK(profile.valid);
     const auto recovery=cat::sprite_sequence::Duration(jump->program,jump->program.outro);
-    const auto turn=cat::sprite_sequence::Duration(walk->program,walk->program.outro)-profile.exitOffsetMs;
+    const auto turn=profile.entryMs;
     for(const auto character:{cat::Character::Cream,cat::Character::Tuxedo}) {
         State state=NewState(born);state.preferences.character=character;state.pet.position=.2;
         Model model;model.Bind(state);model.Reset(0,2400,700);
@@ -812,7 +823,7 @@ void CompanionJumpReturnOwnsTheCompletedRecoveryBoundary() {
             Step(model,c,1);const auto physical=model.Physical();const auto view=model.View(c.ticks);
             if(physical.landed)landed=c.ticks;
             if(landed && c.ticks-landed>=recovery && view.animation.spriteClip==Clip::Walk &&
-                    view.animation.spriteFrame>=57 && view.animation.spriteFrame<=60) {
+                    view.animation.spriteFrame>=20 && view.animation.spriteFrame<=29) {
                 returning=c.ticks;break;
             }
         }
@@ -825,7 +836,7 @@ void CompanionJumpReturnOwnsTheCompletedRecoveryBoundary() {
             // The old waitingForStop recovery extension must not resurrect
             // Jump or reset this just-started real side-to-front turn.
             if(c.ticks-returning<turn)
-                CHECK(view.animation.spriteClip==Clip::Walk&&view.animation.spriteFrame>=57&&view.animation.spriteFrame<=60);
+                CHECK(view.animation.spriteClip==Clip::Walk&&view.animation.spriteFrame>=20&&view.animation.spriteFrame<=29);
             else CHECK(view.animation.spriteClip==Clip::None&&view.animation.frame==4);
             Step(model,c,1);
         }

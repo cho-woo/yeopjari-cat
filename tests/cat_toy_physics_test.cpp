@@ -69,8 +69,8 @@ void FullActivity(cat::toy::Kind kind, double fps, double growth, double destina
     // Serialized enum IDs retain the retired Box hole. Select deterministic
     // entropy from the current catalog rather than assuming contiguous IDs.
     std::uint32_t entropy=0;
-    while(entropy<5 && Automatic::Choose(entropy)!=kind)++entropy;
-    CHECK(entropy<5 && kind!=Kind::Box);
+    while(entropy<4 && Automatic::Choose(entropy)!=kind)++entropy;
+    CHECK(entropy<4 && !Retired(kind));
     for (int tick=0;tick<1000 && placement.action==AutoAction::None;++tick)
         placement=automatic.Advance(.25,automaticInput,entropy);
     CHECK(placement.action==AutoAction::Place && placement.kind==kind);
@@ -178,11 +178,11 @@ void PauseAndRaisedSupport() {
 int main() {
     try {
         using cat::toy::Kind;
-        constexpr Kind supported[]{Kind::Ball,Kind::PaperBag,Kind::Catnip,Kind::FishingRod,Kind::Cushion};
-        for(unsigned index=0;index<5;++index) CHECK(cat::toy::Automatic::Choose(index)==supported[index]);
-        for(unsigned entropy=0;entropy<1000;++entropy) CHECK(cat::toy::Automatic::Choose(entropy)!=Kind::Box);
+        constexpr Kind supported[]{Kind::Ball,Kind::Catnip,Kind::FishingRod,Kind::Cushion};
+        for(unsigned index=0;index<4;++index) CHECK(cat::toy::Automatic::Choose(index)==supported[index]);
+        for(unsigned entropy=0;entropy<1000;++entropy) CHECK(!cat::toy::Retired(cat::toy::Automatic::Choose(entropy)));
         for (double fps : {30.0, 60.0, 120.0})
-            for (auto kind : {Kind::Ball,Kind::PaperBag})
+            for (auto kind : {Kind::Ball,Kind::Cushion})
                 for (double growth : {.82, 1.0}) {
                     Approach(kind, fps, 500, 700, growth, 60, false);
                     Approach(kind, fps, 800, 600, growth, -60, false);
@@ -199,8 +199,8 @@ int main() {
             for (double growth:{.82,1.0}) {
                 FullActivity(cat::toy::Kind::Ball,fps,growth,440);
                 FullActivity(cat::toy::Kind::Ball,fps,growth,1815);
-                FullActivity(cat::toy::Kind::PaperBag,fps,growth,440);
-                FullActivity(cat::toy::Kind::PaperBag,fps,growth,110);
+                FullActivity(cat::toy::Kind::Cushion,fps,growth,110);
+                FullActivity(cat::toy::Kind::Catnip,fps,growth,110);
                 FullActivity(cat::toy::Kind::Catnip,fps,growth,440);
                 FullActivity(cat::toy::Kind::FishingRod,fps,growth,440);
                 FullActivity(cat::toy::Kind::Cushion,fps,growth,440);
