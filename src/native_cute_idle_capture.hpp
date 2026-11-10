@@ -14,6 +14,37 @@ struct Frame {
     std::uint64_t actorHash=0;
     bool paused=false;
 };
+struct ProxyBuffers {
+    const std::uint32_t *source=nullptr,*deformed=nullptr,*expression=nullptr;
+    const Bitmap *sourceImage=nullptr,*image=nullptr,*expressionImage=nullptr;
+    std::array<std::size_t,3> sizes{},capacities{};
+};
+ProxyBuffers Buffers(const SpriteAtlas::Skin& skin) {
+    return {skin.source.data(),skin.deformed.data(),skin.expression.data(),
+        skin.sourceImage.get(),skin.image.get(),skin.expressionImage.get(),
+        {skin.source.size(),skin.deformed.size(),skin.expression.size()},
+        {skin.source.capacity(),skin.deformed.capacity(),skin.expression.capacity()}};
+}
+bool Stable(const SpriteAtlas::Skin& skin,const ProxyBuffers& before) {
+    const auto after=Buffers(skin);
+    return after.source==before.source&&after.deformed==before.deformed&&after.expression==before.expression&&
+        after.sourceImage==before.sourceImage&&after.image==before.image&&after.expressionImage==before.expressionImage&&
+        after.sizes==before.sizes&&after.capacities==before.capacities;
+}
+std::uint64_t SourceHash(const SpriteAtlas::Skin& skin) {
+    return cat::Checksum(std::string(reinterpret_cast<const char*>(skin.source.data()),skin.source.size()*4));
+}
+std::size_t ProxyResidentPixels(const SpriteAtlas& atlas) {
+    std::size_t count=0;
+    for(const auto& skin:atlas.idleProxies)
+        count+=skin.source.capacity()+skin.deformed.capacity()+skin.expression.capacity()+skin.body.capacity()+skin.head.capacity();
+    return count;
+}
+unsigned ProxyEntries(const SpriteAtlas& atlas) {
+    unsigned count=0;
+    for(const auto& skin:atlas.idleProxies)if(skin.sourceImage&&skin.image&&skin.expressionImage)++count;
+    return count;
+}
 struct Row {
     cat::Character character=cat::Character::Cream;
     cat::nutrition::Visual body;
@@ -22,7 +53,48 @@ struct Row {
     unsigned changedFrames=0,blinkFrames=0,earFrames=0,tailFrames=0,pawFrames=0;
     unsigned longestStillFrames=0;
     bool pauseHeld=true,resumed=false;
+    SpriteAtlas::Skin* proxy=nullptr;
+    ProxyBuffers proxyBuffers{};
+    std::uint64_t proxyBuildsBefore=0,proxyBuildsAfter=0,proxyLruBuilds=0,originalSourceHash=0;
+    int originalWidth=0,originalHeight=0,originalStandingHeight=0,originalResource=0;
+    Rect originalFrame{};
+    std::size_t originalPixels=0,proxyResidentPixels=0,proxyLimitPixels=0;
+    unsigned proxyEntries=0;
 };
+int PrewarmProxy(Row& row) {
+    auto& atlas=CurrentArt(row.character).base;
+    const auto& original=atlas.skins[4];
+    row.originalWidth=original.width;row.originalHeight=original.height;
+    row.originalFrame=atlas.frames[4];row.originalStandingHeight=atlas.standingHeight;row.originalResource=atlas.baseResourceId;
+    row.originalPixels=original.source.size();row.originalSourceHash=SourceHash(original);
+    row.proxyLimitPixels=2*row.originalPixels*3;
+    const auto builds=atlas.idleProxyBuilds;
+    // Exercise actual cache eviction at three display buckets, then return to
+    // the real110px actor. The cache must retain only two reusable entries.
+    for(const double height:{110.,138.,165.,110.}) {
+        if(!IdleProxySkin(atlas,height)||ProxyEntries(atlas)>2||ProxyResidentPixels(atlas)>row.proxyLimitPixels)return 670;
+    }
+    row.proxyLruBuilds=atlas.idleProxyBuilds-builds;
+    row.proxy=IdleProxySkin(atlas,110);
+    if(!row.proxy||row.proxy==&original||row.proxyLruBuilds<3||ProxyEntries(atlas)!=2||
+            row.proxy->width>original.width||row.proxy->height>original.height)return 670;
+    row.proxyBuffers=Buffers(*row.proxy);row.proxyBuildsBefore=atlas.idleProxyBuilds;
+    return 0;
+}
+int VerifyProxy(Row& row,bool checkOriginal=false) {
+    const auto& atlas=CurrentArt(row.character).base;
+    row.proxyBuildsAfter=atlas.idleProxyBuilds;row.proxyEntries=ProxyEntries(atlas);
+    row.proxyResidentPixels=ProxyResidentPixels(atlas);
+    if(!row.proxy||!Stable(*row.proxy,row.proxyBuffers)||row.proxyBuildsAfter!=row.proxyBuildsBefore||
+            row.proxyEntries>2||row.proxyResidentPixels>row.proxyLimitPixels)return 671;
+    const auto& frame=atlas.frames[4];
+    if(checkOriginal&&(SourceHash(atlas.skins[4])!=row.originalSourceHash||
+            atlas.skins[4].width!=row.originalWidth||atlas.skins[4].height!=row.originalHeight||
+            atlas.standingHeight!=row.originalStandingHeight||atlas.baseResourceId!=row.originalResource||
+            frame.X!=row.originalFrame.X||frame.Y!=row.originalFrame.Y||
+            frame.Width!=row.originalFrame.Width||frame.Height!=row.originalFrame.Height))return 672;
+    return 0;
+}
 std::array<double,15> Controls(const cat::animation::Pose& pose) {
     const auto& j=pose.joints;const auto& f=pose.face;
     return {{j.leftEar,j.rightEar,j.headNod,j.frontLeft,j.frontRight,j.tailRaise,j.breath,
@@ -42,6 +114,7 @@ int Simulate(Row& row,std::string& context) {
     row.startX=g.physics.RenderPose().x;
     row.body=cat::appearance::VisualModifiers(g.nutrition,row.character);
     row.frames.reserve(Count);
+    if(const int proxy=PrewarmProxy(row))return proxy;
     Surface actor;if(!actor.Create(300,220))return 661;
     cat::animation::Pose held;
     std::uint64_t previousHash=0,pauseHash=0;unsigned still=0;
@@ -71,6 +144,7 @@ int Simulate(Row& row,std::string& context) {
             if(graphics.GetLastStatus()!=Ok)return 664;
         }
         if(!native_coat_tests::ValidPixels(reinterpret_cast<const std::uint32_t*>(actor.pixels),300,220,true))return 664;
+        if(const int proxy=VerifyProxy(row))return proxy;
         const auto hash=cat::Checksum(std::string(reinterpret_cast<const char*>(actor.pixels),300*220*4));
         if(index&&!paused) {
             if(hash!=previousHash){++row.changedFrames;still=0;}else ++still;
@@ -101,6 +175,7 @@ int Simulate(Row& row,std::string& context) {
     }
     g.menuOpen=false;
     if(host.Saved()!=saved)return 665;
+    if(const int proxy=VerifyProxy(row,true))return proxy;
     if(row.maxBlink<.9||row.maxEar<.05||row.maxTail<.05||row.maxPaw<.05||row.changedFrames<30||
             row.longestStillFrames>Fps*6||!row.pauseHeld||!row.resumed)return 666;
     return 0;
@@ -137,6 +212,7 @@ int Run(std::string& context) {
                 Pen ground(Color(255,185,196,197),1);graphics.DrawLine(&ground,25.0f,floor+1.0f,935.0f,floor+1.0f);
                 graphics.DrawString(rowIndex?L"Tuxedo":L"Cream",-1,&small,PointF(25,floor-152),&ink);
                 DrawPetStyle(graphics,row.character,cat::Outfit::None,pose,row.body,480,floor,110);
+                if(const int proxy=VerifyProxy(rows[rowIndex]))return proxy;
                 if(rowIndex)trace<<',';
                 trace<<"{\"character\":"<<static_cast<unsigned>(row.character)<<",\"root_x\":"<<frame.x
                     <<",\"lift\":"<<frame.lift<<",\"sprite_clip\":"<<static_cast<unsigned>(pose.spriteClip)
@@ -152,6 +228,7 @@ int Run(std::string& context) {
         if(!SaveNativeWalkingReview(*canvas.image,path.c_str()))return 667;
     }
     trace<<"]}\n";
+    for(auto& row:rows)if(const int proxy=VerifyProxy(row,true))return proxy;
     std::ostringstream metadata;metadata.imbue(std::locale::classic());
     metadata<<"{\"schema\":1,\"version\":\"" YEOPJARI_VERSION_STRING "\",\"render_source\":\"Windows GDI+ / Box2D\","
         "\"desktop_recording\":false,\"fps\":60,\"frame_count\":1200,\"canvas\":[960,500],\"reference_height_px\":110,"
@@ -166,6 +243,14 @@ int Run(std::string& context) {
             <<",\"max_tail\":"<<row.maxTail<<",\"max_paw\":"<<row.maxPaw<<",\"changed_actor_frames\":"<<row.changedFrames
             <<",\"longest_still_frames\":"<<row.longestStillFrames<<",\"blink_frames\":"<<row.blinkFrames
             <<",\"ear_frames\":"<<row.earFrames<<",\"tail_frames\":"<<row.tailFrames<<",\"paw_frames\":"<<row.pawFrames
+            <<",\"idle_proxy_width\":"<<row.proxy->width<<",\"idle_proxy_height\":"<<row.proxy->height
+            <<",\"idle_proxy_entries\":"<<row.proxyEntries<<",\"idle_proxy_resident_pixels\":"<<row.proxyResidentPixels
+            <<",\"idle_proxy_capacity_limit_pixels\":"<<row.proxyLimitPixels<<",\"original_source_pixels\":"<<row.originalPixels
+            <<",\"original_source_width\":"<<row.originalWidth<<",\"original_source_height\":"<<row.originalHeight
+            <<",\"original_reference_height\":"<<row.originalStandingHeight
+            <<",\"idle_proxy_builds_before\":"<<row.proxyBuildsBefore<<",\"idle_proxy_builds_after\":"<<row.proxyBuildsAfter
+            <<",\"idle_proxy_lru_builds\":"<<row.proxyLruBuilds
+            <<",\"idle_proxy_buffers_stable\":true,\"idle_proxy_lru_bounded\":true,\"original_source_unchanged\":true,\"original_registration_unchanged\":true"
             <<",\"pause_held\":true,\"pause_clock_preserved\":true,\"resumed\":true,\"source_profile_preserved\":true,\"actor_unclipped\":true}";
     }
     metadata<<"],\"scenario\":\"stable original-design idle; blink, ears, tail and paws; 500ms menu pause; resume\"}\n";

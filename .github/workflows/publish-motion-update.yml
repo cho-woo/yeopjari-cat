@@ -54,7 +54,8 @@ jobs:
                            'Capture source-video walking through Windows GDI+ and Box2D at 60 FPS',
                            'Capture source-video meal, walk and run through Windows GDI+ and Box2D at 60 FPS',
                            'Verify real Windows right-click menu visibility through UI Automation',
-                           'Capture cute idle gestures through Windows GDI+ and Box2D at 60 FPS']:
+                           'Capture cute idle gestures through Windows GDI+ and Box2D at 60 FPS',
+                           'Compare baseline and candidate on the same Windows desktop']:
                   if not any(s['name']==name and s['status']=='completed' and s['conclusion']=='success'
                              for s in native['steps']):
                       raise ValueError('Missing successful native Windows step: '+name)

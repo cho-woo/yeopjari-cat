@@ -37,6 +37,7 @@ CAPTURE_STEP = 'Capture source-video walking through Windows GDI+ and Box2D at 6
 MOTION_CAPTURE_STEP = 'Capture source-video meal, walk and run through Windows GDI+ and Box2D at 60 FPS'
 MENU_STEP = 'Verify real Windows right-click menu visibility through UI Automation'
 IDLE_CAPTURE_STEP = 'Capture cute idle gestures through Windows GDI+ and Box2D at 60 FPS'
+BENCHMARK_STEP = 'Compare baseline and candidate on the same Windows desktop'
 
 
 def require(condition, message):
@@ -83,7 +84,8 @@ def validated_source(run_id, head):
         require(job.get('status') == 'completed' and job.get('conclusion') == 'success',
                 f'Missing successful {name} job')
         if name == 'windows-smoke':
-            for step_name in (SAVE_STEP, RENDER_STEP, CAPTURE_STEP, MOTION_CAPTURE_STEP, MENU_STEP, IDLE_CAPTURE_STEP):
+            for step_name in (SAVE_STEP, RENDER_STEP, CAPTURE_STEP, MOTION_CAPTURE_STEP,
+                              MENU_STEP, IDLE_CAPTURE_STEP, BENCHMARK_STEP):
                 step = exactly_one((s for s in job['steps'] if s['name'] == step_name), step_name)
                 require(step.get('status') == 'completed' and step.get('conclusion') == 'success',
                         f'Native Windows step did not pass: {step_name}')
@@ -537,6 +539,29 @@ def native_motion_capture_contract(native_root, artwork_contract):
     }
 
 
+def idle_proxy_contract(character, reference):
+    fields = ('idle_proxy_width', 'idle_proxy_height', 'idle_proxy_entries', 'idle_proxy_resident_pixels',
+              'idle_proxy_capacity_limit_pixels', 'original_source_pixels', 'original_source_width',
+              'original_source_height', 'original_reference_height', 'idle_proxy_builds_before',
+              'idle_proxy_builds_after', 'idle_proxy_lru_builds')
+    require(all(type(character.get(key)) is int and character[key] >= 0 for key in fields) and
+            character['idle_proxy_width'] == 151 and character['idle_proxy_height'] == 168 and
+            character['idle_proxy_entries'] == 2 and
+            character['original_source_width'] > character['idle_proxy_width'] and
+            character['original_source_height'] > character['idle_proxy_height'] and
+            character['original_source_pixels'] >= character['original_source_width'] * character['original_source_height'] and
+            character['original_reference_height'] == reference['reference_height'] and
+            character['idle_proxy_capacity_limit_pixels'] == 2 * character['original_source_pixels'] * 3 and
+            3 * character['idle_proxy_width'] * character['idle_proxy_height'] <= character['idle_proxy_resident_pixels'] <=
+            character['idle_proxy_capacity_limit_pixels'] and
+            character['idle_proxy_builds_before'] == character['idle_proxy_builds_after'] and
+            character['idle_proxy_builds_before'] >= character['idle_proxy_lru_builds'] >= 3 and
+            all(character.get(key) is True for key in ('idle_proxy_buffers_stable', 'idle_proxy_lru_bounded',
+                                                      'original_source_unchanged', 'original_registration_unchanged')),
+            'Native idle cache must use the bounded two-slot 151x168 proxy without warm-frame rebuilds or source changes')
+    return {key: character[key] for key in fields}
+
+
 def native_idle_capture_contract(native_root, reference):
     path = exactly_one((p for p in native_root.rglob('capture.json') if p.parent.name == 'idle-video'),
                        'native cute idle capture')
@@ -618,6 +643,7 @@ def native_idle_capture_contract(native_root, reference):
                 stat['counts'][key] += value > .050001
                 stat['possible_counts'][key] += value >= .049999
     for character in characters:
+        idle_proxy_contract(character, reference)
         stat = stats[character['character']]
         require(all(character.get(key) is True for key in ('pause_held', 'pause_clock_preserved', 'resumed',
                                                          'source_profile_preserved', 'actor_unclipped')) and stat['resumed'],
@@ -663,6 +689,59 @@ def native_coat_evidence(native_root):
     return path, {**evidence, 'render_source': 'Windows GDI+ / Box2D',
                   'archive_path': 'native-render/two-cats-gdi.png',
                   'visual_quality': 'Requires separate visual review; image presence is not visual approval'}
+
+
+def native_benchmark_contract(native_root, exe):
+    path = exactly_one((p for p in native_root.rglob('result.json') if p.parent.name == 'native-benchmark'),
+                       'completed native Windows performance comparison')
+    require(path.is_file() and not path.is_symlink() and path.stat().st_size <= 8 * 1024 * 1024,
+            'The native benchmark summary is missing or unbounded')
+    report = json.loads(path.read_text(encoding='utf-8-sig'))
+    conditions = report.get('conditions', {})
+    require(report.get('schema') == 1 and report.get('status') == 'completed' and
+            conditions.get('disposable_profile') is True and
+            type(conditions.get('logical_processors')) is int and conditions['logical_processors'] > 0,
+            'The benchmark must complete in a disposable Windows profile with available process counters')
+    runs = report.get('runs', [])
+    require(len(runs) == 2 and {run.get('label') for run in runs} == {'baseline', 'candidate'},
+            'The native benchmark must compare exactly the baseline and validated candidate')
+    expected_phases = {'paused_idle', 'ordinary_autonomous_activity', 'repeated_rest_resume', 'post_repeat_idle_settle'}
+    summaries = []
+    for run in runs:
+        candidate = run['label'] == 'candidate'
+        version = VERSION if candidate else '2.0.15'
+        expected_hash = sha(exe) if candidate else '7b5fd64493ab4241bb932d01c630558c0da242e30ef54b17a61b808147e6d266'
+        require(isinstance(run.get('file_version'), str) and
+                re.fullmatch(re.escape(version) + r'(?:\.0)?', run['file_version']) and
+                run.get('exe_sha256') == expected_hash and type(run.get('exe_bytes')) is int and run['exe_bytes'] > 0 and
+                (not candidate or run['exe_bytes'] == exe.stat().st_size),
+                'The native benchmark executable version/hash differs from its expected baseline or validated candidate')
+        require(all(type(run.get(key)) in (int, float) and math.isfinite(run[key]) and run[key] >= 0
+                    for key in ('startup_ms', 'startup_cpu_seconds', 'startup_private_bytes')) and
+                run['startup_ms'] > 0 and run['startup_private_bytes'] > 0,
+                'The native benchmark startup counters are invalid')
+        phases = run.get('scenarios', [])
+        require(len(phases) == 4 and {phase.get('name') for phase in phases} == expected_phases,
+                'The native performance comparison is missing a measured scenario')
+        for phase in phases:
+            require(all(type(phase.get(key)) in (int, float) and math.isfinite(phase[key]) and phase[key] >= 0
+                        for key in ('wall_seconds', 'cpu_seconds', 'cpu_one_core_percent', 'cpu_machine_percent',
+                                    'private_bytes_start', 'private_bytes_end', 'private_bytes_peak_sampled',
+                                    'working_set_peak_sampled')) and phase['wall_seconds'] > 0 and
+                    phase['private_bytes_peak_sampled'] > 0,
+                    'The native benchmark contains invalid CPU/memory observations')
+        summaries.append({key: value for key, value in run.items() if key != 'scenarios'} |
+                         {'scenarios': [{key: value for key, value in phase.items() if key != 'samples'} for phase in phases]})
+    files = [(path, 'benchmark/result.json')]
+    summary = path.parent / 'performance-summary.png'
+    image = None
+    if summary.exists():
+        image = png_evidence(summary, 'native Windows CPU and memory comparison')
+        files.append((summary, 'benchmark/performance-summary.png'))
+    return files, {'report_sha256': sha(path), 'native_step': BENCHMARK_STEP,
+                   'conditions': conditions, 'runs': summaries, 'summary_png': image,
+                   'performance_thresholds_applied': False,
+                   'scope': 'Only result.json and the optional comparison image are included; raw profiles, logs and CSV files are excluded.'}
 
 
 def native_reference_evidence(native_root):
@@ -1037,6 +1116,7 @@ def main(stage_only=False):
         walk_contract['authored_appearance']['cream_reference'])
     coat_board, coat_contract = native_coat_evidence(native_root)
     reference_board, reference_contract = native_reference_evidence(native_root)
+    benchmark_files, benchmark_contract = native_benchmark_contract(native_root, exe)
 
     history = json.loads(gh('release', 'list', '--repo', REPO, '--limit', '1000',
                            '--json', 'tagName,isDraft,isPrerelease'))
@@ -1076,7 +1156,7 @@ def main(stage_only=False):
             destination = stage / name
             shutil.copyfile(source, destination)
             files.append(destination)
-        interaction_files = menu_files + jump_files + zoomies_files + rest_files + [
+        interaction_files = menu_files + jump_files + zoomies_files + rest_files + benchmark_files + [
             (coat_board, coat_contract['archive_path']), (reference_board, reference_contract['archive_path'])]
         interaction_hashes = {name: sha(path) for path, name in interaction_files}
         interaction_archive = stage / 'interaction-evidence.zip'
@@ -1129,6 +1209,7 @@ def main(stage_only=False):
             'native_reference_rest': rest_contract,
             'native_coat_review': coat_contract,
             'native_reference_review': reference_contract,
+            'native_performance_comparison': benchmark_contract,
             'interaction_evidence': {'archive': interaction_archive.name,
                                      'sha256': sha(interaction_archive), 'files_sha256': interaction_hashes},
             **walk_contract,

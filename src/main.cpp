@@ -40,6 +40,7 @@
 #include "cat_memory_storage.hpp"
 #include "cat_routine.hpp"
 #include "cat_animation.hpp"
+#include "cat_idle_proxy.hpp"
 #include "cat_pose_transition.hpp"
 #include "cat_video_ground_bridge.hpp"
 #include "cat_care_presentation.hpp"
@@ -174,13 +175,22 @@ struct SpriteAtlas {
         std::unique_ptr<Bitmap> sourceImage, image, bodyImage, headImage, expressionImage;
         std::array<int, 11> controls{};
         bool valid = false, partsValid = false;
+        void Reset() {
+            sourceImage.reset();image.reset();bodyImage.reset();headImage.reset();expressionImage.reset();
+            source.clear();deformed.clear();body.clear();head.clear();expression.clear();
+            width=height=groundInset=0;controls={};valid=partsValid=false;
+        }
     };
     std::array<Skin, 32> skins;
+    std::array<Skin,2> idleProxies;
+    std::array<std::uint64_t,2> idleProxyUse{};
+    std::uint64_t idleProxyClock=0,idleProxyBuilds=0,idleProxyHits=0;
     void Reset() {
         for (auto& skin : skins) {
-            skin.sourceImage.reset(); skin.image.reset(); skin.bodyImage.reset(); skin.headImage.reset(); skin.expressionImage.reset();
-            skin.source.clear(); skin.deformed.clear(); skin.body.clear(); skin.head.clear(); skin.expression.clear(); skin.valid = skin.partsValid = false;
+            skin.Reset();
         }
+        for(auto& skin:idleProxies)skin.Reset();
+        idleProxyUse={};idleProxyClock=idleProxyBuilds=idleProxyHits=0;
         image.reset();
         if (stream) { stream->Release(); stream = nullptr; }
         standingHeight = 1;
@@ -1357,6 +1367,48 @@ bool LoadCareSprites() {
     return !g.meshWalkReview || SelectMeshWalkReview();
 }
 
+SpriteAtlas::Skin* IdleProxySkin(SpriteAtlas& atlas,double displayedHeight) {
+    const auto& original=atlas.skins[4];
+    const auto planned=cat::idle_proxy::Plan(original.width,original.height,displayedHeight);
+    if(!planned.width||!planned.height||original.source.empty())return nullptr;
+    if(planned.height>=original.height)return &atlas.skins[4];
+    const auto age=++atlas.idleProxyClock;
+    for(unsigned i=0;i<atlas.idleProxies.size();++i) {
+        auto& skin=atlas.idleProxies[i];
+        if(skin.width==planned.width&&skin.height==planned.height&&skin.sourceImage&&skin.image&&skin.expressionImage) {
+            atlas.idleProxyUse[i]=age;++atlas.idleProxyHits;return &skin;
+        }
+    }
+    const unsigned selected=atlas.idleProxyUse[0]<=atlas.idleProxyUse[1]?0:1;
+    auto& skin=atlas.idleProxies[selected];skin.Reset();
+    skin.width=planned.width;skin.height=planned.height;
+    const auto pixels=static_cast<std::size_t>(skin.width)*skin.height;
+    skin.source.resize(pixels);skin.deformed.resize(pixels);skin.expression.resize(pixels);
+    skin.sourceImage=std::make_unique<Bitmap>(skin.width,skin.height,skin.width*4,
+        PixelFormat32bppPARGB,reinterpret_cast<BYTE*>(skin.source.data()));
+    skin.image=std::make_unique<Bitmap>(skin.width,skin.height,skin.width*4,
+        PixelFormat32bppPARGB,reinterpret_cast<BYTE*>(skin.deformed.data()));
+    skin.expressionImage=std::make_unique<Bitmap>(skin.width,skin.height,skin.width*4,
+        PixelFormat32bppPARGB,reinterpret_cast<BYTE*>(skin.expression.data()));
+    if(skin.sourceImage->GetLastStatus()!=Ok||skin.image->GetLastStatus()!=Ok||skin.expressionImage->GetLastStatus()!=Ok) {
+        skin.Reset();return nullptr;
+    }
+    Bitmap source(original.width,original.height,original.width*4,PixelFormat32bppPARGB,
+        reinterpret_cast<BYTE*>(const_cast<std::uint32_t*>(original.source.data())));
+    {
+        Graphics graphics(skin.sourceImage.get());graphics.SetCompositingMode(CompositingModeSourceCopy);
+        graphics.Clear(Color(0,0,0,0));graphics.SetInterpolationMode(InterpolationModeHighQualityBicubic);
+        graphics.SetPixelOffsetMode(PixelOffsetModeHighQuality);
+        ImageAttributes attributes;attributes.SetWrapMode(WrapModeTileFlipXY);
+        const auto status=graphics.DrawImage(&source,Rect(0,0,skin.width,skin.height),0,0,
+            original.width,original.height,UnitPixel,&attributes);
+        graphics.Flush(FlushIntentionSync);
+        if(status!=Ok||graphics.GetLastStatus()!=Ok){skin.Reset();return nullptr;}
+    }
+    atlas.idleProxyUse[selected]=age;++atlas.idleProxyBuilds;
+    return &skin;
+}
+
 bool LoadAtlas() {
     if(!LoadCareSprites())return false;
     // Prepare the empty prop once from the supplied box drawing. Its outline
@@ -1404,6 +1456,9 @@ bool LoadAtlas() {
             !LoadStyledAtlasResource(110,g.tuxedoHanging,g.hanging,1,1)||
             !LoadStyledAtlasResource(112,g.tuxedoSleepStyles,g.sleepStyles,2,2))return false;
     g.tuxedoArt.actions.standingHeight=g.characters[0].actions.standingHeight;
+    // Prewarm the ordinary110px idle display. Other DPI/growth buckets replace
+    // at most one of two reusable entries; PNG decoding never happens here.
+    if(!IdleProxySkin(g.characters[0].base,110)||!IdleProxySkin(g.tuxedoArt.base,110))return false;
     return true;
 }
 void ReleaseAtlases() {
@@ -2076,7 +2131,7 @@ void DrawPet(Graphics& graphics, int frame, REAL center, REAL bottom, REAL scale
              REAL scaleX = 1, REAL scaleY = 1, REAL angle = 0, bool centerPivot = false,
              cat::deform::Joints joints = {}, bool groundContact = true, bool bodyOnly = false,
              cat::Character character = g.preferences.character, cat::Outfit /*outfit*/ = g.preferences.outfit,
-             cat::expression::Face face = {}) {
+             cat::expression::Face face = {},bool idleActing=false) {
     if (frame < 0 || frame >= cat::animation::kSpriteCount) return;
     auto& art = CurrentArt(character);
     SpriteAtlas* atlas = &art.base;
@@ -2136,7 +2191,11 @@ void DrawPet(Graphics& graphics, int frame, REAL center, REAL bottom, REAL scale
         frame == 24 || frame == 6 || frame >= 27 ? cat::deform::Shape::ReclineSide : cat::deform::Shape::Sitting;
     const bool articulated = newArt || frame == 4 || frame == 6 || frame == 7 || frame == 8 || frame == 9 || frame == 10 || frame == 15 || frame == 16 || frame == 18 || frame >= 24;
     if (articulated) {
-        auto& skin = atlas->skins[cell];
+        auto* selected=&atlas->skins[cell];
+        if(idleActing&&frame==4&&cell==4&&atlas==&art.base&&!bodyOnly) {
+            if(auto* proxy=IdleProxySkin(*atlas,height))selected=proxy;
+        }
+        auto& skin=*selected;
         if (PrepareSkin(skin, frame, joints, shape, bodyOnly,character)) {
             Bitmap* image = bodyOnly ? skin.bodyImage.get() : skin.image.get();
             if (frame == 4 && !bodyOnly && !cat::expression::Zero(face)) {
@@ -2424,7 +2483,7 @@ void DrawStyledAnimationDirect(Graphics& graphics, cat::animation::Pose pose, RE
         DrawPet(target, frame, center, bottom, scale, pose.flip,
                 static_cast<REAL>(pose.scaleX * body.bodyWidth),
                 static_cast<REAL>(pose.scaleY * body.bodyHeight), static_cast<REAL>(pose.angle), pose.centerPivot,
-                pose.joints, pose.groundContact, pose.bellyRig, character, outfit, pose.face);
+                pose.joints, pose.groundContact, pose.bellyRig, character, outfit, pose.face,pose.idleActing);
     };
     if (pose.blendFrame < 0 || pose.blend <= 0 || !blendFrom.image || !blendTo.image) {
         draw(graphics, pose.frame);

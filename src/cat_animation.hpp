@@ -51,6 +51,7 @@ struct Pose {
     bool groundContact = true;
     bool bellyRig = false;
     cat::expression::Face face;
+    bool idleActing=false; // Only the connected microgesture renderer may use its bounded display-size raster cache.
     bool walkingRig=false;
     bool originalWalk=false;
     bool jointWalk=false;
@@ -77,6 +78,7 @@ inline void UseAuthoredSprite(Pose& pose) {
     pose.x=pose.lift=pose.angle=0;pose.scaleX=pose.scaleY=1;
     pose.centerPivot=pose.bellyRig=false;pose.blendFrame=-1;pose.blend=0;
     pose.joints={};pose.face={};
+    pose.idleActing=false;
 }
 
 inline std::uint64_t ReferenceSleepIntroMs(const cat::sprite_sequence::Program* program=nullptr,unsigned sheetFrames=0) {
@@ -103,6 +105,7 @@ inline bool ApplyReferenceNeutralHold(Pose& pose,Motion displayed,bool grounded,
     const bool flip=pose.flip;pose={};pose.frame=4;pose.flip=flip;
     const auto acting=cat::idle_gestures::Sample(idleElapsedMs);
     pose.joints=acting.joints;pose.face=acting.face;
+    pose.idleActing=idleElapsedMs>350;
     return true;
 }
 
