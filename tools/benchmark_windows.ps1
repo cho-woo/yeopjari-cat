@@ -189,7 +189,15 @@ function Wait-SavedValue([string]$File,[string]$Value) {
     while($timer.Elapsed.TotalSeconds -lt 3){
         if(Test-Path -LiteralPath (Join-Path $save $File)){
             try {
-                $text=[IO.File]::ReadAllText((Join-Path $save $File))
+                # SavePet atomically replaces the target with MoveFileEx.
+                # ReadAllText omits FileShare.Delete and can make this poll
+                # block that replacement, leaving the old value on disk.
+                $sharing=[IO.FileShare]([IO.FileShare]::ReadWrite -bor [IO.FileShare]::Delete)
+                $stream=[IO.File]::Open((Join-Path $save $File),[IO.FileMode]::Open,[IO.FileAccess]::Read,$sharing)
+                try {
+                    $reader=[IO.StreamReader]::new($stream,[Text.Encoding]::UTF8,$true)
+                    try { $text=$reader.ReadToEnd() } finally { $reader.Dispose() }
+                } finally { $stream.Dispose() }
             } catch {
                 # Atomic app saves can briefly own the fixture file. Retry
                 # only sharing/lock violations within the existing deadline;
