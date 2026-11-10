@@ -344,6 +344,14 @@ void RealWindowFollowingAndClosure() {
     CHECK(m.Physical().onPlatform); CHECK(m.Physical().x>oldX+20);
     for(int direction:{1,-1}) {
         if(direction<0)for(unsigned i=0;i<60;++i) {c.supportPlatform.left-=.5;c.supportPlatform.right-=.5;Step(m,c,1);}
+        // A support's acceleration can first require physical braking and
+        // the complete registered side-to-front exit. Keep carrying the cat
+        // while waiting, then check its unchanged stable balance pose.
+        const auto began=c.ticks;
+        while(m.View(c.ticks).motion!=cat::animation::Motion::TailRaise &&
+                c.ticks-began<RegisteredGroundTransitionBudget()) {
+            c.supportPlatform.left+=direction*.5;c.supportPlatform.right+=direction*.5;Step(m,c,1);
+        }
         const auto view=m.View(c.ticks);
         CHECK(view.animation.frame==4 && view.motion==cat::animation::Motion::TailRaise);
         CHECK(view.physical.onPlatform && std::abs(view.physical.supportVelocityX-direction*30)<.1);

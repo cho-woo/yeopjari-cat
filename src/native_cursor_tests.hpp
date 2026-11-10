@@ -189,6 +189,27 @@ int Run() {
     for(unsigned frame=0;frame<100 && !EnvironmentBusy();++frame)
         host.Sample(host.PawX(),host.PawHeight());
     if(!EnvironmentBusy())return 291;
+    // A cursor-owned approach uses the shipping motor and pose selector.
+    // A neutral ground bridge must not paint a seated front view over a
+    // moving chase, or retain an autonomous entrance's motor delay.
+    host.Reset();
+    for(unsigned seed=0;;++seed) {
+        std::mt19937 preview(seed);
+        if(std::uniform_real_distribution<double>(0,1)(preview)<.24){g.random.seed(seed);break;}
+    }
+    const double approachX=g.physics.CurrentPose().x+120;
+    bool movingCursorPose=false;
+    for(unsigned frame=0;frame<180;++frame) {
+        host.Sample(approachX,6);AdvancePrimaryMotion(host.now,.016);
+        const auto physical=g.physics.RenderPose();
+        if(!EnvironmentBusy() || !cat::animation::Walking(g.motion) ||
+                std::abs(WalkingVelocity(physical))<=2)continue;
+        const auto pose=PrimaryDisplayedPose(host.now,physical);
+        if(!pose.spriteTimed || (pose.spriteClip!=cat::sprite_sequence::Clip::Walk &&
+                pose.spriteClip!=cat::sprite_sequence::Clip::Run))return 535;
+        movingCursorPose=true;
+    }
+    if(!movingCursorPose)return 535;
     // Real legacy and new-art atlas dimensions drive the native paw geometry.
     for (const auto character : {cat::Character::Cream}) {
         host.Reset(character);

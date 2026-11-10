@@ -49,6 +49,34 @@ void StopWaitsForContactThenFinishesTheActualExit() {
     CHECK(b.Sample(d).valid&&b.Sample(d).frame==60&&b.Sample(d).holding);
     b.Update(9000,false,true,0);CHECK(b.Neutral()&&b.Sample(d).frame==60);
 }
+void ResetWithGroundMomentumNeverShowsTheFrontPose() {
+    const auto d=Layout();Bridge b;b.Configure(1167,542,500);
+    // Busy cursor states reset the bridge, but not the physical body's speed.
+    // Watch/Idle must brake with distance-driven paws before the real exit.
+    for(const double speed:{32.,-32.}) {
+        b.Reset(900);CHECK(b.Sample(d).valid&&b.Sample(d).frame==20);
+        CHECK(b.Update(1000,false,true,speed));
+        CHECK(b.Braking()&&b.Stopping()&&!b.Starting()&&b.HoldMotor());
+        CHECK(!b.Sample(d).valid&&!b.ConsumeLoopReady());
+        b.Update(1100,false,true,speed/2);CHECK(b.Braking()&&!b.Sample(d).valid);
+        b.Update(1200,false,true,.5);CHECK(b.Stopping()&&!b.Braking());
+        CHECK(b.Sample(d).valid&&b.Sample(d).frame==48);
+        b.Update(1741,false,true,0);CHECK(b.Stopping()&&b.Sample(d).frame==60);
+        b.Update(1742,false,true,0);CHECK(b.Neutral()&&b.Sample(d).frame==60);
+    }
+    // Existing momentum also bypasses the stationary entrance when travel
+    // resumes, even when a host temporarily disallows a new entrance.
+    b.Reset();b.Update(2000,true,true,24,false);
+    CHECK(b.Side()&&!b.Starting()&&!b.HoldMotor()&&!b.Sample(d).valid);
+    CHECK(!b.ConsumeLoopReady());
+    // A request can also end during the first moving steps of the entrance.
+    b.Reset();b.Update(3000,true,true,0);b.Update(3600,true,true,24);
+    CHECK(b.Starting()&&!b.HoldMotor());
+    b.Update(3617,false,true,24);
+    CHECK(b.Braking()&&!b.Sample(d).valid&&!b.ConsumeLoopReady());
+    b.Update(3700,false,true,0);CHECK(b.Stopping()&&b.Sample(d).frame==48);
+    b.Update(4242,false,true,0);CHECK(b.Neutral()&&b.Sample(d).frame==60);
+}
 void ReversalAndSideCareDoNotRepeatTheFrontTurn() {
     Bridge b;b.Configure(1167,542,500);b.Update(0,true,true,22);
     for(unsigned i=0;i<10;++i)b.Update(100+i*20,true,true,i<5?0:-22);
@@ -94,6 +122,7 @@ int main() {
     try {
         static_assert(std::is_trivially_copyable<Bridge>::value,"No owned allocations in a ground bridge");
         ActualEntranceAndMotorHaveSeparateClocks();StopWaitsForContactThenFinishesTheActualExit();
+        ResetWithGroundMomentumNeverShowsTheFrontPose();
         ReversalAndSideCareDoNotRepeatTheFrontTurn();SuspensionInterruptionAndNoAirborneGroundBridge();
         RebasedHostClockRetainsTheWholeEntrance();
         std::cout<<"Video ground bridge: "<<checks<<" checks passed\n";return EXIT_SUCCESS;

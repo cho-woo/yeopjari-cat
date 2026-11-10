@@ -47,19 +47,25 @@ public:
         }
         const bool moving=std::abs(relativeVelocity)>.5;
         if(phase_==Phase::Neutral) {
-            if(requestedSide&&allowStart) {
+            if(moving) {
+                // A cursor interruption, drag release or landing can clear
+                // presentation state while Box2D still carries momentum.
+                // Keep the real walking cycle visible until the feet stop;
+                // a front neutral pose must never replace a moving body.
+                completedOutro_=loopReady_=false;
+                Begin(requestedSide?Phase::Side:Phase::Braking,ticks);
+            } else if(requestedSide&&allowStart) {
                 completedOutro_=false;
-                if(moving)phase_=Phase::Side;
-                else {
-                    startForSide_=sideAction_;
-                    Begin(Phase::Starting,ticks);
-                    if(StartDuration()==0)ReleaseEntrance();
-                }
+                startForSide_=sideAction_;
+                Begin(Phase::Starting,ticks);
+                if(StartDuration()==0)ReleaseEntrance();
             }
         } else if(phase_==Phase::Starting) {
             if(!requestedSide) {
-                // Explicit user interruption is permitted; no synthetic rewind.
-                phase_=Phase::Neutral;completedOutro_=loopReady_=false;
+                // Explicit interruption can occur after the first steps
+                // release the motor. Preserve moving paws through braking.
+                Begin(moving?Phase::Braking:Phase::Neutral,ticks);
+                completedOutro_=loopReady_=false;
             } else {
                 startForSide_=sideAction_;
                 if(Age()>=StartDuration())ReleaseEntrance();

@@ -1498,7 +1498,7 @@ void UpdatePrimaryGroundArt(ULONGLONG ticks) {
     const auto* walk=PrimaryVideoGroundArt();
     const bool meal=PrimaryVideoSideMeal();
     const bool walking=cat::animation::Walking(g.motion);
-    if(!walk || g.perch.transitioning || g.physics.Hanging()) {
+    if(!walk || EnvironmentBusy() || g.perch.transitioning || g.physics.Hanging()) {
         g.groundArtBridge.Reset(ticks);return;
     }
     g.groundArtBridge.Configure(cat::sprite_sequence::Duration(walk->program,walk->program.intro),
@@ -2775,7 +2775,7 @@ cat::animation::Pose PrimaryDisplayedPose(ULONGLONG ticks,const cat::physics::Po
     const bool bridgeCompatible=pose.spriteClip==cat::sprite_sequence::Clip::None ||
         pose.spriteClip==cat::sprite_sequence::Clip::Sleep || pose.spriteClip==cat::sprite_sequence::Clip::Walk ||
         pose.spriteClip==cat::sprite_sequence::Clip::Run;
-    if(const auto* walk=PrimaryVideoGroundArt();walk && physical.grounded && !cursorAttack &&
+    if(const auto* walk=PrimaryVideoGroundArt();walk && physical.grounded && !cursorAttack && !EnvironmentBusy() &&
             (bridgeActive || bridgeCompatible) &&
             (cat::animation::Walking(g.motion) || g.motion==Motion::Idle || g.motion==Motion::Watch ||
              g.groundArtBridge.Stopping() ||
