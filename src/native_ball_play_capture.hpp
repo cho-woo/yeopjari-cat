@@ -33,7 +33,9 @@ const char* PhaseName(Phase phase) {
     case Phase::Inspect:return "brake / inspect";case Phase::Interact:return "paw / bat";
     case Phase::Wait:return "watch / rest";default:return "transition";}
 }
-void Configure(native_manual_motion_tests::Host& host,cat::Character character,double center=1024) {
+// At this edge a placed ball is initially too close for a stroke. The shipping
+// chase must make room, stop and turn toward it before the first real contact.
+void Configure(native_manual_motion_tests::Host& host,cat::Character character,double center=1180) {
     native_manual_motion_tests::keyboard_native::Clear();host.Reset(character,false);
     g.cursorPlay=false;g.workInterference=false;g.random.seed(5921);g.randomZoomiesRandom.seed(1831);
     g.work={0,0,1280,720};g.dpiScale=1;g.centerX=center;g.direction=g.facing=1;ResetMovement();
@@ -220,7 +222,7 @@ int Run(std::string& context) {
         "\",\"render_source\":\"Windows GDI+ / Box2D\",\"desktop_recording\":false,\"os_input_injected\":false"
         ",\"fps\":60,\"frame_count\":"<<Count<<",\"canvas\":["<<Width<<','<<Height<<"],\"duration_seconds\":25"
         ",\"app_active_timer_ms\":16,\"reference_height_px\":110,\"profile\":\"no profile loaded or saved\""
-        ",\"scenario\":\"one ball near a work-area edge: paw bat, physical roll/bounce, pursuit, braking, planted turn, repeated play\""
+        ",\"scenario\":\"one ball at the work-area edge: make paw room, planted turn, real bat, physical roll/bounce, pursuit, braking and repeat\""
         ",\"guard_cases\":{\"circle_threshold\":true,\"contact_once\":true,\"late_window_no_kick\":true,\"body_near_paw_far_no_kick\":true,\"airborne_no_kick\":true,\"profile_preserved\":true}"
         ",\"trace\":\"trace.json\",\"characters\":[";
     for(unsigned index=0;index<rows.size();++index){const auto& row=rows[index];if(index)report<<',';

@@ -70,32 +70,6 @@ jobs:
           & python -X utf8 tools/verify_silent_exe.py $exe
           if ($LASTEXITCODE -ne 0) { throw 'Silent executable check failed.' }
           "TEST_EXE=$exe" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-      - name: Compare baseline and candidate on the same Windows desktop
-        timeout-minutes: 8
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          try {
-            New-Item -ItemType Directory -Path benchmark-baseline | Out-Null
-            try {
-              Invoke-WebRequest 'https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.15/YeopjariCat-2.0.15.exe' -OutFile benchmark-baseline/YeopjariCat-2.0.15.exe
-            } catch {
-              # Same immutable baseline through GitHub's asset endpoint when
-              # its release redirect returns a gateway failure. Hash below is
-              # mandatory for both transports.
-              Invoke-WebRequest 'https://api.github.com/repos/cho-woo/yeopjari-cat/releases/assets/725958295' -Headers @{ Accept = 'application/octet-stream' } -OutFile benchmark-baseline/YeopjariCat-2.0.15.exe
-            }
-            $old = (Resolve-Path benchmark-baseline/YeopjariCat-2.0.15.exe).Path
-            if ((Get-FileHash $old -Algorithm SHA256).Hash.ToLowerInvariant() -ne '7b5fd64493ab4241bb932d01c630558c0da242e30ef54b17a61b808147e6d266') { throw 'Baseline hash mismatch' }
-            $output = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/benchmark_windows.ps1 -OldExe $old -NewExe $env:TEST_EXE -OutputDirectory native-benchmark -DisposableProfile -IdleSeconds 8 -ActiveSeconds 12 -SwitchCycles 6 -SettleSeconds 5 2>&1
-            $code = $LASTEXITCODE
-            $output | ForEach-Object { Write-Host $_ }
-            if ($code -ne 0) { throw ($output -join "`n") }
-          } catch {
-            $detail = ($_ | Out-String).Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
-            Write-Host "::error::$detail"
-            throw
-          }
       - name: Execute Windows save, cursor and moving-window regression tests
         if: ${{ !cancelled() }}
         id: selftest
@@ -216,6 +190,32 @@ jobs:
             $detail = $report.Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
             Write-Host "::error::$detail"
             throw "Windows ball play capture failed: $($process.ExitCode)"
+          }
+      - name: Compare baseline and candidate on the same Windows desktop
+        timeout-minutes: 8
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          try {
+            New-Item -ItemType Directory -Path benchmark-baseline | Out-Null
+            try {
+              Invoke-WebRequest 'https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.15/YeopjariCat-2.0.15.exe' -OutFile benchmark-baseline/YeopjariCat-2.0.15.exe
+            } catch {
+              # Same immutable baseline through GitHub's asset endpoint when
+              # its release redirect returns a gateway failure. Hash below is
+              # mandatory for both transports.
+              Invoke-WebRequest 'https://api.github.com/repos/cho-woo/yeopjari-cat/releases/assets/725958295' -Headers @{ Accept = 'application/octet-stream' } -OutFile benchmark-baseline/YeopjariCat-2.0.15.exe
+            }
+            $old = (Resolve-Path benchmark-baseline/YeopjariCat-2.0.15.exe).Path
+            if ((Get-FileHash $old -Algorithm SHA256).Hash.ToLowerInvariant() -ne '7b5fd64493ab4241bb932d01c630558c0da242e30ef54b17a61b808147e6d266') { throw 'Baseline hash mismatch' }
+            $output = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/benchmark_windows.ps1 -OldExe $old -NewExe $env:TEST_EXE -OutputDirectory native-benchmark -DisposableProfile -IdleSeconds 8 -ActiveSeconds 12 -SwitchCycles 6 -SettleSeconds 5 2>&1
+            $code = $LASTEXITCODE
+            $output | ForEach-Object { Write-Host $_ }
+            if ($code -ne 0) { throw ($output -join "`n") }
+          } catch {
+            $detail = ($_ | Out-String).Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
+            Write-Host "::error::$detail"
+            throw
           }
       - uses: actions/upload-artifact@v4
         if: always()

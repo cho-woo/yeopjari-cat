@@ -3170,7 +3170,7 @@ cat::animation::Pose PrimaryDisplayedPose(ULONGLONG ticks,const cat::physics::Po
             pose.spriteClip!=cat::sprite_sequence::Clip::Jump);
     cat::animation::ApplyReferenceNeutralHold(pose,displayed,physical.grounded,WalkingVelocity(physical),
         !g.waitingForStop&&g.groundArtBridge.Neutral()&&!g.jumpPending&&!cursorAttack&&!EnvironmentBusy()&&
-            !g.toyEngaged&&!g.approachingToy&&!g.approachingUser&&g.pendingCare<0,actionElapsed);
+            (!g.toyEngaged||g.toy==ToyKind::Ball)&&!g.approachingToy&&!g.approachingUser&&g.pendingCare<0,actionElapsed);
     const auto* authored=CareSpriteFor(pose,g.preferences.character);
     g.authoredBoxVisible=authored && authored->layout->clip==cat::sprite_sequence::Clip::Box;
     if(authored)cat::animation::UseAuthoredSprite(pose);

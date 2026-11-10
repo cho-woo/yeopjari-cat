@@ -76,7 +76,20 @@ void NoFoldoversOrAlphaSeams() {
         CHECK(target[y*width+x]>>24==255);
     CHECK(!Warp(source.data(),width,height,source.data(),{}));
 }
+void ContactHasOneSmoothCompressionRamp() {
+    for(double strength:{.15,.5,1.}) {
+        Driver driver;driver.Ground(0);driver.Flight(-300,2);
+        auto previous=driver.Land(0,strength,0);
+        double peak=0;
+        for(unsigned frame=1;frame<=30;++frame) {
+            const auto controls=driver.Land(frame*1000/60,strength,0);
+            CHECK(std::abs(controls.crouch-previous.crouch)<=.26);
+            peak=std::max(peak,controls.crouch);previous=controls;
+        }
+        CHECK(peak>.8*strength&&previous.crouch==0);
+    }
+}
 }
 int main(){try{OnePaintingHasStableFaceAndPlantedContact();PhysicsControlsPawsInsteadOfNominalFrameClock();
-    NoFoldoversOrAlphaSeams();std::cout<<"Connected jump: "<<checks<<" checks passed\n";return EXIT_SUCCESS;
+    NoFoldoversOrAlphaSeams();ContactHasOneSmoothCompressionRamp();std::cout<<"Connected jump: "<<checks<<" checks passed\n";return EXIT_SUCCESS;
 }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return EXIT_FAILURE;}}

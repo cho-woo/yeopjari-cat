@@ -62,7 +62,13 @@ public:
     Controls Land(std::uint64_t elapsed,double strength,double height) {
         if(air_){contactStart_=last_;air_=false;}
         if(std::isfinite(height))ground_=height;
-        return last_=Blend(contactStart_,Contact(elapsed,strength),static_cast<double>(elapsed)/70);
+        const auto contact=Contact(elapsed,strength);
+        auto settled=Blend(contactStart_,contact,static_cast<double>(elapsed)/70);
+        // Flight has no compression. Contact already eases this channel from
+        // zero; multiplying by a second ramp delayed it and caused a sharp
+        // catch-up around70ms. Only the airborne paw/tail offsets need blending.
+        settled.crouch=contact.crouch;
+        return last_=settled;
     }
 private:
     double ground_=0,launch_=0;bool air_=false;
