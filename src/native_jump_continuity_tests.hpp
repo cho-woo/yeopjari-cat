@@ -172,7 +172,15 @@ int Run() {
             }
         }
         if(!entry||!flight||!landing||!returned||!neutral||!locked||maxLift<30||(moving&&!sideEntry)||
-                maxPreparation<.70||maxFlightTuck<.70||maxContactCompression<.10||maxJointDelta>.26)return 588;
+                maxPreparation<.70||maxFlightTuck<.70||maxContactCompression<.10||maxJointDelta>.26) {
+            std::ostringstream failure;
+            failure<<"case="<<caseIndex<<" entry="<<entry<<" sideEntry="<<sideEntry<<" flight="<<flight
+                <<" landed="<<landing<<" returned="<<returned<<" neutral="<<neutral<<" locked="<<locked
+                <<" lift="<<maxLift<<" preparation="<<maxPreparation<<" tuck="<<maxFlightTuck
+                <<" contact="<<maxContactCompression<<" controlDelta="<<maxJointDelta;
+            WriteBytes(L"render-self-test/jump-continuity/failure.txt",failure.str());
+            return 588;
+        }
         if(caseIndex)report<<',';
         report<<"{\"character\":"<<static_cast<unsigned>(character)<<",\"facing\":"<<facing
             <<",\"scenario\":\""<<(moving?"walk-jump":"idle-jump")<<"\",\"entry_from_side_turn_seen\":"<<(sideEntry?"true":"false")

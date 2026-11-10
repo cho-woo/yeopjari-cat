@@ -104,6 +104,12 @@ jobs:
         run: |
           $process = Start-Process -FilePath $env:TEST_EXE -ArgumentList '--self-test' -PassThru -Wait
           if ($process.ExitCode -ne 0) {
+            foreach ($path in @('render-self-test/jump-continuity/failure.txt', 'render-self-test/keyboard-super-report.json', 'render-self-test/manual-motion-self-test.json')) {
+              if (Test-Path $path) {
+                $detail = (Get-Content $path -Raw).Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
+                Write-Host "::error::$path $detail"
+              }
+            }
             Write-Host "::error::Windows self-test failed: $($process.ExitCode)"
             throw "Windows self-test failed: $($process.ExitCode)"
           }
@@ -173,7 +179,7 @@ jobs:
             throw "Windows cute idle capture failed: $($process.ExitCode)"
           }
       - name: Capture nearby cursor play through Windows GDI+ and Box2D at 60 FPS
-        if: ${{ !cancelled() && steps.selftest.outcome == 'success' }}
+        if: ${{ !cancelled() && (steps.selftest.outcome == 'success' || steps.selftest.outcome == 'failure') }}
         timeout-minutes: 6
         shell: pwsh
         run: |
@@ -186,7 +192,7 @@ jobs:
             throw "Windows nearby cursor play capture failed: $($process.ExitCode)"
           }
       - name: Review connected grooming through Windows GDI+ and Box2D
-        if: ${{ !cancelled() && steps.selftest.outcome == 'success' }}
+        if: ${{ !cancelled() && (steps.selftest.outcome == 'success' || steps.selftest.outcome == 'failure') }}
         timeout-minutes: 3
         shell: pwsh
         run: |
@@ -199,7 +205,7 @@ jobs:
             throw "Windows connected grooming review failed: $($process.ExitCode)"
           }
       - name: Capture ball play through Windows GDI+ and Box2D at 60 FPS
-        if: ${{ !cancelled() && steps.selftest.outcome == 'success' }}
+        if: ${{ !cancelled() && (steps.selftest.outcome == 'success' || steps.selftest.outcome == 'failure') }}
         timeout-minutes: 7
         shell: pwsh
         run: |
