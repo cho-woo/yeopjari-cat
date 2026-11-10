@@ -5,6 +5,7 @@
 #include <cstdint>
 #include "cat_deformation.hpp"
 #include "cat_expression.hpp"
+#include "cat_idle_gestures.hpp"
 #include "cat_gait.hpp"
 #include "cat_walk_dynamics.hpp"
 #include "cat_sprite_sequence.hpp"
@@ -93,13 +94,16 @@ inline bool ApplyReferenceSleepHold(Pose& pose,Motion displayed,std::uint64_t el
     return true;
 }
 inline bool ApplyReferenceNeutralHold(Pose& pose,Motion displayed,bool grounded,double relativeVelocity,
-                                      bool permitted=true) {
+                                      bool permitted=true,std::uint64_t idleElapsedMs=0) {
     using Clip=cat::sprite_sequence::Clip;
     const bool quiet=displayed==Motion::Idle||displayed==Motion::Watch;
     const bool resting=pose.spriteClip==Clip::None||pose.spriteClip==Clip::Sleep||
         pose.spriteClip==Clip::Walk||pose.spriteClip==Clip::Run;
     if(!permitted||!quiet||!resting||!grounded||!std::isfinite(relativeVelocity)||std::abs(relativeVelocity)>.5)return false;
-    const bool flip=pose.flip;pose={};pose.frame=4;pose.flip=flip;return true;
+    const bool flip=pose.flip;pose={};pose.frame=4;pose.flip=flip;
+    const auto acting=cat::idle_gestures::Sample(idleElapsedMs);
+    pose.joints=acting.joints;pose.face=acting.face;
+    return true;
 }
 
 inline double SmoothStep(double fraction) {

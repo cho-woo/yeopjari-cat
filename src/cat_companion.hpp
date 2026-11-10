@@ -644,7 +644,7 @@ public:
                 !StationaryLanding(ticks,s.physical)&&s.animation.spriteClip!=cat::sprite_sequence::Clip::Jump);
         cat::animation::ApplyReferenceNeutralHold(s.animation,displayed,s.physical.grounded,relativeVelocity,
             !waitingForStop_&&groundArtBridge_.Neutral()&&!jumpPending_&&!StationaryLanding(ticks,s.physical)&&
-                interaction_==Interaction::None);
+                interaction_==Interaction::None,elapsed);
         if(Registered(s.animation.spriteClip))cat::animation::UseAuthoredSprite(s.animation);
         return s;
     }

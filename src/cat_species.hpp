@@ -28,13 +28,14 @@ inline int ArtCell(Character character) noexcept { return UsesNewArt(character) 
 // the puppy's shorter muzzle. Reusing cat eye coordinates would blink a nose.
 inline expression::Landmarks FaceFor(Character character) noexcept {
     switch(character){
+    case Character::Cream:return {{.415,.475},{.735,.445},{.57,.60}};
     case Character::Black:return {{.59,.39},{.839,.344},{.74,.52}};
     case Character::Calico:return {{.607,.409},{.835,.377},{.74,.53}};
     case Character::Siamese:return {{.598,.364},{.839,.330},{.75,.49}};
     case Character::Munchkin:return {{.617,.421},{.836,.389},{.75,.55}};
     case Character::Dog:return {{.528,.301},{.766,.255},{.73,.47}};
     case Character::Rabbit:return {{.557,.471},{.831,.452},{.72,.59}};
-    case Character::Tuxedo:return {{.60,.37},{.833,.33},{.74,.50}};
+    case Character::Tuxedo:return {{.430,.475},{.740,.445},{.59,.60}};
     case Character::British:return {{.586,.346},{.825,.307},{.74,.48}};
     default:return {};
     }
@@ -49,7 +50,7 @@ inline expression::Landmarks ClosedFaceFor(Character character) noexcept {
     case Character::Munchkin:return {{.526,.505},{.834,.429},{.75,.55}};
     case Character::Dog:return {{.472,.38},{.769,.262},{.73,.47}};
     case Character::Rabbit:return {{.556,.557},{.875,.495},{.72,.59}};
-    case Character::Tuxedo:return {{.543,.471},{.844,.395},{.74,.50}};
+    case Character::Tuxedo:return {{.418,.488},{.760,.437},{.59,.60}};
     case Character::British:return {{.517,.471},{.817,.39},{.74,.48}};
     default:return {};
     }

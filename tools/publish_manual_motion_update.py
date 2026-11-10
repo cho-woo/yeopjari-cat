@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Publish the exact Windows-validated v2.0.24 cat motion and appearance fixes as stable.
+"""Publish the exact Windows-validated v2.0.25 cute idle and motion update as stable.
 
 CI-only. Uses a draft/tag prepared at the validated source commit. It never
 rebuilds, replaces a public release, or promotes the opt-in mesh walking study.
@@ -25,9 +25,9 @@ import release
 from verify_silent_exe import verify_silent_exe
 
 REPO = 'cho-woo/yeopjari-cat'
-VERSION = '2.0.24'
+VERSION = '2.0.25'
 TAG = 'v' + VERSION
-PREVIOUS_STABLE = 'v2.0.23'
+PREVIOUS_STABLE = 'v2.0.24'
 ROOT = Path(__file__).resolve().parents[1]
 FEED_URL = f'https://github.com/{REPO}/releases/latest/download/latest.txt'
 BASE_URL = f'https://github.com/{REPO}/releases/download/{TAG}/'
@@ -36,6 +36,7 @@ RENDER_STEP = 'Render real Windows GDI+ gait, contact and posture regressions'
 CAPTURE_STEP = 'Capture source-video walking through Windows GDI+ and Box2D at 60 FPS'
 MOTION_CAPTURE_STEP = 'Capture source-video meal, walk and run through Windows GDI+ and Box2D at 60 FPS'
 MENU_STEP = 'Verify real Windows right-click menu visibility through UI Automation'
+IDLE_CAPTURE_STEP = 'Capture cute idle gestures through Windows GDI+ and Box2D at 60 FPS'
 
 
 def require(condition, message):
@@ -82,7 +83,7 @@ def validated_source(run_id, head):
         require(job.get('status') == 'completed' and job.get('conclusion') == 'success',
                 f'Missing successful {name} job')
         if name == 'windows-smoke':
-            for step_name in (SAVE_STEP, RENDER_STEP, CAPTURE_STEP, MOTION_CAPTURE_STEP, MENU_STEP):
+            for step_name in (SAVE_STEP, RENDER_STEP, CAPTURE_STEP, MOTION_CAPTURE_STEP, MENU_STEP, IDLE_CAPTURE_STEP):
                 step = exactly_one((s for s in job['steps'] if s['name'] == step_name), step_name)
                 require(step.get('status') == 'completed' and step.get('conclusion') == 'success',
                         f'Native Windows step did not pass: {step_name}')
@@ -536,6 +537,112 @@ def native_motion_capture_contract(native_root, artwork_contract):
     }
 
 
+def native_idle_capture_contract(native_root, reference):
+    path = exactly_one((p for p in native_root.rglob('capture.json') if p.parent.name == 'idle-video'),
+                       'native cute idle capture')
+    text = exactly_one(native_root.rglob('idle-video-report.txt'), 'native idle capture exit report')
+    require(text.read_text(encoding='utf-8-sig').startswith('exit=0 '), 'The native idle capture failed')
+    metadata = json.loads(path.read_text(encoding='utf-8-sig'))
+    require(metadata.get('schema') == 1 and metadata.get('version') == VERSION and
+            metadata.get('render_source') == 'Windows GDI+ / Box2D' and metadata.get('desktop_recording') is False and
+            metadata.get('fps') == 60 and metadata.get('frame_count') == 1200 and metadata.get('canvas') == [960, 500] and
+            metadata.get('reference_height_px') == 110 and metadata.get('source_asset') == reference['source'] and
+            metadata.get('source_base_resource_id') == reference['resource_id'] and metadata.get('new_motion_drawings') == 0 and
+            metadata.get('pause_first_frame') == 480 and metadata.get('pause_last_frame_exclusive') == 510 and
+            metadata.get('trace') == 'trace.json' and
+            metadata.get('application_timer_ms') == {'active_gesture': 16, 'quiet': 40, 'hidden': 250} and
+            isinstance(metadata.get('capture_cadence_note'), str) and metadata['capture_cadence_note'],
+            'The release requires the exact 20-second native idle capture and truthful adaptive desktop timing')
+    characters = metadata.get('characters', [])
+    require(len(characters) == 2 and {c.get('character') for c in characters} == {0, 8},
+            'The native idle capture must cover both characters')
+    stats = {c: {'origin': None, 'previous_hash': None, 'previous_controls': None,
+                 'pause_hash': None, 'pause_controls': None, 'resumed': False,
+                 'changed': 0, 'still': 0, 'longest': 0, 'root_dx': 0, 'lift': 0,
+                 'maximum': {key: 0 for key in ('blink', 'ear', 'tail', 'paw')},
+                 'counts': {key: 0 for key in ('blink', 'ear', 'tail', 'paw')},
+                 'possible_counts': {key: 0 for key in ('blink', 'ear', 'tail', 'paw')}} for c in (0, 8)}
+    trace_path = path.parent / 'trace.json'
+    trace = json.loads(trace_path.read_text(encoding='utf-8-sig'))
+    require(trace.get('schema') == 1 and trace.get('fps') == 60 and
+            isinstance(trace.get('frames'), list) and len(trace['frames']) == 1200,
+            'Native idle trace does not match its declared cadence or duration')
+    controls = ('blink', 'left_ear', 'right_ear', 'tail', 'left_paw', 'right_paw', 'head_nod', 'breath')
+    for index, frame in enumerate(trace['frames']):
+        require(frame.get('frame') == index and frame.get('elapsed_ms') == index * 1000 // 60,
+                'Native idle trace is not contiguous at 60 FPS')
+        rows = frame.get('characters', [])
+        require(len(rows) == 2 and {row.get('character') for row in rows} == {0, 8},
+                'A native idle frame is missing a current character')
+        paused = 480 <= index < 510
+        for row in rows:
+            stat = stats[row['character']]
+            require(row.get('sprite_clip') == 8 and row.get('sprite_resource') == reference['resource_id'] and
+                    row.get('sprite_frame') in (reference['neutral_frame'], 5) and row.get('reference_height_px') == 110 and
+                    row.get('paused') is paused and
+                    all(type(row.get(key)) in (int, float) and math.isfinite(row[key])
+                        for key in ('root_x', 'lift') + controls) and
+                    isinstance(row.get('actor_hash'), str) and re.fullmatch(r'\d{1,20}', row['actor_hash']) and
+                    int(row['actor_hash']) <= 18446744073709551615,
+                    'Native idle source pose, controls or pause clock are invalid')
+            if stat['origin'] is None:
+                stat['origin'] = row['root_x']
+            stat['root_dx'] = max(stat['root_dx'], abs(row['root_x'] - stat['origin']))
+            stat['lift'] = max(stat['lift'], abs(row['lift']))
+            require(stat['root_dx'] <= .02 and stat['lift'] <= .01,
+                    'Idle gestures moved the physical root or lifted the actor')
+            current_controls = tuple(row[key] for key in controls) + (row['sprite_frame'],)
+            if index == 480:
+                stat['pause_hash'] = stat['previous_hash']
+                stat['pause_controls'] = stat['previous_controls']
+            if paused:
+                require(row['actor_hash'] == stat['pause_hash'] and current_controls == stat['pause_controls'],
+                        'The native menu pause did not retain the idle drawing and controls')
+            if index >= 510 and row['actor_hash'] != stat['pause_hash']:
+                stat['resumed'] = True
+            if index and not paused:
+                if row['actor_hash'] != stat['previous_hash']:
+                    stat['changed'] += 1
+                    stat['still'] = 0
+                else:
+                    stat['still'] += 1
+                stat['longest'] = max(stat['longest'], stat['still'])
+            stat['previous_hash'] = row['actor_hash']
+            stat['previous_controls'] = current_controls
+            values = {'blink': row['blink'], 'ear': max(abs(row['left_ear']), abs(row['right_ear'])),
+                      'tail': abs(row['tail']), 'paw': max(abs(row['left_paw']), abs(row['right_paw']))}
+            for key, value in values.items():
+                stat['maximum'][key] = max(stat['maximum'][key], value)
+                # Native controls are serialized at six significant digits;
+                # threshold-adjacent samples cannot recover the raw comparison.
+                stat['counts'][key] += value > .050001
+                stat['possible_counts'][key] += value >= .049999
+    for character in characters:
+        stat = stats[character['character']]
+        require(all(character.get(key) is True for key in ('pause_held', 'pause_clock_preserved', 'resumed',
+                                                         'source_profile_preserved', 'actor_unclipped')) and stat['resumed'],
+                'The native idle capture did not preserve pause, profile or actor bounds')
+        require(all(type(character.get(key)) in (int, float) and math.isfinite(character[key])
+                    for key in ('max_root_dx', 'max_lift', 'max_blink', 'max_ear', 'max_tail', 'max_paw')) and
+                0 <= character['max_root_dx'] <= .01 and 0 <= character['max_lift'] <= .01 and
+                character['max_blink'] >= .9 and all(character['max_' + key] >= .05 for key in ('ear', 'tail', 'paw')),
+                'Native idle gestures or physical support metrics are missing')
+        require(type(character.get('changed_actor_frames')) is int and
+                character['changed_actor_frames'] == stat['changed'] and stat['changed'] >= 30 and
+                type(character.get('longest_still_frames')) is int and
+                character['longest_still_frames'] == stat['longest'] and stat['longest'] <= 360,
+                'Native idle pixel changes or still intervals differ from the trace')
+        for key in ('blink', 'ear', 'tail', 'paw'):
+            require(abs(character['max_' + key] - stat['maximum'][key]) <= .00001 and
+                    type(character.get(key + '_frames')) is int and
+                    stat['counts'][key] <= character[key + '_frames'] <= stat['possible_counts'][key] and
+                    character[key + '_frames'] > 0,
+                    'Native idle gesture coverage differs from its actual pose trace: ' + key)
+    return path.parent, {'capture': metadata, 'capture_sha256': sha(path), 'trace_sha256': sha(trace_path),
+                         'native_report_sha256': sha(text), 'native_capture_step': IDLE_CAPTURE_STEP,
+                         'visual_quality': 'Native pixel changes and gesture coverage require separate visual review'}
+
+
 def png_evidence(path, description):
     require(path.is_file() and not path.is_symlink(), 'Missing native image evidence: ' + description)
     require(0 < path.stat().st_size <= 64 * 1024 * 1024, 'Unbounded native image evidence: ' + description)
@@ -920,6 +1027,8 @@ def main(stage_only=False):
         walk_contract['source_videos']['run']['selection']['native_speed_logical_px_s'])
     capture_directory, capture_contract = native_walk_capture_contract(native_root, walk_contract)
     motion_directory, motion_capture_contract = native_motion_capture_contract(native_root, walk_contract)
+    idle_directory, idle_capture_contract = native_idle_capture_contract(native_root,
+        walk_contract['authored_appearance']['cream_reference'])
     menu_report, menu_files, menu_contract = native_menu_contract(native_root)
     jump_report, jump_files, jump_contract = native_jump_contract(native_root, walk_contract,
         walk_contract['authored_appearance']['cream_reference'])
@@ -978,7 +1087,8 @@ def main(stage_only=False):
         from encode_locomotion_capture import encode
         for directory, basename, contract in (
                 (capture_directory, 'walking-native', capture_contract),
-                (motion_directory, 'motions-native', motion_capture_contract)):
+                (motion_directory, 'motions-native', motion_capture_contract),
+                (idle_directory, 'idle-native', idle_capture_contract)):
             native_video = stage / (basename + '.mp4')
             contract['encoding'] = encode(directory, native_video)
             contract['video_sha256'] = sha(native_video)
@@ -1012,6 +1122,7 @@ def main(stage_only=False):
             'native_manual_motion': manual_contract,
             'native_walk_capture': capture_contract,
             'native_motion_capture': motion_capture_contract,
+            'native_idle_capture': idle_capture_contract,
             'native_menu_visibility': menu_contract,
             'native_jump_continuity': jump_contract,
             'native_random_zoomies': zoomies_contract,
@@ -1049,9 +1160,10 @@ def main(stage_only=False):
                          f'- [Windows EXE]({BASE_URL}YeopjariCat-{VERSION}.exe)\n'
                          f'- [실제 앱 렌더링으로 보는 걷기 영상]({BASE_URL}walking-native.mp4)\n'
                          f'- [밥 먹기·걷기·달리기 영상]({BASE_URL}motions-native.mp4)\n'
+                         f'- [눈·귀·꼬리·앞발 대기 동작 영상]({BASE_URL}idle-native.mp4)\n'
                          f'- [메뉴·점프·동작별 캐릭터 확인 자료]({BASE_URL}interaction-evidence.zip)\n'
                          f'- [검증 출처와 SHA-256]({BASE_URL}windows-validation.json)\n\n'
-                         '무작위 우다다, 고양이 모습과 점프 연결을 수정했습니다.\n'
+                         '눈 깜빡임과 귀·꼬리·앞발 움직임으로 대기 동작을 보강했습니다.\n'
                          '미리보기는 실제 앱 그리기로 출력한 60FPS 영상이며, 바탕화면 녹화는 아닙니다.\n'
                          f'검증 소스: `{head}` · [Windows 실행 검사](https://github.com/{REPO}/actions/runs/{run_id}).\n',
                          encoding='utf-8')
@@ -1101,7 +1213,7 @@ def main(stage_only=False):
                                  'Inspect the draft evidence, then run without `stage_only` to promote these exact bytes.\n')
             return
         gh('release', 'edit', TAG, '--repo', REPO, '--notes-file', str(notes),
-           '--title', f'옆자리 고양이 {VERSION} — 랜덤 우다다와 고양이 모습·점프 연결 수정',
+           '--title', f'옆자리 고양이 {VERSION} — 귀여운 대기 동작과 자연스러운 움직임',
            '--draft=false', '--prerelease=false', '--latest=true')
         published = json.loads(gh('release', 'view', TAG, '--repo', REPO,
                                  '--json', 'isDraft,isPrerelease,targetCommitish,url'))

@@ -159,6 +159,19 @@ jobs:
             Write-Host "::error::$detail"
             throw "Windows source-video meal/run capture failed: $($process.ExitCode)"
           }
+      - name: Capture cute idle gestures through Windows GDI+ and Box2D at 60 FPS
+        if: ${{ !cancelled() && steps.selftest.outcome == 'success' }}
+        timeout-minutes: 5
+        shell: pwsh
+        run: |
+          $process = Start-Process -FilePath $env:TEST_EXE -ArgumentList '--render-idle-video' -PassThru -Wait
+          $report = if (Test-Path render-self-test/idle-video-report.txt) { Get-Content render-self-test/idle-video-report.txt -Raw } else { 'No native cute idle capture report produced.' }
+          Write-Host $report
+          if ($process.ExitCode -ne 0) {
+            $detail = $report.Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
+            Write-Host "::error::$detail"
+            throw "Windows cute idle capture failed: $($process.ExitCode)"
+          }
       - uses: actions/upload-artifact@v4
         if: always()
         with:

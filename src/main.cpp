@@ -1552,7 +1552,10 @@ void RefreshAnimationTimer() {
         const auto second = g.companionModel.View(ticks);
         companionResting = (second.motion == Motion::Sleep || second.motion == Motion::Idle || second.motion == Motion::Watch ||
             g.companionModel.HoldingFinalCarePose(ticks)) && second.physical.grounded &&
-            std::abs(second.physical.velocityX) < .5;
+            std::abs(second.physical.velocityX) < .5 &&
+            !(second.animation.spriteClip==cat::sprite_sequence::Clip::None && second.animation.frame==4 &&
+                (second.animation.face.blink>0 || second.animation.joints.leftEar>0 || second.animation.joints.rightEar>0 ||
+                 second.animation.joints.frontLeft>0 || second.animation.joints.frontRight>0));
     }
     const bool toysResting = (g.toy != ToyKind::Ball ||
         (std::abs(g.toyBall.velocity) < .5 && std::abs(g.toyBall.verticalVelocity) < .5 && g.toyBall.lift < .2)) &&
@@ -1561,7 +1564,10 @@ void RefreshAnimationTimer() {
         g.motion == Motion::Idle || g.motion == Motion::Watch || PrimaryAuthoredCareHolding(ticks)) &&
         companionResting && toysResting && !g.groundArtBridge.Starting() && !g.groundArtBridge.Stopping() &&
         (!g.physicsReady || (g.physics.CurrentPose().grounded && std::abs(WalkingVelocity(g.physics.CurrentPose())) < .5));
-    const UINT interval = g.hidden ? 250 : (g.menuOpen || g.dragging || resting ? 40 : 16);
+    const bool idleActing=(g.motion==Motion::Idle||g.motion==Motion::Watch) && !g.waitingForStop && !g.jumpPending &&
+        g.groundArtBridge.Neutral() && ticks>=g.motionStart &&
+        cat::idle_gestures::NeedsFineCadence(ticks-g.motionStart);
+    const UINT interval = g.hidden ? 250 : (g.menuOpen || g.dragging || (resting&&!idleActing) ? 40 : 16);
     const bool precise = interval == 16;
     if (precise && !g.preciseTimer) g.preciseTimer = timeBeginPeriod(1) == TIMERR_NOERROR;
     else if (!precise && g.preciseTimer) { timeEndPeriod(1); g.preciseTimer = false; }
@@ -2818,7 +2824,7 @@ cat::animation::Pose PrimaryDisplayedPose(ULONGLONG ticks,const cat::physics::Po
             pose.spriteClip!=cat::sprite_sequence::Clip::Jump);
     cat::animation::ApplyReferenceNeutralHold(pose,displayed,physical.grounded,WalkingVelocity(physical),
         !g.waitingForStop&&g.groundArtBridge.Neutral()&&!g.jumpPending&&!cursorAttack&&!EnvironmentBusy()&&
-            !g.toyEngaged&&!g.approachingToy&&!g.approachingUser&&g.pendingCare<0);
+            !g.toyEngaged&&!g.approachingToy&&!g.approachingUser&&g.pendingCare<0,actionElapsed);
     const auto* authored=CareSpriteFor(pose,g.preferences.character);
     g.authoredBoxVisible=authored && authored->layout->clip==cat::sprite_sequence::Clip::Box;
     if(authored)cat::animation::UseAuthoredSprite(pose);
@@ -5153,6 +5159,7 @@ int NativeMenuContractTest() {
 #include "native_manual_motion_tests.hpp"
 #include "native_video_walk_capture.hpp"
 #include "native_video_motion_capture.hpp"
+#include "native_cute_idle_capture.hpp"
 #include "native_menu_visibility_tests.hpp"
 
 int SelfTest(HINSTANCE instance) {
@@ -5190,6 +5197,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
     if(commandLine && wcsstr(commandLine,L"--menu-self-test"))return NativeMenuVisibilityTest(instance);
     if(commandLine && wcsstr(commandLine,L"--render-walk-video"))return NativeVideoWalkCapture(instance);
     if(commandLine && wcsstr(commandLine,L"--render-motion-video"))return NativeVideoMotionCapture(instance);
+    if(commandLine && wcsstr(commandLine,L"--render-idle-video"))return NativeCuteIdleCapture(instance);
     if(commandLine && wcsstr(commandLine,L"--render-mesh-walk-review")) {
         g.instance=instance;return RenderSelfTest(true);
     }

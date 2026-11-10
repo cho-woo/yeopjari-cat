@@ -8,6 +8,17 @@ struct Alpha {
     int left=420,top=320,right=-1,bottom=-1;
     double x=0,y=0;
 };
+bool BoundedIdleGestures(const cat::animation::Pose& pose) {
+    const auto& j=pose.joints;const auto& face=pose.face;
+    const auto within=[](double value,double low,double high) {
+        return std::isfinite(value)&&value>=low-1e-12&&value<=high+1e-12;
+    };
+    return cat::deform::Finite(j)&&within(j.leftEar,0,.48)&&within(j.rightEar,0,.43)&&
+        within(j.frontLeft,0,.85)&&within(j.frontRight,0,.80)&&within(j.tailRaise,0,.44)&&
+        within(j.headNod,-.10,.10)&&within(j.breath,-.20,.20)&&
+        j.crouch==0&&j.pawReachX==0&&j.pawReachY==0&&j.pawAnchorX==0&&
+        within(face.blink,0,1)&&face.wide==0&&face.mouth==0&&face.smile==0&&face.brow==0;
+}
 Alpha Bounds(const Surface& surface) {
     Alpha result;double weight=0;
     for(int y=0;y<surface.height;++y)for(int x=0;x<surface.width;++x) {
@@ -59,8 +70,10 @@ int Run() {
                 rendered.grounded&&g.groundArtBridge.Neutral()&&!g.waitingForStop&&!g.jumpPending&&
                 (g.motion==Motion::Idle||g.motion==Motion::Watch)&&std::abs(WalkingVelocity(rendered))<=.5&&
                 pose.x==0&&pose.lift==0&&pose.angle==0&&pose.scaleX==1&&pose.scaleY==1&&
-                !pose.spriteTimed&&!pose.bellyRig&&!pose.centerPivot&&pose.blendFrame<0&&cat::deform::Zero(pose.joints);
+                !pose.spriteTimed&&!pose.bellyRig&&!pose.centerPivot&&pose.blendFrame<0&&BoundedIdleGestures(pose);
             if(!asset&&!referenceNeutral)return 582;
+            if(referenceNeutral&&host.now>=g.motionStart&&host.now-g.motionStart<=350&&
+                    (!cat::deform::Zero(pose.joints)||!cat::expression::Zero(pose.face)))return 582;
             const unsigned source=asset?SpriteFrameFor(pose,*asset->layout):4;
             if(asset&&source>=asset->layout->frameCount)return 582;
             const auto& base=CurrentArt(character).base;const auto& baseRect=base.frames[4];
@@ -116,6 +129,7 @@ int Run() {
                 <<",\"sprite_clip\":"<<static_cast<unsigned>(pose.spriteClip)<<",\"sprite_resource\":"<<resource
                 <<",\"sprite_frame\":"<<source<<",\"anchor\":["<<registration.anchor.x<<','<<registration.anchor.y
                 <<"],\"reference_height\":"<<referenceHeight<<",\"reference_neutral\":"<<(referenceNeutral?"true":"false")
+                <<",\"idle_gestures\":"<<(referenceNeutral&&(!cat::deform::Zero(pose.joints)||!cat::expression::Zero(pose.face))?"true":"false")
                 <<",\"alpha_bbox\":["<<alpha.left<<','<<alpha.top<<','<<alpha.right<<','<<alpha.bottom
                 <<"],\"alpha_centroid\":["<<alpha.x<<','<<alpha.y<<"],\"entry_turn\":"<<(entering?"true":"false")
                 <<",\"return_turn\":"<<(returning?"true":"false")<<'}';

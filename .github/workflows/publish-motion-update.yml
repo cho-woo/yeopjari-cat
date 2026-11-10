@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       validation_run:
-        description: Successful Validate run for v2.0.24 with native menu, jump and rendering tests
+        description: Successful Validate run for v2.0.25 with native idle, menu, jump and rendering tests
         required: true
         type: string
       stage_only:
@@ -53,7 +53,8 @@ jobs:
                            'Render real Windows GDI+ gait, contact and posture regressions',
                            'Capture source-video walking through Windows GDI+ and Box2D at 60 FPS',
                            'Capture source-video meal, walk and run through Windows GDI+ and Box2D at 60 FPS',
-                           'Verify real Windows right-click menu visibility through UI Automation']:
+                           'Verify real Windows right-click menu visibility through UI Automation',
+                           'Capture cute idle gestures through Windows GDI+ and Box2D at 60 FPS']:
                   if not any(s['name']==name and s['status']=='completed' and s['conclusion']=='success'
                              for s in native['steps']):
                       raise ValueError('Missing successful native Windows step: '+name)
@@ -87,8 +88,10 @@ jobs:
       - name: Ensure native preview encoding tools are available
         run: |
           if ! command -v ffmpeg >/dev/null || ! command -v ffprobe >/dev/null; then
-            sudo apt-get update
-            sudo apt-get install -y ffmpeg
+            if ! sudo apt-get install -y --no-install-recommends ffmpeg; then
+              sudo apt-get update
+              sudo apt-get install -y --no-install-recommends ffmpeg
+            fi
           fi
           ffmpeg -version | head -n 1
           ffprobe -version | head -n 1
