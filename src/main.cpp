@@ -4814,9 +4814,21 @@ int NativeToyHostTest() {
             auto paired=CompanionContext(GetTickCount64(),.016);
             if(paired.primaryBusy || paired.primaryMotion!=Motion::Zoomies)return 235;
             if(!g.companionModel.TrySocial(cat::companion::Interaction::RunTogether,paired))return 236;
-            for(unsigned frame=0;frame<30;++frame) {
+            const auto pairedStart=paired.ticks;
+            const auto* pairedWalk=LoadedCareSprite(cat::sprite_sequence::Clip::Walk,
+                g.companionStore.state.preferences.character);
+            const auto entrance=pairedWalk?cat::sprite_sequence::Duration(
+                pairedWalk->layout->program,pairedWalk->layout->program.intro):0;
+            const auto motorDelay=pairedWalk?pairedWalk->layout->movementDelayMs:0;
+            // A new partner turns from front to side before its first step.
+            // Test that real motor hold, then allow the complete registered
+            // entrance plus bounded acceleration before requiring running.
+            const unsigned pairedFrames=std::max(30u,static_cast<unsigned>((entrance+500+15)/16));
+            for(unsigned frame=0;frame<pairedFrames;++frame) {
                 g.physics.Update(.016);paired=CompanionContext(paired.ticks+16,.016);
                 g.companionModel.Tick(paired);
+                if(paired.ticks-pairedStart<motorDelay &&
+                        std::abs(g.companionModel.Physical().velocityX)>.5)return 237;
             }
             if(g.companionModel.Physical().velocityX<30 || g.companionStore.state.mutualPlay!=1 ||
                     g.motionSerial!=runSerial || cat::Serialize(g.pet)!=birthdayRecord)return 237;
