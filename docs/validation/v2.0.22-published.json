@@ -277,10 +277,10 @@
   },
   "current_official_feed": {
     "url": "https://github.com/cho-woo/yeopjari-cat/releases/latest/download/latest.txt",
-    "version": "2.0.21",
-    "latest_stable_release": "https://github.com/cho-woo/yeopjari-cat/releases/tag/v2.0.21",
-    "sha256": "8e92bdc267723ce221737c8b4fefd94ff33c4ebffdac875012e3cbdd592aa143",
-    "size_bytes": 1360
+    "version": "2.0.23",
+    "latest_stable_release": "https://github.com/cho-woo/yeopjari-cat/releases/tag/v2.0.23",
+    "sha256": "651e948e746134cbad182b6e8a80dd2f604eb57f81dc469c3eb3847fa22d5d8c",
+    "size_bytes": 2132
   },
   "visual_review": {
     "status": "failed",
@@ -289,12 +289,25 @@
     "approximate_elapsed_seconds": 0.983,
     "input_video_frame": 13,
     "defect": "Tuxedo entry bridge has a brown tail blob and inconsistent coat patches. Passing numeric and native execution checks did not establish visual quality.",
-    "review_image": "docs/validation/v2.0.22-tuxedo-bridge-defect.png"
+    "review_image": "docs/validation/v2.0.22-tuxedo-bridge-defect.png",
+    "evidence_image": "docs/validation/v2.0.22-tuxedo-bridge-defect.png",
+    "evidence_sha256": "739abc810e39c0fa818e6e9a822cce1928d3292efc51050d94fef02dce70a540"
   },
   "correction": {
     "version": "2.0.23",
-    "status": "in_progress",
+    "status": "published",
     "scope": "Correct Tuxedo appearance on existing bridge geometry; keep motion programs and cadence.",
-    "original_v2_0_22_release_assets_unchanged": true
+    "original_v2_0_22_release_assets_unchanged": true,
+    "release": "https://github.com/cho-woo/yeopjari-cat/releases/tag/v2.0.23",
+    "source_commit": "645e7c43aa2cfe406e267b8d8c8e5c84681a5dd2",
+    "validation_url": "https://github.com/cho-woo/yeopjari-cat/actions/runs/42749566124",
+    "publication_url": "https://github.com/cho-woo/yeopjari-cat/actions/runs/42750304437"
+  },
+  "official_feed_at_withdrawal": {
+    "url": "https://github.com/cho-woo/yeopjari-cat/releases/latest/download/latest.txt",
+    "version": "2.0.21",
+    "latest_stable_release": "https://github.com/cho-woo/yeopjari-cat/releases/tag/v2.0.21",
+    "sha256": "8e92bdc267723ce221737c8b4fefd94ff33c4ebffdac875012e3cbdd592aa143",
+    "size_bytes": 1360
   }
 }

@@ -3,17 +3,17 @@
 일하는 동안 Windows 작업표시줄과 창 위에서 함께 지내는 작은 고양이입니다. 현재 버전은 크림치즈냥과 턱시도냥을 제공하며, 두 마리를 각자의 성장·성격·기억과 함께 키우는 기능은 유지합니다.
 
 
-**v2.0.21:** 사진을 참고한 새 턱시도냥 원화를 먹기·놀이·점프와 기본 자세까지 적용했습니다. 걷기·달리기의 중간 움직임을 보완하고, 점프 착지 후에는 회복 자세를 거쳐 쉽니다. 박스 이벤트는 제거했으며 다른 장난감과 돌봄·성장 기능은 유지합니다.
+**v2.0.23:** 보내준 영상의 실제 걷기·달리기·사료 먹기를 두 고양이에 적용했습니다. 돌아서 출발하고 멈춰 앉는 장면을 연결하며, 턱시도냥의 회전 구간에 섞이던 갈색 털도 보정했습니다. 기존 돌봄·성장·장난감과 두 마리 키우기는 유지합니다.
 
-[걷기·달리기 미리보기](https://raw.githubusercontent.com/cho-woo/yeopjari-cat/main/docs/previews/v2.0.21/cats-in-motion.mp4) · [먹기·점프·착지 미리보기](https://raw.githubusercontent.com/cho-woo/yeopjari-cat/main/docs/previews/v2.0.21/actions-and-landing.mp4) · [새 턱시도냥 이미지](docs/previews/v2.0.21/actions-and-landing.png). 영상은 현재 원화와 C++ 동작 데이터·점프 물리를 이용한 60FPS 합성이며 바탕화면 녹화는 아닙니다.
+[걷기·정지·반전 영상](https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.23/walking-native.mp4) · [식사→걷기→달리기 영상](https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.23/motions-native.mp4) · [실제 Windows 출력 이미지](docs/previews/v2.0.23/motions-native.png). 두 영상은 실제 앱과 같은 Windows GDI+·Box2D 경로로 출력한 60FPS 영상이며, 바탕화면 녹화는 아닙니다.
 
 ## 다운로드와 실행
 
 **[최신 버전 다운로드](https://github.com/cho-woo/yeopjari-cat/releases/latest)**
 
-[2.0.21 사용자용 ZIP 바로 받기](https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.21/YeopjariCat-Windows-2.0.21.zip)
+[2.0.23 사용자용 ZIP 바로 받기](https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.23/YeopjariCat-Windows-2.0.23.zip)
 
-**현재 공개 정식 버전은 v2.0.21입니다.** 새 턱시도냥 원화, 이어지는 보행·먹기·놀이와 점프 회복을 적용했습니다. 기존 성장·돌봄 기록, 장난감, 두 마리 키우기, 무음·자동 업데이트를 유지합니다. 고양이 우클릭 → **프로그램 업데이트 → 업데이트 확인…**에서 받을 수 있습니다. [Windows 실행·배포 확인](docs/validation/v2.0.21-published.json).
+**현재 공개 정식 버전은 v2.0.23입니다.** 걷기·달리기·식사와 출발·정지 연결을 적용하고, 턱시도냥의 회전 무늬를 보정했습니다. 고양이 우클릭 → **프로그램 업데이트 → 업데이트 확인…**에서 받을 수 있습니다. [전체 Windows 검사·공개 배포 확인](docs/validation/v2.0.23-published.json).
 
 실행 대상은 **Windows 10/11 x64**입니다. 사용자 ZIP의 압축을 완전히 풀고 `YeopjariCat.exe`를 실행하세요. Python이나 게임 엔진 설치는 필요하지 않습니다. 프로그램이 업데이트될 수 있도록 바탕화면·문서 폴더 등 본인이 파일을 수정할 수 있는 위치에 두세요.
 
