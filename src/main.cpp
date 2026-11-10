@@ -4815,11 +4815,13 @@ int NativeToyHostTest() {
             if(paired.primaryBusy || paired.primaryMotion!=Motion::Zoomies)return 235;
             if(!g.companionModel.TrySocial(cat::companion::Interaction::RunTogether,paired))return 236;
             const auto pairedStart=paired.ticks;
-            const auto* pairedWalk=LoadedCareSprite(cat::sprite_sequence::Clip::Walk,
-                g.companionStore.state.preferences.character);
+            // This host test runs before PNG decoding; the companion reads
+            // the compiled registration independently of the renderer cache.
+            const auto* pairedWalk=cat::sprite_assets::Find(cat::sprite_sequence::Clip::Walk,
+                static_cast<unsigned>(g.companionStore.state.preferences.character),cat::sprite_assets::kCareSprites);
             const auto entrance=pairedWalk?cat::sprite_sequence::Duration(
-                pairedWalk->layout->program,pairedWalk->layout->program.intro):0;
-            const auto motorDelay=pairedWalk?pairedWalk->layout->movementDelayMs:0;
+                pairedWalk->program,pairedWalk->program.intro):0;
+            const auto motorDelay=pairedWalk?pairedWalk->movementDelayMs:0;
             // A new partner turns from front to side before its first step.
             // Test that real motor hold, then allow the complete registered
             // entrance plus bounded acceleration before requiring running.
