@@ -77,6 +77,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Install pinned native preview layout dependency
+        run: |
+          python3 -m venv "$RUNNER_TEMP/yeopjari-preview"
+          "$RUNNER_TEMP/yeopjari-preview/bin/python" -m pip install --disable-pip-version-check Pillow==11.3.0
+          echo "$RUNNER_TEMP/yeopjari-preview/bin" >> "$GITHUB_PATH"
       - uses: actions/download-artifact@v4
         with:
           name: windows-x64-validated-package
