@@ -3,17 +3,17 @@
 일하는 동안 Windows 작업표시줄과 창 위에서 함께 지내는 작은 고양이입니다. 현재 버전은 크림치즈냥과 턱시도냥을 제공하며, 두 마리를 각자의 성장·성격·기억과 함께 키우는 기능은 유지합니다.
 
 
-**v2.0.24:** 랜덤 우다다, 원본 대기·수면 자세와 고양이 비율을 적용했습니다. 점프 전후 연결과 우클릭 메뉴 표시를 수정하고 턱시도냥의 털색을 행동 사이에 맞췄습니다. 기존 돌봄·성장·장난감과 두 마리 키우기는 유지합니다.
+**v2.0.25:** 원래 고양이 모습을 유지하면서 쉬는 중에도 눈을 깜빡이고, 귀를 쫑긋하거나 살짝 접고, 꼬리를 천천히 흔들며 앞발을 작게 들었다 놓습니다. 잠든 모습은 보내준 기본 시트의 웅크린 자세로 유지합니다. 랜덤 우다다와 점프 연결·우클릭·턱시도 색상 수정도 포함합니다.
 
-[걷기·정지·반전 영상](https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.24/walking-native.mp4) · [식사→걷기→달리기 영상](https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.24/motions-native.mp4) · [원본 수면 자세의 실제 Windows 출력](docs/previews/v2.0.24/native-sleep-reference.png). 두 영상은 실제 앱과 같은 Windows GDI+·Box2D 경로로 출력한 60FPS 영상이며, 바탕화면 녹화는 아닙니다.
+[눈·귀·꼬리·앞발의 20초 미리보기](https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.25/idle-native.mp4) · [실제 Windows 출력 이미지](docs/previews/v2.0.25/idle-native-keyframes.png) · [원본 수면 자세](docs/previews/v2.0.25/sleep-reference-native.png). 미리보기는 실제 앱과 같은 Windows GDI+·Box2D 경로에서 출력한 60FPS 영상이며, 바탕화면 녹화는 아닙니다. 앱은 짧은 몸짓 중16ms, 잔잔한 대기40ms, 숨김250ms 주기로 갱신합니다.
 
 ## 다운로드와 실행
 
 **[최신 버전 다운로드](https://github.com/cho-woo/yeopjari-cat/releases/latest)**
 
-[2.0.24 사용자용 ZIP 바로 받기](https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.24/YeopjariCat-Windows-2.0.24.zip)
+[2.0.25 사용자용 ZIP 바로 받기](https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.25/YeopjariCat-Windows-2.0.25.zip)
 
-**현재 공개 정식 버전은 v2.0.24입니다.** 랜덤 우다다와 원본 모습, 점프 연결·우클릭·색상 수정을 포함합니다. 고양이 또는 트레이 아이콘 우클릭 → **프로그램 업데이트 → 업데이트 확인…**에서 받을 수 있습니다. [전체 Windows 검사·공개 배포 확인](docs/validation/v2.0.24-published.json).
+**현재 공개 정식 버전은 v2.0.25입니다.** 귀여운 대기 몸짓과 원본 수면 자세, 랜덤 우다다를 포함합니다. 고양이 또는 트레이 아이콘 우클릭 → **프로그램 업데이트 → 업데이트 확인…**에서 받을 수 있습니다. [전체 Windows 검사·공개 배포 확인](docs/validation/v2.0.25-published.json).
 
 실행 대상은 **Windows 10/11 x64**입니다. 사용자 ZIP의 압축을 완전히 풀고 `YeopjariCat.exe`를 실행하세요. Python이나 게임 엔진 설치는 필요하지 않습니다. 프로그램이 업데이트될 수 있도록 바탕화면·문서 폴더 등 본인이 파일을 수정할 수 있는 위치에 두세요.
 

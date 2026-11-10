@@ -1,0 +1,116 @@
+{
+  "schema": 1,
+  "version": "2.0.25",
+  "published": true,
+  "verified_utc": "2026-11-10T06:47:00.093152+00:00",
+  "source_commit": "d4511a141c165f68588a501c19f11a99bcac78de",
+  "validation_run": 42768446421,
+  "draft_staging_run": 42769321304,
+  "publication_run": 42769997932,
+  "release_url": "https://github.com/cho-woo/yeopjari-cat/releases/tag/v2.0.25",
+  "asset_count": 28,
+  "checksum_entries": 27,
+  "exe_sha256": "9fba071574b933f144c87abdca1403d0a501c554f8ad07cb4ebb4ee91b6b7e24",
+  "local_exe": "/workspace/yeopjari-cat/release/YeopjariCat.exe",
+  "downloaded_public_asset_hashes": {
+    "RELEASE_NOTES_KO.txt": "55da0c66c1de5dc42ec38f2577c679e5da6097c2d3868a08d638179dc2debd01",
+    "SHA256SUMS.txt": "9458531bef61f710abd4881cccea4dcf7e9ea648a57ce80aca34b199902c782f",
+    "YeopjariCat-2.0.25.exe": "9fba071574b933f144c87abdca1403d0a501c554f8ad07cb4ebb4ee91b6b7e24",
+    "YeopjariCat-Windows-2.0.25.zip": "cc377d1b3d918943fcbff1a9bafe1f75e8889f7b1bd5c09c65d56e767f7bfcec",
+    "draft-staging-proof.json": "d1e2e77f6eefeac127ef6dced6ef29abf99165038c2efcb7e9e93d4e81abb737",
+    "idle-native-capture.json": "e028f6f9e8d5c8984ca25d646f479d9fd76cc1e75e2cbe07e847d99c7cb97bb2",
+    "idle-native-trace.json": "d2e333d3ead2c3f85e10139518428a8ae1582486af045840b44eb09e089d2bd8",
+    "idle-native.json": "567c8e30be49b0571a60f1895f609375ec0e766a52db4610dd3773d8348722dc",
+    "idle-native.mp4": "d33fdf205ed69301e60377eb9fb87494ed7fa5df52613716295210c93defe543",
+    "interaction-evidence.zip": "748cb8ea7ada934b86e94220f161e6a025612d829e0702dc123b025615d1cd16",
+    "jump-continuity-report.json": "1d4dc04e8eadf5606d95c101e415433c6442c9339907c373d7517a31b146aeae",
+    "latest.txt": "cbfe58d54d7066f78be45934b4ee90e59056f8c500fe4a371a43273a05f2e538",
+    "manual-motion-self-test.json": "a74912f2ab49f449d39005f8e85631d85f5598bbbc0617b155429a82b02790d9",
+    "menu-visibility-report.json": "a21843c5b88de5abf66207b1506b04aad39f19319e25f58e4034bc642c26069e",
+    "motions-native-capture.json": "956a2d53323862d5632efd59e5689920b427813417dc4e4c9c1a740e1332a84b",
+    "motions-native-trace.json": "35e5dd999e6705d596670cc6951ffcf5ab9d782cd6b96a197251259f05283492",
+    "motions-native.json": "0eca094977f5f8bd694366c47f72587eb21c96b98745af6a7e7ab0fdb2b3bd46",
+    "motions-native.mp4": "081fe81e2b9c256b23a1c09ecaf36f273ec58953835c8b6ea4a87b5d3d0d027e",
+    "random-zoomies-report.json": "e74d43f5a907d2b76a2b9ae4c6703ae148a1e67531c4a9b0ed70d1ec1c7a47d3",
+    "reference-rest-report.json": "eb4cc5f0c99c2f24977a652a78f3363fdfde12cc8dc9126c38c9cf3c6f224405",
+    "release-info.json": "17326e16cdc0c8b6996e7fd9729fccdad9dc5a234accae06e0e16c926adb7c5c",
+    "render-self-test.txt": "8af5828fbff6f2d7149f59a252ace7689ebb1a37bc14caee5e21295bcc7726af",
+    "walking-native-capture.json": "06bb457c4ca9ced2ed0376c7eaf786e0e5ccfa7b40d42c114307f5a3946eb86f",
+    "walking-native-trace.json": "dfaacee07af130e86cc313fcc6a0b04ce9b1d7ff60671c35f8f9e4d5f94bdad0",
+    "walking-native.json": "be58c89e340832263c1e26fcdc0f0577976640847f799c1fa5a97ba693d189c8",
+    "walking-native.mp4": "56584e01986f9c35289a22391f6eef88b65e0d55b210887d9e5a6a6c18192ec1",
+    "windows-validation.json": "468f8268a07bf7a93771fda0ea99b425f56caa9ce9e4bee5a2a2bb4b182b9408"
+  },
+  "native_review": {
+    "idle": "Actual20s/1200-frame Windows GDI+/Box2D movie fully decoded; open/blink/ear/paw/tail frames viewed at normal110px",
+    "body_and_support": "Original design and physical root retained; both cats",
+    "sleep": "Unchanged original curled base6",
+    "menu_jump_coat": "All v24 native gates retained and passed",
+    "cache": "151x168, two LRU slots per coat, stable buffers/no rebuilds during20s; original RGBA and registration retained"
+  },
+  "native_performance": [
+    {
+      "label": "baseline",
+      "version": "2.0.15",
+      "startup_ms": 1941.7238,
+      "scenarios": [
+        {
+          "name": "paused_idle",
+          "cpu_one_core_percent": 0.3868703794445727,
+          "private_bytes_end": 193224704,
+          "observed_private_growth_bytes": 8192
+        },
+        {
+          "name": "ordinary_autonomous_activity",
+          "cpu_one_core_percent": 0.515522863579222,
+          "private_bytes_end": 193224704,
+          "observed_private_growth_bytes": -4096
+        },
+        {
+          "name": "repeated_rest_resume",
+          "cpu_one_core_percent": 2.5275846887807663,
+          "private_bytes_end": 193224704,
+          "observed_private_growth_bytes": 0
+        },
+        {
+          "name": "post_repeat_idle_settle",
+          "cpu_one_core_percent": 0,
+          "private_bytes_end": 193196032,
+          "observed_private_growth_bytes": -28672
+        }
+      ]
+    },
+    {
+      "label": "candidate",
+      "version": "2.0.25",
+      "startup_ms": 1259.1200000000001,
+      "scenarios": [
+        {
+          "name": "paused_idle",
+          "cpu_one_core_percent": 0.9642725807829613,
+          "private_bytes_end": 325537792,
+          "observed_private_growth_bytes": 8192
+        },
+        {
+          "name": "ordinary_autonomous_activity",
+          "cpu_one_core_percent": 0.5155829544678546,
+          "private_bytes_end": 325537792,
+          "observed_private_growth_bytes": -4096
+        },
+        {
+          "name": "repeated_rest_resume",
+          "cpu_one_core_percent": 2.7947958736542633,
+          "private_bytes_end": 325537792,
+          "observed_private_growth_bytes": 0
+        },
+        {
+          "name": "post_repeat_idle_settle",
+          "cpu_one_core_percent": 0.9262817828028391,
+          "private_bytes_end": 325509120,
+          "observed_private_growth_bytes": -28672
+        }
+      ]
+    }
+  ],
+  "limits": "Movies are native offscreen output, not desktop recordings. Menu evidence uses actual Windows HWND screenshots. Performance is a short sequential Windows Server2022 disposable-profile comparison against v2.0.15; action mix is nondeterministic. It does not establish long-term leak freedom or manual Windows10/11 mixed-DPI behavior."
+}
