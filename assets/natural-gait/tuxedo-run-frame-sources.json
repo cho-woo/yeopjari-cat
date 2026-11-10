@@ -1,0 +1,184 @@
+[
+  {
+    "source_frame_index": 57,
+    "source_png_sha256": "b48a0038e5120957232f945a442adb5f0dce40d2fdb7854c26e974b970719fa6",
+    "rect": [
+      0,
+      0,
+      297,
+      244
+    ],
+    "anchor": [
+      155.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 58,
+    "source_png_sha256": "3575f1d6c5834cea394bda7cf4019dd88043b83f367eb3bb49e1998066adecde",
+    "rect": [
+      297,
+      0,
+      297,
+      244
+    ],
+    "anchor": [
+      155.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 59,
+    "source_png_sha256": "53cefa75eb13c6e5172f73be6b4692f9a726f8ae9ca9396011628c968ec12ceb",
+    "rect": [
+      594,
+      0,
+      297,
+      244
+    ],
+    "anchor": [
+      155.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 60,
+    "source_png_sha256": "5599141b0adee4eef2ea1be6607d70b8449e13271d73b21147b0a0406fca7099",
+    "rect": [
+      891,
+      0,
+      297,
+      244
+    ],
+    "anchor": [
+      155.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 61,
+    "source_png_sha256": "1e1234f2115a4fd31fc13e899e869bbfe79725af45fc3050921deb1cba580cd8",
+    "rect": [
+      1188,
+      0,
+      297,
+      244
+    ],
+    "anchor": [
+      155.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 62,
+    "source_png_sha256": "d7ffa98d58512677bdf1963733056c548dc03720d728040ab7ea91f3f94b8d44",
+    "rect": [
+      0,
+      244,
+      297,
+      244
+    ],
+    "anchor": [
+      155.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 63,
+    "source_png_sha256": "bb660e16bd07226313e1e70ab6d9f8ca31a5bd2209abbd75973575f5323ce508",
+    "rect": [
+      297,
+      244,
+      297,
+      244
+    ],
+    "anchor": [
+      155.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 64,
+    "source_png_sha256": "451aa96515929adc2d3575cbac9600a96808fb41459c8a57fa48b502cecd8293",
+    "rect": [
+      594,
+      244,
+      297,
+      244
+    ],
+    "anchor": [
+      155.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 65,
+    "source_png_sha256": "015bc995aeeb965c5c3ebc13b2d6c23242dcc4faf9c3a88d4da2802a58c32cdb",
+    "rect": [
+      891,
+      244,
+      297,
+      244
+    ],
+    "anchor": [
+      155.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 66,
+    "source_png_sha256": "230e9d410e68e197622f5427b9397581295b6edaaed6296a8ca3cfc6f4c5adad",
+    "rect": [
+      1188,
+      244,
+      297,
+      244
+    ],
+    "anchor": [
+      155.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 67,
+    "source_png_sha256": "95e435b754138ed6870dc31e37b0612276b76ed522fff43060cf09808681e494",
+    "rect": [
+      0,
+      488,
+      297,
+      244
+    ],
+    "anchor": [
+      155.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 68,
+    "source_png_sha256": "72f2cb9f5e4b6adce660620beb84e572bdd6333e28a7d4cf81fe08f7cbfa69ed",
+    "rect": [
+      297,
+      488,
+      297,
+      244
+    ],
+    "anchor": [
+      155.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 69,
+    "source_png_sha256": "2c47952a24f3c8eaa2095f28e72e272c6939ecf52deb2c63109e860ebe78db54",
+    "rect": [
+      594,
+      488,
+      297,
+      244
+    ],
+    "anchor": [
+      155.5,
+      235.5
+    ]
+  }
+]

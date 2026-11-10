@@ -1,0 +1,45 @@
+{
+  "name": "eat",
+  "keys": [
+    {
+      "source_frame": 15
+    },
+    {
+      "source_frame": 54
+    },
+    {
+      "source_frame": 82
+    },
+    {
+      "source_frame": 96
+    }
+  ],
+  "period": null,
+  "temporal_sigma": 17,
+  "ignore_eye_trace": true,
+  "eye_rois": [
+    [
+      245,
+      230,
+      340,
+      382
+    ]
+  ],
+  "prop_mask_dir": "assets/natural-gait/eat-prop-masks",
+  "preserve_rectangles": [
+    [
+      0,
+      385,
+      350,
+      592
+    ]
+  ],
+  "preview_keys": [
+    15,
+    54,
+    82,
+    96
+  ],
+  "reference_height": 403,
+  "exclude_iris_from_material": true
+}

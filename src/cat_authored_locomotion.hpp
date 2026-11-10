@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cmath>
+#include <algorithm>
 
 namespace cat::authored_locomotion {
 
@@ -16,10 +17,13 @@ public:
     static constexpr double RunEnterSpeed = 60;
     static constexpr double RunExitSpeed = 45;
 
-    bool Configure(double walkStride, double runStride) {
-        if (!ValidStride(walkStride) || !ValidStride(runStride)) return false;
+    bool Configure(double walkStride, double runStride, double nominalWalkSpeed=0) {
+        if (!ValidStride(walkStride) || !ValidStride(runStride) ||
+                !std::isfinite(nominalWalkSpeed) || nominalWalkSpeed<0 || nominalWalkSpeed>16384) return false;
         walkStride_ = walkStride;
         runStride_ = runStride;
+        runEnterSpeed_=std::max(RunEnterSpeed,nominalWalkSpeed*1.35);
+        runExitSpeed_=std::max(RunExitSpeed,nominalWalkSpeed*1.15);
         return true;
     }
     void Reset() {
@@ -29,8 +33,15 @@ public:
     }
     bool Configured() const { return walkStride_ > 0 && runStride_ > 0; }
     double Phase() const { return phase_; }
+    bool SetPhase(double phase) {
+        if(!std::isfinite(phase)||phase<0||phase>1)return false;
+        phase_=phase==1?0:phase;
+        return true;
+    }
     Mode CurrentMode() const { return mode_; }
     double Stride() const { return mode_ == Mode::Run ? runStride_ : walkStride_; }
+    double RunEnterThreshold() const {return runEnterSpeed_;}
+    double RunExitThreshold() const {return runExitSpeed_;}
     bool Standing() const {return hasWalked_ && stillSeconds_>=.10;}
     bool RecentWalk() const {return hasWalked_ && stillSeconds_<1.2;}
 
@@ -54,8 +65,8 @@ public:
             if(stillSeconds_>=.18) {phase_=0;mode_=Mode::Walk;}
             stillSeconds_=0;hasWalked_=true;
         }
-        if (mode_ == Mode::Walk && speed >= RunEnterSpeed) mode_ = Mode::Run;
-        else if (mode_ == Mode::Run && speed <= RunExitSpeed) mode_ = Mode::Walk;
+        if (mode_ == Mode::Walk && speed >= runEnterSpeed_) mode_ = Mode::Run;
+        else if (mode_ == Mode::Run && speed <= runExitSpeed_) mode_ = Mode::Walk;
         const double advance = distance / Stride();
         if (!std::isfinite(advance)) { Reset(); return false; }
         phase_ = std::fmod(phase_ + advance, 1.0);
@@ -69,6 +80,7 @@ private:
     }
     double walkStride_ = 0, runStride_ = 0, phase_ = 0;
     double stillSeconds_=0;
+    double runEnterSpeed_=RunEnterSpeed,runExitSpeed_=RunExitSpeed;
     bool hasWalked_=false;
     Mode mode_ = Mode::Walk;
 };

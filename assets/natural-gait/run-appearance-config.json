@@ -1,0 +1,36 @@
+{
+  "name": "run",
+  "keys": [
+    {
+      "source_frame": 57
+    },
+    {
+      "source_frame": 60
+    },
+    {
+      "source_frame": 64
+    },
+    {
+      "source_frame": 67
+    }
+  ],
+  "period": 13,
+  "temporal_sigma": 3.0,
+  "ignore_eye_trace": true,
+  "eye_rois": [
+    [
+      480,
+      200,
+      625,
+      370
+    ]
+  ],
+  "preview_keys": [
+    57,
+    60,
+    64,
+    67
+  ],
+  "reference_height": 417,
+  "exclude_iris_from_material": true
+}

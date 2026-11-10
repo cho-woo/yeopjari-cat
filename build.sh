@@ -3,7 +3,8 @@ set -euo pipefail
 DESKCAT_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 python3 "$DESKCAT_ROOT/tools/import_care_sprites.py" --check
 python3 "$DESKCAT_ROOT/tools/import_styled_sprites.py" --check --require-character 8
-if [[ -d "$DESKCAT_ROOT/assets/derived-motion" ]]; then
+if [[ ! -f "$DESKCAT_ROOT/assets/natural-gait/manifest.json" &&
+      -d "$DESKCAT_ROOT/assets/derived-motion" ]]; then
   python3 "$DESKCAT_ROOT/tools/derive_locomotion_flow.py" --check
 fi
 # The review resource is optional, but a partially registered or stale bake

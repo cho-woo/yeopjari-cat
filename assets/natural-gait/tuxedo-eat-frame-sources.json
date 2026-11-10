@@ -1,0 +1,1220 @@
+[
+  {
+    "source_frame_index": 8,
+    "source_png_sha256": "0a5ecca496fece31866fa0db0337c31ff9269c555fe5d8a6f94da8675851d781",
+    "rect": [
+      0,
+      0,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 9,
+    "source_png_sha256": "979724c2c0d4674bdabcb0a137bf1e0a6d4875e67cbfa3fdab038c0b3c8071b1",
+    "rect": [
+      288,
+      0,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 10,
+    "source_png_sha256": "0e42f63f13e1cb0d6d1e5ce6105f1e33b8d9d65a16c8bd259731fba89af5b5a4",
+    "rect": [
+      576,
+      0,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 11,
+    "source_png_sha256": "fa3c00c928cf761b24c876823fe99e0e32520df486f53e6c2f0808be4b41744a",
+    "rect": [
+      864,
+      0,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 12,
+    "source_png_sha256": "48f4e7da3cf369b18a17ef3de9e2e10384d8b78c12ebd974d7110811c847333a",
+    "rect": [
+      1152,
+      0,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 13,
+    "source_png_sha256": "922a2589b830c88996c6737df3be2026ff2efd72e589704cb031ad6e04943eb9",
+    "rect": [
+      1440,
+      0,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 14,
+    "source_png_sha256": "2d09afabe30dea9531a1c96d5b28baed0a467fe544c09cb7dc6aa1871d4b62c8",
+    "rect": [
+      1728,
+      0,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 15,
+    "source_png_sha256": "a3919904d95ade688de268ead0cb7893214c9c92fabf0066e79e0440c40e808b",
+    "rect": [
+      2016,
+      0,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 16,
+    "source_png_sha256": "2b54e00eb3adbab147a63068425a4af8ed912c7cd400dec7c61b70537fa64f7f",
+    "rect": [
+      0,
+      252,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 17,
+    "source_png_sha256": "e0ea0dcadb7f451665ad988d572282f2d5eb501aedc9e07d8b5321cc33db08b3",
+    "rect": [
+      288,
+      252,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 18,
+    "source_png_sha256": "6a25aa8de237cf14c18a2f8731662c2aea78995af19d46b9c41246aa3eb512d0",
+    "rect": [
+      576,
+      252,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 19,
+    "source_png_sha256": "d0e550cd7de57ce69aa69025da82e26b159122af1e6a2b0fc1898918cd99ba01",
+    "rect": [
+      864,
+      252,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 20,
+    "source_png_sha256": "999d1b9756253fdfde7ae9a33bfd737ac66e44fd767519cf80813cd47b9f5f62",
+    "rect": [
+      1152,
+      252,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 21,
+    "source_png_sha256": "ceb4c4c3cb9a5ee391d95a4b992af95c796402cc799f9716e06bbbb85667e5aa",
+    "rect": [
+      1440,
+      252,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 22,
+    "source_png_sha256": "5f122e18623f3d4fe5b64a13708fe7005055dc9699b7a54d6aa6672687c7b7e7",
+    "rect": [
+      1728,
+      252,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 23,
+    "source_png_sha256": "caca9117c93570a52ba5c2ba4d95fa688ee206f0b8821a750af2dbf908118b40",
+    "rect": [
+      2016,
+      252,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 24,
+    "source_png_sha256": "5d3ecddc024b304badba3a6258dd97ca2b9a4530810cd84447fc4daeb06f9abd",
+    "rect": [
+      0,
+      504,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 25,
+    "source_png_sha256": "d3047c53cd29bfc1124124a369766d791e08122d3d02399641e768bd615a62f9",
+    "rect": [
+      288,
+      504,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 26,
+    "source_png_sha256": "46a2d56d0e6385a65f00ff5d394c29ab01608cb27fd961c9820cacec083c9b58",
+    "rect": [
+      576,
+      504,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 27,
+    "source_png_sha256": "55bd56df52b7f5a9991ff93e407679a8ed1f7c9131902395ad68e74136bc3330",
+    "rect": [
+      864,
+      504,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 28,
+    "source_png_sha256": "5abc26266758cb9c527b6293b7751960b2c648ab3f059bed2aa5cc9858e2dcc2",
+    "rect": [
+      1152,
+      504,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 29,
+    "source_png_sha256": "2aeb7cfe7fe505e7b6b3b70ef5d5ad832f609eaf23e922cc5d55fee4793d4da9",
+    "rect": [
+      1440,
+      504,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 30,
+    "source_png_sha256": "f2d91e1cbf83df2d9cb74fc7d2e70e2054882e3b1df3770090da7827f426ee8f",
+    "rect": [
+      1728,
+      504,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 31,
+    "source_png_sha256": "1e2233add7375dc9dad3b25e50d186fd9c85a67633de0fa3773890cacd70cbf9",
+    "rect": [
+      2016,
+      504,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 32,
+    "source_png_sha256": "0a3647b5db553f68510aa8e20a7bc66b207507b7c3e7f013cd91432859c606a7",
+    "rect": [
+      0,
+      756,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 33,
+    "source_png_sha256": "c610bc36c270ce246254089493f460f4d2bbbd121f3ae0ef5bf3fa68aafbc92a",
+    "rect": [
+      288,
+      756,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 34,
+    "source_png_sha256": "b5479c669fb3eb4f4efdfe57c94f036e02619a52e00951bb525e6913564d8d5d",
+    "rect": [
+      576,
+      756,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 35,
+    "source_png_sha256": "cc4cc12709342a7fc0c074b2fba75fbb859b85c35a0006402e8a4a9480c9dbb0",
+    "rect": [
+      864,
+      756,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 36,
+    "source_png_sha256": "175ea727259a073c7596c2482dcdf18956709d6fe34d476289ea7974c7f6c617",
+    "rect": [
+      1152,
+      756,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 37,
+    "source_png_sha256": "3e802ec985fbe5e6f34bfe66651f18b1a93384564150b1b4beb349db3589f57f",
+    "rect": [
+      1440,
+      756,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 38,
+    "source_png_sha256": "d02e2ebe4e8bd9ae501e9a79a6d67d3c98c2137c9b50a771d5f612a873d5fa36",
+    "rect": [
+      1728,
+      756,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 39,
+    "source_png_sha256": "dc77a674a525162782b0ae90bf786b11d562b0a5a060756eb4fc90198f76cdea",
+    "rect": [
+      2016,
+      756,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 40,
+    "source_png_sha256": "6af2e5fb432681241e0236d9bc342fa35b36cd14fbd20e92169a9f1b26de38a7",
+    "rect": [
+      0,
+      1008,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 41,
+    "source_png_sha256": "bf02f43d16633e687d05e46218473ca4fb53dcdb6ef18badd3b8cf87b42a464b",
+    "rect": [
+      288,
+      1008,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 42,
+    "source_png_sha256": "9e1e61288310e9255742ee8aee89093960a6bd6da419a85c7feca89d5e99ff14",
+    "rect": [
+      576,
+      1008,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 43,
+    "source_png_sha256": "cab91af51bfc85c464cb0345ee781031c1a829ab1bb51cd9660d4e2c2445453d",
+    "rect": [
+      864,
+      1008,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 44,
+    "source_png_sha256": "c936651c664c033b51fbed597644be218904b80f8c9e0869d05e7cce02de7811",
+    "rect": [
+      1152,
+      1008,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 45,
+    "source_png_sha256": "024b155199f0ec27b61cec32354ec5085f4244d36f585e24becd084733ef79ff",
+    "rect": [
+      1440,
+      1008,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 46,
+    "source_png_sha256": "59c46f64ea65d082a0b46f11535624d8c533c5df528a990d946861771bd6c493",
+    "rect": [
+      1728,
+      1008,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 47,
+    "source_png_sha256": "886571a951aa5881a85fa5dd123c87d11cad13c887097673ff2e50467e41a135",
+    "rect": [
+      2016,
+      1008,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 48,
+    "source_png_sha256": "4c196613013d639045c7f4a9d9be574ecc76fef8bef45f8f9a54a6cf9d7de528",
+    "rect": [
+      0,
+      1260,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 49,
+    "source_png_sha256": "2f5af169ac8f10a3f3d9db5506b2240740527eff82ec05f2f80e749d5dbb1d1b",
+    "rect": [
+      288,
+      1260,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 50,
+    "source_png_sha256": "3b40047b9855e9de0c46e8ea9ebf236751028caafaa31b343c848800859be20a",
+    "rect": [
+      576,
+      1260,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 51,
+    "source_png_sha256": "6a39b579911ecfeef0037a7d0fac272d2cf85215c96e17c4d902b5f48c716d56",
+    "rect": [
+      864,
+      1260,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 52,
+    "source_png_sha256": "1a1db3007b695f79f43a7a9a35406cdc19087a8b67eae1d8da6930d940c570d8",
+    "rect": [
+      1152,
+      1260,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 53,
+    "source_png_sha256": "20ac31d4493018f15787ed20ef9a9b4e448c808427f8e327788e22560378a20e",
+    "rect": [
+      1440,
+      1260,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 54,
+    "source_png_sha256": "12d55f8355bec88d89e8b0861e1448ad2a6c588c826f49520be0ffd1714255a5",
+    "rect": [
+      1728,
+      1260,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 55,
+    "source_png_sha256": "2a80ec5ef2ae5f90fa626df38dfd692dd1a76c5e965a306bc32411dd46060c26",
+    "rect": [
+      2016,
+      1260,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 56,
+    "source_png_sha256": "76b28b0754176d53954ee5dd971311afe7b25126f9c5a8dfe5dcc2dc072190af",
+    "rect": [
+      0,
+      1512,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 57,
+    "source_png_sha256": "0ab59334c1194af1cd00cebf9abc247013e061f3a619abf5bf90ec97cc276427",
+    "rect": [
+      288,
+      1512,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 58,
+    "source_png_sha256": "d5d665bf8dd94cef5debb821e7faa22c6b15c265926c7e692ea4bdfe261404c7",
+    "rect": [
+      576,
+      1512,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 59,
+    "source_png_sha256": "6ae8409c9ed005ba532e96859fbce3e35ab6532ec6c7983de9c2e0dfa89bda40",
+    "rect": [
+      864,
+      1512,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 60,
+    "source_png_sha256": "9a6176316fe2635ff66d52f298383a7686e52be799a2c5ce26b7afca9112bfef",
+    "rect": [
+      1152,
+      1512,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 61,
+    "source_png_sha256": "70571a0b00587f4fdc0fe721d42cef46f2a0d807c8e902f9fc3179106b41551d",
+    "rect": [
+      1440,
+      1512,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 62,
+    "source_png_sha256": "5eb41c4e2cdb9e38eaa2ab2ad5497ce4818a8ea3e66be4994f8040b32c4e068a",
+    "rect": [
+      1728,
+      1512,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 63,
+    "source_png_sha256": "75e38e488c5b44393fd9e318a7350838033205566349196d024d1ec45330d4b1",
+    "rect": [
+      2016,
+      1512,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 64,
+    "source_png_sha256": "16822dc731cdb101395ad699f62fc3997139b4301157697cf62ae0f412592474",
+    "rect": [
+      0,
+      1764,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 65,
+    "source_png_sha256": "951779f7a048cf26c7403f0476e428be46565e27ca7b6a4ad221b6b5de033f74",
+    "rect": [
+      288,
+      1764,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 66,
+    "source_png_sha256": "07f42ff02943016ed6f83e4999e57a4dea3e939fbd8d76c95a4aaf238c8e7349",
+    "rect": [
+      576,
+      1764,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 67,
+    "source_png_sha256": "5149d5aa8b00f034c42646272c4dd5e22c5b55f7b094971d9bcdc4faea7aab78",
+    "rect": [
+      864,
+      1764,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 68,
+    "source_png_sha256": "3d1404b54045993ca76a495e1c6a551d9d8cfb6da1042fc3ce4183294ab0eeaf",
+    "rect": [
+      1152,
+      1764,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 69,
+    "source_png_sha256": "8b6a68dc37ac9b6fcdee12e3e7edac7f06cdbca8dc20abd9c3272a5463a28bfd",
+    "rect": [
+      1440,
+      1764,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 70,
+    "source_png_sha256": "ee2a2f83c86e9e41d593aab4a73ea27db7f31641e4e7e3226b49b9731e60c0b9",
+    "rect": [
+      1728,
+      1764,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 71,
+    "source_png_sha256": "82aae095a6318c8d1ea2ecd83b20b25afbc4084c60feedc406bd1efc2b899329",
+    "rect": [
+      2016,
+      1764,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 72,
+    "source_png_sha256": "ac371c91e58a3ac99f6691c1bb5048bc11baae138f5168b216d81df23b7c876d",
+    "rect": [
+      0,
+      2016,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 73,
+    "source_png_sha256": "a337f994f2905bdaf25590c74da46c392365ac83d17f7c5584f4ecbea8a7e156",
+    "rect": [
+      288,
+      2016,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 74,
+    "source_png_sha256": "d16f26edf3191f52ddab65c6bb07f0a3c4ec38fe7c1c8d7ca686aad619034161",
+    "rect": [
+      576,
+      2016,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 75,
+    "source_png_sha256": "2b2d7a6d2555a2a2786c4814ec2ed00e607f7831fa22b93fc5dc91999241d5ec",
+    "rect": [
+      864,
+      2016,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 76,
+    "source_png_sha256": "6f0e97b66466831b29702f07b12529259b8d0a403e08a7525c737cc5bb399f27",
+    "rect": [
+      1152,
+      2016,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 77,
+    "source_png_sha256": "0755f3073c10fe9fb12962dc3abc883ffd0471157c08fd08c3ca39990eb06cbd",
+    "rect": [
+      1440,
+      2016,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 78,
+    "source_png_sha256": "22d21beb7f7c9501412d6caaa9d042e1c1308284293a5393918558aa1e2c9cdb",
+    "rect": [
+      1728,
+      2016,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 79,
+    "source_png_sha256": "cc4bdf0ef72b226aab44b4749227926e8d86ffa3e46a267f1ff682e46c47ffe5",
+    "rect": [
+      2016,
+      2016,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 80,
+    "source_png_sha256": "e4776b903ff88bd316a797ed3472a0467cda9f6491582c89988aab6ef5bfe943",
+    "rect": [
+      0,
+      2268,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 81,
+    "source_png_sha256": "eb58065a265a2757e40f032fd3813b3c5a5a2408566c712a165a88baf14a04c8",
+    "rect": [
+      288,
+      2268,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 82,
+    "source_png_sha256": "a74b423fb6023ba6f5269b80975d6dd735fbb4c27452f47187e849dcc188af77",
+    "rect": [
+      576,
+      2268,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 83,
+    "source_png_sha256": "fb210bea61ad92b2929898948579fb409cd6156b4f64b63ef722b7cf80b35680",
+    "rect": [
+      864,
+      2268,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 84,
+    "source_png_sha256": "3b05062a237ecd1086656155c71db390c0303b50b6bd76230b253c96905c1e58",
+    "rect": [
+      1152,
+      2268,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 85,
+    "source_png_sha256": "22a8e523febbf3e0879bab13e4c4047a7f77c54c726e83026f46e6a909601944",
+    "rect": [
+      1440,
+      2268,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 86,
+    "source_png_sha256": "c09d13f1effa76cde31be51158730701819abdb0405843ae35f8c3fc4b374cc8",
+    "rect": [
+      1728,
+      2268,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 87,
+    "source_png_sha256": "a240b6b86d791c486cb5179ea03297d68c85f27b77e60c4161acaebdf6abdade",
+    "rect": [
+      2016,
+      2268,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 88,
+    "source_png_sha256": "3140587cf3b90d346c8996031a4643a00c885c9244fd34dbd282a291617b0d27",
+    "rect": [
+      0,
+      2520,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 89,
+    "source_png_sha256": "ca7ddbd09271837569cb802a1a1651153ddf45d7e0e24743ff71be68c70463e6",
+    "rect": [
+      288,
+      2520,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 90,
+    "source_png_sha256": "ce386055bc37144d122e3d70d4a5c17fd3a5d113d650193349414f63f46d8286",
+    "rect": [
+      576,
+      2520,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 91,
+    "source_png_sha256": "42d1c7475596b782623af0c6ef59ac4a1d9c3fe174dcacc7e8304f4db3ad001c",
+    "rect": [
+      864,
+      2520,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 92,
+    "source_png_sha256": "b949674077ee4e4130696749f56bf0203988a361ee50aa3146fd8673fe6d8447",
+    "rect": [
+      1152,
+      2520,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 93,
+    "source_png_sha256": "1b99dce6d024e4b3ec61b859712138fa6becf792129f9ce274eb66d6a100f2c0",
+    "rect": [
+      1440,
+      2520,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  },
+  {
+    "source_frame_index": 94,
+    "source_png_sha256": "736fa9e332dbf0c784e646dca42d6e6f79f3d63d56f4f9dd98ad19878f52777a",
+    "rect": [
+      1728,
+      2520,
+      288,
+      252
+    ],
+    "anchor": [
+      102.5,
+      235.5
+    ]
+  }
+]

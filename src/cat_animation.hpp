@@ -219,12 +219,14 @@ public:
     double OriginalWalkPhase() const { return originalWalkPhase_; }
     // Register once when art/body width changes. Reconfiguration preserves the
     // step fraction; changing an action name never restarts an authored cycle.
-    bool ConfigureAuthoredStrides(double walkStride,double runStride,unsigned standingFrame=0) {
+    bool ConfigureAuthoredStrides(double walkStride,double runStride,unsigned standingFrame=0,
+                                 double nominalWalkSpeed=0) {
         standingFrame_=standingFrame;
-        return authoredCycle_.Configure(walkStride,runStride);
+        return authoredCycle_.Configure(walkStride,runStride,nominalWalkSpeed);
     }
     bool AuthoredConfigured() const { return authoredCycle_.Configured(); }
     double AuthoredPhase() const { return authoredCycle_.Phase(); }
+    bool SetAuthoredPhase(double phase) {return authoredCycle_.SetPhase(phase);}
     cat::authored_locomotion::Mode AuthoredMode() const { return authoredCycle_.CurrentMode(); }
     double AuthoredStride() const { return authoredCycle_.Stride(); }
     unsigned AuthoredStandingFrame() const {return standingFrame_;}

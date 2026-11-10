@@ -61,6 +61,7 @@ HEADER='src/care_sprites.generated.hpp'
 RC='src/care_sprites.generated.rc'
 CANONICAL='assets/care-sprites/manifest.json'
 DERIVED='assets/derived-motion/manifest.json'
+NATURAL='assets/natural-gait/manifest.json'
 
 class ImportError(ValueError):
     pass
@@ -207,7 +208,7 @@ def load_entries(manifest_path):
     for index,entry in enumerate(manifest['clips']):
         label=f'clips[{index}]'
         required={'clip','character','source','columns','rows','reference_height'}
-        optional={'frames','anchor','sha256'}|({'frame_count','sequence','stride_pixels','standing_frame'} if schema==2 else set())
+        optional={'frames','anchor','sha256'}|({'frame_count','sequence','stride_pixels','standing_frame','movement_delay_ms'} if schema==2 else set())
         require(isinstance(entry,dict) and required<=set(entry) and set(entry)<=required|optional,f'{label}: unsupported or missing fields')
         name=entry['clip'];require(isinstance(name,str) and name in LAYOUT,f'{label}: unknown clip')
         require(schema==2 or name not in ('walk','run'),f'{label}: locomotion requires schema2 and a sequence')
@@ -248,6 +249,9 @@ def load_entries(manifest_path):
         standing=integer(entry.get('standing_frame',0),label+'.standing_frame',0,count-1)
         stride=number(entry.get('stride_pixels',0),label+'.stride_pixels',0,4096)
         require(name not in ('walk','run') or stride>0,f'{label}: locomotion stride_pixels must be positive')
+        movement_delay=integer(entry.get('movement_delay_ms',0),label+'.movement_delay_ms',0,MAX_DURATION_MS)
+        intro_duration=sum(step['ms'] for step in program['canonical']['intro']) if program is not None else 0
+        require(movement_delay<=intro_duration,f'{label}: movement_delay_ms exceeds the entrance duration')
         frames=[]
         for frame_index in range(count):
             frame_label=f'{label}.frames[{frame_index}]'
@@ -276,7 +280,8 @@ def load_entries(manifest_path):
         resource=400+character*2+(name=='run') if name in ('walk','run') else 113+character*8+clip_index
         entries.append({'clip':name,'enum':enum,'character':character,'resource':resource,'schema':schema,
                         'columns':columns,'rows':rows,'reference_height':reference,'width':width,'height':height,
-                        'frames':frames,'filename':filename,'sha256':digest,'data':data,'program':program,'stride_pixels':stride,'standing_frame':standing})
+                        'frames':frames,'filename':filename,'sha256':digest,'data':data,'program':program,'stride_pixels':stride,
+                        'standing_frame':standing,'movement_delay_ms':movement_delay})
     entries.sort(key=lambda value:(value['character'],LAYOUT[value['clip']][0]))
     for entry in entries:
         if entry['clip']=='run':
@@ -288,6 +293,143 @@ def load_entries(manifest_path):
 
 def numeric(value):
     return repr(value) if type(value) is float else str(value)
+
+
+def natural_locomotion(root,originals):
+    """Select independently authored/video action poses without replacing source art.
+
+    Unlike the archived optical-flow bake, this registration owns its measured
+    stride, reference height, frame count and root anchors. Its manifest is the
+    activation point: an authoring project folder alone changes nothing.
+    """
+    root=Path(root).resolve();manifest=root/NATURAL
+    if not manifest.is_file():return originals,0
+    directory=manifest.parent
+    provenance=directory/'provenance.json'
+    require(provenance.is_file(),'Missing natural gait provenance')
+    require(provenance.stat().st_size<=1024*1024,'Natural gait provenance exceeds1MiB')
+    try:report=json.loads(provenance.read_text(encoding='utf-8'),object_pairs_hook=unique_object)
+    except (OSError,UnicodeError,ValueError) as error:raise ImportError('Cannot read natural gait provenance') from error
+    require(isinstance(report,dict) and report.get('schema')==1 and
+            report.get('method') in ('skeletal_3d_bake','skeletal_2d_bake','authored_pose_bake','authored_video_extraction') and
+            report.get('precomputed_only') is True,'Invalid natural gait provenance')
+    def verify(path,expected,label):
+        require(path.is_file() and isinstance(expected,str),f'Natural gait {label} drift or missing file')
+        digest=hashlib.sha256()
+        with path.open('rb') as source:
+            for block in iter(lambda:source.read(1024*1024),b''):digest.update(block)
+        require(digest.hexdigest()==expected,f'Natural gait {label} drift or missing file')
+    def bounded_path(base,relative,label):
+        require(isinstance(relative,str) and relative and not Path(relative).is_absolute(),
+                f'Natural gait {label} path must be relative')
+        path=(base/relative).resolve()
+        require(path.is_relative_to(root),f'Natural gait {label} must stay inside the project')
+        return path
+    verify(manifest,report.get('manifest_sha256'),'manifest')
+    sources=report.get('sources')
+    require(isinstance(sources,list) and 3<=len(sources)<=32,'Natural gait authoring sources required')
+    roles=set()
+    for source in sources:
+        require(isinstance(source,dict) and isinstance(source.get('role'),str) and
+                source['role'] not in roles,'Natural gait duplicate or invalid source role')
+        roles.add(source['role'])
+        path=bounded_path(root,source.get('path'),'source')
+        verify(path,source.get('sha256'),source['role'])
+    video_method=report.get('method')=='authored_video_extraction'
+    require(({'importer','contacts'} if video_method else {'generator','project','contacts'})<=roles and
+            (not video_method or any(role=='input_video' or role.startswith('input_video_') for role in roles)),
+            'Natural gait authoring/video, importer and contacts sources required')
+    atlases=report.get('atlases')
+    require(isinstance(atlases,list) and 1<=len(atlases)<=20,'Natural gait atlas evidence required')
+    registered={}
+    for atlas in atlases:
+        require(isinstance(atlas,dict),'Natural gait atlas record required')
+        path=bounded_path(directory,atlas.get('source'),'atlas')
+        require(path.is_relative_to(directory) and path.suffix.lower()=='.png',
+                'Natural gait atlas must be a PNG inside its asset directory')
+        require(path not in registered,'Natural gait duplicate atlas evidence')
+        verify(path,atlas.get('sha256'),'atlas')
+        registered[path]=atlas
+    replacements=load_entries(manifest)
+    allowed=('walk','run','eat') if video_method else ('walk','run')
+    require(1<=len(replacements)<=len(allowed) and all(entry['character']==0 and entry['clip'] in allowed for entry in replacements),
+            'Natural action override contains an unsupported character or clip')
+    raw=json.loads(manifest.read_text(encoding='utf-8-sig'),object_pairs_hook=unique_object)
+    paths={(entry['clip'],entry['character']):bounded_path(directory,entry['source'],'clip atlas')
+           for entry in raw['clips']}
+    evidence=report.get('clips')
+    require(isinstance(evidence,list) and len(evidence)==len(replacements),'Natural gait clip evidence required')
+    for entry in replacements:
+        require(any(base['clip']==entry['clip'] and base['character']==0 for base in originals),
+                'Natural gait cannot replace an absent original clip')
+        path=paths[(entry['clip'],entry['character'])]
+        require(path in registered,'Natural gait clip has no atlas evidence')
+        atlas=registered[path]
+        require(entry['sha256']==atlas.get('sha256') and
+                entry['width']==atlas.get('image_width') and entry['height']==atlas.get('image_height'),
+                'Natural gait atlas registration mismatch')
+        proofs=[proof for proof in evidence if isinstance(proof,dict) and proof.get('clip')==entry['clip']]
+        require(len(proofs)==1,'Natural gait duplicate or absent clip evidence')
+        proof=proofs[0];program=entry['program']
+        require(program is not None and (entry['clip'] not in ('walk','run') or program['ranges'][1][1]>=2),
+                'Natural action needs a program and locomotion needs a walking cycle')
+        first,count=program['ranges'][1]
+        cycle_frames=len({step['frame'] for step in program['steps'][first:first+count]})
+        require(len(entry['frames'])==proof.get('rendered_frames') and
+                cycle_frames==proof.get('cycle_frames') and
+                entry['standing_frame']==proof.get('standing_frame') and
+                entry['stride_pixels']==proof.get('stride_pixels') and
+                entry['reference_height']==proof.get('reference_height'),
+                'Natural gait clip registration mismatch')
+        if video_method:
+            videos=report.get('videos')
+            if isinstance(videos,dict):
+                video=videos.get(entry['clip'])
+                require(isinstance(video,dict),'Natural action per-clip video metadata required')
+                selected=video.get('selected_frame_indices')
+                source_role=video.get('source_role')
+            else:
+                video=report.get('video');require(isinstance(video,dict),'Natural gait video metadata required')
+                selections=video.get('selected_frame_indices');require(isinstance(selections,dict),'Natural video selections required')
+                selected=selections.get(entry['clip'])
+                source_role=video.get('source_role','input_video')
+            require(isinstance(source_role,str) and source_role in roles and
+                    (source_role=='input_video' or source_role.startswith('input_video_')),
+                    'Natural video source role is not bound to an input video')
+            fps=number(video.get('source_fps'),'Natural video source_fps',.000001,240)
+            source_count=integer(video.get('source_frame_count'),'Natural video source_frame_count',1,1000000)
+            require(isinstance(selected,list) and len(selected)==len(entry['frames']) and
+                    all(type(index) is int and 0<=index<source_count for index in selected),
+                    'Natural video source frame selection mismatch')
+            entry['nominal_fps']=fps
+        entry['asset_path']=path.relative_to(root).as_posix()
+    replaced={(entry['clip'],entry['character']) for entry in replacements}
+    result=[entry for entry in originals if (entry['clip'],entry['character']) not in replaced]+replacements
+    # Previously shared Walk/Run resource400 must separate when only one clip
+    # is replaced. Keep the remaining clip's actual source/rectangles intact.
+    walk=next((entry for entry in result if entry['character']==0 and entry['clip']=='walk'),None)
+    run=next((entry for entry in result if entry['character']==0 and entry['clip']=='run'),None)
+    if walk is not None and run is not None and walk['sha256']!=run['sha256'] and walk['resource']==run['resource']:
+        result=[dict(entry,resource=401) if entry is run else entry for entry in result]
+    result.sort(key=lambda value:(value['character'],LAYOUT[value['clip']][0]))
+    require(sum(frame['rect'][2]*frame['rect'][3] for entry in result for frame in entry['frames'])<=MAX_RESIDENT_PIXELS,
+            'Natural gait frame storage exceeds192MiB resident budget')
+    return result,len(replacements)
+
+
+def runtime_locomotion(root,originals):
+    # A new authored pose family takes precedence over the archived flow bake.
+    manifest=Path(root)/NATURAL
+    if manifest.is_file():
+        try:raw=json.loads(manifest.read_text(encoding='utf-8-sig'),object_pairs_hook=unique_object)
+        except (OSError,UnicodeError,ValueError) as error:raise ImportError('Cannot read natural gait manifest') from error
+        require(isinstance(raw,dict) and isinstance(raw.get('clips'),list),'Natural gait clips required')
+        keys={(entry.get('clip'),entry.get('character')) for entry in raw['clips'] if isinstance(entry,dict)}
+        # A complete new family has no dependency on archived flow files. A
+        # Walk-only replacement keeps the existing derived Run exactly.
+        base=originals if {('walk',0),('run',0)}<=keys else derived_locomotion(root,originals)[0]
+        return natural_locomotion(root,base)
+    return derived_locomotion(root,originals)
 
 
 def derived_locomotion(root,originals):
@@ -373,6 +515,8 @@ def generated(entries):
             header+='    }},"'+entry['sha256']+'","'+asset_path+'"'
             if entry['program'] is not None or entry['stride_pixels']:
                 header+=','+generated_program(entry['program'])+','+numeric(entry['stride_pixels'])+','+str(entry['standing_frame'])
+                if entry.get('nominal_fps',0) or entry.get('movement_delay_ms',0):header+=','+numeric(entry.get('nominal_fps',0))
+                if entry.get('movement_delay_ms',0):header+=','+str(entry['movement_delay_ms'])
             header+='},\n'
             if entry['resource'] in resources:
                 require(resources[entry['resource']]==entry['sha256'],'Conflicting PNGs share a resource identifier')
@@ -388,7 +532,9 @@ def prepare_import(root,manifest_path=None,check=False):
     root=Path(root).resolve();default=root/CANONICAL
     selected=Path(manifest_path).resolve() if manifest_path is not None else default if default.is_file() else None
     originals=load_entries(selected)
-    entries,derived=derived_locomotion(root,originals) if manifest_path is None else (originals,0)
+    entries,overrides=runtime_locomotion(root,originals) if manifest_path is None else (originals,0)
+    natural=overrides if manifest_path is None and (root/NATURAL).is_file() else 0
+    derived=overrides if not natural else 0
     header,rc=generated(entries)
     outputs={root/HEADER:header,root/RC:rc}
     for entry in originals:outputs[root/'assets/care-sprites'/entry['filename']]=entry['data']
@@ -404,6 +550,7 @@ def prepare_import(root,manifest_path=None,check=False):
                 if entry['stride_pixels']:
                     value['stride_pixels']=entry['stride_pixels']
                     value['standing_frame']=entry['standing_frame']
+                if entry.get('movement_delay_ms',0):value['movement_delay_ms']=entry['movement_delay_ms']
             clips.append(value)
         canonical={'schema':schema,'clips':clips}
         outputs[default]=(json.dumps(canonical,ensure_ascii=False,indent=2)+'\n').encode()
@@ -424,6 +571,7 @@ def prepare_import(root,manifest_path=None,check=False):
             finally:temporary.unlink(missing_ok=True)
     return {'status':'verified' if check else 'imported','clips':len(entries),'original_png_bytes_preserved':True,
             'derived_locomotion_clips':derived,
+            'natural_locomotion_clips':natural,
             'resource_ids':[entry['resource'] for entry in entries],
             'unique_sheets':len({entry['sha256'] for entry in entries}),
             'actual_frames':sum(len(entry['frames']) for entry in entries),

@@ -733,6 +733,40 @@ void AuthoredGaitChangesPreservePhaseAndUseSpeedHysteresis() {
     CHECK(std::abs(gait.AuthoredPhase()-.1)<1e-12);
 }
 
+void NativeVideoCadenceDoesNotSelectTheOldRunGait() {
+    using namespace cat::animation;
+    using Mode=cat::authored_locomotion::Mode;
+    for(double modifiers:{.7,1.,1.25,1./.7})for(int fps:{30,60,120}) {
+        Locomotion gait;
+        const double nativeWalk=81.6*modifiers;
+        CHECK(gait.ConfigureAuthoredStrides(68,72,0,nativeWalk));
+        for(int tick=0;tick<fps;++tick) {
+            CHECK(gait.Advance(Motion::Walk,nativeWalk/fps,1./fps,true));
+            CHECK(gait.AuthoredMode()==Mode::Walk);
+        }
+        CHECK(std::abs(gait.AuthoredPhase()-std::fmod(nativeWalk/68,1.))<1e-11);
+        CHECK(gait.Advance(Motion::Zoomies,135*modifiers/fps,1./fps,true));
+        CHECK(gait.AuthoredMode()==Mode::Run);
+        CHECK(gait.Advance(Motion::Walk,nativeWalk/fps,1./fps,true));
+        CHECK(gait.AuthoredMode()==Mode::Walk);
+        const auto phase=gait.AuthoredPhase();
+        for(double invalid:{-1.,std::numeric_limits<double>::infinity(),std::numeric_limits<double>::quiet_NaN()}) {
+            CHECK(!gait.ConfigureAuthoredStrides(68,72,0,invalid));
+            CHECK(gait.AuthoredPhase()==phase);
+        }
+        CHECK(gait.SetAuthoredPhase(.375)&&gait.AuthoredPhase()==.375);
+        CHECK(!gait.SetAuthoredPhase(-.01)&&gait.AuthoredPhase()==.375);
+        CHECK(!gait.SetAuthoredPhase(std::numeric_limits<double>::quiet_NaN())&&gait.AuthoredPhase()==.375);
+        CHECK(gait.SetAuthoredPhase(1)&&gait.AuthoredPhase()==0);
+    }
+    cat::authored_locomotion::Cycle cycle;
+    CHECK(cycle.Configure(68,72,81.6));
+    CHECK(std::abs(cycle.RunEnterThreshold()-110.16)<1e-10);
+    CHECK(std::abs(cycle.RunExitThreshold()-93.84)<1e-10);
+    CHECK(cycle.Configure(68,72));
+    CHECK(cycle.RunEnterThreshold()==60 && cycle.RunExitThreshold()==45);
+}
+
 void ActualTakeoffKeepsPreparationsGroundedPastPreviewDeadline() {
     using namespace cat::animation;
     using Clip=cat::sprite_sequence::Clip;
@@ -991,6 +1025,7 @@ int main() {
         AuthoredLocomotionUsesPhysicalDistanceAtEveryFrameRate();
         AuthoredLocomotionFreezesItsDrawingAndModeWithoutRelativeTravel();
         AuthoredGaitChangesPreservePhaseAndUseSpeedHysteresis();
+        NativeVideoCadenceDoesNotSelectTheOldRunGait();
         ActualTakeoffKeepsPreparationsGroundedPastPreviewDeadline();
         AuthoredLocomotionAttachesOnlyAvailableGroundedWalking();
         AuthoredWrapAndActionClockRestartsKeepOnePhysicalStep();

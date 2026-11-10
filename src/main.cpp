@@ -39,6 +39,7 @@
 #include "cat_routine.hpp"
 #include "cat_animation.hpp"
 #include "cat_pose_transition.hpp"
+#include "cat_video_ground_bridge.hpp"
 #include "cat_care_presentation.hpp"
 #include "cat_locomotion_rig.hpp"
 #include "cat_articulated_walk.hpp"
@@ -313,6 +314,7 @@ struct App {
     cat::animation::Locomotion gait;
     cat::motion::GroundDrive groundDrive;
     cat::animation::PoseTransition poseTransition;
+    cat::video_ground_bridge::GroundBridge groundArtBridge;
     bool physicsReady = false, jumpPending = false, jumpLaunched = false;
     bool waitingForStop = false;
     bool preciseTimer = false;
@@ -1452,6 +1454,7 @@ void ResetMovement() {
     g.gait.Reset();
     g.groundDrive.Reset(g.direction);
     g.poseTransition.Reset();
+    g.groundArtBridge.Reset();
     ResetPrimaryCarePresentation();
     g.jumpPending = g.jumpLaunched = false;
     g.manualMotionActive = false;
@@ -1469,14 +1472,60 @@ const CareSpriteAtlas* LoadedCareSprite(cat::sprite_sequence::Clip clip,cat::Cha
         if(sprite->layout->clip==clip && sprite->layout->character==cat::sprite_assets::AuthoredCharacter(static_cast<unsigned>(character)))return sprite.get();
     return nullptr;
 }
+double RegisteredWalkSpeed(double fallback=22) {
+    const auto* walk=LoadedCareSprite(cat::sprite_sequence::Clip::Walk,g.preferences.character);
+    const double native=walk?cat::sprite_assets::NominalLocomotionSpeed(*walk->layout):0;
+    return native>0?native:fallback;
+}
+double RegisteredRunSpeed(double fallback=90) {
+    const auto* run=LoadedCareSprite(cat::sprite_sequence::Clip::Run,g.preferences.character);
+    const double runNative=run?cat::sprite_assets::NominalLocomotionSpeed(*run->layout):0;
+    if(runNative>0)return runNative;
+    const auto* walk=LoadedCareSprite(cat::sprite_sequence::Clip::Walk,g.preferences.character);
+    const double native=walk?cat::sprite_assets::NominalLocomotionSpeed(*walk->layout):0;
+    return native>0?std::max(fallback,native*1.65):fallback;
+}
+const cat::sprite_assets::Descriptor* PrimaryVideoGroundArt() {
+    const auto* walk=LoadedCareSprite(cat::sprite_sequence::Clip::Walk,g.preferences.character);
+    return walk && walk->layout->nominalFramesPerSecond>0 && walk->layout->program.intro.count &&
+        walk->layout->program.outro.count ? walk->layout : nullptr;
+}
+bool PrimaryVideoSideMeal() {
+    const auto* eat=LoadedCareSprite(cat::sprite_sequence::Clip::Eat,g.preferences.character);
+    return g.motion==Motion::Eat && !g.fishMeal && eat && eat->layout->nominalFramesPerSecond>0;
+}
+void UpdatePrimaryGroundArt(ULONGLONG ticks) {
+    const auto* walk=PrimaryVideoGroundArt();
+    const bool meal=PrimaryVideoSideMeal();
+    const bool walking=cat::animation::Walking(g.motion);
+    if(!walk || g.perch.transitioning || g.physics.Hanging()) {
+        g.groundArtBridge.Reset(ticks);return;
+    }
+    g.groundArtBridge.Configure(cat::sprite_sequence::Duration(walk->program,walk->program.intro),
+        cat::sprite_sequence::Duration(walk->program,walk->program.outro),walk->movementDelayMs);
+    const auto physical=g.physics.RenderPose();
+    const bool travel=walking && (!g.pet.roamingPaused || g.manualMotionActive);
+    // Finish the real side-to-front stop before mirroring. The shared front
+    // drawing is the safe point at which the next turn can face the other way.
+    if(travel && g.groundArtBridge.Neutral() && std::abs(WalkingVelocity(physical))<=.5 && g.direction!=g.facing) {
+        g.facing=g.direction;g.groundDrive.Reset(g.direction);
+    }
+    const bool reversing=travel && g.direction!=g.facing;
+    g.groundArtBridge.Update(ticks,travel && !reversing,
+        physical.grounded,WalkingVelocity(physical),!EnvironmentBusy(),meal);
+    if(g.groundArtBridge.Stopping() || g.groundArtBridge.StartingForSideAction())g.waitingForStop=true;
+}
 void ConfigurePrimaryAuthoredStride() {
     using Clip=cat::sprite_sequence::Clip;
     const auto* walk=LoadedCareSprite(Clip::Walk,g.preferences.character);
     const auto* run=LoadedCareSprite(Clip::Run,g.preferences.character);
     if(walk && run) {
         const auto body=cat::nutrition::VisualModifiers(g.nutrition);
+        const double growth=std::max(.1,cat::GrowthScale(g.pet.bornUtc,UtcNow()));
+        const double walkHint=cat::sprite_assets::NominalLocomotionSpeed(*walk->layout)*body.speed*
+            cat::species::ProfileFor(g.preferences.character).movementSpeedMultiplier/growth;
         g.gait.ConfigureAuthoredStrides(walk->layout->stridePixels*body.bodyWidth,
-            run->layout->stridePixels*body.bodyWidth,walk->layout->standingFrame);
+            run->layout->stridePixels*body.bodyWidth,walk->layout->standingFrame,walkHint);
     }
 }
 ULONGLONG PrimaryTakeoffMs(bool pounce=false) {
@@ -1501,7 +1550,7 @@ void RefreshAnimationTimer() {
         !(g.toy == ToyKind::FishingRod && g.toyEngaged);
     const bool resting = (g.motion == Motion::Sleep || g.motion == Motion::Loaf || g.motion == Motion::BoxSit ||
         g.motion == Motion::Idle || g.motion == Motion::Watch || PrimaryAuthoredCareHolding(ticks)) &&
-        companionResting && toysResting &&
+        companionResting && toysResting && !g.groundArtBridge.Starting() && !g.groundArtBridge.Stopping() &&
         (!g.physicsReady || (g.physics.CurrentPose().grounded && std::abs(WalkingVelocity(g.physics.CurrentPose())) < .5));
     const UINT interval = g.hidden ? 250 : (g.menuOpen || g.dragging || resting ? 40 : 16);
     const bool precise = interval == 16;
@@ -1597,6 +1646,7 @@ void SetMotion(Motion motion, ULONGLONG duration) {
     g.jumpLaunched = false;
     g.approachingToy = false; g.toyContact = false;
     g.approachingUser = false; g.memorySequenceCount = 0;
+    if(motion!=Motion::Eat)UpdatePrimaryGroundArt(ticks);
     RefreshAnimationTimer();
 }
 
@@ -1915,7 +1965,7 @@ void MaintainPerch(ULONGLONG ticks) {
         const auto bounds = MovementBoundsLogical();
         g.direction = g.physics.CurrentPose().x < (bounds.first + bounds.second)*.5 ? 1 : -1;
         const bool run = bounds.second - bounds.first >= 250 && Random(0, 1) < .35;
-        g.speed = (run ? 90 : 42) * g.dpiScale;
+        g.speed = (run ? RegisteredRunSpeed() : RegisteredWalkSpeed(42)) * g.dpiScale;
         SetMotion(run ? Motion::Zoomies : Motion::Walk, run ? 2100 : 4200);
     }
     const bool available = !EnvironmentBusy() && !g.lifeSequenceCount && !g.lifeCrossing.Active() &&
@@ -2635,12 +2685,9 @@ void RenderToy() {
     SetWindowPos(g.toyWindow, g.window, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW);
 }
 
-void Render() {
-    if (!g.window || !g.surface.image || g.hidden) return;
-    const ULONGLONG ticks = GetTickCount64();
-    const auto now = UtcNow();
-    const REAL scale = static_cast<REAL>(110.0 * g.dpiScale * cat::GrowthScale(g.pet.bornUtc, now) / CurrentArt().base.standingHeight);
-    const auto physical = g.physics.RenderPose();
+// Shared by the desktop renderer and native video captures. State gates,
+// landing/contact selection, authored transitions and final pose cannot drift.
+cat::animation::Pose PrimaryDisplayedPose(ULONGLONG ticks,const cat::physics::Pose& physical) {
     const auto actionElapsed = ticks >= g.motionStart ? ticks - g.motionStart : 0;
     const Motion displayed = cat::motion::DisplayedMotion(g.motion,g.walkingMotion,
         physical.grounded,g.waitingForStop,WalkingVelocity(physical));
@@ -2724,11 +2771,37 @@ void Render() {
             LoadedCareSprite(cat::sprite_sequence::Clip::Sleep,g.preferences.character)) {
         pose.spriteClip=cat::sprite_sequence::Clip::Sleep;pose.spriteFrame=0;pose.spriteTimed=false;
     }
+    const bool bridgeActive=g.groundArtBridge.Starting() || g.groundArtBridge.Stopping();
+    const bool bridgeCompatible=pose.spriteClip==cat::sprite_sequence::Clip::None ||
+        pose.spriteClip==cat::sprite_sequence::Clip::Sleep || pose.spriteClip==cat::sprite_sequence::Clip::Walk ||
+        pose.spriteClip==cat::sprite_sequence::Clip::Run;
+    if(const auto* walk=PrimaryVideoGroundArt();walk && physical.grounded && !cursorAttack &&
+            (bridgeActive || bridgeCompatible) &&
+            (cat::animation::Walking(g.motion) || g.motion==Motion::Idle || g.motion==Motion::Watch ||
+             g.groundArtBridge.Stopping() ||
+             (PrimaryVideoSideMeal() && g.groundArtBridge.Starting()))) {
+        const auto bridge=g.groundArtBridge.Sample(*walk);
+        if(bridge.valid) {
+            pose.spriteClip=cat::sprite_sequence::Clip::Walk;pose.spriteFrame=bridge.frame;pose.spriteTimed=false;
+            pose.fishMeal=false;cat::animation::UseAuthoredSprite(pose);
+        }
+    }
     const auto* authored=CareSpriteFor(pose,g.preferences.character);
     g.authoredBoxVisible=authored && authored->layout->clip==cat::sprite_sequence::Clip::Box;
     if(authored)cat::animation::UseAuthoredSprite(pose);
     pose = g.poseTransition.Apply(pose,ticks,g.motionSerial,
         static_cast<unsigned>(g.preferences.character), !cursorAttack,g.motionStart);
+    return pose;
+}
+
+void Render() {
+    if (!g.window || !g.surface.image || g.hidden) return;
+    const ULONGLONG ticks = GetTickCount64();
+    const auto now = UtcNow();
+    const REAL scale = static_cast<REAL>(110.0 * g.dpiScale * cat::GrowthScale(g.pet.bornUtc, now) / CurrentArt().base.standingHeight);
+    const auto physical = g.physics.RenderPose();
+    const auto pose=PrimaryDisplayedPose(ticks,physical);
+    const auto* authored=CareSpriteFor(pose,g.preferences.character);
     Graphics graphics(g.surface.image.get());
     graphics.SetCompositingMode(CompositingModeSourceCopy); graphics.Clear(Color(0, 0, 0, 0));
     graphics.SetCompositingMode(CompositingModeSourceOver); graphics.SetCompositingQuality(CompositingQualityHighQuality);
@@ -2744,7 +2817,8 @@ void Render() {
     // without lifting/resizing the cat to fit the image's bounding box.
     int bottomInset=0;
     if(authored && (authored->layout->clip==cat::sprite_sequence::Clip::Fish ||
-            authored->layout->clip==cat::sprite_sequence::Clip::Jump)) {
+            authored->layout->clip==cat::sprite_sequence::Clip::Jump ||
+            authored->layout->clip==cat::sprite_sequence::Clip::Eat)) {
         bottomInset=cat::render::SpriteBottomSafetyInset(*authored->layout,110*bodyScale,
             cat::nutrition::VisualModifiers(g.nutrition).bodyHeight);
         placement=cat::render::WithBottomSafetyInset(placement,bottomInset);
@@ -2886,6 +2960,7 @@ void CareFood(cat::feeding::FoodKind kind) {
         foodDuration);
     g.fishMeal = kind == cat::feeding::FoodKind::Fish;
     g.nextDecision=g.motionStart+foodDuration;
+    UpdatePrimaryGroundArt(ticks);
     NotifyCompanionFood();
     Speak(snack ? L"츄르다! 할짝할짝 ♡" : g.fishMeal ? L"생선이다! 냠냠 ♡" : L"냠냠, 잘 먹을게 ♡", 3000);
     SavePet(); Render();
@@ -3301,7 +3376,8 @@ void StartManualMotion(Motion motion) {
     const auto bounds = MovementBoundsLogical();
     g.direction = g.physics.CurrentPose().x <= (bounds.first + bounds.second) * .5 ? 1 : -1;
     SetMotion(motion, motion == Motion::Walk ? 5000 : motion == Motion::Zoomies ? 3200 : 3000);
-    g.speed = (motion == Motion::Walk ? 22 : motion == Motion::Zoomies ? 90 : 0) * g.dpiScale;
+    g.speed = (motion == Motion::Walk ? RegisteredWalkSpeed() :
+        motion == Motion::Zoomies ? RegisteredRunSpeed() : 0) * g.dpiScale;
     g.manualMotionActive = true;
     // SetMotion cancels any approach/story and disengages a held box or toy.
     // The prop remains on the floor and can be rediscovered after the quiet interval.
@@ -3571,7 +3647,8 @@ void DecideMotion() {
     if ((selected == Motion::Watch || selected == Motion::Stalk || selected == Motion::Pounce) && nearby)
         g.direction = cursor.x < g.centerX ? -1 : 1;
     else if (selected == Motion::Walk || selected == Motion::Zoomies) g.direction = Random(0, 1) < .5 ? -1 : 1;
-    g.speed = plan.speed * g.dpiScale;
+    g.speed = (selected==Motion::Walk?RegisteredWalkSpeed(plan.speed):
+        selected==Motion::Zoomies?RegisteredRunSpeed(plan.speed):plan.speed) * g.dpiScale;
     SetMotion(selected, plan.durationMs);
     if (selected == Motion::Sneeze) {
         Speak(L"에취!", 1200);
@@ -3828,7 +3905,7 @@ void UpdateLifeEvent(ULONGLONG ticks, double elapsed) {
         g.direction=fromLeft ? -1 : 1;
         ResetMovement(); // Explicit rare event at opacity zero, on the floor.
     }
-    if(!g.lifeCrossing.Active()) {g.speed=45*g.dpiScale;SetMotion(Motion::Walk,2400);}
+    if(!g.lifeCrossing.Active()) {g.speed=RegisteredWalkSpeed(45)*g.dpiScale;SetMotion(Motion::Walk,2400);}
 }
 
 void DispatchAutonomousMotion(ULONGLONG ticks) {
@@ -3863,7 +3940,9 @@ void DispatchAutonomousMotion(ULONGLONG ticks) {
 
 // Shared shipping host and native command tests: Box2D owns all translation, takeoff and landing.
 void AdvancePrimaryMotion(ULONGLONG ticks, double elapsed) {
-    cat::motion::AdvanceGroundStop(g.waitingForStop,g.physics.CurrentPose().grounded,
+    UpdatePrimaryGroundArt(ticks);
+    cat::motion::AdvanceGroundStop(g.waitingForStop,g.physics.CurrentPose().grounded &&
+        !g.groundArtBridge.Stopping() && !g.groundArtBridge.StartingForSideAction(),
         WalkingVelocity(g.physics.CurrentPose()),g.groundDrive,ticks,g.motionStart,g.nextDecision);
     const auto actionElapsed = ticks >= g.motionStart ? ticks - g.motionStart : 0;
     const auto body = cat::nutrition::VisualModifiers(g.nutrition);
@@ -3932,6 +4011,10 @@ void AdvancePrimaryMotion(ULONGLONG ticks, double elapsed) {
         }
     }
     if (g.waitingForStop) targetSpeed = 0;
+    if(g.groundArtBridge.HoldMotor())targetSpeed=0;
+    else if(g.groundArtBridge.Starting())
+        targetSpeed=std::clamp(targetSpeed,-RegisteredWalkSpeed()*body.speed,
+            RegisteredWalkSpeed()*body.speed);
     const auto motorPose=g.physics.CurrentPose();
     targetSpeed=g.groundDrive.Update(targetSpeed,WalkingVelocity(motorPose),
         WalkingVelocity(g.physics.RenderPose()),motorPose.grounded,elapsed);
@@ -3970,6 +4053,7 @@ void AdvancePrimaryMotion(ULONGLONG ticks, double elapsed) {
         rendered.grounded,g.waitingForStop,WalkingVelocity(rendered));
     ConfigurePrimaryAuthoredStride();
     g.gait.Advance(gaitMotion, (rendered.relativeTravelX-previousRendered.relativeTravelX) / growth, elapsed, rendered.grounded);
+    if(g.groundArtBridge.ConsumeLoopReady())g.gait.SetAuthoredPhase(0);
     if (physical.landed) {
         g.landedAt = ticks;
         g.landingStrength = std::clamp(physical.landingSpeed / 230.0, .35, 1.0);
@@ -4029,6 +4113,7 @@ void FreezePrimaryMotion(ULONGLONG ticks, ULONGLONG clockDelta) {
     g.physics.Update(0, true);
     PauseCursorReaction(clockDelta);
     g.poseTransition.Pause(clockDelta);
+    g.groundArtBridge.Freeze(clockDelta);
     PausePrimaryCarePresentation(clockDelta);
 }
 
@@ -4927,6 +5012,8 @@ int NativeMenuContractTest() {
 #include "native_cursor_tests.hpp"
 #include "native_perch_tests.hpp"
 #include "native_manual_motion_tests.hpp"
+#include "native_video_walk_capture.hpp"
+#include "native_video_motion_capture.hpp"
 
 int SelfTest(HINSTANCE instance) {
     const auto start = cat::ToUnix({2026, 10, 31, 0, 0, 0});
@@ -4960,6 +5047,8 @@ int SelfTest(HINSTANCE instance) {
 }
 
 int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
+    if(commandLine && wcsstr(commandLine,L"--render-walk-video"))return NativeVideoWalkCapture(instance);
+    if(commandLine && wcsstr(commandLine,L"--render-motion-video"))return NativeVideoMotionCapture(instance);
     if(commandLine && wcsstr(commandLine,L"--render-mesh-walk-review")) {
         g.instance=instance;return RenderSelfTest(true);
     }

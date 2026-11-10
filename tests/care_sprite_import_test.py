@@ -98,6 +98,216 @@ class CareSpriteImportTests(unittest.TestCase):
         self.assertFalse((self.root/'assets').exists())
         self.assertIn('std::array<Descriptor,0>',(self.root/importer.HEADER).read_text())
 
+    def install_natural_gait(self):
+        # Small, distinct fixture cells stand in for offline rig-rendered poses.
+        # They test registration and source ownership, not animation quality.
+        entries=[self.authored(8,columns=4,clip='walk'),self.authored(8,columns=4,clip='run'),self.entry('groom')]
+        self.apply(entries,schema=2)
+        directory=self.root/'assets/natural-gait';directory.mkdir()
+        data,_=sheet(16,11);atlas=directory/'rigged.png';atlas.write_bytes(data)
+        clips=[];proofs=[]
+        for name,count,offset,stride in [('walk',97,0,38.25),('run',65,97,85.75)]:
+            frames=[{'rect':[((offset+i)%16)*16,((offset+i)//16)*16,16,16],
+                     'anchor':[7.25,13.5]} for i in range(count)]
+            clips.append({'clip':name,'character':0,'source':atlas.name,'columns':16,'rows':11,
+                'frame_count':count,'reference_height':12.5,'frames':frames,'stride_pixels':stride,
+                'standing_frame':count-1,'sequence':{'loop':[{'frame':i,'ms':17} for i in range(count-1)]}})
+            proofs.append({'clip':name,'rendered_frames':count,'cycle_frames':count-1,
+                'standing_frame':count-1,'stride_pixels':stride,'reference_height':12.5})
+        manifest=directory/'manifest.json';manifest.write_text(json.dumps({'schema':2,'clips':clips}))
+        sources=[]
+        sha=lambda path:hashlib.sha256(path.read_bytes()).hexdigest()
+        for role in ('generator','project','contacts'):
+            path=directory/(role+'.json');path.write_text(json.dumps({'fixture':role}))
+            sources.append({'role':role,'path':path.relative_to(self.root).as_posix(),'sha256':sha(path)})
+        report={'schema':1,'method':'skeletal_3d_bake','precomputed_only':True,
+            'manifest_sha256':sha(manifest),'sources':sources,'clips':proofs,
+            'atlases':[{'source':atlas.name,'sha256':sha(atlas),'image_width':256,'image_height':176}]}
+        provenance=directory/'provenance.json';provenance.write_text(json.dumps(report))
+        return manifest,provenance,report
+
+    def test_natural_rig_overrides_have_independent_counts_stride_anchors_and_park(self):
+        self.install_natural_gait()
+        originals={p.name:p.read_bytes() for p in (self.root/'assets/care-sprites').iterdir()}
+        result=importer.prepare_import(self.root)
+        self.assertEqual(result['natural_locomotion_clips'],2)
+        self.assertEqual(result['derived_locomotion_clips'],0)
+        self.assertEqual(result['actual_frames'],97+65+16)
+        self.assertEqual(originals,{p.name:p.read_bytes() for p in (self.root/'assets/care-sprites').iterdir()})
+        header=(self.root/importer.HEADER).read_text()
+        self.assertIn('assets/natural-gait/rigged.png',header)
+        self.assertIn('38.25,96',header)
+        self.assertIn('85.75,64',header)
+        self.assertIn('{7.25,13.5}',header)
+        self.assertEqual((self.root/importer.RC).read_text().count('400 RCDATA'),1)
+        self.assertEqual(importer.prepare_import(self.root,check=True)['natural_locomotion_clips'],2)
+
+    def test_natural_activation_precedes_old_flow_and_partial_project_is_inactive(self):
+        project=self.root/'assets/natural-gait';project.mkdir(parents=True)
+        (project/'authoring-project.json').write_text('{}')
+        self.assertEqual(importer.prepare_import(self.root)['natural_locomotion_clips'],0)
+        shutil.rmtree(project)
+        self.install_natural_gait()
+        # An obsolete/missing old flow manifest must not invalidate the new rig.
+        (self.root/'assets/derived-motion').mkdir()
+        self.assertEqual(importer.prepare_import(self.root)['natural_locomotion_clips'],2)
+
+    @unittest.skipUnless(shutil.which('g++'),'C++ compiler unavailable')
+    def test_natural_non_power_of_two_counts_compile_and_park_is_not_in_cycle(self):
+        self.install_natural_gait();importer.prepare_import(self.root)
+        source=self.base/'natural.cpp';source.write_text('''#include "care_sprites.generated.hpp"
+using namespace cat::sprite_assets;
+using cat::sprite_sequence::Clip;
+constexpr auto* walk=Find(Clip::Walk,0,kCareSprites);
+constexpr auto* run=Find(Clip::Run,0,kCareSprites);
+static_assert(Valid(*walk) && Valid(*run));
+static_assert(walk->frameCount==97 && walk->standingFrame==96);
+static_assert(run->frameCount==65 && run->standingFrame==64);
+static_assert(walk->program.loop.count==96 && run->program.loop.count==64);
+static_assert(walk->stridePixels==38.25 && run->stridePixels==85.75);
+static_assert(walk->resourceId==400 && run->resourceId==400);
+int main(){
+    for(unsigned i=0;i<1000;++i){
+        cat::sprite_sequence::Options options;options.sheetFrames=walk->frameCount;
+        options.cyclePhase=i/1000.;
+        const auto pose=cat::sprite_sequence::SampleProgram(Clip::Walk,walk->program,0,options);
+        if(pose.frame>=96)return 1;
+    }
+    return 0;
+}
+''')
+        result=subprocess.run(['g++','-std=c++17','-Wall','-Wextra','-Werror','-I',str(self.root/'src'),
+            str(source),'-o',str(self.base/'natural')],capture_output=True,text=True)
+        self.assertEqual(result.returncode,0,result.stderr[:6000])
+        subprocess.run([str(self.base/'natural')],check=True)
+
+    def test_natural_project_or_image_drift_and_unbound_registration_reject(self):
+        manifest,provenance,report=self.install_natural_gait()
+        importer.prepare_import(self.root)
+        before=(self.root/importer.HEADER).read_bytes()
+        project=self.root/report['sources'][1]['path'];original=project.read_bytes()
+        project.write_bytes(original+b' ')
+        with self.assertRaisesRegex(importer.ImportError,'project drift'):importer.prepare_import(self.root)
+        project.write_bytes(original)
+        atlas=manifest.parent/'rigged.png';original=atlas.read_bytes();atlas.write_bytes(original+b' ')
+        with self.assertRaisesRegex(importer.ImportError,'atlas drift'):importer.prepare_import(self.root)
+        atlas.write_bytes(original)
+        report['clips'][0]['stride_pixels']=32
+        provenance.write_text(json.dumps(report))
+        with self.assertRaisesRegex(importer.ImportError,'clip registration mismatch'):importer.prepare_import(self.root)
+        self.assertEqual((self.root/importer.HEADER).read_bytes(),before)
+
+    def test_walk_only_video_keeps_derived_run_and_binds_native_cadence(self):
+        canonical,original,old_atlas=self.derived_fixture()
+        original_bytes=original.read_bytes();canonical_bytes=canonical.read_bytes()
+        directory=self.root/'assets/natural-gait';directory.mkdir()
+        data,_=sheet(5,4);atlas=directory/'video-walk.png';atlas.write_bytes(data)
+        entry={'clip':'walk','character':0,'source':atlas.name,'columns':5,'rows':4,
+            'frame_count':20,'reference_height':12.5,'anchor':[7.25,13.5],'stride_pixels':68,
+            'standing_frame':0,'sequence':{'loop':[{'frame':i,'ms':1000} for i in range(20)]}}
+        manifest=directory/'manifest.json';manifest.write_text(json.dumps({'schema':2,'clips':[entry]}))
+        sha=lambda path:hashlib.sha256(path.read_bytes()).hexdigest()
+        sources=[]
+        for role in ('input_video','importer','contacts'):
+            path=directory/(role+'.fixture');path.write_text(role)
+            sources.append({'role':role,'path':path.relative_to(self.root).as_posix(),'sha256':sha(path)})
+        report={'schema':1,'method':'authored_video_extraction','precomputed_only':True,
+            'manifest_sha256':sha(manifest),'sources':sources,
+            'atlases':[{'source':atlas.name,'sha256':sha(atlas),'image_width':80,'image_height':64}],
+            'clips':[{'clip':'walk','rendered_frames':20,'cycle_frames':20,'standing_frame':0,
+                'stride_pixels':68,'reference_height':12.5}],
+            'video':{'source_fps':24,'source_frame_count':121,'selected_frame_indices':{'walk':list(range(50,70))}}}
+        provenance=directory/'provenance.json';provenance.write_text(json.dumps(report))
+        result=importer.prepare_import(self.root)
+        self.assertEqual(result['natural_locomotion_clips'],1)
+        self.assertEqual(original.read_bytes(),original_bytes)
+        self.assertEqual(canonical.read_bytes(),canonical_bytes)
+        runtime,count=importer.runtime_locomotion(self.root,importer.load_entries(canonical))
+        walk=next(e for e in runtime if e['clip']=='walk');run=next(e for e in runtime if e['clip']=='run')
+        self.assertEqual(count,1);self.assertEqual((walk['resource'],run['resource']),(400,401))
+        self.assertEqual((len(walk['frames']),len(run['frames'])),(20,64))
+        self.assertEqual(walk['nominal_fps'],24)
+        self.assertEqual(run['data'],old_atlas.read_bytes())
+        rc=(self.root/importer.RC).read_text()
+        self.assertIn('400 RCDATA "../assets/natural-gait/video-walk.png"',rc)
+        self.assertIn('401 RCDATA "../assets/derived-motion/c0-locomotion-flow.png"',rc)
+        self.assertIn(',68,0,24}',(self.root/importer.HEADER).read_text())
+        report['video']['selected_frame_indices']['walk'][-1]=121
+        provenance.write_text(json.dumps(report))
+        with self.assertRaisesRegex(importer.ImportError,'selection mismatch'):importer.prepare_import(self.root)
+
+    def test_per_clip_video_walk_run_and_meal_programs_preserve_events_and_other_actions(self):
+        self.apply([self.authored(8,columns=4,clip='walk'),self.authored(8,columns=4,clip='run'),
+                    self.entry('eat'),self.entry('groom')],schema=2)
+        canonical=self.root/importer.CANONICAL;original=canonical.read_bytes()
+        directory=self.root/'assets/natural-gait';directory.mkdir()
+        sha=lambda path:hashlib.sha256(path.read_bytes()).hexdigest()
+        clips=[];evidence=[];atlases=[];videos={};sources=[]
+        for role in ('importer','contacts'):
+            path=directory/(role+'.fixture');path.write_text(role)
+            sources.append({'role':role,'path':path.relative_to(self.root).as_posix(),'sha256':sha(path)})
+        for ordinal,(name,count,stride) in enumerate((('walk',22,68),('run',16,144),('eat',24,0))):
+            _,pixels=sheet(5,5);pixels[(5*80+7)*4]=30+ordinal
+            atlas=directory/(name+'.png');atlas.write_bytes(png(80,80,pixels))
+            role='input_video_'+name;video=directory/(name+'.fixture');video.write_text(name)
+            sources.append({'role':role,'path':video.relative_to(self.root).as_posix(),'sha256':sha(video)})
+            intro=[];outro=[]
+            if name=='walk':
+                intro=[{'frame':20+i,'ms':40} for i in range(2)]
+                loop=[{'frame':i,'ms':1000} for i in range(20)]
+            elif name=='eat':
+                intro=[{'frame':i,'ms':42} for i in range(8)]
+                loop=[{'frame':i,'ms':42} for i in range(8,16)]
+                outro=[{'frame':i,'ms':42} for i in range(16,24)]
+            else:loop=[{'frame':i,'ms':1000} for i in range(count)]
+            sequence={'intro':intro,'loop':loop,'outro':outro,'finish':'hold' if name=='eat' else 'complete'}
+            if name=='eat':sequence.update(duration_ms=1008,events=[{'step':8,'offset_ms':0,'type':'contact'}])
+            entry={'clip':name,'character':0,'source':atlas.name,'columns':5,'rows':5,'frame_count':count,
+                'reference_height':12.5,'anchor':[7.25,13.5],'stride_pixels':stride,'standing_frame':0,
+                'sequence':sequence}
+            if name=='walk':entry['movement_delay_ms']=80
+            clips.append(entry)
+            evidence.append({'clip':name,'rendered_frames':count,'cycle_frames':len(loop),'standing_frame':0,
+                'stride_pixels':stride,'reference_height':12.5})
+            atlases.append({'clip':name,'character':0,'source':atlas.name,'sha256':sha(atlas),'image_width':80,'image_height':80})
+            videos[name]={'source_fps':24,'source_frame_count':121,'source_role':role,'selected_frame_indices':list(range(count))}
+        manifest=directory/'manifest.json';manifest.write_text(json.dumps({'schema':2,'clips':clips}))
+        (directory/'provenance.json').write_text(json.dumps({'schema':1,'method':'authored_video_extraction',
+            'precomputed_only':True,'manifest_sha256':sha(manifest),'sources':sources,'atlases':atlases,
+            'clips':evidence,'videos':videos}))
+        (self.root/'assets/derived-motion').mkdir() # Complete new locomotion has no old-flow dependency.
+        result=importer.prepare_import(self.root)
+        self.assertEqual(result['natural_locomotion_clips'],3)
+        self.assertEqual(result['resource_ids'],[113,118,400,401])
+        self.assertEqual(canonical.read_bytes(),original)
+        if shutil.which('g++'):
+            source=self.base/'video-actions.cpp';source.write_text('''#include "care_sprites.generated.hpp"
+using namespace cat::sprite_assets;
+using namespace cat::sprite_sequence;
+constexpr auto* walk=Find(Clip::Walk,0,kCareSprites);
+constexpr auto* run=Find(Clip::Run,0,kCareSprites);
+constexpr auto* eat=Find(Clip::Eat,0,kCareSprites);
+static_assert(Valid(*walk)&&Valid(*run)&&Valid(*eat));
+static_assert(walk->frameCount==22&&walk->program.loop.count==20&&walk->movementDelayMs==80);
+static_assert(NominalLocomotionSpeed(*walk)>81.59&&NominalLocomotionSpeed(*walk)<81.61);
+static_assert(NominalLocomotionSpeed(*run)==216&&NominalLocomotionSpeed(*eat)==0);
+static_assert(eat->nominalFramesPerSecond==24&&eat->program.intro.count==8&&eat->program.outro.count==8);
+int main(){
+    Options options;options.sheetFrames=eat->frameCount;
+    ProgramCueCursor cues;
+    if(cues.Consume(Clip::Eat,eat->program,0,options).eventCount)return 1;
+    if(cues.Consume(Clip::Eat,eat->program,400,options).contactCount!=1)return 2;
+    if(cues.Consume(Clip::Eat,eat->program,9000,options).eventCount)return 3;
+    const auto done=SampleProgram(Clip::Eat,eat->program,1008,options);
+    if(done.frame!=23||!done.holding||done.finished)return 4;
+    return 0;
+}
+''')
+            result=subprocess.run(['g++','-std=c++17','-Wall','-Wextra','-Werror','-I',str(self.root/'src'),
+                str(source),'-o',str(self.base/'video-actions')],capture_output=True,text=True)
+            self.assertEqual(result.returncode,0,result.stderr[:6000])
+            subprocess.run([str(self.base/'video-actions')],check=True)
+
     def test_default_grid_preserves_original_bytes_and_fixed_registration(self):
         entry=self.entry();original=(self.inputs/entry['source']).read_bytes();result=self.apply([entry])
         copied=self.root/'assets/care-sprites/c0-groom.png';self.assertEqual(copied.read_bytes(),original)

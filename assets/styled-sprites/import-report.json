@@ -1,7 +1,7 @@
 {
   "schema": 1,
-  "design": "tuxedo-kitten-authored-20261109",
-  "atlases": 15,
+  "design": "tuxedo-video-walk-run-meal-20261110",
+  "atlases": 16,
   "characters": [
     8
   ],
@@ -20,13 +20,14 @@
     512,
     513,
     514,
-    515
+    515,
+    516
   ],
   "complete_characters": [
     8
   ],
-  "sheet_pixels": 28634735,
-  "largest_decoded_atlas_bytes": 50481152,
+  "sheet_pixels": 26500459,
+  "largest_decoded_atlas_bytes": 25546752,
   "sources": [
     {
       "character": 8,
@@ -154,11 +155,11 @@
       "base_resource_id": 118,
       "resource_id": 505,
       "source": "c8-r118.png",
-      "image_width": 1086,
-      "image_height": 1448,
-      "sha256": "bf6e3f231236994f4fb13a553a3c1a932798c8a87490c6577c7839a00ab70509",
-      "base_source": "assets/care-sprites/c0-eat.png",
-      "base_sha256": "225ef4fc0253da354fc1d186de3394390aa68b78be5d14d80e3653581f85bd09"
+      "image_width": 2304,
+      "image_height": 2772,
+      "sha256": "c2bd228564746f20fcd8f8a02f9f7a20424751099a537b7fcd59533e8971f34e",
+      "base_source": "assets/natural-gait/cream-video-eat.png",
+      "base_sha256": "cccf5dd255a8d4957794bd334306b7e395ce013c7ad919a786683483fffd5214"
     },
     {
       "character": 8,
@@ -187,11 +188,22 @@
       "base_resource_id": 400,
       "resource_id": 508,
       "source": "c8-r400.png",
-      "image_width": 2512,
-      "image_height": 5024,
-      "sha256": "35125ae146ff91b4b293ed2634ffbaa8a6cbe151d6ffda1ff13b22d4c0dafef2",
-      "base_source": "assets/derived-motion/c0-locomotion-flow.png",
-      "base_sha256": "bc7e6ae24279dc757e0ffafceb81bea9071ca0e0031cef4bef69661d985ca69b"
+      "image_width": 2408,
+      "image_height": 1904,
+      "sha256": "1ed781a6b9e26a12ce7bff092f0d300c108e7de4b1d82253e455299031329c1a",
+      "base_source": "assets/natural-gait/cream-video-walk.png",
+      "base_sha256": "1c1e5112d9be836fbc7786c60648796dcbf9b4f997e68de5d9e4b16450297d5d"
+    },
+    {
+      "character": 8,
+      "base_resource_id": 401,
+      "resource_id": 516,
+      "source": "c8-r401.png",
+      "image_width": 1485,
+      "image_height": 732,
+      "sha256": "da4657a3fbc3cbb148677482d46225ff85475cb14389a8565f45e2d9a7e67f2c",
+      "base_source": "assets/natural-gait/cream-video-run.png",
+      "base_sha256": "a129327846b8e6146c04db0bd65d7631bc7219440313647b09c95d041282cfad"
     }
   ]
 }

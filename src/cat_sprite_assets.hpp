@@ -33,7 +33,14 @@ struct Descriptor {
     cat::sprite_sequence::Program program{};
     double stridePixels=0;
     unsigned standingFrame=0; // Planted source drawing; same scale/anchor as the gait.
+    double nominalFramesPerSecond=0; // Source cadence hint; physical distance still selects poses.
+    unsigned movementDelayMs=0; // Stationary part of an authored locomotion entrance.
 };
+constexpr double NominalLocomotionSpeed(const Descriptor& asset) {
+    return (asset.clip==cat::sprite_sequence::Clip::Walk||asset.clip==cat::sprite_sequence::Clip::Run) &&
+        asset.nominalFramesPerSecond>0 && asset.program.loop.count>0 && asset.stridePixels>0?
+        asset.stridePixels*asset.nominalFramesPerSecond/asset.program.loop.count:0;
+}
 constexpr int ResourceId(cat::sprite_sequence::Clip clip,unsigned character) {
     if(character>=kCharacters)return 0;
     if(static_cast<unsigned>(clip)<8)return 113+static_cast<int>(character*8+static_cast<unsigned>(clip));
@@ -53,13 +60,16 @@ constexpr bool Valid(const Descriptor& asset) {
        asset.imageWidth>kMaxSide||asset.imageHeight>kMaxSide||
        static_cast<std::uint64_t>(asset.imageWidth)*asset.imageHeight>kMaxImagePixels||
        !(asset.referenceHeight>0&&asset.referenceHeight<=kMaxSide)||
-       !(asset.stridePixels>=0&&asset.stridePixels<=kMaxSide))return false;
+       !(asset.stridePixels>=0&&asset.stridePixels<=kMaxSide)||
+       !(asset.nominalFramesPerSecond>=0&&asset.nominalFramesPerSecond<=240))return false;
     if(asset.program.stepCount) {
         if(!GridAllowed(asset.clip,asset.columns,asset.rows,asset.frameCount)||
            !ValidProgram(asset.program,asset.frameCount))return false;
     } else if(grid.count==0||!GridAllowed(asset.clip,asset.columns,asset.rows)||asset.frameCount!=grid.count||
               asset.clip==Clip::Walk||asset.clip==Clip::Run)return false;
     if((asset.clip==Clip::Walk||asset.clip==Clip::Run)&&asset.stridePixels<=0)return false;
+    if(asset.movementDelayMs && (!asset.program.stepCount||
+            asset.movementDelayMs>Duration(asset.program,asset.program.intro)))return false;
     std::uint64_t residentPixels=0;
     for(unsigned index=0;index<asset.frameCount;++index) {
         const auto& f=asset.frames[index];

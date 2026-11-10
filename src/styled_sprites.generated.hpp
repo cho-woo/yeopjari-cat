@@ -2,7 +2,7 @@
 #pragma once
 #include "cat_styled_sprite_assets.hpp"
 namespace cat::styled_assets {
-inline constexpr std::array<Atlas,15> kStyledAtlases{{
+inline constexpr std::array<Atlas,16> kStyledAtlases{{
     Atlas{8,101,509,1774,887,"ede3b3069a2ad94207ecf43dd6fe5e8eb7c0c3f3d2fc1a6e0e36998a5500721c","assets/styled-sprites/c8-r101.png",nullptr,0,0},
     Atlas{8,102,510,1774,887,"ee911587178b13806ce549d05d3baf8ceb60f11b70b29245155cf354fc95a272","assets/styled-sprites/c8-r102.png",nullptr,0,0},
     Atlas{8,105,511,738,714,"e161fbd44f31a1d8e5c1bb08ea90b3a4785680c68fecd6539bbd3e2f0ac73fbd","assets/styled-sprites/c8-r105.png",nullptr,0,0},
@@ -14,10 +14,11 @@ inline constexpr std::array<Atlas,15> kStyledAtlases{{
     Atlas{8,114,501,1774,887,"658e351b2afa73adc8f65550598370728a740c44ee157f11ae4e84f345fcb8ac","assets/styled-sprites/c8-r114.png",nullptr,0,0},
     Atlas{8,116,503,1774,887,"b509d40cd8c83a025c656bd2a68b593a54a56c3fd660d2931bed227ed8b23b45","assets/styled-sprites/c8-r116.png",nullptr,0,0},
     Atlas{8,117,504,1448,1086,"ef5d7cabef389c0303ab35a3a481749d93917575e935b4f245bf0493b70f5121","assets/styled-sprites/c8-r117.png",nullptr,0,0},
-    Atlas{8,118,505,1086,1448,"bf6e3f231236994f4fb13a553a3c1a932798c8a87490c6577c7839a00ab70509","assets/styled-sprites/c8-r118.png",nullptr,0,0},
+    Atlas{8,118,505,2304,2772,"c2bd228564746f20fcd8f8a02f9f7a20424751099a537b7fcd59533e8971f34e","assets/styled-sprites/c8-r118.png",nullptr,0,0},
     Atlas{8,119,506,1254,1254,"1fd1b3f1b5b8025b6dd44ee3dbfea1f03d3cb1aad3e18cfb60a2f1f20727bd0a","assets/styled-sprites/c8-r119.png",nullptr,0,0},
     Atlas{8,120,507,1536,1024,"7fe4e30db5b67d05eb4f8508a904bf65388db6c759cbbc64a9a54b443d070a2b","assets/styled-sprites/c8-r120.png",nullptr,0,0},
-    Atlas{8,400,508,2512,5024,"35125ae146ff91b4b293ed2634ffbaa8a6cbe151d6ffda1ff13b22d4c0dafef2","assets/styled-sprites/c8-r400.png",nullptr,0,0},
+    Atlas{8,400,508,2408,1904,"1ed781a6b9e26a12ce7bff092f0d300c108e7de4b1d82253e455299031329c1a","assets/styled-sprites/c8-r400.png",nullptr,0,0},
+    Atlas{8,401,516,1485,732,"da4657a3fbc3cbb148677482d46225ff85475cb14389a8565f45e2d9a7e67f2c","assets/styled-sprites/c8-r401.png",nullptr,0,0},
 }};
 static_assert(ValidSet(kStyledAtlases), "Invalid authored appearance atlases");
 } // namespace cat::styled_assets

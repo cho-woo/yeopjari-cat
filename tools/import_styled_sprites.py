@@ -19,7 +19,7 @@ from pathlib import Path
 import struct
 import sys
 
-from import_care_sprites import ImportError, derived_locomotion, load_entries, png_alpha, unique_object
+from import_care_sprites import ImportError, runtime_locomotion, load_entries, png_alpha, unique_object
 
 ROOT=Path(__file__).resolve().parents[1]
 DIRECTORY=Path('assets/styled-sprites')
@@ -50,7 +50,7 @@ def runtime_care_entries(root):
     # Use the same checked override selection as the ordinary care importer.
     # The canonical care manifest remains the original eight-drawing source.
     originals=load_entries(Path(root)/'assets/care-sprites/manifest.json')
-    return derived_locomotion(Path(root),originals)[0]
+    return runtime_locomotion(Path(root),originals)[0]
 
 
 def base_sources(root,runtime=None):

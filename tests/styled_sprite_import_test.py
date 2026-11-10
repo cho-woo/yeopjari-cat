@@ -85,7 +85,7 @@ class StyledSpriteImportTests(unittest.TestCase):
                  'asset_path':'assets/derived-motion/c0-locomotion-flow.png',
                  'frames':[{'rect':[0,0,8,8],'anchor':[4,8]} for _ in range(64)]}
         entry=dict(self.entry,base_resource_id=400,resource_id=508,anchors=[[4,8] for _ in range(64)])
-        with mock.patch.object(importer,'derived_locomotion',return_value=([derived],2)):
+        with mock.patch.object(importer,'runtime_locomotion',return_value=([derived],2)):
             report=self.apply([entry]);atlas=report['sources'][0]
             self.assertEqual(atlas['base_source'],'assets/derived-motion/c0-locomotion-flow.png')
             self.assertEqual((atlas['image_width'],atlas['image_height']),(8,8))
@@ -99,6 +99,26 @@ class StyledSpriteImportTests(unittest.TestCase):
         with self.assertRaises(importer.ImportError):self.apply([dict(self.entry,sha256='wrong')])
         self.apply();(self.root/'assets/styled-sprites/c8-r113.png').write_bytes(png(4,4,40))
         with self.assertRaises(importer.ImportError):importer.prepare_import(self.root,check=True)
+
+    def test_new_video_walk_and_retained_run_have_separate_appearance_resources(self):
+        natural=self.root/'assets/natural-gait';natural.mkdir()
+        legacy=self.root/'assets/derived-motion';legacy.mkdir()
+        (natural/'cream.png').write_bytes(png(8,8,250))
+        (legacy/'cream.png').write_bytes(png(4,4,250))
+        self.source.write_bytes(png(8,8,30))
+        old_source=self.directory/'old-run.png';old_source.write_bytes(png(4,4,25))
+        entries=[dict(self.entry,base_resource_id=400,resource_id=508),
+                 dict(self.entry,base_resource_id=401,resource_id=516,source=old_source.name)]
+        runtime=[{'clip':'walk','character':0,'resource':400,'filename':'c0-walk.png','asset_path':'assets/natural-gait/cream.png',
+                  'frames':[{'rect':[0,0,8,8],'anchor':[4,8]} for _ in range(20)]},
+                 {'clip':'run','character':0,'resource':401,'filename':'c0-run.png','asset_path':'assets/derived-motion/cream.png',
+                  'frames':[{'rect':[0,0,4,4],'anchor':[2,4]} for _ in range(64)]}]
+        with mock.patch.object(importer,'runtime_locomotion',return_value=(runtime,1)):
+            report=self.apply(entries)
+        self.assertEqual([a['base_resource_id'] for a in report['sources']],[400,401])
+        self.assertEqual([a['resource_id'] for a in report['sources']],[508,516])
+        self.assertEqual([a['image_width'] for a in report['sources']],[8,4])
+        self.assertEqual(report['sources'][1]['base_source'],'assets/derived-motion/cream.png')
 
     @unittest.skipUnless(shutil.which('g++'),'C++ compiler unavailable')
     def test_generated_interface_selects_pixels_without_animation_metadata(self):

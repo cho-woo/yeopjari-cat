@@ -111,6 +111,27 @@ Context Frame(std::uint64_t ticks,double x,double lift=0) {
 void Step(Model& model,Context& c,unsigned frames) {
     for(unsigned i=0;i<frames;++i) { c.ticks+=17;c.nowUtc=born+static_cast<std::int64_t>(c.ticks/1000); model.Tick(c); }
 }
+std::uint64_t RegisteredGroundTransitionBudget() {
+    const auto* walk=cat::sprite_assets::Find(cat::sprite_sequence::Clip::Walk,0,cat::sprite_assets::kCareSprites);
+    return walk && walk->nominalFramesPerSecond>0?
+        cat::sprite_sequence::Duration(walk->program,walk->program.intro)+
+        cat::sprite_sequence::Duration(walk->program,walk->program.outro)+800:800;
+}
+void RequireMoving(Model& model,Context& c,double minimumSpeed) {
+    const auto began=c.ticks;
+    while(std::abs(model.Physical().velocityX-model.Physical().supportVelocityX)<=minimumSpeed &&
+            c.ticks-began<RegisteredGroundTransitionBudget())Step(model,c,1);
+    CHECK(std::abs(model.Physical().velocityX-model.Physical().supportVelocityX)>minimumSpeed);
+}
+void RequireCareStarts(Model& model,Context& c,cat::sprite_sequence::Clip clip) {
+    const auto began=c.ticks;
+    while(model.View(c.ticks).animation.spriteClip!=clip &&
+            c.ticks-began<RegisteredGroundTransitionBudget())Step(model,c,1);
+    const auto view=model.View(c.ticks);
+    CHECK(view.animation.spriteClip==clip && view.animation.spriteTimed);
+    CHECK(view.animation.spriteElapsedMs==0);
+    CHECK(std::abs(view.physical.velocityX-view.physical.supportVelocityX)<cat::motion::kStoppedSpeed);
+}
 void CanonicalPoseTransitionUsesHostActionAndPause() {
     using M=cat::animation::Motion;
     for(unsigned reset=0;reset<5;++reset) {
@@ -220,15 +241,29 @@ void AcceptedFoodRestartsItsClockAfterLongMenuPauses() {
         Model model;model.Bind(state);model.Reset(40,1000,700);
         CHECK(model.FeedFood(born,100,kinds.first,1)==FeedResult::Accepted);
         auto c=Frame(100,model.Physical().x+60);c.primaryVisible=false;
-        model.Tick(c);c.ticks=3100;model.Tick(c);
+        model.Tick(c);
+        // A front-facing meal first plays the shared real turn. Measure the
+        // food clock after that entrance, so this fixture still tests the
+        // accepted serving across a long menu pause rather than the bridge.
+        const auto firstClip=kinds.first==FoodKind::Meal?Clip::Eat:Clip::Treat;
+        for(unsigned frame=0;frame<100 && model.View(c.ticks).animation.spriteClip!=firstClip;++frame) {
+            c.ticks+=16;model.Tick(c);
+        }
+        CHECK(model.View(c.ticks).animation.spriteClip==firstClip);
+        c.ticks+=3000;model.Tick(c);
         CHECK(model.View(c.ticks).animation.spriteElapsedMs==3000);
         // The real menu freezes the action clock while UTC still advances
         // nutrition. Five minutes later another serving can be accepted.
         c.paused=true;c.ticks+=300000;c.nowUtc=born+300;model.Tick(c);
         CHECK(model.View(c.ticks).animation.spriteElapsedMs==3000);
         CHECK(model.FeedFood(c.nowUtc,c.ticks,kinds.second,1)==FeedResult::Accepted);
-        const auto fresh=model.View(c.ticks);
         const bool treat=kinds.second==FoodKind::Treat;
+        const auto freshClip=treat?Clip::Treat:Clip::Fish;
+        c.paused=false;
+        for(unsigned frame=0;frame<100 && model.View(c.ticks).animation.spriteClip!=freshClip;++frame) {
+            c.ticks+=16;model.Tick(c);
+        }
+        const auto fresh=model.View(c.ticks);
         CHECK(fresh.motion==(treat?cat::animation::Motion::Treat:cat::animation::Motion::Eat));
         CHECK(fresh.animation.spriteClip==(treat?Clip::Treat:Clip::Fish));
         CHECK(fresh.animation.spriteElapsedMs==0 && fresh.animation.spriteFrame==0);
@@ -331,7 +366,7 @@ void SpeciesLimitsAndBraking() {
     c.supportPlatform=c.primaryPlatform;
     Step(m,c,180);CHECK(m.Physical().onPlatform);
     m.DragTo(400);c=Frame(4000,600);s.nutrition.fullness=50;s.pet.hunger=50;
-    CHECK(m.TrySocial(Interaction::Follow,c));Step(m,c,30);
+    CHECK(m.TrySocial(Interaction::Follow,c));RequireMoving(m,c,10);
     CHECK(m.Physical().velocityX>10);
     CHECK(m.Feed(c.nowUtc,c.ticks,false)==cat::nutrition::FeedResult::Accepted);
     CHECK(cat::animation::Travels(m.View(c.ticks).motion)); // A seated eating frame cannot slide during braking.
@@ -361,14 +396,16 @@ void ManualCareIsNotInterrupted() {
         auto c=Frame(1100,m.Physical().x+180);c.primaryMotion=cat::animation::Motion::Eat;c.primaryBusy=true;
         CHECK(!m.FoodOffered(c));
         c.primaryBusy=false;CHECK(!m.TrySocial(Interaction::Follow,c));
-        m.Tick(c);CHECK(m.View(c.ticks).motion==(treat?cat::animation::Motion::Treat:cat::animation::Motion::Eat));
+        m.Tick(c);const auto accepted=m.View(c.ticks);
+        CHECK(accepted.motion==(treat?cat::animation::Motion::Treat:cat::animation::Motion::Eat));
+        const auto actionStart=c.ticks-accepted.animation.spriteElapsedMs;
         // A menu freezes the complete accepted meal, including its social gate.
         c.paused=true;c.ticks+=10000;c.nowUtc+=10;m.Tick(c);
         c.paused=false;c.ticks+=100;c.nowUtc+=1;
         CHECK(!m.FoodOffered(c));CHECK(!m.Pet(c.nowUtc,c.ticks));CHECK(!m.Play(c.nowUtc,c.ticks));
         const auto clip=treat?cat::sprite_sequence::Clip::Treat:cat::sprite_sequence::Clip::Eat;
         const auto* art=cat::sprite_assets::Find(clip,0,cat::sprite_assets::kCareSprites);
-        CHECK(art);c.ticks=101+10000+cat::sprite_sequence::ProgramDuration(art->program);
+        CHECK(art);c.ticks=actionStart+10000+cat::sprite_sequence::ProgramDuration(art->program);
         c.nowUtc=born+c.ticks/1000;
         CHECK(m.FoodOffered(c)); // Ordinary interaction may resume after the preserved meal ends.
         CHECK(s.pet.feedCount==(treat?0U:1U));CHECK(s.pet.snackCount==(treat?1U:0U));CHECK(Valid(s));
@@ -424,7 +461,7 @@ void SocialGesturesWaitForPlantedFeet() {
         State s=NewState(born);s.pet.position=.2;s.nutrition.fullness=60;s.pet.hunger=60;
         Model m;m.Bind(s);m.Reset(0,1600,700);
         auto c=Frame(100,m.Physical().x+200);c.primaryMotion=M::Zoomies;
-        CHECK(m.TrySocial(Interaction::RunTogether,c));Step(m,c,30);CHECK(m.Physical().velocityX>40);
+        CHECK(m.TrySocial(Interaction::RunTogether,c));RequireMoving(m,c,40);CHECK(m.Physical().velocityX>40);
         c.primary.x=m.Physical().x+(kind==Interaction::Paw?48:65);
         c.primaryMotion=kind==Interaction::SharedSleep?M::Sleep:kind==Interaction::FoodCompetition?M::Eat:M::Idle;
         CHECK(m.TrySocial(kind,c));m.Tick(c);
@@ -446,7 +483,7 @@ void BrakingPreservesTheCompleteMeal() {
     State s=NewState(born);s.pet.position=.2;s.nutrition.fullness=45;s.pet.hunger=45;
     Model m;m.Bind(s);m.Reset(0,1600,700);
     auto c=Frame(100,m.Physical().x+200);c.primaryMotion=cat::animation::Motion::Zoomies;
-    CHECK(m.TrySocial(Interaction::RunTogether,c));Step(m,c,30);CHECK(m.Physical().velocityX>40);
+    CHECK(m.TrySocial(Interaction::RunTogether,c));RequireMoving(m,c,40);CHECK(m.Physical().velocityX>40);
     const auto acceptedAt=c.ticks;
     CHECK(m.Feed(c.nowUtc,c.ticks,false)==cat::nutrition::FeedResult::Accepted);
     c.primaryVisible=false;
@@ -549,15 +586,18 @@ void AuthoredCompanionWalkRunUsesItsRealRegisteredTravel() {
     const auto* walk=cat::sprite_assets::Find(Clip::Walk,0,cat::sprite_assets::kCareSprites);
     const auto* run=cat::sprite_assets::Find(Clip::Run,0,cat::sprite_assets::kCareSprites);
     CHECK(walk && run && walk->stridePixels>0 && run->stridePixels>walk->stridePixels);
+    const double videoPace=cat::sprite_assets::NominalLocomotionSpeed(*walk);
+    const double normalPace=videoPace>0?videoPace:22;
+    const double runningPace=std::max(150.0,normalPace*1.8);
     for(const auto character:{cat::Character::Cream,cat::Character::SilverTabby})
-        for(const double pace:{12.,90.}) {
+        for(const double pace:{12.,normalPace,runningPace}) {
             State state=NewState(born);state.preferences.character=character;state.pet.position=.2;
             Model model;model.Bind(state);model.Reset(0,10000,700);
             auto c=Frame(100,model.Physical().x+60);c.elapsedSeconds=1./120;
             c.primaryMotion=cat::animation::Motion::Zoomies;c.primary.velocityX=pace;
             CHECK(model.TrySocial(Interaction::RunTogether,c));
             double previousTravel=model.View(c.ticks).physical.relativeTravelX,expectedPhase=0;
-            unsigned authored=0;
+            unsigned authored=0,entrance=0;bool loopStarted=false;
             for(unsigned frame=1;frame<=300;++frame) {
                 c.ticks=100+frame*1000/120;c.nowUtc=born+static_cast<std::int64_t>(c.ticks/1000);
                 c.primary.x=model.Physical().x+60;model.Tick(c);
@@ -567,13 +607,26 @@ void AuthoredCompanionWalkRunUsesItsRealRegisteredTravel() {
                 if(character==cat::Character::Cream) {
                     CHECK(view.animation.spriteClip==Clip::Walk || view.animation.spriteClip==Clip::Run);
                     const auto* layout=view.animation.spriteClip==Clip::Run?run:walk;
-                    expectedPhase=std::fmod(expectedPhase+std::abs(travel)/
-                        (view.growthScale*layout->stridePixels*view.body.bodyWidth),1.0);
-                    CHECK(std::abs(view.animation.spriteOptions.cyclePhase-expectedPhase)<1e-10);
+                    if(!view.animation.spriteTimed) {
+                        CHECK(!loopStarted && layout==walk);
+                        const auto first=walk->program.intro.first,last=first+walk->program.intro.count;
+                        CHECK(std::any_of(walk->program.steps.begin()+first,walk->program.steps.begin()+last,
+                            [&](const auto& step){return step.frame==view.animation.spriteFrame;}));
+                        ++entrance;
+                    } else {
+                        // The authored first steps finish before the real
+                        // distance-driven cycle is seeded at its seam.
+                        if(!loopStarted){expectedPhase=0;loopStarted=true;}
+                        else expectedPhase=std::fmod(expectedPhase+std::abs(travel)/
+                            (view.growthScale*layout->stridePixels*view.body.bodyWidth),1.0);
+                        CHECK(std::abs(view.animation.spriteOptions.cyclePhase-expectedPhase)<1e-10);
+                    }
                     CHECK(!view.animation.originalWalk && !view.animation.jointWalk && !view.animation.walkingRig);
                     CHECK(view.animation.x==0 && view.animation.lift==0 && view.animation.angle==0);
                     CHECK(view.animation.scaleX==1 && view.animation.scaleY==1 && view.animation.blendFrame==-1);
-                    if(frame>120)CHECK(view.animation.spriteClip==(pace<20?Clip::Walk:Clip::Run));
+                    // Native video cadence is still walking. A distinctly
+                    // faster shared sprint selects the separate run cycle.
+                    if(loopStarted && frame>180)CHECK(view.animation.spriteClip==(pace==runningPace?Clip::Run:Clip::Walk));
                     ++authored;
                 } else {
                     CHECK(view.animation.spriteClip==Clip::None && view.animation.originalWalk);
@@ -582,6 +635,7 @@ void AuthoredCompanionWalkRunUsesItsRealRegisteredTravel() {
             }
             if(character==cat::Character::Cream) {
                 CHECK(authored==300);
+                CHECK(loopStarted && (!videoPace || entrance>0));
                 const auto before=model.View(c.ticks);
                 c.paused=true;c.ticks+=60000;c.nowUtc+=60;model.Tick(c);
                 const auto paused=model.View(c.ticks);
@@ -606,17 +660,22 @@ void OptionalWalkReviewKeepsBothCoatsOnTheRegisteredStride() {
         c.primaryMotion=cat::animation::Motion::Zoomies;c.primary.velocityX=12;
         CHECK(model.TrySocial(Interaction::RunTogether,c));
         double previousTravel=model.View(c.ticks).physical.relativeTravelX,expectedPhase=0;
+        bool loopStarted=false;
         for(unsigned frame=1;frame<=300;++frame) {
             c.ticks=100+frame*1000/120;c.nowUtc=born+static_cast<std::int64_t>(c.ticks/1000);
             c.primary.x=model.Physical().x+60;model.Tick(c);
             const auto view=model.View(c.ticks);
             const double travel=view.physical.relativeTravelX-previousTravel;
             previousTravel=view.physical.relativeTravelX;
-            expectedPhase=std::fmod(expectedPhase+std::abs(travel)/
-                (view.growthScale*authored.stridePixels*view.body.bodyWidth),1.);
             CHECK(view.animation.spriteClip==Clip::Walk);
-            CHECK(std::abs(view.animation.spriteOptions.cyclePhase-expectedPhase)<1e-10);
+            if(view.animation.spriteTimed) {
+                if(!loopStarted){expectedPhase=0;loopStarted=true;}
+                else expectedPhase=std::fmod(expectedPhase+std::abs(travel)/
+                    (view.growthScale*authored.stridePixels*view.body.bodyWidth),1.);
+                CHECK(std::abs(view.animation.spriteOptions.cyclePhase-expectedPhase)<1e-10);
+            } else CHECK(!loopStarted);
         }
+        CHECK(loopStarted);
         const double x=model.Physical().x;
         model.SetWalkRegistration(nullptr);CHECK(model.Physical().x==x);
         c.ticks+=9;c.primary.x=model.Physical().x+60;model.Tick(c);
@@ -650,6 +709,7 @@ void RegisteredCompanionCareFinishesItsWholeProgram() {
         CHECK(!loop || duration-intro-outro>=loop);
         CHECK(model.FeedFood(born,c.ticks,food,1)==cat::nutrition::FeedResult::Accepted);
         model.Tick(c);
+        RequireCareStarts(model,c,clip);
         const auto start=c.ticks;
         const auto end=c.ticks+duration;
         std::set<unsigned> introSeen,outroSeen;
@@ -677,6 +737,7 @@ void RegisteredCompanionCareFinishesItsWholeProgram() {
         const auto source=cat::sprite_sequence::SampleProgram(clip,asset->program,last.animation.spriteElapsedMs,options);
         CHECK(source.frame==asset->program.steps[asset->program.stepCount-1].frame);
         c.ticks=end;c.nowUtc=born+static_cast<std::int64_t>(end/1000);model.Tick(c);
+        RequireCareStarts(model,c,Clip::Groom);
         const auto grooming=model.View(c.ticks);
         CHECK(grooming.motion==cat::animation::Motion::Groom);
         const auto* groom=cat::sprite_assets::Find(Clip::Groom,0,cat::sprite_assets::kCareSprites);
@@ -685,7 +746,13 @@ void RegisteredCompanionCareFinishesItsWholeProgram() {
         c.ticks+=groomDuration;c.nowUtc=born+static_cast<std::int64_t>(c.ticks/1000);model.Tick(c);
         const auto neutral=model.View(c.ticks);
         CHECK(neutral.motion==cat::animation::Motion::Idle);
-        CHECK(neutral.animation.spriteClip==Clip::Sleep && neutral.animation.spriteFrame==0 && !neutral.animation.spriteTimed);
+        const auto* walk=cat::sprite_assets::Find(Clip::Walk,static_cast<unsigned>(character),cat::sprite_assets::kCareSprites);
+        if(walk && walk->nominalFramesPerSecond>0 && walk->program.intro.count && walk->program.outro.count) {
+            const auto neutralStep=food==Food::Meal?walk->program.outro.first+walk->program.outro.count-1:
+                walk->program.intro.first;
+            CHECK(neutral.animation.spriteClip==Clip::Walk &&
+                neutral.animation.spriteFrame==walk->program.steps[neutralStep].frame && !neutral.animation.spriteTimed);
+        } else CHECK(neutral.animation.spriteClip==Clip::Sleep && neutral.animation.spriteFrame==0 && !neutral.animation.spriteTimed);
         CHECK(Valid(state));
     }
 }

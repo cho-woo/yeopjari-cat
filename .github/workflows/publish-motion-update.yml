@@ -1,9 +1,9 @@
-name: Publish exact Windows-validated artwork and animation update
+name: Publish exact Windows-validated source-video gait update
 on:
   workflow_dispatch:
     inputs:
       validation_run:
-        description: Successful Validate run for v2.0.21 with native Windows save and render tests
+        description: Successful Validate run for v2.0.22 with native Windows save and render tests
         required: true
         type: string
 permissions:
@@ -44,7 +44,9 @@ jobs:
                   raise ValueError('The source/package validation and native Windows jobs must both pass')
               native = next(j for j in jobs if j['name']=='windows-smoke')
               for name in ['Execute Windows save, cursor and moving-window regression tests',
-                           'Render real Windows GDI+ gait, contact and posture regressions']:
+                           'Render real Windows GDI+ gait, contact and posture regressions',
+                           'Capture source-video walking through Windows GDI+ and Box2D at 60 FPS',
+                           'Capture source-video meal, walk and run through Windows GDI+ and Box2D at 60 FPS']:
                   if not any(s['name']==name and s['status']=='completed' and s['conclusion']=='success'
                              for s in native['steps']):
                       raise ValueError('Missing successful native Windows step: '+name)
@@ -75,6 +77,14 @@ jobs:
           path: native-review
           run-id: ${{ inputs.validation_run }}
           github-token: ${{ github.token }}
+      - name: Ensure native preview encoding tools are available
+        run: |
+          if ! command -v ffmpeg >/dev/null || ! command -v ffprobe >/dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y ffmpeg
+          fi
+          ffmpeg -version | head -n 1
+          ffprobe -version | head -n 1
       - name: Verify exact validated bytes, publish stable and confirm the official public feed
         run: |
           set +e

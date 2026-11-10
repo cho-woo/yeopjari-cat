@@ -34,21 +34,26 @@ struct Host {
     void Rebase() {
         const auto duration = g.nextDecision - g.motionStart;
         g.motionStart = now; g.nextDecision = now + duration;
+        g.groundArtBridge.RebaseClock(now);
     }
-    void Command(UINT id) { RunCommand(id); Rebase(); }
-    void Frame() {
-        now += 16;
-        AdvanceAutomaticToy(.016);
+    void Command(UINT id) {
+        g.groundArtBridge.RebaseClock(GetTickCount64());
+        RunCommand(id); Rebase();
+    }
+    void Frame(ULONGLONG stepMs=16) {
+        now += stepMs;
+        const double elapsed=stepMs/1000.;
+        AdvanceAutomaticToy(elapsed);
         const auto position = g.physics.CurrentPose();
         POINT pointer{static_cast<LONG>(g.work.left+(position.x+35)*g.dpiScale),
             static_cast<LONG>(g.work.bottom-65*g.dpiScale)};
-        UpdateCursorReactionSample(now,16,pointer,true);
+        UpdateCursorReactionSample(now,stepMs,pointer,true);
         auto serial = g.motionSerial;
         FinishManualMotion(now);
         if (g.motionSerial != serial) Rebase();
         serial = g.motionSerial; DispatchAutonomousMotion(now);
         if (g.motionSerial != serial) Rebase();
-        serial = g.motionSerial; AdvancePrimaryMotion(now,.016);
+        serial = g.motionSerial; AdvancePrimaryMotion(now,elapsed);
         if (g.motionSerial != serial) Rebase();
     }
     std::string Saved() const {
@@ -84,6 +89,12 @@ int Run(std::string& proof) {
             LoadedCareSprite(cat::sprite_sequence::Clip::Walk,cat::Character::Tuxedo) != walk ||
             g.meshWalkReview) return 520;
     const auto approvedWalkFrames = walk->layout->frameCount;
+    const double nativeWalkSpeed=cat::sprite_assets::NominalLocomotionSpeed(*walk->layout);
+    const double expectedWalkSpeed=nativeWalkSpeed>0?nativeWalkSpeed:22;
+    const auto* run=LoadedCareSprite(cat::sprite_sequence::Clip::Run,cat::Character::Cream);
+    const double nativeRunSpeed=run?cat::sprite_assets::NominalLocomotionSpeed(*run->layout):0;
+    const double expectedRunSpeed=nativeRunSpeed>0?nativeRunSpeed:
+        nativeWalkSpeed>0?std::max(90.0,nativeWalkSpeed*1.65):90;
     std::ostringstream characters;
     bool first = true;
     for (const auto character : cat::kAvailableCharacters) {
@@ -108,7 +119,7 @@ int Run(std::string& proof) {
             if (g.manualMotionActive || g.motion != Motion::Idle || !g.autonomousResting ||
                     host.Saved() != saved || !g.pet.roamingPaused ||
                     distances[action] < (action ? 180 : 80) ||
-                    std::abs(peaks[action]-(action ? 90 : 22)) > 1) return 524;
+                    std::abs(peaks[action]-(action ? expectedRunSpeed : expectedWalkSpeed)) > 1) return 524;
             g.workInterference = false;
             for (unsigned frame = 0; frame < 50; ++frame) host.Frame();
             if (std::abs(WalkingVelocity(g.physics.CurrentPose())) > .5 || host.Saved() != saved) return 525;
