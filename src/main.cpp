@@ -91,7 +91,9 @@ constexpr wchar_t kTitle[] = L"옆자리 고양이";
 constexpr UINT kTrayMessage = WM_APP + 1;
 constexpr UINT kShowExisting = WM_APP + 2;
 constexpr UINT_PTR kTickTimer = 1;
-constexpr int kFeedHotkey = 1, kSnackHotkey = 2, kHideHotkey = 3, kKeyboardHotkey=4, kSuperHotkey=5;
+constexpr int kFeedHotkey = 1, kSnackHotkey = 2, kHideHotkey = 3;
+// Retired motion/toy IDs stay inert, including queued older WM_HOTKEYs.
+constexpr int kKeyboardHotkey=0x2601, kSuperHotkey=0x2602;
 constexpr UINT kCharacterCommandBase = 2500, kOutfitCommandBase = 2520;
 constexpr UINT kWorkInterferenceCommand = 2300, kSeasonalEventsCommand = 2301,kCursorPlayCommand=2303;
 constexpr UINT kFishCommand = 2302;

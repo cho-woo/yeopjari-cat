@@ -45,7 +45,7 @@ inline animation::Pose AttackPose(AttackKind kind,std::uint64_t elapsed,int dire
         p.face.wide=.10*focus;p.face.brow=.08*focus;
         p.joints.leftEar=.10*focus;p.joints.rightEar=.06*focus;
         p.joints.tailRaise=.12*focus*(.5+.5*std::sin(t*.007));
-        p.idleActing=true;
+        p.idleActing=cursor_rig::Active(p.cursorReach);
         return p;
     }
     const double amount=kind==AttackKind::Gentle ?
@@ -75,7 +75,7 @@ inline animation::Pose HopPose(std::uint64_t elapsed,bool launched,bool grounded
                                std::uint64_t contactElapsed,int direction,double targetDx,double targetHeight,
                                Geometry geometry={}) {
     (void)targetHeight;
-    animation::Pose p;p.flip=direction<0;p.groundContact=grounded;p.idleActing=true;
+    animation::Pose p;p.flip=direction<0;p.groundContact=grounded;
     const auto g=Bounded(geometry);
     const double aim=std::clamp((p.flip?-1:1)*targetDx/g.width,-1.0,1.0);
     if(!launched) {
@@ -97,16 +97,18 @@ inline animation::Pose HopPose(std::uint64_t elapsed,bool launched,bool grounded
         p.joints.crouch=.15*std::sin(t*animation::kPi);
         p.face.blink=.45*Pulse(contactElapsed,50,160,300);
     }
+    p.idleActing=cursor_rig::Active(p.cursorReach);
     return p;
 }
 inline animation::Pose GroomPose(std::uint64_t elapsed,int direction=1,std::uint64_t totalDurationMs=0) {
-    animation::Pose p;p.flip=direction<0;p.idleActing=true;
+    animation::Pose p;p.flip=direction<0;
     const std::uint64_t phrase=totalDurationMs?std::min<std::uint64_t>(4200,totalDurationMs):4200;
     if(totalDurationMs&&(phrase==0||elapsed>=(totalDurationMs/phrase)*phrase))return p;
     const double t=static_cast<double>(elapsed%phrase)*4200.0/phrase;
     const double held=animation::SmoothStep((t-180)/500)*(1-animation::SmoothStep((t-3300)/650));
     const double wipe=std::sin(std::clamp((t-780)/2350,0.0,1.0)*animation::kPi*4);
     p.cursorReach={0,0,held,.65*wipe,1};
+    p.idleActing=held>0;
     p.face.blink=.82*held*(.60+.40*std::max(0.0,wipe));
     p.joints.tailRaise=.05*held;
     return p;
@@ -115,10 +117,11 @@ constexpr std::uint64_t kBallPawMs=1050;
 inline int BallPawContactIndex(std::uint64_t elapsed) {return elapsed>=330&&elapsed<660?1:0;}
 inline animation::Pose BallPawPose(std::uint64_t elapsed,int direction,double targetDx,double targetHeight,Geometry geometry={}) {
     (void)targetHeight;
-    animation::Pose p;p.flip=direction<0;p.idleActing=true;
+    animation::Pose p;p.flip=direction<0;
     if(elapsed>=kBallPawMs)return p;
     const auto g=Bounded(geometry);const double reach=Pulse(elapsed,100,490,970);
     p.cursorReach={0,0,reach,std::clamp((p.flip?-1:1)*targetDx/g.width,-1.0,1.0),0,1};
+    p.idleActing=reach>0;
     p.face.wide=.10*reach;return p;
 }
 inline deform::Point PawPosition(const animation::Pose& pose,Geometry geometry={}) {

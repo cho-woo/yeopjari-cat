@@ -55,11 +55,20 @@ void SmoothHopAndGroomEnd() {
     CHECK(std::abs(lastAir.cursorReach.leftLift-landed.cursorReach.leftLift)<1e-9);
     const auto settled=HopPose(1420,true,true,0,520,1,20,140);
     CHECK(!cat::cursor_rig::Active(settled.cursorReach));
+    CHECK(!settled.idleActing);
+    CHECK(!GroomPose(0,1,7500).idleActing);
+    CHECK(!BallPawPose(0,1,34,12).idleActing);
+    CHECK(!BallPawPose(1050,1,34,12).idleActing);
+    for(const auto kind:{AttackKind::Tiptoe,AttackKind::BothPaws}) {
+        CHECK(!AttackPose(kind,0,1,18,80).idleActing);
+        CHECK(!AttackPose(kind,DurationMs(kind),1,18,80).idleActing);
+    }
     for(unsigned duration:{1300,3000,4200,5000,9000}) {
         for(unsigned t=duration-20;t<=duration+20;++t) {
             const auto pose=GroomPose(t,1,duration);
             CHECK(!cat::cursor_rig::Active(pose.cursorReach));
             CHECK(pose.face.blink==0&&pose.frame==4&&pose.spriteClip==cat::sprite_sequence::Clip::None);
+            CHECK(!pose.idleActing); // Same full-resolution neutral as the following Idle.
         }
     }
     for(unsigned t=0;t<=1050;++t){
