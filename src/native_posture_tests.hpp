@@ -10,7 +10,7 @@ int NativePostureRenderTest(std::string& context) {
     const auto savedNutrition=cat::nutrition::Serialize(g.nutrition);
     const auto savedMemory=cat::memory::Serialize(g.memory.state);
     const auto savedLife=cat::life::Serialize(g.life.state);
-    const auto body=cat::nutrition::VisualModifiers(g.nutrition);
+    const auto body=cat::appearance::VisualModifiers(g.nutrition,g.preferences.character);
     const auto draw=[&](cat::Character character,cat::Outfit outfit,const cat::animation::Pose& pose) {
         Graphics graphics(canvas.image.get());
         graphics.SetCompositingMode(CompositingModeSourceCopy);graphics.Clear(Color(0,0,0,0));

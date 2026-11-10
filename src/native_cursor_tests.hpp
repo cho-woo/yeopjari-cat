@@ -65,7 +65,7 @@ struct Host {
         Sample(x,height,16,available);
         cat::motion::AdvanceStopGate(g.waitingForStop, g.physics.CurrentPose().grounded,
             WalkingVelocity(g.physics.CurrentPose()), now, g.motionStart, g.nextDecision);
-        const auto body = cat::nutrition::VisualModifiers(g.nutrition);
+        const auto body = cat::appearance::VisualModifiers(g.nutrition,g.preferences.character);
         g.physics.SetTargetVelocity(g.waitingForStop ? 0 : CursorReactionVelocity()*body.speed*
             cat::species::ProfileFor(g.preferences.character).movementSpeedMultiplier);
         if (!g.waitingForStop && g.jumpPending && now-g.motionStart >= PrimaryTakeoffMs(true)) {
@@ -126,13 +126,13 @@ struct Host {
     }
     double PawX() const {
         if(PunchArt())return g.physics.CurrentPose().x+g.direction*38.15*
-            cat::nutrition::VisualModifiers(g.nutrition).bodyWidth*cat::GrowthScale(g.pet.bornUtc,UtcNow());
+            cat::appearance::VisualModifiers(g.nutrition,g.preferences.character).bodyWidth*cat::GrowthScale(g.pet.bornUtc,UtcNow());
         const auto geometry = CursorAttackGeometry();
         return g.physics.CurrentPose().x + (geometry.pawAnchorX-.5)*geometry.width*
             cat::GrowthScale(g.pet.bornUtc,UtcNow());
     }
     double PawHeight() const {
-        if(PunchArt())return 38.89*cat::nutrition::VisualModifiers(g.nutrition).bodyHeight*
+        if(PunchArt())return 38.89*cat::appearance::VisualModifiers(g.nutrition,g.preferences.character).bodyHeight*
             cat::GrowthScale(g.pet.bornUtc,UtcNow());
         return .04*CursorAttackGeometry().height*cat::GrowthScale(g.pet.bornUtc,UtcNow());
     }

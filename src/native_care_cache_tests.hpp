@@ -30,7 +30,7 @@ int NativeCareCacheCapacityTest(std::string& context) {
     CLSID png{};if(!NativeCarePngEncoder(png))return 370;
     DisabledCareSpriteScope restore;
     Surface canvas;if(!canvas.Create(180,140))return 370;
-    auto body=cat::nutrition::VisualModifiers(g.nutrition);body.bodyWidth=body.bodyHeight=1;
+    auto body=cat::appearance::VisualModifiers(g.nutrition,g.preferences.character);body.bodyWidth=body.bodyHeight=1;
     const auto savedStats=careSpriteMemory;
     std::ostringstream report;report.precision(9);
     report<<"{\"schema\":1,\"status\":\"passed\",\"test\":\"native_frame_cache_capacity\","

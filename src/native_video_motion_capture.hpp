@@ -41,7 +41,7 @@ int Simulate(Row& row,const Schedule& schedule,std::string& context) {
     g.companionStore.outcome=cat::companion::Outcome::Missing;
     const auto start=host.now;
     row.startX=g.physics.RenderPose().x;
-    row.body=cat::nutrition::VisualModifiers(g.nutrition);
+    row.body=cat::appearance::VisualModifiers(g.nutrition,g.preferences.character);
     row.frames.reserve(schedule.frames);
     const auto* eat=LoadedCareSprite(Clip::Eat,row.character);
     const auto* run=LoadedCareSprite(Clip::Run,row.character);
@@ -80,7 +80,7 @@ int Simulate(Row& row,const Schedule& schedule,std::string& context) {
             physical.grounded,g.waitingForStop,WalkingVelocity(physical));
         const auto pose=PrimaryDisplayedPose(host.now,physical);
         const auto* asset=CareSpriteFor(pose,row.character);
-        const unsigned source=asset?SpriteFrameFor(pose,*asset->layout):0;
+        const unsigned source=asset?SpriteFrameFor(pose,*asset->layout):static_cast<unsigned>(pose.frame);
         if(asset&&source>=asset->layout->frameCount)return 566;
         const double velocity=WalkingVelocity(physical);
         if(g.motion==Motion::Zoomies&&std::abs(velocity)>2&&
@@ -94,8 +94,9 @@ int Simulate(Row& row,const Schedule& schedule,std::string& context) {
         if(g.motion==Motion::Zoomies)row.peakRun=std::max(row.peakRun,std::abs(velocity));
         if(elapsed>schedule.run+4200&&!g.manualMotionActive&&std::abs(velocity)<.5)row.stopped=true;
         row.frames.push_back({pose,physical.x,velocity,g.gait.AuthoredPhase(),
-            asset?asset->layout->referenceHeight:0,source,
-            asset?static_cast<unsigned>(asset->layout->resourceId):0,g.motion,displayed,g.waitingForStop});
+            asset?asset->layout->referenceHeight:CurrentArt(row.character).base.standingHeight,source,
+            asset?static_cast<unsigned>(asset->layout->resourceId):static_cast<unsigned>(CurrentArt(row.character).base.baseResourceId),
+            g.motion,displayed,g.waitingForStop});
     }
     std::vector<bool> requiredEat(eat->layout->frameCount,false),requiredRun(run->layout->frameCount,false);
     for(unsigned i=0;i<eat->layout->program.stepCount;++i)requiredEat[eat->layout->program.steps[i].frame]=true;

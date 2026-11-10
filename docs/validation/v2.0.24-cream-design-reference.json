@@ -1,0 +1,91 @@
+{
+  "schema": 1,
+  "reference_sha256": "f92c5b30167b8978252c812af65ac99ec5be1e7c79fffa1bf3d94810b25d9803",
+  "reference_source_unchanged": true,
+  "source_motion_art_not_claimed_identical_to_reference": true,
+  "source_differences": [
+    "Walk/Run videos use a closed-mouth side profile; reference walking poses use an open-mouth three-quarter view.",
+    "Eat video uses a side-facing eating story; reference frame7 faces down into its bowl.",
+    "The retained care drawings are independent original poses, not pixel-identical reference images."
+  ],
+  "runtime_distortion_fixed": "whole-sprite nonuniform nutrition width/height removed for Cream/Tux only; speed/jump and all care state remain",
+  "clips": [
+    {
+      "clip": "groom",
+      "source": "assets/care-sprites/c0-groom.png",
+      "sha256": "d26e8495f42da710c4f9a0b9488ecc4666513146dcc5268ef5311e253cd654f4",
+      "reference_frame": 4,
+      "frame_count": 16,
+      "reference_height": 273
+    },
+    {
+      "clip": "sleep",
+      "source": "assets/care-sprites/c0-sleep.png",
+      "sha256": "76560182751c11b45ff87cea4f30904a48a014c0000f2fffef4d883b2aaeab7a",
+      "reference_frame": 6,
+      "frame_count": 8,
+      "reference_height": 373
+    },
+    {
+      "clip": "fish",
+      "source": "assets/care-sprites/c0-fish.png",
+      "sha256": "5577d90a87569acab3a20046e34df40651dca4172092a29c81c2f7e95b2f3697",
+      "reference_frame": 7,
+      "frame_count": 8,
+      "reference_height": 360
+    },
+    {
+      "clip": "punch",
+      "source": "assets/care-sprites/c0-punch.png",
+      "sha256": "580e91c043ace82a4f04ba8de95b2511b3a6fe764e5def82b91b3da95b9b00c0",
+      "reference_frame": 4,
+      "frame_count": 12,
+      "reference_height": 297
+    },
+    {
+      "clip": "eat",
+      "source": "assets/natural-gait/cream-video-eat.png",
+      "sha256": "cccf5dd255a8d4957794bd334306b7e395ce013c7ad919a786683483fffd5214",
+      "reference_frame": 7,
+      "frame_count": 87,
+      "reference_height": 210.0
+    },
+    {
+      "clip": "jump",
+      "source": "assets/care-sprites/c0-jump.png",
+      "sha256": "8d1f2bf8e3502381061df15a28f0fca85ee2db57ef963cf72554ec44ff6b4fd7",
+      "reference_frame": 0,
+      "frame_count": 16,
+      "reference_height": 244
+    },
+    {
+      "clip": "treat",
+      "source": "assets/care-sprites/c0-treat.png",
+      "sha256": "1cc0d92d56fc3b55b85a2ed1d90a29b4e00a3d1c9a8695a7e3af4be1d3044e8e",
+      "reference_frame": 4,
+      "frame_count": 24,
+      "reference_height": 221
+    },
+    {
+      "clip": "walk",
+      "source": "assets/natural-gait/cream-video-walk.png",
+      "sha256": "1c1e5112d9be836fbc7786c60648796dcbf9b4f997e68de5d9e4b16450297d5d",
+      "reference_frame": 0,
+      "frame_count": 61,
+      "reference_height": 210.0
+    },
+    {
+      "clip": "run",
+      "source": "assets/natural-gait/cream-video-run.png",
+      "sha256": "a129327846b8e6146c04db0bd65d7631bc7219440313647b09c95d041282cfad",
+      "reference_frame": 0,
+      "frame_count": 13,
+      "reference_height": 210.0
+    }
+  ],
+  "kind": "authored_source_design_audit_not_windows_capture",
+  "reference_manifest": "assets/cream-design-reference.json",
+  "reference_manifest_sha256": "744f95443f70b38664e28c3079b21604d4d6d660a85748491e962dee207a890c",
+  "shape_helper": "src/cat_appearance_visual.hpp",
+  "scope": "Reference pixels are preserved; nonuniform whole-character nutrition stretching removed. Independent source-video camera and mouth poses are not claimed identical to the eight-pose reference."
+}

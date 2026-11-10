@@ -106,8 +106,7 @@ void ShowCompanionMenu(POINT point) {
     AppendMenuW(menu, MF_STRING, kCompanionToggle, L"두 번째 동물 잠시 쉬게 하기");
     g.menuOpen = true;
     SetForegroundWindow(g.companionWindow.Handle());
-    const UINT command = static_cast<UINT>(TrackPopupMenu(menu, TPM_RETURNCMD | TPM_NONOTIFY | TPM_RIGHTBUTTON,
-        point.x, point.y, 0, g.companionWindow.Handle(), nullptr));
+    const UINT command=TrackPetContextMenu(menu,g.companionWindow.Handle(),point);
     PostMessageW(g.companionWindow.Handle(), WM_NULL, 0, 0);
     DestroyMenu(menu); g.menuOpen = false;
     if (command == kCompanionFeed) FeedCompanion(false);

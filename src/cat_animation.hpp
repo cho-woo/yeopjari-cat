@@ -24,6 +24,7 @@ constexpr std::uint64_t kPeekDurationMs = 3600;
 constexpr std::uint64_t kBellyRollDurationMs = 4300;
 constexpr double kPi = 3.14159265358979323846;
 constexpr int kSpriteCount = 29;
+constexpr int kReferenceSleepFrame = 6; // assets/cat.png: requested curled nap.
 // Original complete drawings have about 12–15 logical pixels of forepaw
 // excursion at the 110 px reference size. Keep the established 14 px cycle.
 // Four poses cannot describe a complete fast gallop; cap their presentation
@@ -75,6 +76,30 @@ inline void UseAuthoredSprite(Pose& pose) {
     pose.x=pose.lift=pose.angle=0;pose.scaleX=pose.scaleY=1;
     pose.centerPivot=pose.bellyRig=false;pose.blendFrame=-1;pose.blend=0;
     pose.joints={};pose.face={};
+}
+
+inline std::uint64_t ReferenceSleepIntroMs(const cat::sprite_sequence::Program* program=nullptr,unsigned sheetFrames=0) {
+    if(program&&program->stepCount)return cat::sprite_sequence::Duration(*program,program->intro);
+    return sheetFrames==8?cat::sprite_sequence::kSleepStoryIntroMs:
+        sheetFrames?cat::sprite_sequence::kSleepIntroMs:0;
+}
+// This chooses the original drawing in pose data, before either renderer or
+// trace observes it. Physical placement and the common base scale are intact.
+inline bool ApplyReferenceSleepHold(Pose& pose,Motion displayed,std::uint64_t elapsed,
+                                    bool grounded,std::uint64_t introMs,bool permitted=true) {
+    if(!permitted||displayed!=Motion::Sleep||!grounded||elapsed<introMs)return false;
+    const bool flip=pose.flip;
+    pose={};pose.frame=kReferenceSleepFrame;pose.flip=flip;
+    return true;
+}
+inline bool ApplyReferenceNeutralHold(Pose& pose,Motion displayed,bool grounded,double relativeVelocity,
+                                      bool permitted=true) {
+    using Clip=cat::sprite_sequence::Clip;
+    const bool quiet=displayed==Motion::Idle||displayed==Motion::Watch;
+    const bool resting=pose.spriteClip==Clip::None||pose.spriteClip==Clip::Sleep||
+        pose.spriteClip==Clip::Walk||pose.spriteClip==Clip::Run;
+    if(!permitted||!quiet||!resting||!grounded||!std::isfinite(relativeVelocity)||std::abs(relativeVelocity)>.5)return false;
+    const bool flip=pose.flip;pose={};pose.frame=4;pose.flip=flip;return true;
 }
 
 inline double SmoothStep(double fraction) {

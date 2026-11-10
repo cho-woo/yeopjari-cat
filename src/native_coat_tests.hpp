@@ -60,16 +60,20 @@ int NativeCoatRenderTest(std::string& context) {
     if(!cream.Create(420,340)||!tuxedo.Create(420,340)||!from.Create(420,340)||
             !to.Create(420,340)||!review.Create(1200,2400))return 440;
     {Graphics graphics(review.image.get());graphics.Clear(Color(255,235,239,243));}
-    const auto body=cat::nutrition::VisualModifiers(g.nutrition);
+    const auto body=cat::appearance::VisualModifiers(g.nutrition,g.preferences.character);
     std::size_t coatPixels=0;unsigned row=0;
-    const auto draw=[&](Surface& surface,C character,const cat::animation::Pose& pose) {
+    const auto drawVisual=[&](Surface& surface,C character,const cat::animation::Pose& pose,
+                              const cat::nutrition::Visual& visual) {
         Graphics graphics(surface.image.get());graphics.Clear(Color(0,0,0,0));
         graphics.SetSmoothingMode(SmoothingModeAntiAlias);
         graphics.SetInterpolationMode(InterpolationModeHighQualityBicubic);
         graphics.SetPixelOffsetMode(PixelOffsetModeHighQuality);
         DrawStyledAnimationDirect(graphics,pose,210,300,110.0f/CurrentArt(character).base.standingHeight,
-            character,cat::Outfit::None,body,from,to,420,340);
+            character,cat::Outfit::None,visual,from,to,420,340);
         graphics.Flush(FlushIntentionSync);return graphics.GetLastStatus()==Ok;
+    };
+    const auto draw=[&](Surface& surface,C character,const cat::animation::Pose& pose) {
+        return drawVisual(surface,character,pose,body);
     };
     const auto fallback=[&](const SpriteAtlas& atlas,int base) {
         const auto* style=cat::styled_assets::Find(8,base,cat::styled_assets::kStyledAtlases);
@@ -159,6 +163,33 @@ int NativeCoatRenderTest(std::string& context) {
         if(!native_coat_tests::ValidPixels(reinterpret_cast<const std::uint32_t*>(cream.pixels),420,340,true)||
                 !native_coat_tests::ValidPixels(reinterpret_cast<const std::uint32_t*>(tuxedo.pixels),420,340,true))return 449;
     }
+    // Same authored pose must produce identical real GDI+ pixels at every
+    // weight. Nutrition still changes speed/jump; it cannot stretch the face.
+    Surface proportions;
+    if(!proportions.Create(1260,680))return 451;
+    {Graphics graphics(proportions.image.get());graphics.Clear(Color(255,235,239,243));}
+    for(unsigned coat=0;coat<2;++coat) {
+        const auto character=coat?C::Tuxedo:C::Cream;
+        std::vector<BYTE> expected;
+        for(unsigned sample=0;sample<3;++sample) {
+            auto state=g.nutrition;state.bodyCondition=sample*50.;
+            const auto visual=cat::appearance::VisualModifiers(state,character);
+            const auto health=cat::nutrition::VisualModifiers(state);
+            context="reference proportions nutrition="+std::to_string(sample*50)+" coat="+std::to_string(coat);
+            if(visual.bodyWidth!=1||visual.bodyHeight!=1||visual.speed!=health.speed||visual.jump!=health.jump)return 451;
+            cat::animation::Pose pose;pose.frame=4;
+            if(!drawVisual(cream,character,pose,visual))return 451;
+            const std::size_t count=420*340*4;
+            if(expected.empty())expected.assign(cream.pixels,cream.pixels+count);
+            else if(!std::equal(expected.begin(),expected.end(),cream.pixels))return 451;
+            Graphics graphics(proportions.image.get());
+            graphics.DrawImage(cream.image.get(),Rect(sample*420,coat*340,420,340),0,0,420,340,UnitPixel);
+            Font font(L"Segoe UI",13,FontStyleRegular,UnitPixel);SolidBrush ink(Color(255,35,45,55));
+            const std::wstring label=(coat?L"Tuxedo":L"Cream")+std::wstring(L" / condition ")+std::to_wstring(sample*50);
+            graphics.DrawString(label.c_str(),-1,&font,PointF(static_cast<REAL>(sample*420+8),static_cast<REAL>(coat*340+8)),&ink);
+        }
+    }
+    if(!SaveNativeWalkingReview(*proportions.image,L"render-self-test/reference-proportions-gdi.png"))return 452;
     if(!SaveNativeWalkingReview(*review.image,L"render-self-test/two-cats-gdi.png"))return 450;
     return 0;
 }

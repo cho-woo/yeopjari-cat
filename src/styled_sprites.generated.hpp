@@ -3,22 +3,22 @@
 #include "cat_styled_sprite_assets.hpp"
 namespace cat::styled_assets {
 inline constexpr std::array<Atlas,16> kStyledAtlases{{
-    Atlas{8,101,509,1774,887,"ede3b3069a2ad94207ecf43dd6fe5e8eb7c0c3f3d2fc1a6e0e36998a5500721c","assets/styled-sprites/c8-r101.png",nullptr,0,0},
-    Atlas{8,102,510,1774,887,"ee911587178b13806ce549d05d3baf8ceb60f11b70b29245155cf354fc95a272","assets/styled-sprites/c8-r102.png",nullptr,0,0},
-    Atlas{8,105,511,738,714,"e161fbd44f31a1d8e5c1bb08ea90b3a4785680c68fecd6539bbd3e2f0ac73fbd","assets/styled-sprites/c8-r105.png",nullptr,0,0},
-    Atlas{8,106,512,744,762,"96dd6e1c89eedb8e246803b4a5a25f16de719dbbb6b07cae4ddadba65954ee4a","assets/styled-sprites/c8-r106.png",nullptr,0,0},
-    Atlas{8,107,513,1422,370,"5b22a7b4fccf4f0c12af8444fb38a7f4422d4768350f948bf7be6c75fef8f5ea","assets/styled-sprites/c8-r107.png",nullptr,0,0},
-    Atlas{8,110,514,243,487,"4aea9dd388792f226bd142469b56eebf0a7521949aac512879776f3b91a5391f","assets/styled-sprites/c8-r110.png",nullptr,0,0},
-    Atlas{8,112,515,598,199,"113c200608430660c043ae692dab1a3750c1061172a397149594d16882a9deb3","assets/styled-sprites/c8-r112.png",nullptr,0,0},
-    Atlas{8,113,500,1254,1254,"c173510dd85dc20ec7c22c713e3d66485fbdca768452ba7b4227e68b841a5e42","assets/styled-sprites/c8-r113.png",nullptr,0,0},
-    Atlas{8,114,501,1774,887,"658e351b2afa73adc8f65550598370728a740c44ee157f11ae4e84f345fcb8ac","assets/styled-sprites/c8-r114.png",nullptr,0,0},
-    Atlas{8,116,503,1774,887,"b509d40cd8c83a025c656bd2a68b593a54a56c3fd660d2931bed227ed8b23b45","assets/styled-sprites/c8-r116.png",nullptr,0,0},
-    Atlas{8,117,504,1448,1086,"ef5d7cabef389c0303ab35a3a481749d93917575e935b4f245bf0493b70f5121","assets/styled-sprites/c8-r117.png",nullptr,0,0},
-    Atlas{8,118,505,2304,2772,"c2bd228564746f20fcd8f8a02f9f7a20424751099a537b7fcd59533e8971f34e","assets/styled-sprites/c8-r118.png",nullptr,0,0},
-    Atlas{8,119,506,1254,1254,"1fd1b3f1b5b8025b6dd44ee3dbfea1f03d3cb1aad3e18cfb60a2f1f20727bd0a","assets/styled-sprites/c8-r119.png",nullptr,0,0},
-    Atlas{8,120,507,1536,1024,"7fe4e30db5b67d05eb4f8508a904bf65388db6c759cbbc64a9a54b443d070a2b","assets/styled-sprites/c8-r120.png",nullptr,0,0},
-    Atlas{8,400,508,2408,1904,"9fbd42688410f772ba9c85bfb3bd4bee34214715cb4a9b79e31ae5fc140cae4f","assets/styled-sprites/c8-r400.png",nullptr,0,0},
-    Atlas{8,401,516,1485,732,"da4657a3fbc3cbb148677482d46225ff85475cb14389a8565f45e2d9a7e67f2c","assets/styled-sprites/c8-r401.png",nullptr,0,0},
+    Atlas{8,101,509,1774,887,"6b449bb6ba56e84aa0be4b33c4f6f35e48bfc443286c8ba6ede43978d556bbfe","assets/styled-sprites/c8-r101.png",nullptr,0,0},
+    Atlas{8,102,510,1774,887,"b56749ab4e5ccbd8f4a2d327aab76d687d2e43aa8422c50cbdf9464f152aaec6","assets/styled-sprites/c8-r102.png",nullptr,0,0},
+    Atlas{8,105,511,738,714,"39245e101df791daee730d88cb31c0ddf4be4cc06a91fc6f459b82fa23d41d82","assets/styled-sprites/c8-r105.png",nullptr,0,0},
+    Atlas{8,106,512,744,762,"64d17a4990a34cd3a5d7e97fb2f4b1c69baca09ca7a62937a330519c363a4d23","assets/styled-sprites/c8-r106.png",nullptr,0,0},
+    Atlas{8,107,513,1422,370,"7eae39e26515639323f6002144cec786c3b5fc9871b023d3a44559ca70325287","assets/styled-sprites/c8-r107.png",nullptr,0,0},
+    Atlas{8,110,514,243,487,"c821fa1d72d7f6ea97e477ead897478f5e456381fcc3a9c2f33c083909b7aed3","assets/styled-sprites/c8-r110.png",nullptr,0,0},
+    Atlas{8,112,515,598,199,"e3db7b19ccd30aa16e462fe566fde2de6f0c178af616c8b52f71728305069fb5","assets/styled-sprites/c8-r112.png",nullptr,0,0},
+    Atlas{8,113,500,1254,1254,"590ab728ea5733516744835c1ec9be7c71161c44f817a8901b4cce07895284bc","assets/styled-sprites/c8-r113.png",nullptr,0,0},
+    Atlas{8,114,501,1774,887,"606358708df5b76cb68a8da36608dea7ee151509fc2c42ae6b285ce0074c7506","assets/styled-sprites/c8-r114.png",nullptr,0,0},
+    Atlas{8,116,503,1774,887,"de8bc43d77ca3e46e8d634592ef097c5692a6cdc28afc23046fbcc16087c60e8","assets/styled-sprites/c8-r116.png",nullptr,0,0},
+    Atlas{8,117,504,1448,1086,"dda872598d35a9601b1c74da29a801b977f9c00c291df5f80fcb8034b47b4fb9","assets/styled-sprites/c8-r117.png",nullptr,0,0},
+    Atlas{8,118,505,2304,2772,"97832c64611018ed658dba2fdebc2399283be2078822ed3d52fbb3ddd1d4721e","assets/styled-sprites/c8-r118.png",nullptr,0,0},
+    Atlas{8,119,506,1254,1254,"1f7995222f78772fa3ccbe3bd3a9b7192bd2b441dd4981f8a9f631a5c358ec0d","assets/styled-sprites/c8-r119.png",nullptr,0,0},
+    Atlas{8,120,507,1536,1024,"25eaa525002355b4047f8b9d4197cd438f099d14b3c31315c3ff8120a0b47cd4","assets/styled-sprites/c8-r120.png",nullptr,0,0},
+    Atlas{8,400,508,2408,1904,"38611f5c38265a8d5004a7ffaa7efc8bb217cbbeb6ad078a22ce8741fdf83aa4","assets/styled-sprites/c8-r400.png",nullptr,0,0},
+    Atlas{8,401,516,1485,732,"f8e3bb26f263a1ba25fecf2e9e82fe531a61849f44d9f55c3695922b2be3ad94","assets/styled-sprites/c8-r401.png",nullptr,0,0},
 }};
 static_assert(ValidSet(kStyledAtlases), "Invalid authored appearance atlases");
 } // namespace cat::styled_assets

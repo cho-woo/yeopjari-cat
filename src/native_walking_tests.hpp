@@ -33,7 +33,7 @@ int NativeAuthoredWalkingRenderTest(std::string& context) {
     {Graphics graphics(evidence.image.get());graphics.Clear(Color(255,235,239,243));}
     const auto preferences=cat::SerializePreferences(g.preferences);
     const auto nutrition=cat::nutrition::Serialize(g.nutrition);
-    const auto normal=cat::nutrition::VisualModifiers(g.nutrition);
+    const auto normal=cat::appearance::VisualModifiers(g.nutrition,g.preferences.character);
     const auto copy=[&]{return std::vector<BYTE>(canvas.pixels,canvas.pixels+width*height*4);};
     const auto draw=[&](const cat::animation::Pose& pose,const cat::nutrition::Visual& body,
                         REAL desiredHeight,bool direct) {
@@ -164,7 +164,7 @@ int NativeWalkingRenderTest(std::string& context) {
     if(!canvas.Create(420,320))return 151;
     const auto savedPreferences=cat::SerializePreferences(g.preferences);
     const auto savedNutrition=cat::nutrition::Serialize(g.nutrition);
-    const auto normalBody=cat::nutrition::VisualModifiers(g.nutrition);
+    const auto normalBody=cat::appearance::VisualModifiers(g.nutrition,g.preferences.character);
     const auto copy=[&] {return std::vector<BYTE>(canvas.pixels,canvas.pixels+420*320*4);};
     const auto draw=[&](cat::Character character,cat::Outfit outfit,const cat::animation::Pose& pose,
                         const cat::nutrition::Visual& body,bool direct,REAL bottom=280,REAL desiredHeight=110) {

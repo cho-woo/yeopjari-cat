@@ -85,7 +85,7 @@ int NativeGroundDriveReview(std::string& context) {
                         const REAL center=static_cast<REAL>((physical.x+(character==cat::Character::Tuxedo?360:0))*dpi);
                         const REAL scale=static_cast<REAL>(110*dpi/CurrentArt(character).base.standingHeight);
                         DrawStyledAnimationDirect(graphics,drawing,center,floor,scale,character,cat::Outfit::None,
-                            cat::nutrition::VisualModifiers(g.nutrition),from,to,width,height);
+                            cat::appearance::VisualModifiers(g.nutrition,g.preferences.character),from,to,width,height);
                     }
                     const auto* layout=cat::sprite_assets::Find(drawing.spriteClip,0,cat::sprite_assets::kCareSprites);
                     trace+=std::to_string(dpi)+","+std::to_string(tick)+","+std::to_string(lane)+","+

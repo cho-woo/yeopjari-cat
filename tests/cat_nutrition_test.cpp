@@ -1,4 +1,5 @@
 #include "../src/cat_nutrition.hpp"
+#include "../src/cat_appearance_visual.hpp"
 
 #include <iostream>
 #include <stdexcept>
@@ -287,6 +288,36 @@ void VisualBounds() {
     CHECK(!nutrition::IsValid(state) && nutrition::Serialize(state).empty());
 }
 
+void ReferenceAppearanceKeepsCareEffects() {
+    auto state=nutrition::NewState(Start-Day,Start,73);
+    state.lastMealUtc=Start-Hour;
+    for(const auto character:{cat::Character::Cream,cat::Character::Tuxedo}) {
+        for(const double condition:{0.,20.,35.,50.,65.,80.,100.}) {
+            state.bodyCondition=condition;
+            const auto before=nutrition::Serialize(state);
+            const auto health=nutrition::VisualModifiers(state);
+            const auto visual=cat::appearance::VisualModifiers(state,character);
+            CHECK(visual.bodyWidth==1 && visual.bodyHeight==1);
+            CHECK(visual.speed==health.speed && visual.jump==health.jump);
+            // A fixed sprite, collider registration, stride and paw contact
+            // retain one coordinate system even at extreme body conditions.
+            CHECK(Near(68*visual.bodyWidth,68));
+            CHECK(Near(38.15*visual.bodyWidth,38.15));
+            CHECK(Near(110*visual.bodyHeight,110));
+            CHECK(Near((329.0/367)*visual.bodyWidth/visual.bodyHeight,329.0/367));
+            CHECK(nutrition::Serialize(state)==before);
+        }
+    }
+    state.bodyCondition=0;
+    const auto weak=cat::appearance::VisualModifiers(state,cat::Character::Cream);
+    CHECK(Near(weak.speed,.70) && Near(weak.jump,.65));
+    state.bodyCondition=100;
+    const auto heavy=cat::appearance::VisualModifiers(state,cat::Character::Cream);
+    CHECK(Near(heavy.speed,.78) && Near(heavy.jump,.75));
+    CHECK(cat::appearance::VisualModifiers(state,cat::Character::SilverTabby).bodyWidth==
+        nutrition::VisualModifiers(state).bodyWidth);
+}
+
 void SaveRoundTripsAndCorruption() {
     auto state = nutrition::NewState(Start - Day, Start, 23.456789123);
     state.bodyCondition = 67.234567891;
@@ -369,6 +400,7 @@ int main() {
         GentlePersistentRequests();
         ClockAndLongAbsence();
         VisualBounds();
+        ReferenceAppearanceKeepsCareEffects();
         SaveRoundTripsAndCorruption();
         std::cout << "cat nutrition: " << checks << " checks passed (10 scenario groups)\n";
         return 0;

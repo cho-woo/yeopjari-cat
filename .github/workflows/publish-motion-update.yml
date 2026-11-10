@@ -1,11 +1,16 @@
-name: Publish exact Windows-validated source-video gait update
+name: Publish exact Windows-validated cat motion and appearance update
 on:
   workflow_dispatch:
     inputs:
       validation_run:
-        description: Successful Validate run for v2.0.23 with native Windows save and render tests
+        description: Successful Validate run for v2.0.24 with native menu, jump and rendering tests
         required: true
         type: string
+      stage_only:
+        description: Upload and verify draft evidence without publishing or changing the stable feed
+        required: false
+        default: false
+        type: boolean
 permissions:
   contents: write
   actions: read
@@ -20,6 +25,7 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       VALIDATION_RUN: ${{ inputs.validation_run }}
+      STAGE_ONLY: ${{ inputs.stage_only }}
     steps:
       - name: Select the exact successful native Windows validation commit
         id: validated
@@ -46,7 +52,8 @@ jobs:
               for name in ['Execute Windows save, cursor and moving-window regression tests',
                            'Render real Windows GDI+ gait, contact and posture regressions',
                            'Capture source-video walking through Windows GDI+ and Box2D at 60 FPS',
-                           'Capture source-video meal, walk and run through Windows GDI+ and Box2D at 60 FPS']:
+                           'Capture source-video meal, walk and run through Windows GDI+ and Box2D at 60 FPS',
+                           'Verify real Windows right-click menu visibility through UI Automation']:
                   if not any(s['name']==name and s['status']=='completed' and s['conclusion']=='success'
                              for s in native['steps']):
                       raise ValueError('Missing successful native Windows step: '+name)
@@ -88,7 +95,9 @@ jobs:
       - name: Verify exact validated bytes, publish stable and confirm the official public feed
         run: |
           set +e
-          python3 tools/publish_manual_motion_update.py > /tmp/motion-publication.log 2>&1
+          args=()
+          if [ "$STAGE_ONLY" = "true" ]; then args+=(--stage-only); fi
+          python3 tools/publish_manual_motion_update.py "${args[@]}" > /tmp/motion-publication.log 2>&1
           code=$?
           cat /tmp/motion-publication.log
           if [ "$code" -ne 0 ]; then

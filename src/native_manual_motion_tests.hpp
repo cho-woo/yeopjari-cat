@@ -14,6 +14,7 @@ struct Host {
         g.life.outcome = cat::life::storage::Outcome::Blocked;
         g.companionStore.state.enabled = false;
         g.brain.reset(); g.lifeSequenceCount = g.memorySequenceCount = 0;
+        g.randomZoomies.Reset();g.randomZoomiesSerial=0;g.randomZoomiesMsRemainder=0;
         g.lifeCrossing = {}; g.smallBoxEvent = g.lifeDispatching = false;
         g.toy = ToyKind::None; g.toyEngaged = g.toyDispatching = g.approachingToy = false;
         g.toySession.Cancel(); g.automaticToy = {};
@@ -51,6 +52,7 @@ struct Host {
         auto serial = g.motionSerial;
         FinishManualMotion(now);
         if (g.motionSerial != serial) Rebase();
+        AdvanceRandomZoomies(now,elapsed);
         serial = g.motionSerial; DispatchAutonomousMotion(now);
         if (g.motionSerial != serial) Rebase();
         serial = g.motionSerial; AdvancePrimaryMotion(now,elapsed);
@@ -62,6 +64,9 @@ struct Host {
             cat::life::Serialize(g.life.state) + cat::companion::Serialize(g.companionStore.state);
     }
 };
+
+#include "native_jump_continuity_tests.hpp"
+#include "native_random_zoomies_tests.hpp"
 
 bool MenuCommands(bool enabled) {
     HMENU menu = BuildPetMenu(); if (!menu) return false;
@@ -83,6 +88,8 @@ bool MenuCommands(bool enabled) {
 }
 
 int Run(std::string& proof) {
+    if(const int randomZoomies=random_zoomies_native::Run())return randomZoomies;
+    if(const int jumpContinuity=jump_continuity::Run())return jumpContinuity;
     Host host;
     const auto* walk = LoadedCareSprite(cat::sprite_sequence::Clip::Walk,cat::Character::Cream);
     if (!walk || !cat::sprite_assets::Valid(*walk->layout) || walk->layout->frameCount < 8 ||

@@ -56,3 +56,35 @@ python3 tools/video_tuxedo/review.py \
 These material keys are not new walk/run/eat poses. The actual motion is supplied
 by the uploaded videos. There is no claim that the clipped Run video's abrupt
 front-sit cut is a newly authored start or stop animation.
+
+## Shared Tuxedo palette
+
+`tools/lock_tuxedo_identity.py` uses **Pillow only**. It bakes one common neutral
+black/white fur palette into all 16 existing runtime atlases. It does not change
+alpha, white-mark locations, frame geometry, registration, motion or timing.
+Original skin/blush, olive/gold eyes and explicit fish/package/hand/bowl/crumb
+masks remain byte-for-byte intact. There is no recoloring cost during playback.
+
+```sh
+python3 tools/lock_tuxedo_identity.py \
+  --mask-dir assets/styled-sprites/identity-masks --check
+python3 tools/pack_walk_video.py
+python3 tools/import_styled_sprites.py --check --require-character 8
+```
+
+The video packer always reads the retained original Tuxedo source PNGs and then
+applies the same palette once. To reproduce a legacy atlas bake, obtain the
+original style snapshot at `identity-policy.json`'s `input_git_revision` and use
+that original directory as `--source-dir`; do not rebake already normalized PNGs:
+
+```sh
+python3 tools/lock_tuxedo_identity.py \
+  --source-dir ORIGINAL_SNAPSHOT/assets/styled-sprites \
+  --mask-dir assets/styled-sprites/identity-masks \
+  --output build/tuxedo-identity-rebuild
+```
+
+`assets/styled-sprites/identity-policy.json` records original/output hashes and
+separate alpha, skin, iris and prop checks. The v2.0.24 authored-atlas review in
+`docs/previews/v2.0.24/authored-tuxedo-*` uses identical 128px before/after
+layouts, including fallback actions. It is explicitly **not Windows capture**.

@@ -74,7 +74,7 @@ int NativeCareSpriteRenderTest(std::string& context) {
         if(sprite->image->GetLastStatus()!=Ok)return 282;
         g.careSprites.push_back(std::move(sprite));
     }
-    const auto body=cat::nutrition::VisualModifiers(g.nutrition);
+    const auto body=cat::appearance::VisualModifiers(g.nutrition,g.preferences.character);
     auto normal=body;normal.bodyWidth=normal.bodyHeight=1;
     const auto draw=[&](const cat::animation::Pose& pose,cat::Character character,
                         const cat::nutrition::Visual& shape,REAL desiredHeight,bool direct) {
@@ -230,7 +230,7 @@ int NativeActualCareSpriteRenderTest(std::string& context) {
     constexpr REAL center=320,bottom=400;
     Surface canvas,from,to;
     if(!canvas.Create(width,height))return 295;
-    auto normal=cat::nutrition::VisualModifiers(g.nutrition);normal.bodyWidth=normal.bodyHeight=1;
+    auto normal=cat::appearance::VisualModifiers(g.nutrition,g.preferences.character);normal.bodyWidth=normal.bodyHeight=1;
     const auto preferences=cat::SerializePreferences(g.preferences);
     const auto nutrition=cat::nutrition::Serialize(g.nutrition);
     const auto configure=[](Graphics& graphics) {

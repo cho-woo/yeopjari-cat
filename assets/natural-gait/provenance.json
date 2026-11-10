@@ -7,7 +7,7 @@
     {
       "role": "importer",
       "path": "tools/pack_walk_video.py",
-      "sha256": "2a7bcec3b943bf8d4b70e5f713d76530593f4a3055a198a07a200506c66f8e1b"
+      "sha256": "03aff5cc7ec4295484e34e299cb235c1876b455b1f6bcf5492f41c98e2c89cc5"
     },
     {
       "role": "packing",
@@ -28,6 +28,41 @@
       "role": "appearance_importer",
       "path": "tools/video_tuxedo/transfer.py",
       "sha256": "5226999dfc7ca110ec0b5da31ac89966c529feacf6b0152e2ccbe38504fc1c4a"
+    },
+    {
+      "role": "appearance_identity_importer",
+      "path": "tools/lock_tuxedo_identity.py",
+      "sha256": "fe3645a9b2273d548dd581084daad95e0a94ac0f0dc9255f4badb1daa7a14a61"
+    },
+    {
+      "role": "appearance_identity_policy",
+      "path": "assets/styled-sprites/identity-policy.json",
+      "sha256": "c747fcfb965c3196987a8eb7f32395df766f10ae3e3012bcf3b004738db6385d"
+    },
+    {
+      "role": "appearance_identity_mask_c8-r101",
+      "path": "assets/styled-sprites/identity-masks/c8-r101.png",
+      "sha256": "91316e1a2c5982af29cb41ac723ba1ae9a50085faa28957a228a0b33d4f7bbad"
+    },
+    {
+      "role": "appearance_identity_mask_c8-r105",
+      "path": "assets/styled-sprites/identity-masks/c8-r105.png",
+      "sha256": "c2cb885e2ecc99f5ba8abfcef44262a2964d5c9abff747ba66de7db74487b665"
+    },
+    {
+      "role": "appearance_identity_mask_c8-r116",
+      "path": "assets/styled-sprites/identity-masks/c8-r116.png",
+      "sha256": "87d11d1bd5207d178d1a145c2a65489220df73a03679fd6d1879dadd9ba93793"
+    },
+    {
+      "role": "appearance_identity_mask_c8-r118",
+      "path": "assets/styled-sprites/identity-masks/c8-r118.png",
+      "sha256": "4e0715c4198bf3b5fa4bf04f1f67f2bfac7b9408289c95e7b59fc9dd5fc97b5a"
+    },
+    {
+      "role": "appearance_identity_mask_c8-r120",
+      "path": "assets/styled-sprites/identity-masks/c8-r120.png",
+      "sha256": "07c9bbbd887d1dda6ca1acdae30efe4078c20d8ec926760855f4a1692976f966"
     },
     {
       "role": "input_video",
@@ -60,7 +95,7 @@
       "character": 8,
       "base_resource_id": 400,
       "source": "tuxedo-video-walk.png",
-      "sha256": "9fbd42688410f772ba9c85bfb3bd4bee34214715cb4a9b79e31ae5fc140cae4f",
+      "sha256": "38611f5c38265a8d5004a7ffaa7efc8bb217cbbeb6ad078a22ce8741fdf83aa4",
       "image_width": 2408,
       "image_height": 1904
     },
@@ -78,7 +113,7 @@
       "character": 8,
       "base_resource_id": 401,
       "source": "tuxedo-video-run.png",
-      "sha256": "da4657a3fbc3cbb148677482d46225ff85475cb14389a8565f45e2d9a7e67f2c",
+      "sha256": "f8e3bb26f263a1ba25fecf2e9e82fe531a61849f44d9f55c3695922b2be3ad94",
       "image_width": 1485,
       "image_height": 732
     },
@@ -96,7 +131,7 @@
       "character": 8,
       "base_resource_id": 118,
       "source": "tuxedo-video-eat.png",
-      "sha256": "c2bd228564746f20fcd8f8a02f9f7a20424751099a537b7fcd59533e8971f34e",
+      "sha256": "97832c64611018ed658dba2fdebc2399283be2078822ed3d52fbb3ddd1d4721e",
       "image_width": 2304,
       "image_height": 2772
     }

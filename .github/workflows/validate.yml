@@ -120,6 +120,19 @@ jobs:
             Write-Host "::error::$detail"
             throw "Windows render test failed: $($process.ExitCode)"
           }
+      - name: Verify real Windows right-click menu visibility through UI Automation
+        if: ${{ !cancelled() && steps.selftest.outcome == 'success' }}
+        timeout-minutes: 2
+        shell: pwsh
+        run: |
+          $process = Start-Process -FilePath $env:TEST_EXE -ArgumentList '--menu-self-test' -PassThru -Wait
+          $report = if (Test-Path render-self-test/menu-visibility-report.txt) { Get-Content render-self-test/menu-visibility-report.txt -Raw } else { 'No native context-menu visibility report produced.' }
+          Write-Host $report
+          if ($process.ExitCode -ne 0) {
+            $detail = $report.Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
+            Write-Host "::error::$detail"
+            throw "Windows context-menu visibility test failed: $($process.ExitCode)"
+          }
       - name: Capture source-video walking through Windows GDI+ and Box2D at 60 FPS
         if: ${{ !cancelled() && steps.selftest.outcome == 'success' }}
         timeout-minutes: 4

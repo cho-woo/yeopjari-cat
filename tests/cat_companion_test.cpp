@@ -754,13 +754,8 @@ void RegisteredCompanionCareFinishesItsWholeProgram() {
         c.ticks+=groomDuration;c.nowUtc=born+static_cast<std::int64_t>(c.ticks/1000);model.Tick(c);
         const auto neutral=model.View(c.ticks);
         CHECK(neutral.motion==cat::animation::Motion::Idle);
-        const auto* walk=cat::sprite_assets::Find(Clip::Walk,static_cast<unsigned>(character),cat::sprite_assets::kCareSprites);
-        if(walk && walk->nominalFramesPerSecond>0 && walk->program.intro.count && walk->program.outro.count) {
-            const auto neutralStep=food==Food::Meal?walk->program.outro.first+walk->program.outro.count-1:
-                walk->program.intro.first;
-            CHECK(neutral.animation.spriteClip==Clip::Walk &&
-                neutral.animation.spriteFrame==walk->program.steps[neutralStep].frame && !neutral.animation.spriteTimed);
-        } else CHECK(neutral.animation.spriteClip==Clip::Sleep && neutral.animation.spriteFrame==0 && !neutral.animation.spriteTimed);
+        CHECK(neutral.animation.spriteClip==Clip::None&&neutral.animation.frame==4&&!neutral.animation.spriteTimed);
+        CHECK(cat::deform::Zero(neutral.animation.joints)&&neutral.animation.scaleX==1&&neutral.animation.scaleY==1);
         CHECK(Valid(state));
     }
 }
@@ -798,8 +793,54 @@ void ContactRecoveryFinishesBeforeAcceptedFishStarts() {
     CHECK(state.pet.feedCount==1 && state.memory.meals==1 && Valid(state));
 }
 
+void CompanionJumpReturnOwnsTheCompletedRecoveryBoundary() {
+    using Clip=cat::sprite_sequence::Clip;
+    const auto* jump=cat::sprite_assets::Find(Clip::Jump,0,cat::sprite_assets::kCareSprites);
+    const auto* walk=cat::sprite_assets::Find(Clip::Walk,0,cat::sprite_assets::kCareSprites);
+    CHECK(jump&&walk);
+    const auto profile=cat::video_ground_bridge::JumpTurns(*walk);CHECK(profile.valid);
+    const auto recovery=cat::sprite_sequence::Duration(jump->program,jump->program.outro);
+    const auto turn=cat::sprite_sequence::Duration(walk->program,walk->program.outro)-profile.exitOffsetMs;
+    for(const auto character:{cat::Character::Cream,cat::Character::Tuxedo}) {
+        State state=NewState(born);state.preferences.character=character;state.pet.position=.2;
+        Model model;model.Bind(state);model.Reset(0,2400,700);
+        auto c=Frame(100,700,120);c.primary.onPlatform=true;
+        c.primaryPlatform={912,400,2100,120,true};c.supportPlatform=c.primaryPlatform;
+        CHECK(model.TrySocial(Interaction::WindowFollow,c));
+        std::uint64_t landed=0,returning=0;
+        for(unsigned frame=0;frame<400;++frame) {
+            Step(model,c,1);const auto physical=model.Physical();const auto view=model.View(c.ticks);
+            if(physical.landed)landed=c.ticks;
+            if(landed && c.ticks-landed>=recovery && view.animation.spriteClip==Clip::Walk &&
+                    view.animation.spriteFrame>=57 && view.animation.spriteFrame<=60) {
+                returning=c.ticks;break;
+            }
+        }
+        CHECK(landed&&returning&&returning-landed>=recovery&&returning-landed<=recovery+34);
+        const auto origin=model.View(c.ticks).physical;
+        while(c.ticks-returning<turn+34) {
+            const auto view=model.View(c.ticks);
+            CHECK(view.physical.grounded&&view.physical.onPlatform);
+            CHECK(std::abs(view.physical.x-origin.x)<.01&&std::abs(view.physical.lift-origin.lift)<.01);
+            // The old waitingForStop recovery extension must not resurrect
+            // Jump or reset this just-started real side-to-front turn.
+            if(c.ticks-returning<turn)
+                CHECK(view.animation.spriteClip==Clip::Walk&&view.animation.spriteFrame>=57&&view.animation.spriteFrame<=60);
+            else CHECK(view.animation.spriteClip==Clip::None&&view.animation.frame==4);
+            Step(model,c,1);
+        }
+        const auto settled=model.View(c.ticks);
+        CHECK(settled.motion==cat::animation::Motion::Idle&&settled.animation.spriteClip==Clip::None&&settled.animation.frame==4);
+        CHECK(cat::deform::Zero(settled.animation.joints)&&settled.animation.scaleX==1&&settled.animation.scaleY==1);
+        CHECK(state.pet.feedCount==0&&state.pet.snackCount==0&&Valid(state));
+    }
+}
+
 void AuthoredSleepKeepsItsIdentityIncludingWindowRestAndWake() {
     using Clip=cat::sprite_sequence::Clip;
+    const auto* sleep=cat::sprite_assets::Find(Clip::Sleep,0,cat::sprite_assets::kCareSprites);
+    CHECK(sleep);
+    const auto intro=cat::animation::ReferenceSleepIntroMs(&sleep->program,sleep->frameCount);
     for(unsigned seed=0;seed<20;++seed) {
         State state=NewState(born+seed);state.preferences.character=cat::Character::Cream;
         Model model;model.Bind(state);model.Reset(0,1600,700);
@@ -810,7 +851,8 @@ void AuthoredSleepKeepsItsIdentityIncludingWindowRestAndWake() {
             c.ticks=100+seconds*1000;c.nowUtc=born+seed+seconds;model.Tick(c);
             const auto view=model.View(c.ticks);
             CHECK(view.motion==cat::animation::Motion::Sleep);
-            CHECK(view.animation.spriteClip==Clip::Sleep && view.animation.spriteTimed);
+            if(seconds*1000<intro)CHECK(view.animation.spriteClip==Clip::Sleep&&view.animation.spriteTimed);
+            else CHECK(view.animation.spriteClip==Clip::None&&!view.animation.spriteTimed&&view.animation.frame==6);
         }
     }
     State state=NewState(born);state.preferences.character=cat::Character::Cream;state.pet.position=.2;
@@ -826,6 +868,7 @@ void AuthoredSleepKeepsItsIdentityIncludingWindowRestAndWake() {
     Step(model,c,static_cast<unsigned>((recovery+16)/17+1));
     c.primary.x=model.Physical().x+65;c.primaryMotion=cat::animation::Motion::Sleep;
     CHECK(model.TrySocial(Interaction::SharedSleep,c));model.Tick(c);
+    RequireCareStarts(model,c,Clip::Sleep); // Finish an in-progress, contact-owned jump return before the nap clock begins.
     CHECK(model.View(c.ticks).physical.onPlatform);
     CHECK(model.View(c.ticks).animation.spriteClip==Clip::Sleep);
     const auto started=c.ticks;
@@ -843,6 +886,7 @@ int main() {
         AuthoredCompanionWalkRunUsesItsRealRegisteredTravel();RegisteredCompanionCareFinishesItsWholeProgram();
         OptionalWalkReviewKeepsBothCoatsOnTheRegisteredStride();
         ContactRecoveryFinishesBeforeAcceptedFishStarts();
+        CompanionJumpReturnOwnsTheCompletedRecoveryBoundary();
         AuthoredSleepKeepsItsIdentityIncludingWindowRestAndWake();
         std::cout<<"companion checks passed: "<<checks<<'\n';return 0;
     } catch(const std::exception& e) { std::cerr<<e.what()<<'\n';return 1; }

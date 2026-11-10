@@ -52,6 +52,17 @@ def pack(directory, clip, character):
         atlas.paste(frame,(x,y))
         records.append({'source_frame_index':original,'source_png_sha256':sha(path),
                         'rect':[x,y,*cell],'anchor':root})
+    # One offline material policy covers legacy care/fallback and every video
+    # action. Apply only RGB after packing; original alpha/rects/roots remain.
+    identity=directory.parent/'styled-sprites/identity-policy.json'
+    if character=='tuxedo' and identity.exists():
+        from lock_tuxedo_identity import apply_palette,spec
+        policy=json.loads(identity.read_text())
+        for field in ('method','curve_input','curve_output'):
+            if policy[field]!=spec()[field]:raise ValueError('Tuxedo identity policy/tool drift')
+        mask_path=identity.parent/'identity-masks'/f'c8-r{RESOURCES[clip["clip"]]}.png'
+        with Image.open(mask_path) if mask_path.exists() else Image.new('L',atlas.size) as mask:
+            atlas,_=apply_palette(atlas,mask)
     return atlas, records, columns, rows
 
 def main():
@@ -66,6 +77,12 @@ def main():
              source(directory/'contact-reference.json','contacts'),
              source(ROOT/'tools/matte_walk_video.py','matting_importer'),
              source(ROOT/'tools/video_tuxedo/transfer.py','appearance_importer')]
+    identity=directory.parent/'styled-sprites/identity-policy.json'
+    if identity.exists():
+        sources.extend([source(ROOT/'tools/lock_tuxedo_identity.py','appearance_identity_importer'),
+                        source(identity,'appearance_identity_policy')])
+        for mask in sorted((identity.parent/'identity-masks').glob('*.png')):
+            sources.append(source(mask,'appearance_identity_mask_'+mask.stem))
     for clip in config['clips']:
         name=clip['clip']; original_alpha=None
         role='input_video' if name=='walk' else 'input_video_'+name

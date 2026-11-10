@@ -1,0 +1,129 @@
+{
+  "schema": 1,
+  "character": "cream",
+  "source": "assets/cat.png",
+  "sha256": "f92c5b30167b8978252c812af65ac99ec5be1e7c79fffa1bf3d94810b25d9803",
+  "canvas": [
+    1774,
+    887
+  ],
+  "resource_id": 101,
+  "alpha_ignore_at_or_below": 16,
+  "reference_height": 367,
+  "geometry_policy": "retain original head/body proportions; no whole-sprite weight stretching",
+  "frames": [
+    {
+      "frame": 0,
+      "pose": "walk-reach",
+      "rect": [
+        32,
+        54,
+        389,
+        336
+      ],
+      "anchor": [
+        194.5,
+        336
+      ]
+    },
+    {
+      "frame": 1,
+      "pose": "walk-pass",
+      "rect": [
+        484,
+        54,
+        381,
+        339
+      ],
+      "anchor": [
+        190.5,
+        339
+      ]
+    },
+    {
+      "frame": 2,
+      "pose": "walk-push",
+      "rect": [
+        925,
+        53,
+        384,
+        338
+      ],
+      "anchor": [
+        192.0,
+        338
+      ]
+    },
+    {
+      "frame": 3,
+      "pose": "walk-recover",
+      "rect": [
+        1357,
+        54,
+        396,
+        339
+      ],
+      "anchor": [
+        198.0,
+        339
+      ]
+    },
+    {
+      "frame": 4,
+      "pose": "front-sit",
+      "rect": [
+        56,
+        468,
+        329,
+        366
+      ],
+      "anchor": [
+        164.5,
+        366
+      ]
+    },
+    {
+      "frame": 5,
+      "pose": "front-smile",
+      "rect": [
+        497,
+        467,
+        325,
+        367
+      ],
+      "anchor": [
+        162.5,
+        367
+      ]
+    },
+    {
+      "frame": 6,
+      "pose": "curled-sleep",
+      "rect": [
+        907,
+        552,
+        411,
+        271
+      ],
+      "anchor": [
+        205.5,
+        271
+      ]
+    },
+    {
+      "frame": 7,
+      "pose": "bowl-eating",
+      "rect": [
+        1389,
+        520,
+        357,
+        318
+      ],
+      "anchor": [
+        178.5,
+        318
+      ]
+    }
+  ],
+  "scope": "The exact eight-pose design reference. Source-video camera angles and mouth poses are separate motion artwork, not newly matched reference poses."
+}

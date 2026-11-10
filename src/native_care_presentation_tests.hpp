@@ -7,7 +7,7 @@ int NativeCarePresentationRenderTest(std::string& context) {
     if(!cat::sprite_assets::Find(Clip::Groom,0,cat::sprite_assets::kCareSprites))return 0;
     Surface canvas;
     if(!canvas.Create(420,320))return 330;
-    const auto body=cat::nutrition::VisualModifiers(g.nutrition);
+    const auto body=cat::appearance::VisualModifiers(g.nutrition,g.preferences.character);
     auto idle=cat::animation::Evaluate(Motion::Idle,0,500000,1);idle.face={};idle.joints={};
     auto groom=idle;cat::animation::AttachSprite(groom,Clip::Groom,0);cat::animation::UseAuthoredSprite(groom);
     auto neutral=idle;neutral.spriteClip=Clip::Sleep;neutral.spriteFrame=0;neutral.spriteTimed=false;

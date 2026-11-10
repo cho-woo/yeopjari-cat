@@ -39,7 +39,7 @@ int Simulate(Row& row,std::string& context) {
     const auto saved=host.Saved();
     const auto start=host.now;
     row.startX=g.physics.RenderPose().x;
-    row.body=cat::nutrition::VisualModifiers(g.nutrition);
+    row.body=cat::appearance::VisualModifiers(g.nutrition,g.preferences.character);
     row.frames.reserve(Count);
     const auto* walk=LoadedCareSprite(Clip::Walk,row.character);
     if(!walk || walk->layout->program.loop.count!=20 || walk->layout->nominalFramesPerSecond!=24 ||
@@ -61,7 +61,7 @@ int Simulate(Row& row,std::string& context) {
             physical.grounded,g.waitingForStop,WalkingVelocity(physical));
         const auto pose=PrimaryDisplayedPose(host.now,physical);
         const auto* asset=CareSpriteFor(pose,row.character);
-        const unsigned source=asset?SpriteFrameFor(pose,*asset->layout):0;
+        const unsigned source=asset?SpriteFrameFor(pose,*asset->layout):static_cast<unsigned>(pose.frame);
         const double velocity=WalkingVelocity(physical);
         if(g.motion==Motion::Walk && std::abs(velocity)>2 && pose.spriteClip!=Clip::Walk) {
             context+=" requested Walk selected clip="+std::to_string(static_cast<unsigned>(pose.spriteClip));return 543;

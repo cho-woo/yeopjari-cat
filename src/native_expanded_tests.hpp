@@ -13,7 +13,7 @@ int NativeExpandedRenderTest(std::string& context) {
     if (!canvas.Create(420,320)) return 120;
     const auto originalPreferences = cat::SerializePreferences(g.preferences);
     const auto originalNutrition = cat::nutrition::Serialize(g.nutrition);
-    const auto body = cat::nutrition::VisualModifiers(g.nutrition);
+    const auto body = cat::appearance::VisualModifiers(g.nutrition,g.preferences.character);
     auto draw = [&](cat::Character character, cat::Outfit outfit, const cat::animation::Pose& pose) {
         Graphics graphics(canvas.image.get());
         graphics.SetCompositingMode(CompositingModeSourceCopy); graphics.Clear(Color(0,0,0,0));

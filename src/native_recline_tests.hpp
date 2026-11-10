@@ -33,7 +33,7 @@ int NativeReclineRenderTest(std::string& context) {
     for(int c=0;c<1;++c)for(int facing:{-1,1})for(double condition:{0.,50.,100.}) {
         const auto character=cat::kAvailableCharacters[c];
         auto state=g.nutrition;state.bodyCondition=condition;
-        const auto body=cat::nutrition::VisualModifiers(state);
+        const auto body=cat::appearance::VisualModifiers(state,character);
         const REAL scale=110.0f/CurrentArt(character).base.standingHeight;
         const auto draw=[&](const cat::animation::Pose& pose) {
             Graphics graphics(canvas.image.get());configure(graphics);
