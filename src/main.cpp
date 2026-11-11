@@ -1857,7 +1857,7 @@ void KeepOnWorkArea(bool reposition = false) {
     if (changed || dpiChanged || reposition || !g.physicsReady) ResetMovement();
 }
 double Random(double low, double high) { return std::uniform_real_distribution<double>(low, high)(g.random); }
-void SetMotion(Motion motion, ULONGLONG duration,ULONGLONG actionTicks=0) {
+void SetMotion(Motion motion, ULONGLONG duration,ULONGLONG actionTicks=0,bool continueManualMotion=false) {
     if(motion==Motion::BoxSit)motion=Motion::Idle; // Retired box/bag events cannot re-enter through legacy queues.
     const auto ticks=actionTicks?actionTicks:g.autonomousDispatching?g.autonomousTick:GetTickCount64();
     const auto body=cat::appearance::VisualModifiers(g.nutrition,g.preferences.character);
@@ -1876,7 +1876,10 @@ void SetMotion(Motion motion, ULONGLONG duration,ULONGLONG actionTicks=0) {
         (motion==Motion::Idle || motion==Motion::Watch);
     ++g.motionSerial;
     g.retiredBoxPending = false; // A newer action owns its full presentation.
-    g.manualMotionActive = false; // A newer explicit action or physical safety stop revokes the request.
+    // A real travelling landing keeps its existing input owner while the
+    // ground bridge chooses its next pose. A transient false here would make
+    // a paused-roaming keyboard cat latch a stop before ownership is restored.
+    g.manualMotionActive = continueManualMotion && g.manualMotionActive;
     using Clip=cat::sprite_sequence::Clip;
     const auto clip=motion==Motion::Groom?Clip::Groom:motion==Motion::Eat?Clip::Eat:
         motion==Motion::Treat?Clip::Treat:motion==Motion::Punch?Clip::Punch:Clip::None;
@@ -4734,7 +4737,7 @@ void AdvancePrimaryMotion(ULONGLONG ticks, double elapsed) {
             Motion resume=carried.resume;
             if(KeyboardPlayActive())resume=keyboardPlay.input.Direction()?
                 (keyboardPlay.input.Running()?Motion::Zoomies:Motion::Walk):Motion::Idle;
-            SetMotion(resume,carried.resumeDurationMs,ticks);
+            SetMotion(resume,carried.resumeDurationMs,ticks,manual);
             g.speed=carried.baseSpeed*g.dpiScale;g.manualMotionActive=manual;
             g.groundArtBridge.ContinueLocomotion(ticks);
             if(KeyboardPlayActive()){
