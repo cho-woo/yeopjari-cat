@@ -114,6 +114,7 @@ void MovingFailure(const char* phase,const MovingJump& jump,double normalPeak) {
 }
 
 int Run() {
+    CreateDirectoryW(L"render-self-test",nullptr);
     Host host;
     std::string characters;
     int result=0;unsigned clickThroughPixels=0;

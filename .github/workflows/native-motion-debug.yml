@@ -1,0 +1,41 @@
+name: Diagnose native motion (never publish)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash tools/setup.sh
+      - run: bash build.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: diagnostic-exe
+          path: release/YeopjariCat.exe
+  diagnose:
+    needs: build
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: diagnostic-exe
+      - name: Run production self-test and print motion failure context
+        shell: pwsh
+        run: |
+          $process = Start-Process -FilePath ./YeopjariCat.exe -ArgumentList '--self-test' -PassThru -Wait
+          Get-ChildItem render-self-test -Recurse -File -Include '*failure*.txt','*report.json' | ForEach-Object {
+            Write-Host $_.FullName
+            Get-Content $_.FullName -Raw | Write-Host
+          }
+          if ($process.ExitCode -ne 0) { throw "Diagnostic native self-test: $($process.ExitCode)" }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: diagnostic-motion-context
+          path: |
+            render-self-test/*failure*.txt
+            render-self-test/*report.json
+            render-self-test/jump-continuity/failure.txt

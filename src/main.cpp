@@ -3877,7 +3877,7 @@ LRESULT CALLBACK KeyboardPlayHook(int code,WPARAM message,LPARAM data) {
 bool BeginKeyboardCapture(ULONGLONG ticks) {
     keyboardPlay.waitForRelease.fill(false);
     if(!keyboardPlay.fixture) {
-        for(unsigned key:std::array<unsigned,9>{{VK_LEFT,VK_RIGHT,'A','D',VK_SHIFT,VK_LSHIFT,VK_RSHIFT,VK_SPACE,'X'}})
+        for(unsigned key:std::array<unsigned,8>{{VK_LEFT,VK_RIGHT,'A','D',VK_SHIFT,VK_LSHIFT,VK_RSHIFT,VK_SPACE}})
             keyboardPlay.waitForRelease[key]=(GetAsyncKeyState(static_cast<int>(key))&0x8000)!=0;
         keyboardPlay.hook=SetWindowsHookExW(WH_KEYBOARD_LL,KeyboardPlayHook,g.instance,0);
         if(!keyboardPlay.hook){keyboardPlay.requested=false;Speak(L"키보드 놀이를 켜지 못했어요",2400);return false;}
