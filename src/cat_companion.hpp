@@ -607,6 +607,9 @@ public:
         }
         if(displayed==cat::animation::Motion::Groom && s.physical.grounded && !waitingForStop_) {
             s.animation=cat::cursor::GroomPose(elapsed,displayedFacing,nextDecision_>=motionStart_?nextDecision_-motionStart_:0);
+            if(const auto* groom=Registered(cat::sprite_sequence::Clip::Groom))
+                if(std::string_view(groom->sourcePath).find("assets/video-actions/")==0)
+                    cat::animation::AttachSprite(s.animation,cat::sprite_sequence::Clip::Groom,elapsed);
         }
         if(displayed==cat::animation::Motion::Stretch && wakingFromSleep_ && sleepVariant_==0 &&
                 s.physical.grounded && (!s.physical.onPlatform || authoredSleep) &&

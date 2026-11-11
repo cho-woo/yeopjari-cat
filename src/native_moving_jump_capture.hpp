@@ -70,7 +70,7 @@ int Run() {
         "\",\"render_source\":\"Windows GDI+ / Box2D\",\"desktop_recording\":false,\"fps\":30,"
         "\"simulation_fps\":60,\"frame_count\":600,\"canvas\":[1280,320],\"display_height_logical_px\":110,"
         "\"scenario\":\"10s walk-forward-jump-walk; 10s run-forward-jump-run\","
-        "\"artwork\":\"existing artwork; new Seedance jump poses not yet generated\",\"new_painted_frames\":0}\n";
+        "\"artwork\":\"Dropshot reference-conditioned jump video frames\",\"new_painted_frames\":0,\"new_video_frames\":62}\n";
     return WriteBytes(L"render-self-test/moving-jump/trace.json",trace.str())&&
         WriteBytes(L"render-self-test/moving-jump/capture.json",metadata)?0:813;
 }

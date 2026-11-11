@@ -70,13 +70,33 @@ void CorruptionDoesNotChangeAcceptedHistory() {
     }
     CHECK(notice.SetAvailable({1, 7, 0}, "1.9.0"));
     CHECK(notice.Ready(Quiet()));
-    CHECK(std::wstring(cat::update::kCatUpdateMessage) == L"프로그램 업데이트\n해줘랴 냥!");
+    CHECK(std::wstring(cat::update::kCatUpdateMessage) == L"업데이트해줘");
+}
+void PersistentUntilInstalled() {
+    cat::update::Announcement notice;
+    CHECK(notice.SetAvailable({2,0,28},"2.0.29"));
+    CHECK(notice.HasAvailable({2,0,28}));
+    notice.MarkAnnounced();
+    CHECK(!notice.Ready(Quiet()));
+    CHECK(notice.HasAvailable({2,0,28}));
+    cat::update::Announcement restarted;
+    CHECK(restarted.Restore(notice.Serialize()));
+    CHECK(restarted.HasAvailable({2,0,28}));
+    CHECK(!restarted.HasAvailable({2,0,29}));
+    CHECK(!restarted.SetAvailable({2,0,28},"2.0.28"));
+    CHECK(!restarted.HasAvailable({2,0,28}));
+    cat::update::Announcement cleared;
+    CHECK(cleared.Restore(restarted.Serialize()));
+    CHECK(!cleared.HasAvailable({2,0,28}));
+    CHECK(cleared.Restore("schema=1\nversion=2.0.29\n"));
+    CHECK(cleared.HasAvailable({2,0,28}));
 }
 }
 int main() {
     try {
         NewerVersionOnly(); WaitWithoutDroppingTheNotice();
         SurvivesRestartAndLaterReleases(); CorruptionDoesNotChangeAcceptedHistory();
+        PersistentUntilInstalled();
         std::cout << "Update notice: 4 groups; " << checks << " checks passed\n";
         return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }

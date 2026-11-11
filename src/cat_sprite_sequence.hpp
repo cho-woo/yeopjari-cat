@@ -9,15 +9,19 @@
 namespace cat::sprite_sequence {
 
 // The first eight ordinals are stable asset identifiers. None is not a sheet.
-enum class Clip { Groom, Sleep, Box, Fish, Punch, Eat, Jump, Treat, None, Walk, Run };
+enum class Clip { Groom, Sleep, Box, Fish, Punch, Eat, Jump, Treat, None, Walk, Run, Knead, Reach,
+    BallPlay, ToyPlay, Brake, Slide, Stumble, Climb, FlyHunt };
 constexpr std::array<Clip,8> kClips{{Clip::Groom,Clip::Sleep,Clip::Box,Clip::Fish,
                                    Clip::Punch,Clip::Eat,Clip::Jump,Clip::Treat}};
-constexpr std::array<Clip,10> kAuthoredClips{{Clip::Groom,Clip::Sleep,Clip::Box,Clip::Fish,
-    Clip::Punch,Clip::Eat,Clip::Jump,Clip::Treat,Clip::Walk,Clip::Run}};
+constexpr std::array<Clip,19> kAuthoredClips{{Clip::Groom,Clip::Sleep,Clip::Box,Clip::Fish,
+    Clip::Punch,Clip::Eat,Clip::Jump,Clip::Treat,Clip::Walk,Clip::Run,Clip::Knead,Clip::Reach,
+    Clip::BallPlay,Clip::ToyPlay,Clip::Brake,Clip::Slide,Clip::Stumble,Clip::Climb,Clip::FlyHunt}};
 constexpr unsigned kMaxAuthoredFrames=256,kMaxProgramSteps=512,kMaxProgramCues=64;
 constexpr std::uint32_t kMaxStepMs=60000,kMaxProgramMs=86400000;
 constexpr bool KnownClip(Clip clip) {
-    return static_cast<unsigned>(clip)<8 || clip==Clip::Walk || clip==Clip::Run;
+    return static_cast<unsigned>(clip)<8 || clip==Clip::Walk || clip==Clip::Run ||
+        clip==Clip::Knead || clip==Clip::Reach ||
+        (clip>=Clip::BallPlay&&clip<=Clip::FlyHunt);
 }
 struct Grid { unsigned columns=0,rows=0,count=0; };
 constexpr Grid GridFor(Clip clip,unsigned sheetFrames=0) {
@@ -31,7 +35,9 @@ constexpr Grid GridFor(Clip clip,unsigned sheetFrames=0) {
     case Clip::Eat:grid={3,4,12};break;
     case Clip::Jump:grid={4,4,16};break;
     case Clip::Treat:grid={6,4,24};break;
-    case Clip::Walk:case Clip::Run:grid={8,1,8};break;
+    case Clip::Walk:case Clip::Run:case Clip::Knead:case Clip::Reach:grid={8,1,8};break;
+    case Clip::BallPlay:case Clip::ToyPlay:case Clip::Brake:case Clip::Slide:case Clip::Stumble:case Clip::Climb:case Clip::FlyHunt:
+        grid={8,1,8};break;
     case Clip::None:break;
     }
     return sheetFrames==0 || sheetFrames==grid.count?grid:Grid{};
@@ -550,7 +556,8 @@ inline Frame Sample(Clip clip,std::uint64_t elapsed,const Options& options={}) {
         const double phase=std::isfinite(options.cyclePhase)?options.cyclePhase-std::floor(options.cyclePhase):0;
         return {std::min(7u,static_cast<unsigned>(phase*8)),0,0,true,true,false,true};
     }
-    case Clip::None:break;
+    case Clip::None:case Clip::Knead:case Clip::Reach:case Clip::BallPlay:case Clip::ToyPlay:
+    case Clip::Brake:case Clip::Slide:case Clip::Stumble:case Clip::Climb:case Clip::FlyHunt:break;
     }
     return {0,0,0,false,true,true,true};
 }

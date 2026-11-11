@@ -193,6 +193,16 @@ void ContainerPathsAndFeather() {
     CHECK(lure.offset==before.offset && lure.velocity==before.velocity);
     for (int tick=0;tick<60*8;++tick) lure.Advance(1.0/60);
     CHECK(std::abs(lure.offset)<.01 && std::abs(lure.velocity)<.02);
+    for(const int fps:{30,60,120}) {
+        Lure released;released.offset=72;released.velocity=0;
+        released.Advance(1./fps);
+        CHECK(released.offset>65&&released.offset<72); // A recorded release must not snap to the old26px limit.
+        for(int tick=0;tick<fps*8;++tick) {
+            released.Advance(1./fps);
+            CHECK(std::isfinite(released.offset)&&std::abs(released.offset)<=72);
+        }
+        CHECK(std::abs(released.offset)<.01&&std::abs(released.velocity)<.02);
+    }
 }
 
 cat::toy::AutoDecision AdvanceAutomatic(cat::toy::Automatic& automatic,

@@ -49,13 +49,16 @@ CLIPS=(('groom','Groom',4,4),('sleep','Sleep',4,3),('box','Box',4,2),('fish','Fi
        ('punch','Punch',4,3),('eat','Eat',3,4),('jump','Jump',4,4),('treat','Treat',6,4))
 LAYOUT={name:(index,enum,columns,rows) for index,(name,enum,columns,rows) in enumerate(CLIPS)}
 LAYOUT.update({'walk':(9,'Walk',4,2),'run':(10,'Run',4,2)})
+LAYOUT.update({'knead':(11,'Knead',8,1),'reach':(12,'Reach',8,1)})
+LAYOUT.update({name:(13+index,enum,8,1) for index,(name,enum) in enumerate(
+    [('ball','BallPlay'),('toy','ToyPlay'),('brake','Brake'),('slide','Slide'),('stumble','Stumble'),('climb','Climb'),('fly','FlyHunt')])})
 MAX_FRAMES=256
 MAX_STEPS=512
 MAX_CUES=64
 MAX_DURATION_MS=24*60*60*1000
 MAX_BYTES=32*1024*1024
 MAX_PIXELS=32*1024*1024
-MAX_RESIDENT_PIXELS=48*1024*1024
+MAX_RESIDENT_PIXELS=64*1024*1024
 MAX_SIDE=16384
 HEADER='src/care_sprites.generated.hpp'
 RC='src/care_sprites.generated.rc'
@@ -273,11 +276,16 @@ def load_entries(manifest_path):
                 values=alpha[scanline*width+x:scanline*width+x+fw];minimum=min(minimum,min(values));maximum=max(maximum,max(values))
             require(minimum<=16 and maximum>16,f'{frame_label}: frame must contain transparent padding and visible artwork')
             resident_pixels+=fw*fh
-            require(resident_pixels<=MAX_RESIDENT_PIXELS,f'{label}: decoded frame storage exceeds192MiB resident budget')
+            require(resident_pixels<=MAX_RESIDENT_PIXELS,f'{label}: decoded frame storage exceeds256MiB resident budget')
             frames.append({'rect':[x,y,fw,fh],'anchor':fixed_anchor})
         filename=f'c{character}-{name}.png'
         # 301..314 remain reserved by the retired-audio compatibility checks.
-        resource=400+character*2+(name=='run') if name in ('walk','run') else 113+character*8+clip_index
+        if clip_index>=13:
+            resource=430+character*32+clip_index-13
+        elif name in ('knead','reach'):
+            resource=440+character*2+(name=='reach')
+        else:
+            resource=400+character*2+(name=='run') if name in ('walk','run') else 113+character*8+clip_index
         entries.append({'clip':name,'enum':enum,'character':character,'resource':resource,'schema':schema,
                         'columns':columns,'rows':rows,'reference_height':reference,'width':width,'height':height,
                         'frames':frames,'filename':filename,'sha256':digest,'data':data,'program':program,'stride_pixels':stride,
@@ -413,8 +421,36 @@ def natural_locomotion(root,originals):
         result=[dict(entry,resource=401) if entry is run else entry for entry in result]
     result.sort(key=lambda value:(value['character'],LAYOUT[value['clip']][0]))
     require(sum(frame['rect'][2]*frame['rect'][3] for entry in result for frame in entry['frames'])<=MAX_RESIDENT_PIXELS,
-            'Natural gait frame storage exceeds192MiB resident budget')
+            'Natural gait frame storage exceeds256MiB resident budget')
     return result,len(replacements)
+
+
+def video_action_entries(root,originals):
+    directory=Path(root)/'assets/video-actions'
+    manifest=directory/'manifest.json'
+    if not manifest.exists():return originals
+    proof=json.loads((directory/'provenance.json').read_text(encoding='utf-8'))
+    require(proof.get('schema')==1 and proof.get('method')=='dropshot_video_extraction',
+            'Invalid video action provenance')
+    for record in proof['files']:
+        path=(directory/record['path']).resolve()
+        require(path.is_relative_to(directory.resolve()) and path.is_file(), 'Missing video action source')
+        require(hashlib.sha256(path.read_bytes()).hexdigest()==record['sha256'],
+                'Video action source or atlas drift: '+record['path'])
+    require(hashlib.sha256(manifest.read_bytes()).hexdigest()==proof['manifest_sha256'],
+            'Video action manifest drift')
+    replacements=load_entries(manifest)
+    sources={entry['clip']:entry['source'] for entry in json.loads(manifest.read_text(encoding='utf-8'))['clips']}
+    require({entry['clip'] for entry in replacements}=={'jump','groom','punch','knead','reach','ball','toy','brake','slide','stumble','climb','fish','fly'} and
+            all(entry['character']==0 for entry in replacements), 'Incomplete video action family')
+    for entry in replacements:
+        entry['asset_path']=(Path('assets/video-actions')/sources[entry['clip']]).as_posix()
+    replaced={(entry['clip'],entry['character']) for entry in replacements}
+    result=[entry for entry in originals if (entry['clip'],entry['character']) not in replaced]+replacements
+    result.sort(key=lambda entry:(entry['character'],LAYOUT[entry['clip']][0]))
+    require(sum(frame['rect'][2]*frame['rect'][3] for entry in result for frame in entry['frames'])<=MAX_RESIDENT_PIXELS,
+            'Video actions exceed the resident frame budget')
+    return result
 
 
 def runtime_locomotion(root,originals):
@@ -428,8 +464,10 @@ def runtime_locomotion(root,originals):
         # A complete new family has no dependency on archived flow files. A
         # Walk-only replacement keeps the existing derived Run exactly.
         base=originals if {('walk',0),('run',0)}<=keys else derived_locomotion(root,originals)[0]
-        return natural_locomotion(root,base)
-    return derived_locomotion(root,originals)
+        entries,count=natural_locomotion(root,base)
+    else:
+        entries,count=derived_locomotion(root,originals)
+    return video_action_entries(root,entries),count
 
 
 def derived_locomotion(root,originals):
@@ -478,7 +516,7 @@ def derived_locomotion(root,originals):
     result=[entry for entry in originals if (entry['clip'],entry['character']) not in replaced]+replacements
     result.sort(key=lambda value:(value['character'],LAYOUT[value['clip']][0]))
     require(sum(frame['rect'][2]*frame['rect'][3] for entry in result for frame in entry['frames'])<=MAX_RESIDENT_PIXELS,
-            'Derived frame storage exceeds192MiB resident budget')
+            'Derived frame storage exceeds256MiB resident budget')
     return result,len(replacements)
 
 

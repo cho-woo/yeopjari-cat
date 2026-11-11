@@ -35,6 +35,8 @@ struct Controller::Impl {
     double platformLeft = 0, platformRight = 0, platformHeight = 0;
     double platformTargetX = 0, platformTargetY = 0;
     bool platformCanCollide = false, ballistic = false;
+    bool wallClimbing = false;
+    double brakeGrip = 1;
     double minX = 0.0, maxX = 100.0;
     double ceiling = 100000.0;
     double targetVelocity = 0.0;
@@ -53,6 +55,7 @@ struct Controller::Impl {
         platformShape = b2_nullShapeId;
         hangJoint = b2_nullJointId;
         platformCanCollide = ballistic = false;
+        wallClimbing=false;brakeGrip=1;
     }
 
     void Bounds(double low, double high) {
@@ -61,6 +64,10 @@ struct Controller::Impl {
     }
 
     void CreateBoundary() {
+        if(wallClimbing&&B2_IS_NON_NULL(hangJoint)) {
+            b2DestroyJoint(hangJoint);hangJoint=b2_nullJointId;
+            wallClimbing=false;current.hanging=false;ballistic=true;
+        }
         if (B2_IS_NON_NULL(boundary)) b2DestroyBody(boundary);
         b2BodyDef boundaryDef = b2DefaultBodyDef();
         boundary = b2CreateBody(world, &boundaryDef);
@@ -208,7 +215,7 @@ struct Controller::Impl {
 
     void Step(int remainingSteps) {
         previous = current;
-        if (B2_IS_NON_NULL(hangJoint)) {
+        if (!wallClimbing && B2_IS_NON_NULL(hangJoint)) {
             // Shorten a physical constraint gradually. The solver, gravity and
             // momentum move the body; no pose/position override performs the catch.
             b2DistanceJoint_SetLength(hangJoint,
@@ -244,8 +251,8 @@ struct Controller::Impl {
         const double supportVx = current.onPlatform ? platformVelocity.x * kPixelsPerMeter : 0;
         const double desired = targetVelocity + supportVx;
         const bool braking = std::abs(desired) < std::abs(vx) || desired * vx < 0.0;
-        const double response = braking ? 0.10 : 0.13;
-        const double maxAcceleration = current.grounded ? (braking ? 680.0 : 460.0) : 180.0;
+        const double response = braking ? 0.10/brakeGrip : 0.13;
+        const double maxAcceleration = current.grounded ? (braking ? 680.0*brakeGrip : 460.0) : 180.0;
         const double acceleration = current.hanging || (ballistic && !current.grounded) ? 0.0 :
             std::clamp((desired-vx)/response, -maxAcceleration, maxAcceleration);
         const float mass = b2Body_GetMass(body);
@@ -391,6 +398,7 @@ void Controller::RemovePlatform() {
     const bool supported = impl_->current.onPlatform || impl_->current.hanging;
     if (B2_IS_NON_NULL(impl_->hangJoint)) b2DestroyJoint(impl_->hangJoint);
     impl_->hangJoint = b2_nullJointId;
+    impl_->wallClimbing=false;
     impl_->current.hanging = false;
     if (supported) b2Body_SetLinearDamping(impl_->body, 0);
     if (B2_IS_NON_NULL(impl_->platform)) b2DestroyBody(impl_->platform);
@@ -409,6 +417,43 @@ void Controller::RemovePlatform() {
 bool Controller::OnPlatform() const { return impl_->current.onPlatform; }
 
 bool Controller::Hanging() const { return impl_->current.hanging; }
+
+bool Controller::BeginWallClimb(double risePixels) {
+    const auto pose=impl_->current;
+    if(!pose.grounded||pose.onPlatform||pose.hanging||!std::isfinite(risePixels)||
+            risePixels<20||risePixels>impl_->ceiling||impl_->maxX-pose.x>2)return false;
+    b2PrismaticJointDef joint=b2DefaultPrismaticJointDef();
+    joint.bodyIdA=impl_->boundary;joint.bodyIdB=impl_->body;
+    joint.localAnchorA=b2Body_GetPosition(impl_->body);
+    joint.localAnchorB={0,0};joint.localAxisA={0,1};
+    joint.enableLimit=true;joint.lowerTranslation=0;
+    joint.upperTranslation=static_cast<float>(risePixels/kPixelsPerMeter);
+    joint.enableMotor=true;joint.motorSpeed=0;
+    joint.maxMotorForce=b2Body_GetMass(impl_->body)*kGravity*2.5f;
+    joint.collideConnected=true;
+    impl_->hangJoint=b2CreatePrismaticJoint(impl_->world,&joint);
+    impl_->wallClimbing=true;impl_->current.hanging=true;
+    impl_->targetVelocity=0;impl_->previous=impl_->current;
+    b2Body_SetAwake(impl_->body,true);
+    return true;
+}
+void Controller::SetWallClimbSpeed(double pixelsPerSecond) {
+    if(!impl_->wallClimbing||!std::isfinite(pixelsPerSecond))return;
+    b2Body_SetAwake(impl_->body,true);
+    b2PrismaticJoint_SetMotorSpeed(impl_->hangJoint,
+        static_cast<float>(std::clamp(pixelsPerSecond,-100.,100.)/kPixelsPerMeter));
+}
+void Controller::EndWallClimb() {
+    if(!impl_->wallClimbing)return;
+    b2DestroyJoint(impl_->hangJoint);impl_->hangJoint=b2_nullJointId;
+    impl_->wallClimbing=false;impl_->current.hanging=false;
+    impl_->current.grounded=false;impl_->ballistic=true;
+    impl_->previous=impl_->current;b2Body_SetAwake(impl_->body,true);
+}
+bool Controller::WallClimbing() const {return impl_->wallClimbing;}
+void Controller::SetBrakeGrip(double grip) {
+    impl_->brakeGrip=std::isfinite(grip)?std::clamp(grip,.12,1.5):1;
+}
 
 bool Controller::BeginHang(double edgeX, double height) {
     if (!impl_->current.onPlatform || impl_->current.hanging || !std::isfinite(edgeX) ||
@@ -446,6 +491,7 @@ bool Controller::BeginHang(double edgeX, double height) {
 }
 
 bool Controller::EndHang(bool climb) {
+    if(impl_->wallClimbing){EndWallClimb();return false;}
     if (!impl_->current.hanging || B2_IS_NULL(impl_->hangJoint)) return false;
     double vx = 0, vy = 0;
     const auto platformPosition = b2Body_GetPosition(impl_->platform);

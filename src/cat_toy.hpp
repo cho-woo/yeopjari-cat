@@ -101,7 +101,8 @@ inline double Duration(Kind kind, Phase phase) {
     case Phase::Inspect: return kind == Kind::Ball ? 150 : kind == Kind::FishingRod ? 350 : 700;
     case Phase::Interact:
         switch (kind) {
-        case Kind::Ball: case Kind::FishingRod: return 1050;
+        case Kind::Ball: return 1050;
+        case Kind::FishingRod: return 3300;
         case Kind::Box: return 1700;
         case Kind::PaperBag: return 2800;
         case Kind::Catnip: return 4300;
@@ -264,6 +265,7 @@ inline double SessionTarget(const Session& session, double toyX, double catX, do
                             double low, double high) {
     growth = std::max(.1, growth);
     if (session.phase == Phase::BoxExit) return ClampCenter(toyX, low, high);
+    if(session.kind==Kind::FishingRod)return ClampCenter(toyX,low,high);
     if (session.phase == Phase::Exit) {
         const double preferred = toyX - session.entryDirection * 100 * growth;
         const double alternate = toyX + session.entryDirection * 100 * growth;
@@ -286,9 +288,10 @@ struct Lure {
         const int steps = std::max(1, static_cast<int>(std::ceil(seconds * 240)));
         const double step = seconds / steps;
         for (int index = 0; index < steps; ++index) {
+            const double limit=std::max(26.,std::abs(offset)); // Preserve a recorded release outside the ordinary spring arc.
             velocity += (-18 * offset - 3.5 * velocity) * step;
             offset += velocity * step;
-            if (std::abs(offset) > 26) { offset = std::copysign(26.0, offset); velocity *= -.35; }
+            if (std::abs(offset) > limit) { offset = std::copysign(limit, offset); velocity *= -.35; }
         }
     }
 };

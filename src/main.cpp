@@ -50,10 +50,12 @@
 #include "cat_motion_gate.hpp"
 #include "cat_physics.hpp"
 #include "cat_running_jump.hpp"
+#include "cat_lively_motion.hpp"
 #include "cat_environment.hpp"
 #include "cat_cursor_attack.hpp"
 #include "cat_cursor_reach_hop.hpp"
 #include "cat_cursor_animation.hpp"
+#include "video_action_contacts.generated.hpp"
 #include "cat_toy.hpp"
 #include "cat_ball_physics.hpp"
 #include "cat_ball_play.hpp"
@@ -101,6 +103,8 @@ constexpr UINT kFishCommand = 2302;
 constexpr UINT kKeyboardPlayCommand=2304;
 // Fresh IDs: installed action/toy IDs and the companion's 2600 range stay retired/reserved.
 constexpr UINT kManualWalkCommand = 2800, kManualRunCommand = 2801, kManualJumpCommand = 2802;
+constexpr UINT kWallClimbCommand=2803;
+constexpr UINT kFlyHuntCommand=2804;
 // Keep the original IDs: retired action, toy and sound IDs are never reused.
 enum Command {
     FeedCommand = 1010, SnackCommand = 1011, StatusCommand = 1012,
@@ -362,6 +366,12 @@ struct App {
     cat::video_ground_bridge::GroundBridge groundArtBridge;
     bool physicsReady = false, jumpPending = false, jumpLaunched = false;
     bool waitingForStop = false;
+    cat::sprite_sequence::Clip stopClip=cat::sprite_sequence::Clip::None;
+    ULONGLONG stopStarted=0,stopUntil=0;
+    enum class WallPhase {None,Approach,Climb,Return};
+    WallPhase wallPhase=WallPhase::None;
+    ULONGLONG wallStarted=0,wallDeadline=0;
+    bool wallBounds=false;
     bool preciseTimer = false;
     UINT timerInterval = 0;
     double lastPhysicsTime = 0, landingStrength = 0;
@@ -385,6 +395,10 @@ struct App {
     std::uint64_t motionSerial = 0; // Transient ownership; clocks can be rebased during pauses.
     bool autonomousResting = false, autonomousDispatching = false, companionReaction = false;
     bool manualMotionActive = false; // Transient ownership; never changes the saved roaming preference.
+    bool flyActive=false;
+    std::uint64_t flySerial=0;
+    int flyFacing=1;
+    ULONGLONG nextFlyHunt=0;
     cat::random_zoomies::Scheduler randomZoomies;
     std::uint64_t randomZoomiesSerial=0;
     std::mt19937 randomZoomiesRandom{std::random_device{}()};
@@ -786,6 +800,12 @@ void InitializeUpdates() {
     std::string notice;
     if (ReadBytes(g.directory + L"\\update-notice.ini", notice)) updates.announcement.Restore(notice);
 }
+void SaveUpdateAnnouncement() {
+    const std::wstring path=g.directory+L"\\update-notice.ini",temporary=path+L".tmp";
+    if(!WriteBytes(temporary,updates.announcement.Serialize())||
+            !MoveFileExW(temporary.c_str(),path.c_str(),MOVEFILE_REPLACE_EXISTING|MOVEFILE_WRITE_THROUGH))
+        DeleteFileW(temporary.c_str());
+}
 void ToggleAutomaticUpdates() {
     const bool enabled = !updates.automatic;
     const std::wstring path = g.directory + L"\\update-settings.ini", temporary = path + L".tmp";
@@ -915,6 +935,7 @@ void PollUpdates() {
         } else if (completed == UpdateState::Operation::Checking) {
             updates.hasUpdate = cat::update::Compare(result.manifest.version, kVersion) > 0;
             updates.announcement.SetAvailable(kVersion, result.manifest.versionText);
+            SaveUpdateAnnouncement();
             if (updates.hasUpdate) {
                 updates.available = result.manifest;
                 if (updates.manual) ShowUpdateDetails();
@@ -1696,6 +1717,8 @@ void ResetMovement() {
     const double current = std::clamp((g.centerX - g.work.left) / g.dpiScale, low, high);
     g.centerX = g.work.left + current * g.dpiScale;
     g.physics.Reset(current, low, high);
+    g.wallPhase=App::WallPhase::None;g.wallBounds=false;
+    g.stopClip=cat::sprite_sequence::Clip::None;g.stopStarted=g.stopUntil=0;
     // Reserve space for the tallest pose/head. A rapidly raised window can
     // impart a real upward velocity; the work-area roof keeps it visible.
     g.physics.SetCeiling(std::max(1.0, (g.work.bottom - g.work.top) / g.dpiScale - 160.0));
@@ -1715,6 +1738,7 @@ void ResetMovement() {
     ResetPrimaryCarePresentation();
     g.jumpPending = g.jumpLaunched = false;
     g.manualMotionActive = false;
+    g.flyActive=false;g.nextFlyHunt=MotionClock()+90000;
     g.waitingForStop = false;
     g.landedAt = 0;
     g.facing = g.direction;
@@ -1852,14 +1876,20 @@ void KeepOnWorkArea(bool reposition = false) {
     }
     if (changed || reposition || !g.initialized) g.centerX = g.work.left + fraction * (g.work.right - g.work.left);
     const double margin = 96 * g.dpiScale;
-    if (g.work.right - g.work.left > margin * 2) g.centerX = std::clamp(g.centerX, g.work.left + margin, g.work.right - margin);
-    else g.centerX = (g.work.left + g.work.right) / 2.0;
+    if (g.work.right - g.work.left > margin * 2) {
+        if(!g.wallBounds)g.centerX=std::clamp(g.centerX,g.work.left+margin,g.work.right-margin);
+    } else g.centerX = (g.work.left + g.work.right) / 2.0;
     if (changed || dpiChanged || reposition || !g.physicsReady) ResetMovement();
 }
 double Random(double low, double high) { return std::uniform_real_distribution<double>(low, high)(g.random); }
 void SetMotion(Motion motion, ULONGLONG duration,ULONGLONG actionTicks=0,bool continueManualMotion=false) {
+    g.flyActive=false;
     if(motion==Motion::BoxSit)motion=Motion::Idle; // Retired box/bag events cannot re-enter through legacy queues.
     const auto ticks=actionTicks?actionTicks:g.autonomousDispatching?g.autonomousTick:GetTickCount64();
+    g.stopClip=cat::sprite_sequence::Clip::None;g.stopUntil=0;g.physics.SetBrakeGrip(1);
+    if(g.wallPhase!=App::WallPhase::None && motion!=Motion::Hang) {
+        g.physics.EndWallClimb();g.wallPhase=App::WallPhase::None;
+    }
     const auto body=cat::appearance::VisualModifiers(g.nutrition,g.preferences.character);
     const double scale=body.speed*cat::species::ProfileFor(g.preferences.character).movementSpeedMultiplier;
     const auto carried=motion==Motion::Jump && g.physicsReady && !g.perch.active && !g.perch.transitioning?
@@ -1978,8 +2008,21 @@ bool PrimarySocialBoundary(ULONGLONG ticks) {
         !g.approachingToy && !g.approachingUser && g.pendingCare<0;
 }
 void BeginAutonomousRest(ULONGLONG ticks=0) {
+    const auto now=ticks?ticks:GetTickCount64();
+    const bool stopping=g.motion==Motion::Zoomies&&g.physicsReady&&g.physics.CurrentPose().grounded&&!g.physics.CurrentPose().onPlatform&&
+        std::abs(WalkingVelocity(g.physics.CurrentPose()))>40&&!g.toyEngaged&&!KeyboardPlayActive()&&
+        g.wallPhase==App::WallPhase::None;
     SetMotion(Motion::Idle,cat::behavior::Brain::NeutralRestDuration(g.random()),ticks);
     g.autonomousResting=true;g.speed=0;
+    if(stopping) {
+        const auto clip=cat::lively::StopClip(static_cast<unsigned>(g.random()));
+        if(const auto* asset=LoadedCareSprite(clip,g.preferences.character)) {
+            g.stopClip=clip;g.stopStarted=now;
+            g.stopUntil=now+cat::sprite_sequence::ProgramDuration(asset->layout->program);
+            g.physics.SetBrakeGrip(cat::lively::Grip(clip));
+            g.nextDecision=std::max(g.nextDecision,g.stopUntil+1500);
+        }
+    }
 }
 struct PerchCandidate { HWND hwnd = nullptr; RECT rect{}; };
 
@@ -2684,7 +2727,7 @@ unsigned SpriteFrameFor(const cat::animation::Pose& pose,const cat::sprite_asset
 const CareSpriteAtlas* CareSpriteFor(const cat::animation::Pose& pose,cat::Character character) {
     using Clip=cat::sprite_sequence::Clip;
     const auto clip=pose.fishMeal?Clip::Fish:pose.spriteClip;
-    if(clip==Clip::None || (clip!=Clip::Jump && !pose.groundContact))return nullptr;
+    if(clip==Clip::None || (clip!=Clip::Jump && clip!=Clip::Climb && !pose.groundContact))return nullptr;
     if(const auto* sprite=LoadedCareSprite(clip,character)) {
         const auto index=SpriteFrameFor(pose,*sprite->layout);
         if(index<sprite->layout->frameCount && (sprite->frames[index] || sprite->image))return sprite;
@@ -2696,7 +2739,7 @@ bool DrawCareSprite(Graphics& graphics,const cat::animation::Pose& pose,REAL cen
     const auto* sprite=CareSpriteFor(pose,character);
     if(!sprite)return false;
     unsigned index=SpriteFrameFor(pose,*sprite->layout);
-    if(pose.jumpRig) {
+    if(pose.jumpRig && std::string_view(sprite->layout->sourcePath).find("assets/video-actions/")!=0) {
         const auto* walk=LoadedCareSprite(cat::sprite_sequence::Clip::Walk,character);
         if(walk&&cat::video_ground_bridge::JumpTurns(*walk->layout).valid) {
             sprite=walk;index=cat::jump_animation::kSourceFrame;
@@ -2967,16 +3010,33 @@ void DrawToyBackground(Graphics& graphics, REAL localX, REAL ground, ULONGLONG t
         }
     } else if (g.toy == ToyKind::FishingRod) {
         Pen rod(Color(255, 105, 78, 63), 4*u), line(Color(200, 105, 111, 121), .9f*u);
-        const REAL featherX=localX+static_cast<REAL>(g.toyLure.offset)*u;
-        const REAL reachHeight=static_cast<REAL>(58*cat::GrowthScale(g.pet.bornUtc,UtcNow())*
-            cat::appearance::VisualModifiers(g.nutrition,g.preferences.character).bodyHeight);
-        const REAL featherY=ground-(reachHeight-static_cast<REAL>(std::abs(g.toyLure.offset))*.12f)*u;
+        const bool pinned=g.toyEngaged&&g.toySession.phase==cat::toy::Phase::Interact&&
+            g.motion==Motion::ToyPaw&&!g.waitingForStop&&g.physics.CurrentPose().grounded;
+        REAL featherX=localX+static_cast<REAL>(g.toyLure.offset)*u;
+        REAL featherY=ground-(3+static_cast<REAL>(std::abs(g.toyLure.offset))*.12f)*u;
+        bool sourceFeather=false;
+        if(pinned) {
+            if(const auto* asset=LoadedCareSprite(cat::sprite_sequence::Clip::ToyPlay,g.preferences.character)) {
+                cat::sprite_sequence::Options options;options.sheetFrames=asset->layout->frameCount;
+                const auto frame=cat::sprite_sequence::SampleProgram(cat::sprite_sequence::Clip::ToyPlay,
+                    asset->layout->program,static_cast<std::uint64_t>(g.toySession.elapsedMs),options).frame;
+                const auto point=cat::video_actions::ToyProp(static_cast<unsigned>(g.preferences.character),frame);
+                sourceFeather=cat::video_actions::ToyPropVisible(static_cast<unsigned>(g.preferences.character),frame);
+                const auto body=cat::appearance::VisualModifiers(g.nutrition,g.preferences.character);
+                const auto growth=cat::GrowthScale(g.pet.bornUtc,UtcNow());
+                featherX=localX+static_cast<REAL>((g.centerX-g.toyX)/g.dpiScale+point.x*growth*body.bodyWidth)*u;
+                featherY=ground-static_cast<REAL>(point.y*growth*body.bodyHeight)*u;
+            }
+        }
         graphics.DrawLine(&rod,localX+49*u,ground-2*u,localX+34*u,ground-145*u);
         graphics.DrawLine(&line,localX+34*u,ground-145*u,featherX,featherY-6*u);
         SolidBrush base(Color(255, 138, 117, 99)); graphics.FillEllipse(&base,localX+34*u,ground-7*u,30*u,7*u);
-        SolidBrush pink(Color(255, 214, 119, 154)), gold(Color(255, 233, 180, 91));
-        graphics.FillEllipse(&pink,featherX-11*u,featherY-7*u,13*u,20*u);
-        graphics.FillEllipse(&gold,featherX-1*u,featherY-7*u,10*u,18*u);
+        if(pinned&&sourceFeather)return;
+        SolidBrush feather(g.preferences.character==cat::Character::Tuxedo?Color(255,152,113,84):Color(255,216,207,184));
+        SolidBrush light(Color(255,233,224,201));Pen quill(Color(255,126,105,84),.8f*u);
+        graphics.FillEllipse(&feather,featherX-14*u,featherY-3*u,22*u,6*u);
+        graphics.FillEllipse(&light,featherX-2*u,featherY-2*u,15*u,4*u);
+        graphics.DrawLine(&quill,featherX-16*u,featherY+u,featherX+14*u,featherY-u);
     } else if (g.toy == ToyKind::Cushion) {
         const REAL s=static_cast<REAL>(g.dpiScale * std::max(.95, cat::GrowthScale(g.pet.bornUtc,UtcNow())));
         SolidBrush edge(Color(255, 135, 151, 190)), top(Color(255, 178, 192, 222));
@@ -3098,6 +3158,9 @@ cat::animation::Pose PrimaryDisplayedPose(ULONGLONG ticks,const cat::physics::Po
     if(displayed==Motion::Groom && physical.grounded && !g.waitingForStop) {
         pose=cat::cursor::GroomPose(actionElapsed,g.facing,
             g.nextDecision>=g.motionStart?g.nextDecision-g.motionStart:0);
+        if(const auto* groom=LoadedCareSprite(cat::sprite_sequence::Clip::Groom,g.preferences.character))
+            if(std::string_view(groom->layout->sourcePath).find("assets/video-actions/")==0)
+                cat::animation::AttachSprite(pose,cat::sprite_sequence::Clip::Groom,actionElapsed);
     }
     const bool cursorAttack = ApplyCursorAttackPose(pose,ticks,physical);
     if(!cursorAttack)ApplyBallToyPose(pose,ticks,physical);
@@ -3163,6 +3226,25 @@ cat::animation::Pose PrimaryDisplayedPose(ULONGLONG ticks,const cat::physics::Po
     cat::animation::ApplyReferenceNeutralHold(pose,displayed,physical.grounded,WalkingVelocity(physical),
         !g.waitingForStop&&g.groundArtBridge.Neutral()&&!g.jumpPending&&!cursorAttack&&!EnvironmentBusy()&&
             (!g.toyEngaged||g.toy==ToyKind::Ball)&&!g.approachingToy&&!g.approachingUser&&g.pendingCare<0,actionElapsed);
+    using ActionClip=cat::sprite_sequence::Clip;
+    if(!cursorAttack&&physical.grounded&&g.toyEngaged&&g.toy==ToyKind::FishingRod&&
+            g.toySession.phase==cat::toy::Phase::Interact&&g.motion==Motion::ToyPaw&&!g.waitingForStop) {
+        cat::animation::AttachSprite(pose,ActionClip::ToyPlay,static_cast<std::uint64_t>(g.toySession.elapsedMs));
+        pose.flip=false; // The retained feather interaction is a frontal performance.
+    }
+    if(g.stopClip!=ActionClip::None&&ticks>=g.stopStarted&&ticks<g.stopUntil&&physical.grounded&&!cursorAttack) {
+        cat::animation::AttachSprite(pose,g.stopClip,ticks-g.stopStarted);
+        pose.flip=g.facing<0;
+    }
+    if(g.wallPhase==App::WallPhase::Climb&&ticks>=g.wallStarted) {
+        cat::animation::AttachSprite(pose,ActionClip::Climb,ticks-g.wallStarted);
+        pose.flip=false;pose.groundContact=physical.grounded;
+    }
+    if(g.flyActive&&g.flySerial==g.motionSerial&&physical.grounded&&!g.waitingForStop&&
+            std::abs(WalkingVelocity(physical))<=2&&!cursorAttack) {
+        cat::animation::AttachSprite(pose,ActionClip::FlyHunt,actionElapsed);
+        pose.flip=g.flyFacing<0;
+    }
     const auto* authored=CareSpriteFor(pose,g.preferences.character);
     g.authoredBoxVisible=authored && authored->layout->clip==cat::sprite_sequence::Clip::Box;
     if(authored)cat::animation::UseAuthoredSprite(pose);
@@ -3228,17 +3310,20 @@ void Render() {
         const REAL rise = static_cast<REAL>((ticks % 2600) / 2600.0 * 13 * g.dpiScale);
         graphics.DrawString(L"z", -1, &font, PointF(center + 40 * g.dpiScale, bottom - 62 * g.dpiScale - rise), &text);
     }
-    if (ticks < g.bubbleUntil && !g.bubble.empty()) {
-        const bool twoLines = g.bubble.find(L'\n') != std::wstring::npos;
+    const bool updateBubble=!updates.applying&&updates.announcement.HasAvailable(kVersion);
+    if (updateBubble || (ticks < g.bubbleUntil && !g.bubble.empty())) {
+        const auto* bubbleText=updateBubble?cat::update::kCatUpdateMessage:g.bubble.c_str();
+        const bool twoLines = !updateBubble&&g.bubble.find(L'\n') != std::wstring::npos;
         const REAL width = static_cast<REAL>((KeyboardPlayActive()?236:132) * g.dpiScale), height = static_cast<REAL>((twoLines ? 44 : 28) * g.dpiScale);
-        const REAL x = center - width / 2, y = static_cast<REAL>(g.surface.height - bottomInset - (twoLines ? 172 : 156) * g.dpiScale);
+        const REAL x = std::clamp(center-width/2,static_cast<REAL>(g.work.left-windowLeft),
+            static_cast<REAL>(g.work.right-windowLeft)-width), y = static_cast<REAL>(g.surface.height - bottomInset - (twoLines ? 172 : 156) * g.dpiScale);
         GraphicsPath bubble; RoundedRect(bubble, x, y, width, height, static_cast<REAL>(11 * g.dpiScale));
         SolidBrush fill(Color(239, 255, 250, 240)); Pen border(Color(210, 204, 181, 162), static_cast<REAL>(0.8 * g.dpiScale));
         graphics.FillPath(&fill, &bubble); graphics.DrawPath(&border, &bubble);
         Font font(L"Malgun Gothic", static_cast<REAL>(11 * g.dpiScale), FontStyleRegular, UnitPixel);
         SolidBrush text(Color(255, 110, 85, 68)); StringFormat format;
         format.SetAlignment(StringAlignmentCenter); format.SetLineAlignment(StringAlignmentCenter);
-        graphics.DrawString(g.bubble.c_str(), -1, &font, RectF(x, y, width, height), &format, &text);
+        graphics.DrawString(bubbleText, -1, &font, RectF(x, y, width, height), &format, &text);
     }
     graphics.Flush(FlushIntentionSync);
     POINT destination{windowLeft, placement.windowTop};
@@ -3287,13 +3372,9 @@ void MaybeAnnounceUpdate(ULONGLONG ticks) {
         !g.physics.CurrentPose().grounded;
     context.bubbleVisible = ticks < g.bubbleUntil;
     if (!updates.announcement.Ready(context)) return;
-    Speak(cat::update::kCatUpdateMessage, 6500);
     updates.announcement.MarkAnnounced();
     // Optional notice history is independent of birthday and nutrition records. An unwritable history must not interrupt the desktop pet.
-    const std::wstring path = g.directory + L"\\update-notice.ini", temporary = path + L".tmp";
-    if (!WriteBytes(temporary, updates.announcement.Serialize()) ||
-        !MoveFileExW(temporary.c_str(), path.c_str(), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH))
-        DeleteFileW(temporary.c_str());
+    SaveUpdateAnnouncement();
 }
 void CareFood(cat::feeding::FoodKind kind) {
     if (!cat::feeding::IsValid(kind) ||
@@ -3651,6 +3732,15 @@ bool ApplyCursorAttackPose(cat::animation::Pose& pose, ULONGLONG ticks, const ca
         pose=cat::cursor::HopPose(visualElapsed,interaction.hopFlightLaunched,physical.grounded,physical.velocityY,
             interaction.hopLandedAt&&ticks>=interaction.hopLandedAt?ticks-interaction.hopLandedAt:0,g.direction,
             (targetX-physical.x)/growth,(targetHeight-physical.lift)/growth,CursorAttackGeometry());
+        if(jump&&std::string_view(jump->layout->sourcePath).find("assets/video-actions/")==0) {
+            cat::sprite_sequence::Options options;
+            options.grounded=physical.grounded;options.velocityY=physical.velocityY;
+            options.jump=interaction.hopFlightLaunched?cat::sprite_sequence::JumpPhase::Landing:
+                cat::sprite_sequence::JumpPhase::Crouch;
+            options.contactElapsedMs=interaction.hopLandedAt&&ticks>=interaction.hopLandedAt?ticks-interaction.hopLandedAt:0;
+            cat::animation::AttachSprite(pose,cat::sprite_sequence::Clip::Jump,
+                std::min<ULONGLONG>(visualElapsed,cat::sprite_sequence::Duration(jump->layout->program,jump->layout->program.intro)),options);
+        }
         return true;
     }
     if (!interaction.session.Active() || !interaction.session.ContactAllowed() || !CursorPlaybackAllowed() ||
@@ -3665,14 +3755,37 @@ bool ApplyCursorAttackPose(cat::animation::Pose& pose, ULONGLONG ticks, const ca
     const double growth = cat::GrowthScale(g.pet.bornUtc, UtcNow());
     pose = cat::cursor::AttackPose(kind, ticks >= g.motionStart ? ticks-g.motionStart : 0, g.direction,
         (interaction.cursorX-physical.x)/growth, (interaction.cursorWorldHeight-physical.lift)/growth, CursorAttackGeometry());
+    if(kind==cat::cursor::AttackKind::Tiptoe||kind==cat::cursor::AttackKind::BothPaws) {
+        if(const auto* reach=LoadedCareSprite(cat::sprite_sequence::Clip::Reach,g.preferences.character)) {
+            const auto elapsed=ticks>=g.motionStart?ticks-g.motionStart:0;
+            cat::animation::AttachSprite(pose,cat::sprite_sequence::Clip::Reach,
+                elapsed*1550/cat::cursor::DurationMs(kind));
+            pose.spritePaws=cat::video_actions::ReachPaws(static_cast<unsigned>(g.preferences.character),
+                SpriteFrameFor(pose,*reach->layout));
+            pose.spritePawsValid=true;
+        }
+    }
     return true;
 }
 
 cat::animation::Pose BallToyPawPose(ULONGLONG ticks,const cat::physics::Pose& physical,const cat::toy::BallPose& ball) {
     const double growth=cat::GrowthScale(g.pet.bornUtc,UtcNow());
-    return cat::cursor::BallPawPose(ticks>=g.motionStart?ticks-g.motionStart:0,g.facing,
+    const auto elapsed=ticks>=g.motionStart?ticks-g.motionStart:0;
+    auto pose=cat::cursor::BallPawPose(elapsed,g.facing,
         (ball.x-(g.work.left/g.dpiScale+physical.x))/growth,
         (ball.lift+cat::toy::PhysicsBall::Radius-physical.lift)/growth,CursorAttackGeometry());
+    using C=cat::sprite_sequence::Clip;
+    if(const auto* asset=LoadedCareSprite(C::BallPlay,g.preferences.character)) {
+        cat::sprite_sequence::Options options;options.sheetFrames=asset->layout->frameCount;
+        cat::animation::AttachSprite(pose,C::BallPlay,elapsed,options);
+        pose.spriteFrame=cat::sprite_sequence::SampleProgram(C::BallPlay,asset->layout->program,elapsed,options).frame;
+        pose.spriteTimed=false;pose.spritePawsValid=true;
+        pose.spritePaws=cat::video_actions::BallPaws(static_cast<unsigned>(g.preferences.character),pose.spriteFrame);
+        const auto body=cat::appearance::VisualModifiers(g.nutrition,g.preferences.character);
+        for(auto& paw:pose.spritePaws){paw.x*=body.bodyWidth;paw.y*=body.bodyHeight;}
+        cat::animation::UseAuthoredSprite(pose);
+    }
+    return pose;
 }
 cat::deform::Point BallToyPawWorldPoint(ULONGLONG ticks,const cat::physics::Pose& physical) {
     const auto pose=BallToyPawPose(ticks,physical,g.toyBall.CurrentPose());
@@ -3682,6 +3795,14 @@ cat::deform::Point BallToyPawWorldPoint(ULONGLONG ticks,const cat::physics::Pose
 }
 double BallPawStandOff() {
     const double growth=cat::GrowthScale(g.pet.bornUtc,UtcNow());
+    if(LoadedCareSprite(cat::sprite_sequence::Clip::BallPlay,g.preferences.character)) {
+        const auto paw=cat::video_actions::BallPaws(static_cast<unsigned>(g.preferences.character),12)[1];
+        const auto body=cat::appearance::VisualModifiers(g.nutrition,g.preferences.character);
+        const double dy=paw.y*growth*body.bodyHeight-cat::toy::PhysicsBall::Radius;
+        const double radius=cat::toy::PhysicsBall::Radius+3*growth;
+        const double reach=std::sqrt(std::max(0.,radius*radius-dy*dy))*.65;
+        return std::max(16.,paw.x*growth*body.bodyWidth+reach);
+    }
     const auto pose=cat::cursor::BallPawPose(490,1,45,cat::toy::PhysicsBall::Radius/growth,CursorAttackGeometry());
     const auto paw=cat::cursor::PawPosition(pose,CursorAttackGeometry());
     return std::max(16.,paw.x*growth+cat::toy::PhysicsBall::Radius+4*growth-4);
@@ -3701,8 +3822,8 @@ bool UpdateBallPlayContact(ULONGLONG ticks,const cat::physics::Pose& physical) {
     if(!cat::toy::BallPawContactAt(ticks>=g.motionStart?ticks-g.motionStart:0,g.toyContact,paw.x,paw.y,ball,growth,available))return false;
     g.lastBallPawDistance=std::hypot(ball.x-paw.x,ball.lift+cat::toy::PhysicsBall::Radius-paw.y);
     const int direction=std::abs(ball.x-paw.x)>1?(ball.x<paw.x?-1:1):g.facing;
-    const double speed=58+(g.toySession.rounds%3)*7;
-    g.toyBall.Kick(direction,speed,28);++g.ballKickSerial;
+    const double speed=45+(g.toySession.rounds%3)*13;
+    g.toyBall.Kick(direction,speed,17+(g.toySession.rounds%2)*9);++g.ballKickSerial;
     return true;
 }
 
@@ -3987,8 +4108,44 @@ void StartManualMotion(Motion motion,ULONGLONG actionTicks=0) {
     g.toyRewardPending = false;
 }
 
+void StartWallClimb(ULONGLONG actionTicks=0) {
+    if(!ManualMotionAvailable()||g.wallPhase!=App::WallPhase::None)return;
+    using C=cat::sprite_sequence::Clip;
+    if(!LoadedCareSprite(C::Climb,g.preferences.character))return;
+    const auto ticks=actionTicks?actionTicks:GetTickCount64();
+    if(g.brain)g.brain->Interrupt(ticks);
+    cursorInteraction={};g.prank.Clear();g.bubbleUntil=0;
+    SetMotion(Motion::Walk,45000,ticks);
+    const double width=(g.work.right-g.work.left)/g.dpiScale;
+    const double growth=cat::GrowthScale(g.pet.bornUtc,UtcNow());
+    const auto bounds=MovementBoundsLogical();
+    const auto body=cat::appearance::VisualModifiers(g.nutrition,g.preferences.character);
+    const double edge=std::max(bounds.second,width-48*growth*body.bodyWidth);
+    const auto budget=static_cast<ULONGLONG>(std::max(45000.,
+        std::max(0.,edge-g.physics.CurrentPose().x)/std::max(10.,std::min(55.,RegisteredWalkSpeed()))*1000+15000));
+    g.physics.SetBounds(bounds.first,edge);
+    g.wallBounds=true;g.wallPhase=App::WallPhase::Approach;g.wallDeadline=ticks+budget;g.nextDecision=ticks+budget;
+    g.direction=g.facing=1;g.speed=RegisteredWalkSpeed()*g.dpiScale;
+    g.manualMotionActive=true;g.toyRewardPending=false;
+}
+
+void StartFlyHunt(ULONGLONG actionTicks=0) {
+    if(!ManualMotionAvailable())return;
+    using C=cat::sprite_sequence::Clip;
+    const auto* asset=LoadedCareSprite(C::FlyHunt,g.preferences.character);
+    if(!asset)return;
+    const auto ticks=actionTicks?actionTicks:GetTickCount64();
+    if(g.brain)g.brain->Interrupt(ticks);
+    cursorInteraction={};g.prank.Clear();g.bubbleUntil=0;
+    SetMotion(Motion::Watch,cat::sprite_sequence::ProgramDuration(asset->layout->program),ticks);
+    g.flyActive=true;g.flySerial=g.motionSerial;
+    g.flyFacing=g.physics.CurrentPose().x<(g.work.right-g.work.left)/g.dpiScale/2?1:-1;
+    g.manualMotionActive=true;g.speed=0;g.toyRewardPending=false;
+    g.nextFlyHunt=ticks+static_cast<ULONGLONG>(Random(120000,300000));
+}
+
 void FinishManualMotion(ULONGLONG ticks) {
-    if (!KeyboardPlayActive() && g.manualMotionActive && ticks >= g.nextDecision && !g.waitingForStop &&
+    if (g.wallPhase==App::WallPhase::None && !KeyboardPlayActive() && g.manualMotionActive && ticks >= g.nextDecision && !g.waitingForStop &&
             g.physics.CurrentPose().grounded && !g.jumpPending)
         BeginAutonomousRest(ticks);
 }
@@ -4001,6 +4158,8 @@ void RunCommand(UINT command,ULONGLONG actionTicks=0) {
     case kManualWalkCommand: StartManualMotion(Motion::Walk,actionTicks); break;
     case kManualRunCommand: StartManualMotion(Motion::Zoomies,actionTicks); break;
     case kManualJumpCommand: StartManualMotion(Motion::Jump,actionTicks); break;
+    case kWallClimbCommand: StartWallClimb(actionTicks); break;
+    case kFlyHuntCommand: StartFlyHunt(actionTicks); break;
     case kWorkInterferenceCommand: ChangeInteractionSettings(true); break;
     case kSeasonalEventsCommand: ChangeInteractionSettings(false); break;
     case kCursorPlayCommand: ChangeInteractionSettings(false,true); break;
@@ -4041,6 +4200,8 @@ HMENU BuildPetMenu() {
     AppendMenuW(actions, MF_STRING | actionEnabled, kManualWalkCommand, L"걷기");
     AppendMenuW(actions, MF_STRING | actionEnabled, kManualRunCommand, L"달리기");
     AppendMenuW(actions, MF_STRING | actionEnabled, kManualJumpCommand, L"점프하기");
+    AppendMenuW(actions, MF_STRING | actionEnabled, kWallClimbCommand, L"오른쪽 가장자리 오르기");
+    AppendMenuW(actions, MF_STRING | actionEnabled, kFlyHuntCommand, L"파리 사냥하기");
     AppendMenuW(menu, MF_POPUP | MF_STRING, reinterpret_cast<UINT_PTR>(actions), L"행동시키기");
     HMENU companionMenu = CreatePopupMenu();
     AppendMenuW(companionMenu, MF_STRING | (g.companionStore.enabled() ? MF_CHECKED : MF_UNCHECKED),
@@ -4154,11 +4315,12 @@ void AdvanceToyObjects(double elapsed) {
         // Floor toys retain work-area bounds while the cat visits a window.
         const double width=(g.work.right-g.work.left)/g.dpiScale;
         const double margin=std::min(96.0,width*.5);
-        const double growth=cat::GrowthScale(g.pet.bornUtc,UtcNow());
-        const auto [low,high]=cat::toy::RollingBounds(width,margin,width-margin,36*growth);
+        const auto [low,high]=cat::toy::RollingBounds(width,margin,width-margin,
+            std::max(12.,BallPawStandOff()-18));
         g.toyBall.Advance(elapsed,g.work.left/g.dpiScale+low,g.work.left/g.dpiScale+high,paused);
         g.toyX=g.toyBall.x*g.dpiScale;
-    } else if (g.toy==ToyKind::FishingRod) g.toyLure.Advance(elapsed,paused);
+    } else if (g.toy==ToyKind::FishingRod) g.toyLure.Advance(elapsed,paused||
+        (g.toyEngaged&&(g.toySession.phase==cat::toy::Phase::Inspect||g.toySession.phase==cat::toy::Phase::Interact)));
 }
 
 void AdvanceAutomaticToy(double elapsed) {
@@ -4552,7 +4714,7 @@ bool MaybeLifeEvent(ULONGLONG ticks, bool decisionBoundary) {
 }
 
 void UpdateLifeEvent(ULONGLONG ticks, double elapsed) {
-    if(g.physics.Hanging() && ticks>=g.lifeHangUntil) {
+    if(g.physics.Hanging() && !g.physics.WallClimbing() && ticks>=g.lifeHangUntil) {
         g.physics.EndHang(true);g.lifeHangUntil=0;
         g.airborneMotion=Motion::Jump;SetMotion(Motion::Startled,2000);
     }
@@ -4583,6 +4745,9 @@ void DispatchAutonomousMotion(ULONGLONG ticks) {
             BeginAutonomousRest();return;
         }
         if(!CanStartAutonomousStory(ticks))return;
+        if(!g.pet.roamingPaused&&g.toy==ToyKind::None&&ticks>=g.nextFlyHunt) {
+            StartFlyHunt(ticks);if(g.flyActive)return;
+        }
         const auto before=g.motionSerial;
         MaybeVisitWindow(ticks);
         if(g.motionSerial!=before)return;
@@ -4598,8 +4763,69 @@ void DispatchAutonomousMotion(ULONGLONG ticks) {
 }
 
 // Shared shipping host and native command tests: Box2D owns all translation, takeoff and landing.
+bool AdvanceWallMotion(ULONGLONG ticks,double elapsed) {
+    if(g.wallPhase==App::WallPhase::None)return false;
+    const double growth=cat::GrowthScale(g.pet.bornUtc,UtcNow());
+    const double width=(g.work.right-g.work.left)/g.dpiScale;
+    const double normalHigh=width-std::min(96.,width/2);
+    const auto body=cat::appearance::VisualModifiers(g.nutrition,g.preferences.character);
+    const double wallX=std::max(normalHigh,width-48*growth*body.bodyWidth);
+    auto physical=g.physics.CurrentPose();
+    double speed=0;
+    if(g.wallPhase==App::WallPhase::Approach) {
+        if(ticks>=g.wallDeadline) {
+            g.wallPhase=App::WallPhase::Return;
+        } else {
+            speed=cat::toy::ApproachVelocity(wallX-physical.x,std::min(55.,RegisteredWalkSpeed()),260);
+            if(wallX-physical.x<2.2&&std::abs(physical.velocityX)<2) {
+                SetMotion(Motion::Hang,10000,ticks);
+                if(g.physics.BeginWallClimb(std::min(150.*growth,std::max(20.,(g.work.bottom-g.work.top)/g.dpiScale-180)))) {
+                    g.wallPhase=App::WallPhase::Climb;g.wallStarted=ticks;g.direction=g.facing=1;
+                    g.manualMotionActive=true;g.groundArtBridge.Reset();g.waitingForStop=false;
+                } else g.wallPhase=App::WallPhase::Return;
+            }
+        }
+    }
+    if(g.wallPhase==App::WallPhase::Climb) {
+        const auto age=ticks>=g.wallStarted?ticks-g.wallStarted:0;
+        g.physics.SetWallClimbSpeed(cat::lively::ClimbSpeed(age)*growth);
+        if(age>=5000)g.physics.EndWallClimb();
+        if(age>=6583&&physical.grounded) {
+            SetMotion(Motion::Walk,10000,ticks);
+            g.wallPhase=App::WallPhase::Return;g.manualMotionActive=true;g.direction=g.facing=-1;
+        }
+    }
+    if(g.wallPhase==App::WallPhase::Return&&physical.grounded) {
+        g.direction=g.facing=-1;
+        speed=cat::toy::ApproachVelocity(normalHigh-12-physical.x,std::min(55.,RegisteredWalkSpeed()),260);
+        if(physical.x<=normalHigh-8&&std::abs(physical.velocityX)<2) {
+            g.wallPhase=App::WallPhase::None;g.wallBounds=false;
+            const auto bounds=MovementBoundsLogical();g.physics.SetBounds(bounds.first,bounds.second);
+            BeginAutonomousRest(ticks);return false;
+        }
+    }
+    const auto before=g.physics.RenderPose();
+    g.physics.SetTargetVelocity(speed);g.physics.Update(elapsed);
+    const auto rendered=g.physics.RenderPose();
+    g.centerX=g.work.left+rendered.x*g.dpiScale;
+    ConfigurePrimaryAuthoredStride();
+    g.gait.Advance(Motion::Walk,(rendered.relativeTravelX-before.relativeTravelX)/growth,elapsed,rendered.grounded);
+    if(g.groundArtBridge.ConsumeLoopReady())g.gait.SetAuthoredPhase(0);
+    return true;
+}
+
 void AdvancePrimaryMotion(ULONGLONG ticks, double elapsed) {
+    if(g.stopClip!=cat::sprite_sequence::Clip::None&&ticks>=g.stopUntil) {
+        g.stopClip=cat::sprite_sequence::Clip::None;g.physics.SetBrakeGrip(1);
+    }
     UpdatePrimaryGroundArt(ticks);
+    if(AdvanceWallMotion(ticks,elapsed))return;
+    if(g.wallBounds&&g.physics.CurrentPose().grounded) {
+        const auto bounds=MovementBoundsLogical();
+        if(g.physics.CurrentPose().x<=bounds.second) {
+            g.physics.SetBounds(bounds.first,bounds.second);g.wallBounds=false;
+        }
+    }
     cat::motion::AdvanceGroundStop(g.waitingForStop,g.physics.CurrentPose().grounded &&
         !g.groundArtBridge.Stopping() && !g.groundArtBridge.StartingForSideAction(),
         WalkingVelocity(g.physics.CurrentPose()),g.groundDrive,ticks,g.motionStart,g.nextDecision);
@@ -4609,6 +4835,8 @@ void AdvancePrimaryMotion(ULONGLONG ticks, double elapsed) {
     const bool pounceLanded = g.motion == Motion::Pounce && g.jumpLaunched && g.physics.CurrentPose().grounded;
     double targetSpeed = cat::animation::Travels(g.motion) && (!g.pet.roamingPaused || g.manualMotionActive) && !pounceLanded ?
         g.direction * g.speed / g.dpiScale * body.speed * cat::animation::TravelFactor(g.motion, actionElapsed) : 0;
+    if(!KeyboardPlayActive()&&!g.runningJump.active)
+        targetSpeed*=cat::lively::Pace(actionElapsed,g.motion==Motion::Zoomies,static_cast<unsigned>(g.motionSerial));
     if (EnvironmentBusy()) targetSpeed = CursorReactionVelocity() * body.speed;
     if (g.lifeCrossing.Active() || g.physics.Hanging()) targetSpeed=0;
     if (g.approachingUser) {
@@ -4644,6 +4872,12 @@ void AdvancePrimaryMotion(ULONGLONG ticks, double elapsed) {
             ApplyToyPhase(ticks);
             const bool arrived=g.toy==ToyKind::Ball?ballChase.arrived:
                 std::abs(distanceToTarget())<=2 && std::abs(WalkingVelocity(g.physics.CurrentPose()))<=3;
+            if(g.toy==ToyKind::FishingRod&&g.toySession.phase==cat::toy::Phase::Interact&&
+                    g.toySession.elapsedMs+elapsed*1000>=g.toySession.PhaseDuration()) {
+                const auto point=cat::video_actions::ToyProp(static_cast<unsigned>(g.preferences.character),255);
+                g.toyLure.offset=(g.centerX-g.toyX)/g.dpiScale+point.x*growth*body.bodyWidth;
+                g.toyLure.velocity=0;
+            }
             if (g.toySession.Advance(elapsed,true,arrived)) ApplyToyPhase(ticks);
         }
         targetSpeed=0;
@@ -4656,8 +4890,9 @@ void AdvancePrimaryMotion(ULONGLONG ticks, double elapsed) {
             if (targetSpeed!=0) g.direction=targetSpeed<0 ? -1 : 1;
         }
         if (g.toyEngaged && g.toy!=ToyKind::Ball && g.toySession.phase==cat::toy::Phase::Interact && g.motion==Motion::ToyPaw) {
-            if (cat::toy::PawContactAt(ticks>=g.motionStart ? ticks-g.motionStart : 0,g.toyContact,
-                    toyCenter-g.centerX/g.dpiScale,55*growth,available)) {
+            if (!g.toyContact&&g.toySession.elapsedMs>=1400&&g.toySession.elapsedMs<1800&&
+                    std::abs(toyCenter-g.centerX/g.dpiScale)<=6*growth&&available) {
+                g.toyContact=true;
                 if (g.toy==ToyKind::FishingRod) g.toyLure.Touch(g.direction);
                 if (g.toyRewardPending) { Remember(cat::memory::Event::Play); g.toyRewardPending=false; }
             }
@@ -4669,14 +4904,19 @@ void AdvancePrimaryMotion(ULONGLONG ticks, double elapsed) {
         const auto support = g.physics.CurrentPose();
         const auto [low, high] = MovementBoundsLogical();
         if (cat::motion::BrakeBeforeEdge(support.x, WalkingVelocity(support), targetSpeed, low, high)) {
-            if(!KeyboardPlayActive())g.direction = targetSpeed < 0 ? 1 : -1;
+            if(!KeyboardPlayActive()&&!g.toyEngaged)g.direction = targetSpeed < 0 ? 1 : -1;
             targetSpeed = 0;
             const bool scheduledRun=g.randomZoomies.Active() && g.motion==Motion::Zoomies &&
                 g.motionSerial==g.randomZoomiesSerial;
             // A scheduled run owns its entire moving-time budget. Reverse its
             // ordinary target, then let the common drive plant and turn;
             // switching to Watch here would silently cancel it at the edge.
-            if (g.motion != Motion::Pounce && !scheduledRun && !KeyboardPlayActive()) SetMotion(Motion::Watch, 2400);
+            if (g.motion != Motion::Pounce && !scheduledRun && !KeyboardPlayActive()&&!g.toyEngaged&&!g.approachingUser) {
+                if(targetSpeed>=0&&g.direction<0&&!g.pet.roamingPaused&&g.random()%5==0) {
+                    StartWallClimb(ticks);if(g.wallPhase!=App::WallPhase::None)return;
+                }
+                BeginAutonomousRest(ticks);
+            }
         }
     }
     if (g.waitingForStop) targetSpeed = 0;
@@ -4796,6 +5036,8 @@ void FreezePrimaryMotion(ULONGLONG ticks, ULONGLONG clockDelta) {
     if (g.perch.active) g.perch.leaveAfter += frozen;
     if (g.landedAt) g.landedAt += frozen;
     if (g.lifeHangUntil) g.lifeHangUntil += frozen;
+    if(g.stopUntil){g.stopStarted+=clockDelta;g.stopUntil+=clockDelta;}
+    if(g.wallPhase!=App::WallPhase::None){g.wallStarted+=clockDelta;g.wallDeadline+=clockDelta;}
     g.physics.Update(0, true);
     PauseCursorReaction(clockDelta);
     g.poseTransition.Pause(clockDelta);
@@ -5607,7 +5849,7 @@ int NativeMenuContractTest() {
         OutfitBowCommand == 1033 && OutfitScarfCommand == 1034 && OutfitCrownCommand == 1035,
         "Retired command IDs must not renumber the remaining commands");
     static_assert(kManualWalkCommand==2800 && kManualRunCommand==2801 && kManualJumpCommand==2802 &&
-        kFishCommand==2302 && kCompanionFish==2405 &&
+        kWallClimbCommand==2803 && kFlyHuntCommand==2804 && kFishCommand==2302 && kCompanionFish==2405 &&
         static_cast<int>(cat::feeding::FoodKind::Meal)==0 &&
         static_cast<int>(cat::feeding::FoodKind::Treat)==1 &&
         static_cast<int>(cat::feeding::FoodKind::Fish)==2,
@@ -5657,7 +5899,7 @@ int NativeMenuContractTest() {
         DestroyMenu(menu);
         if (!read) return 221;
         std::vector<UINT> actual, expected{1010, 1011, 1012, 1013, 1014, 1015, 1016, 1017,
-            1024, 1026, 2300, 2301, 2302, 2303, 2304, 2400, 2800, 2801, 2802};
+            1024, 1026, 2300, 2301, 2302, 2303, 2304, 2400, 2800, 2801, 2802, 2803, 2804};
         if (enabled) expected.push_back(1025);
         if (variant != 2) for (UINT id : {2401u, 2402u, 2403u, 2405u}) expected.push_back(id);
         for (auto c:cat::kAvailableCharacters) expected.push_back(2500 + static_cast<int>(c));
@@ -5774,6 +6016,9 @@ int NativeMenuContractTest() {
 #include "native_cursor_play_capture.hpp"
 #include "native_groom_review.hpp"
 #include "native_ball_play_capture.hpp"
+#include "native_fish_review.hpp"
+#include "native_fly_review.hpp"
+#include "native_lively_review.hpp"
 #include "native_menu_visibility_tests.hpp"
 
 int SelfTest(HINSTANCE instance) {
@@ -5808,6 +6053,10 @@ int SelfTest(HINSTANCE instance) {
 }
 
 int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
+    if(commandLine && wcsstr(commandLine,L"--render-fly-review"))return NativeFlyReview(instance);
+    if(commandLine && wcsstr(commandLine,L"--render-fish-review"))return NativeFishReview(instance);
+    if(commandLine && wcsstr(commandLine,L"--manual-motion-self-test"))return NativeManualMotionTest(instance);
+    if(commandLine && wcsstr(commandLine,L"--render-lively-review"))return NativeLivelyReview(instance);
     if(commandLine && wcsstr(commandLine,L"--menu-self-test"))return NativeMenuVisibilityTest(instance);
     if(commandLine && wcsstr(commandLine,L"--render-walk-video"))return NativeVideoWalkCapture(instance);
     if(commandLine && wcsstr(commandLine,L"--render-motion-video"))return NativeVideoMotionCapture(instance);
@@ -5821,7 +6070,12 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
     }
     if (commandLine && wcsstr(commandLine, L"--render-self-test")) {
         g.instance = instance;
-        return RenderSelfTest();
+        const int standard=RenderSelfTest();
+        if(standard)return standard;
+        const int lively=NativeLivelyReview(instance);
+        if(lively)return lively;
+        const int fish=NativeFishReview(instance);
+        return fish?fish:NativeFlyReview(instance);
     }
     if (const auto helperResult = cat::update::HandleUpdateHelperCommandLine()) return *helperResult;
     if (commandLine && wcsstr(commandLine, L"--self-test")) return SelfTest(instance);
