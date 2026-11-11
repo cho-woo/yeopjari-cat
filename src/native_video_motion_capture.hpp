@@ -24,7 +24,7 @@ struct Row {
     bool mealFinished=false,stopped=false;
 };
 struct Schedule {
-    ULONGLONG meal=500,walk=0,run=0,duration=0;
+    ULONGLONG meal=500,walk=0,run=0,recovery=0,duration=0;
     unsigned frames=0;
 };
 
@@ -92,7 +92,8 @@ int Simulate(Row& row,const Schedule& schedule,std::string& context) {
         if(pose.spriteClip==Clip::Run&&!seenRun[source]){seenRun[source]=true;++row.runFramesUsed;}
         if(g.motion==Motion::Walk)row.peakWalk=std::max(row.peakWalk,std::abs(velocity));
         if(g.motion==Motion::Zoomies)row.peakRun=std::max(row.peakRun,std::abs(velocity));
-        if(elapsed>schedule.run+4200&&!g.manualMotionActive&&std::abs(velocity)<.5)row.stopped=true;
+        if(elapsed>schedule.run+3200+schedule.recovery&&!g.manualMotionActive&&
+                g.stopClip==Clip::None&&std::abs(velocity)<.5)row.stopped=true;
         row.frames.push_back({pose,physical.x,velocity,g.gait.AuthoredPhase(),
             asset?asset->layout->referenceHeight:CurrentArt(row.character).base.standingHeight,source,
             asset?static_cast<unsigned>(asset->layout->resourceId):static_cast<unsigned>(CurrentArt(row.character).base.baseResourceId),
@@ -112,7 +113,8 @@ int Simulate(Row& row,const Schedule& schedule,std::string& context) {
             row.peakWalk<RegisteredWalkSpeed()*1.03||row.peakWalk>RegisteredWalkSpeed()*1.28||
             row.peakRun<RegisteredRunSpeed()*1.03||row.peakRun>RegisteredRunSpeed()*1.28) {
         context+=" peak Walk="+std::to_string(row.peakWalk)+" Run="+std::to_string(row.peakRun)+
-            " stopped="+std::to_string(row.stopped);return 568;
+            " stopped="+std::to_string(row.stopped)+" remaining stop="+std::to_string(static_cast<unsigned>(g.stopClip))+
+            " velocity="+std::to_string(WalkingVelocity(g.physics.CurrentPose()));return 568;
     }
     return 0;
 }
@@ -129,7 +131,13 @@ int Run(std::string& context) {
         cat::sprite_sequence::ProgramDuration(meal->layout->program)+
         cat::sprite_sequence::Duration(walk->layout->program,walk->layout->program.outro)+600;
     schedule.run=schedule.walk+5000+1200;
-    schedule.duration=schedule.run+3200+1800;
+    for(const auto clip:{Clip::Brake,Clip::Slide,Clip::Stumble}) {
+        const auto* stop=LoadedCareSprite(clip,cat::Character::Cream);if(!stop)return 562;
+        schedule.recovery=std::max<ULONGLONG>(schedule.recovery,cat::sprite_sequence::ProgramDuration(stop->layout->program));
+    }
+    // Capture the complete longest source recovery AND physical settling;
+    // the former1800ms tail could randomly truncate a real skid/tumble.
+    schedule.duration=schedule.run+3200+schedule.recovery+1400;
     if(schedule.duration>30000)return 562;
     schedule.frames=static_cast<unsigned>((schedule.duration*Fps+999)/1000);
     std::array<Row,2> rows{};rows[0].character=cat::Character::Cream;rows[1].character=cat::Character::Tuxedo;
@@ -198,7 +206,7 @@ int Run(std::string& context) {
         <<",\"camera\":\"display-only pan keeps the complete cat visible; trace retains unchanged Box2D world coordinates\""
         <<",\"scenario\":\"real meal command, complete meal, rest, manual walk, brake and rest, manual run, brake and rest\""
         <<",\"schedule_ms\":{\"meal\":"<<schedule.meal<<",\"walk\":"<<schedule.walk<<",\"run\":"<<schedule.run
-        <<",\"duration\":"<<schedule.duration<<"},\"clips\":[";
+        <<",\"recovery\":"<<schedule.recovery<<",\"duration\":"<<schedule.duration<<"},\"clips\":[";
     bool first=true;
     for(const auto clip:{Clip::Walk,Clip::Run,Clip::Eat}) {
         const auto* asset=LoadedCareSprite(clip,cat::Character::Cream);if(!asset)return 562;
