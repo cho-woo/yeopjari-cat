@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "method": "existing registered side pose and fish/plate extracted from first Dropshot fish video, composed with wide green margins before frame-conditioned generation",
+  "canvas": [
+    1024,
+    1024
+  ],
+  "cat_max_size": [
+    440,
+    360
+  ],
+  "cat_left": 220,
+  "floor_y": 690,
+  "plate_left": 650,
+  "plate_max_size": [
+    190,
+    85
+  ],
+  "fish_source": "sources/rejected/cream-fish.mp4",
+  "fish_source_frame": 0,
+  "fish_source_sha256": "402fad43f65f0ea6d597e95534fe777232a8c7a56f34e71afdade015de4f6d2e",
+  "cat_sources": [
+    {
+      "character": "cream",
+      "path": "assets/natural-gait/source-rgba/029.png",
+      "sha256": "ceed4d1e0de5a7ac8bda9b1114fea99d3f5cd47db3e3d7c4c3a328e41c635e42",
+      "reference": "references/cream-fish-wide.png"
+    },
+    {
+      "character": "tuxedo",
+      "path": "assets/natural-gait/tuxedo-rgba/029.png",
+      "sha256": "cf6c910234d7ac0dafa69eaf9520aa7f31ee986538f5eb3820ae186e1fbe3dd2",
+      "reference": "references/tuxedo-fish-wide.png"
+    }
+  ]
+}

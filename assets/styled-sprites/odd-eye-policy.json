@@ -128,21 +128,6 @@
       "skin_rgb_sha256": "66f6881291f58c6921e2d8ef46a81d1a62aa98813a62469d8f261504bb28dd91"
     },
     {
-      "base_resource_id": 116,
-      "base_source": "assets/care-sprites/c0-fish.png",
-      "source": "c10-r116.png",
-      "input_sha256": "5577d90a87569acab3a20046e34df40651dca4172092a29c81c2f7e95b2f3697",
-      "output_sha256": "06b3c7af11f1e79bcd72e298dc82d7085bb39bd303f7e158304770a4c16d307b",
-      "source_alpha_sha256": "6c2606bf081ebd65a0f8bea7f390a58f7be3fc07309120e9d11c9bedb4ddd66a",
-      "iris_mask": "odd-eye-masks/c10-r116.png",
-      "iris_mask_sha256": "e5bfa47790c64f602de93bf9dfcfbb935b7257a285306f95bd451cc327c54bfc",
-      "alpha_exact": true,
-      "props_rgb_exact": true,
-      "skin_rgb_exact": true,
-      "props_rgb_sha256": "5fedd774958bb57d038eecfff5530c3be008da1e4553cb9957ad22ad0985235c",
-      "skin_rgb_sha256": "672b53fc38a51e5096c579abd68a1ff7ca9619d51eefde2613d7977086078b28"
-    },
-    {
       "base_resource_id": 118,
       "base_source": "assets/natural-gait/cream-video-eat.png",
       "source": "c10-r118.png",
@@ -333,9 +318,21 @@
       "iris_mask_sha256": "7540a4d8740b24f74b90d9ed628cdbae6a70096a21d683bd4d07629285de497d",
       "alpha_exact": true,
       "skin_rgb_exact": true
+    },
+    {
+      "base_resource_id": 116,
+      "base_source": "assets/video-actions/cream-fish.png",
+      "source": "c10-r116.png",
+      "input_sha256": "2a2b1152d6e6b20674e5189bf6ad42445f49552e883beadf1f6298f68fa60713",
+      "output_sha256": "92d20f9b413acad01c827e9cddbaa55fa8710762ea513b0253d88c013dc6d42b",
+      "source_alpha_sha256": "37cc1d6bd08399771feb9d90687bdc86df07805d1e8193e9eea78432381f3694",
+      "iris_mask": "odd-eye-masks/c10-r116.png",
+      "iris_mask_sha256": "2ae5143043d3c410626bd05a19413c7636f715d37540e0c74550efd08559d42d",
+      "alpha_exact": true,
+      "skin_rgb_exact": true
     }
   ],
   "tool_sha256": "38aff80a6a8fe818168305d47c6f697ab0d9af7892119f3e5ab903e5c41c86c4",
   "additional_authoring_tool": "tools/pack_video_actions.py",
-  "additional_authoring_tool_sha256": "f0016123c4cd68dd8cb7374aa8011def1c59a95f4218d67761c2664f40a90171"
+  "additional_authoring_tool_sha256": "725ed5952a57632ee9f9625d482f4311fccba8aafc3f415c74abea36e6500f25"
 }

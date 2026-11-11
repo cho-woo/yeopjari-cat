@@ -23,8 +23,10 @@ ROOT_POINT = (160, 240)
 REFERENCE_HEIGHT = 96
 RESOURCE = {'groom': 113, 'punch': 117, 'jump': 119, 'knead': 440, 'reach': 441}
 RESOURCE.update({'ball':430,'toy':431,'brake':432,'slide':433,'stumble':434,'climb':435})
+RESOURCE['fish']=116
 SOURCE_ACTION = {'groom': 'wipe', 'punch': 'punch', 'jump': 'jump', 'knead': 'knead', 'reach': 'reach'}
 SOURCE_ACTION.update({name:name for name in ('ball','toy','brake','slide','stumble','climb')})
+SOURCE_ACTION['fish']='fish'
 REACH_KEYS = {
     'cream': [(18, 300, 651, 369, 651), (36, 300, 651, 369, 651),
         (54, 243, 360, 378, 360), (72, 282, 228, 396, 306),
@@ -183,7 +185,7 @@ def snow_material(source, eyes):
 
 def selection(clip):
     extra={'ball':range(24,84,2),'toy':range(6,146,2),'brake':range(42,142,3),
-        'slide':range(42,144,2),'stumble':range(45,150,2),'climb':range(0,158)}
+        'slide':range(42,144,2),'stumble':range(45,150,2),'climb':range(0,158),'fish':range(0,158)}
     if clip in extra:return list(extra[clip])
     if clip == 'jump':
         return list(range(42, 104))
@@ -200,7 +202,7 @@ def durations(clip, indices):
     if clip == 'jump':
         return [20 if index<81 else 40 for index in indices]
     total = {'groom':5250,'knead':5200,'reach':1550,'punch':2900,
-        'ball':1050,'toy':3300,'brake':900,'slide':1600,'stumble':2600,'climb':6583}[clip]
+        'ball':1050,'toy':3300,'brake':900,'slide':1600,'stumble':2600,'climb':6583,'fish':6583}[clip]
     if clip == 'punch':
         points = [(22, 0), (40, 700), (68, 1100), (102, 1700), (126, 2100), (140, 2600), (142, total)]
         clock = np.interp(indices + [142], *np.asarray(points).T)
@@ -226,7 +228,7 @@ def bake(clip, character, indices):
     if max(indices) >= len(frames) or abs(fps - 24) > .01:
         raise ValueError('Unexpected original video cadence or duration')
     palette=None if clip=='climb' else background_palette(frames[0])
-    neutral = foreground(frames[0],palette,clip=='ball',clip=='climb',clip=='toy')
+    neutral = foreground(frames[0],palette,clip=='ball',clip=='climb',clip in ('toy','fish'))
     center, top, bottom = head_root(neutral)
     factor = REFERENCE_HEIGHT / (bottom - top)
     columns = 8
@@ -237,7 +239,7 @@ def bake(clip, character, indices):
     props=[];prop_visible=[]
     for ordinal, source_index in enumerate(indices):
         local_palette=background_palette(frames[source_index]) if clip=='stumble' and character=='cream' else palette
-        image = foreground(frames[source_index],local_palette,clip=='ball',clip=='climb',clip=='toy')
+        image = foreground(frames[source_index],local_palette,clip=='ball',clip=='climb',clip in ('toy','fish'))
         anchor_x, anchor_y = center, float(image.getbbox()[3])
         if clip in ('ball','brake','slide','stumble','climb'):
             anchor_x,_,_=head_root(image)

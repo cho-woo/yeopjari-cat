@@ -201,26 +201,6 @@
       "iris_rgb_sha256": "041d91e1f636a7716248f46af446ea82041f55ce4f09a92b851b4d119df0d454"
     },
     {
-      "base_resource_id": 116,
-      "source": "c8-r116.png",
-      "input_sha256": "b509d40cd8c83a025c656bd2a68b593a54a56c3fd660d2931bed227ed8b23b45",
-      "output_sha256": "a8aeb93f58cc6c15806f92a50ea50ec1e90c557adb2c020773bb25941b7de75b",
-      "source_alpha_sha256": "6de5aecc749bd33b9fee15ae9176c4a76aa182bddbbd9da3e2c0b662d51b9d84",
-      "prop_mask": "c8-r116.png",
-      "prop_mask_sha256": "87d11d1bd5207d178d1a145c2a65489220df73a03679fd6d1879dadd9ba93793",
-      "fur_pixels": 565472,
-      "alpha_exact": true,
-      "protected_props_pixels": 73059,
-      "props_rgb_exact": true,
-      "props_rgb_sha256": "ec5245750866731e08a7270abe442905aa3161d0f078e3d643e5505b5726c884",
-      "protected_skin_pixels": 49271,
-      "skin_rgb_exact": true,
-      "skin_rgb_sha256": "4ef7d6ff002c16cda7435a840277cf144e6c02a2a4319060c137cfc84f334130",
-      "protected_iris_pixels": 23944,
-      "iris_rgb_exact": true,
-      "iris_rgb_sha256": "7bc5cf55b6105581ecaab286b6c09784c662ff91d494a2e66ca25c8384c94193"
-    },
-    {
       "base_resource_id": 118,
       "source": "c8-r118.png",
       "input_sha256": "c2bd228564746f20fcd8f8a02f9f7a20424751099a537b7fcd59533e8971f34e",
@@ -305,6 +285,7 @@
   "input_git_revision": "a53829dc6c24563a549d6542cbe6e83d497810f3",
   "separate_video_action_resources": [
     113,
+    116,
     117,
     119,
     430,

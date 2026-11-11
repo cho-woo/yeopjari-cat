@@ -37,7 +37,7 @@
     {
       "role": "appearance_identity_policy",
       "path": "assets/styled-sprites/identity-policy.json",
-      "sha256": "c0c3dd3496e902519212e42ffea62bac9fd623ad889ebcbeda0be66384f7026e"
+      "sha256": "d7e8d8e7bc1c291f9ec1ae478c9bc89bd7d86188c5ab1ab495af6d48d094b273"
     },
     {
       "role": "appearance_identity_mask_c8-r101",

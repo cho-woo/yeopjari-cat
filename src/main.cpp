@@ -5984,6 +5984,7 @@ int NativeMenuContractTest() {
 #include "native_cursor_play_capture.hpp"
 #include "native_groom_review.hpp"
 #include "native_ball_play_capture.hpp"
+#include "native_fish_review.hpp"
 #include "native_lively_review.hpp"
 #include "native_menu_visibility_tests.hpp"
 
@@ -6019,6 +6020,7 @@ int SelfTest(HINSTANCE instance) {
 }
 
 int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
+    if(commandLine && wcsstr(commandLine,L"--render-fish-review"))return NativeFishReview(instance);
     if(commandLine && wcsstr(commandLine,L"--manual-motion-self-test"))return NativeManualMotionTest(instance);
     if(commandLine && wcsstr(commandLine,L"--render-lively-review"))return NativeLivelyReview(instance);
     if(commandLine && wcsstr(commandLine,L"--menu-self-test"))return NativeMenuVisibilityTest(instance);
@@ -6035,7 +6037,9 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
     if (commandLine && wcsstr(commandLine, L"--render-self-test")) {
         g.instance = instance;
         const int standard=RenderSelfTest();
-        return standard?standard:NativeLivelyReview(instance);
+        if(standard)return standard;
+        const int lively=NativeLivelyReview(instance);
+        return lively?lively:NativeFishReview(instance);
     }
     if (const auto helperResult = cat::update::HandleUpdateHelperCommandLine()) return *helperResult;
     if (commandLine && wcsstr(commandLine, L"--self-test")) return SelfTest(instance);
