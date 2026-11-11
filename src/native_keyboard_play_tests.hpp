@@ -76,7 +76,7 @@ int HitTestScreens(Host& host,unsigned& clickThroughPixels) {
     g.window=nullptr;DestroyWindow(hidden);g.surface.Reset();Clear();
     return result;
 }
-struct MovingJump {double peak=0,distance=0,speed=0;bool returned=false;};
+struct MovingJump {double peak=0,distance=0,speed=0,actualAirSpeed=0;bool returned=false,airborne=false;unsigned lastFrame=0;};
 MovingJump HopMoving(Host& host) {
     MovingJump jump;jump.speed=WalkingVelocity(g.physics.CurrentPose());
     const double origin=g.physics.CurrentPose().x;
@@ -84,8 +84,10 @@ MovingJump HopMoving(Host& host) {
     bool airborne=false;
     for(unsigned frame=0;frame<160;++frame) {
         Step(host);const auto physical=g.physics.CurrentPose();
+        jump.lastFrame=frame;
         jump.peak=std::max(jump.peak,physical.lift);
         if(!physical.grounded) {
+            jump.airborne=true;jump.actualAirSpeed=physical.velocityX;
             airborne=true;
             if(std::abs(physical.velocityX-jump.speed)>1)return jump;
         }
@@ -98,6 +100,17 @@ MovingJump HopMoving(Host& host) {
         }
     }
     return jump;
+}
+void MovingFailure(const char* phase,const MovingJump& jump,double normalPeak) {
+    std::ostringstream out;
+    out<<"phase="<<phase<<" returned="<<jump.returned<<" peak="<<jump.peak<<" normalPeak="<<normalPeak
+        <<" distance="<<jump.distance<<" speed="<<jump.speed<<" airSpeed="<<jump.actualAirSpeed
+        <<" airborne="<<jump.airborne<<" frame="<<jump.lastFrame<<" motion="<<static_cast<unsigned>(g.motion)
+        <<" vx="<<g.physics.CurrentPose().velocityX<<" lift="<<g.physics.CurrentPose().lift
+        <<" grounded="<<g.physics.CurrentPose().grounded<<" active="<<g.runningJump.active
+        <<" pending="<<g.jumpPending<<" keyboardJump="<<keyboardPlay.jumping
+        <<" returning="<<keyboardPlay.returning<<" waiting="<<g.waitingForStop;
+    WriteBytes(L"render-self-test/keyboard-moving-jump-failure.txt",out.str());
 }
 
 int Run() {
@@ -135,11 +148,11 @@ int Run() {
         Key(VK_RIGHT);Step(host,160);
         const auto walkingJump=HopMoving(host);
         if(!walkingJump.returned||walkingJump.distance<walkingJump.speed*.6||
-                std::abs(walkingJump.peak-normal.peak)>2){result=778;break;}
+                std::abs(walkingJump.peak-normal.peak)>2){MovingFailure("walk",walkingJump,normal.peak);result=778;break;}
         Key(VK_SHIFT);Step(host,150);
         const auto runningJump=HopMoving(host);
         if(!runningJump.returned||runningJump.distance<runningJump.speed*.6||
-                runningJump.speed<walkingJump.speed*1.4||std::abs(runningJump.peak-normal.peak)>2){result=778;break;}
+                runningJump.speed<walkingJump.speed*1.4||std::abs(runningJump.peak-normal.peak)>2){MovingFailure("run",runningJump,normal.peak);result=778;break;}
         Key(VK_RIGHT,false);Key(VK_SHIFT,false);Step(host,170);
         if(host.Saved()!=saved||!g.pet.roamingPaused){result=779;break;}
         Key(VK_RIGHT);Step(host,3);Key(VK_ESCAPE);
