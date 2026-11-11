@@ -2,7 +2,7 @@
   "schema": 1,
   "created_date": "2026-11-11",
   "provider": "Dropshot",
-  "total_credits": 1200,
+  "total_credits": 3360,
   "jobs": [
     {
       "character": "cream",
@@ -143,6 +143,274 @@
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ee195d86567e452590783e41901176f9/tuxedoFront.png",
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/4e193126060c48b5836d74e8654446dc/tuxedoSide.png"
       ]
+    },
+    {
+      "character": "cream",
+      "action": "ball",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_cea9ddd7c8844b79adb6948c35a250e0",
+      "credit_cost": 120,
+      "source_file": "sources/cream-ball.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_cea9ddd7c8844b79adb6948c35a250e0/output/output_0.mp4",
+      "prompt": "Animate the exact established desktop kitten in the two reference images. Preserve its face, proportions, eye color, coat pattern and soft detailed 3D illustration style. One fixed-camera full-body 6-second animation, no zoom, no cuts, no captions. Uniform bright green chroma-key background #00FF00 and generous empty space around the cat. Natural continuous movement and expressive small reactions. A physically convincing playful kitten interacting with a small red rubber ball. Crouch low, visually follow the ball, shift weight onto the hindquarters, reach one connected forepaw and visibly touch the ball, give it a light tap that makes it roll away, take three quick pursuit steps, slow down, then tap it again with the opposite forepaw. Each ball motion starts after visible paw contact, ball rolls naturally and decelerates from friction. The cat's limbs stay anatomically correct. Finish in a calm seated pose. Ball stays separated from the cat body and does not overlap its torso.",
+      "reference_images": [
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/a949da2973c84558bbbd2d1c06bdd2ac/creamFront.png",
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ec78cb7704784b8ca677bfec8a7c25d1/creamSide.png"
+      ],
+      "used": true
+    },
+    {
+      "character": "cream",
+      "action": "toy",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_04c0d7c42d8d479fa101e7bd07406ada",
+      "credit_cost": 120,
+      "source_file": "sources/cream-toy.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_04c0d7c42d8d479fa101e7bd07406ada/output/output_0.mp4",
+      "prompt": "Animate the exact established desktop kitten in the two reference images. Preserve its face, proportions, eye color, coat pattern and soft detailed 3D illustration style. One fixed-camera full-body 6-second animation, no zoom, no cuts, no captions. Uniform bright green chroma-key background #00FF00 and generous empty space around the cat. Natural continuous movement and expressive small reactions. A physically convincing kitten playing with a feather lure just above the floor. Lower the chest and wiggle the haunches before a short pounce, land on bent forelegs, pin the feather with both forepaws, release it, follow its tiny movement with the head and eyes, then make one quick soft paw swipe. Real feline anticipation, weight transfer, contact, recoil and recovery. Keep all four limbs attached with consistent anatomy. End seated. The lure stays outside the cat silhouette except at the paw tips.",
+      "reference_images": [
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/a949da2973c84558bbbd2d1c06bdd2ac/creamFront.png",
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ec78cb7704784b8ca677bfec8a7c25d1/creamSide.png"
+      ],
+      "used": true
+    },
+    {
+      "character": "cream",
+      "action": "walk",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_4fa2b22264d440df90bdc67dadd74438",
+      "credit_cost": 120,
+      "source_file": "sources/cream-walk.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_4fa2b22264d440df90bdc67dadd74438/output/output_0.mp4",
+      "prompt": "Animate the exact established desktop kitten in the two reference images. Preserve its face, proportions, eye color, coat pattern and soft detailed 3D illustration style. One fixed-camera full-body 6-second animation, no zoom, no cuts, no captions. Uniform bright green chroma-key background #00FF00 and generous empty space around the cat. Natural continuous movement and expressive small reactions. Strict right-facing side view. Start standing, sniff briefly, start with two short tentative steps, walk forward with a natural four-beat feline gait, vary speed gently with two quicker steps then two relaxed steps, shift body weight softly over planted paws, and slow to a relaxed stop. No foot sliding during ground contact. Smooth shoulders, hips, head and tail follow-through. Preserve the exact reference character and four anatomical legs. Full body stays in frame.",
+      "reference_images": [
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/a949da2973c84558bbbd2d1c06bdd2ac/creamFront.png",
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ec78cb7704784b8ca677bfec8a7c25d1/creamSide.png"
+      ],
+      "used": true
+    },
+    {
+      "character": "cream",
+      "action": "run",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_ce9144adfce84d95ab2e03997fa9cfbe",
+      "credit_cost": 120,
+      "source_file": "sources/cream-run.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_ce9144adfce84d95ab2e03997fa9cfbe/output/output_0.mp4",
+      "prompt": "Animate the exact established desktop kitten in the two reference images. Preserve its face, proportions, eye color, coat pattern and soft detailed 3D illustration style. One fixed-camera full-body 6-second animation, no zoom, no cuts, no captions. Uniform bright green chroma-key background #00FF00 and generous empty space around the cat. Natural continuous movement and expressive small reactions. Strict right-facing side view. Start standing, lower the body and accelerate into a cute realistic feline gallop with linked foreleg/hindleg pairs, a brief gathered suspension, then extended flight. Show a short enthusiastic speed burst, a small relaxation, then another two gallop strides and a natural deceleration. Clear contact timing and supple back, ears and tail follow-through. All four legs stay anatomically attached. Full body stays in frame.",
+      "reference_images": [
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/a949da2973c84558bbbd2d1c06bdd2ac/creamFront.png",
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ec78cb7704784b8ca677bfec8a7c25d1/creamSide.png"
+      ],
+      "used": true
+    },
+    {
+      "character": "cream",
+      "action": "brake",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_51f9f90722c5448986077c07f7365f90",
+      "credit_cost": 120,
+      "source_file": "sources/cream-brake.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_51f9f90722c5448986077c07f7365f90/output/output_0.mp4",
+      "prompt": "Animate the exact established desktop kitten in the two reference images. Preserve its face, proportions, eye color, coat pattern and soft detailed 3D illustration style. One fixed-camera full-body 6-second animation, no zoom, no cuts, no captions. Uniform bright green chroma-key background #00FF00 and generous empty space around the cat. Natural continuous movement and expressive small reactions. Strict right-facing side view. The kitten trots right for two steps, then applies a cute forceful natural brake: reaches and plants both forepaws forward, lowers the chest, shifts its weight back onto bent hind legs, leans the torso backward slightly as momentum dissipates, tail swings forward then settles, and rises to a relaxed four-paw stand. A short believable front-paw push and recovery. Preserve anatomy, face and fur. Full body stays in frame.",
+      "reference_images": [
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/a949da2973c84558bbbd2d1c06bdd2ac/creamFront.png",
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ec78cb7704784b8ca677bfec8a7c25d1/creamSide.png"
+      ],
+      "used": true
+    },
+    {
+      "character": "cream",
+      "action": "slide",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_b11b0fe9b40743959ea1d1a04b02d0db",
+      "credit_cost": 120,
+      "source_file": "sources/cream-slide.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_b11b0fe9b40743959ea1d1a04b02d0db/output/output_0.mp4",
+      "prompt": "Animate the exact established desktop kitten in the two reference images. Preserve its face, proportions, eye color, coat pattern and soft detailed 3D illustration style. One fixed-camera full-body 6-second animation, no zoom, no cuts, no captions. Uniform bright green chroma-key background #00FF00 and generous empty space around the cat. Natural continuous movement and expressive small reactions. Strict right-facing side view. The kitten runs right for one stride, tries to stop, then playfully slides a short distance with its forepaws stretched forward and hind paws gathered beneath the body, toes spread, surprised eyes, haunches low and tail balancing. Friction gradually slows the slide to a complete stop. The cat steadies itself and stands normally. Soft comic timing grounded in real weight and inertia, no body distortion and no human posture. Full body stays in frame.",
+      "reference_images": [
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/a949da2973c84558bbbd2d1c06bdd2ac/creamFront.png",
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ec78cb7704784b8ca677bfec8a7c25d1/creamSide.png"
+      ],
+      "used": true
+    },
+    {
+      "character": "cream",
+      "action": "stumble",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_6ef00ab23a3843a5afb84dfa0cf4471c",
+      "credit_cost": 120,
+      "source_file": "sources/rejected/cream-stumble.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_6ef00ab23a3843a5afb84dfa0cf4471c/output/output_0.mp4",
+      "prompt": "Animate the exact established desktop kitten in the two reference images. Preserve its face, proportions, eye color, coat pattern and soft detailed 3D illustration style. One fixed-camera full-body 6-second animation, no zoom, no cuts, no captions. Uniform bright green chroma-key background #00FF00 and generous empty space around the cat. Natural continuous movement and expressive small reactions. Strict right-facing side view. A kitten runs right for one short stride, makes a small harmless clumsy misstep while stopping, tips forward onto its soft chest and forepaws, briefly tumbles onto its side with all limbs anatomically connected, then rolls upright, shakes its head gently and sits with a slightly embarrassed cute expression. No injury, no violent impact. Continuous feline weight transfer and realistic soft recovery. Full body stays in frame.",
+      "reference_images": [
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/a949da2973c84558bbbd2d1c06bdd2ac/creamFront.png",
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ec78cb7704784b8ca677bfec8a7c25d1/creamSide.png"
+      ],
+      "used": false
+    },
+    {
+      "character": "cream",
+      "action": "climb",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_8d0fdba567344404bbeceb1ae07c1a10",
+      "credit_cost": 120,
+      "source_file": "sources/cream-climb.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_8d0fdba567344404bbeceb1ae07c1a10/output/output_0.mp4",
+      "prompt": "Animate the exact established desktop kitten in the two reference images. Preserve its face, proportions, eye color, coat pattern and soft detailed 3D illustration style. One fixed-camera full-body 6-second animation, no zoom, no cuts, no captions. Uniform bright green chroma-key background #00FF00 and generous empty space around the cat. Natural continuous movement and expressive small reactions. Strict side view of the reference kitten at the right vertical edge of a monitor, paws facing RIGHT. A thin neutral-gray vertical wall line is at the far right, clearly separated from the body. The kitten reaches both forepaws up to the edge, grips it, pushes upward with the hind paws and climbs vertically with two alternating forepaw/hindpaw steps, pauses while clinging, then releases and makes a gentle controlled hop back down onto all four paws. Keep the whole cat visible. Real cat climbing coordination and weight shifts. No clipping through the wall, no transformation.",
+      "reference_images": [
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/a949da2973c84558bbbd2d1c06bdd2ac/creamFront.png",
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ec78cb7704784b8ca677bfec8a7c25d1/creamSide.png"
+      ],
+      "used": true
+    },
+    {
+      "character": "tuxedo",
+      "action": "ball",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_61f951f7957442ccbba92530b1e94083",
+      "credit_cost": 120,
+      "source_file": "sources/tuxedo-ball.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_61f951f7957442ccbba92530b1e94083/output/output_0.mp4",
+      "prompt": "Animate the exact established desktop kitten in the two reference images. Preserve its face, proportions, eye color, coat pattern and soft detailed 3D illustration style. One fixed-camera full-body 6-second animation, no zoom, no cuts, no captions. Uniform bright green chroma-key background #00FF00 and generous empty space around the cat. Natural continuous movement and expressive small reactions. A physically convincing playful kitten interacting with a small red rubber ball. Crouch low, visually follow the ball, shift weight onto the hindquarters, reach one connected forepaw and visibly touch the ball, give it a light tap that makes it roll away, take three quick pursuit steps, slow down, then tap it again with the opposite forepaw. Each ball motion starts after visible paw contact, ball rolls naturally and decelerates from friction. The cat's limbs stay anatomically correct. Finish in a calm seated pose. Ball stays separated from the cat body and does not overlap its torso.",
+      "reference_images": [
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ee195d86567e452590783e41901176f9/tuxedoFront.png",
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/4e193126060c48b5836d74e8654446dc/tuxedoSide.png"
+      ],
+      "used": true
+    },
+    {
+      "character": "tuxedo",
+      "action": "toy",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_406e618b3b4b4725be12c94d8a5ad29a",
+      "credit_cost": 120,
+      "source_file": "sources/tuxedo-toy.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_406e618b3b4b4725be12c94d8a5ad29a/output/output_0.mp4",
+      "prompt": "Animate the exact established desktop kitten in the two reference images. Preserve its face, proportions, eye color, coat pattern and soft detailed 3D illustration style. One fixed-camera full-body 6-second animation, no zoom, no cuts, no captions. Uniform bright green chroma-key background #00FF00 and generous empty space around the cat. Natural continuous movement and expressive small reactions. A physically convincing kitten playing with a feather lure just above the floor. Lower the chest and wiggle the haunches before a short pounce, land on bent forelegs, pin the feather with both forepaws, release it, follow its tiny movement with the head and eyes, then make one quick soft paw swipe. Real feline anticipation, weight transfer, contact, recoil and recovery. Keep all four limbs attached with consistent anatomy. End seated. The lure stays outside the cat silhouette except at the paw tips.",
+      "reference_images": [
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ee195d86567e452590783e41901176f9/tuxedoFront.png",
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/4e193126060c48b5836d74e8654446dc/tuxedoSide.png"
+      ],
+      "used": true
+    },
+    {
+      "character": "tuxedo",
+      "action": "walk",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_88569faeeedd47af949f4829a243d6e6",
+      "credit_cost": 120,
+      "source_file": "sources/tuxedo-walk.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_88569faeeedd47af949f4829a243d6e6/output/output_0.mp4",
+      "prompt": "Animate the exact established desktop kitten in the two reference images. Preserve its face, proportions, eye color, coat pattern and soft detailed 3D illustration style. One fixed-camera full-body 6-second animation, no zoom, no cuts, no captions. Uniform bright green chroma-key background #00FF00 and generous empty space around the cat. Natural continuous movement and expressive small reactions. Strict right-facing side view. Start standing, sniff briefly, start with two short tentative steps, walk forward with a natural four-beat feline gait, vary speed gently with two quicker steps then two relaxed steps, shift body weight softly over planted paws, and slow to a relaxed stop. No foot sliding during ground contact. Smooth shoulders, hips, head and tail follow-through. Preserve the exact reference character and four anatomical legs. Full body stays in frame.",
+      "reference_images": [
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ee195d86567e452590783e41901176f9/tuxedoFront.png",
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/4e193126060c48b5836d74e8654446dc/tuxedoSide.png"
+      ],
+      "used": true
+    },
+    {
+      "character": "tuxedo",
+      "action": "run",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_7925246e37a64bb6a4fc51bd99dda1e7",
+      "credit_cost": 120,
+      "source_file": "sources/tuxedo-run.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_7925246e37a64bb6a4fc51bd99dda1e7/output/output_0.mp4",
+      "prompt": "Animate the exact established desktop kitten in the two reference images. Preserve its face, proportions, eye color, coat pattern and soft detailed 3D illustration style. One fixed-camera full-body 6-second animation, no zoom, no cuts, no captions. Uniform bright green chroma-key background #00FF00 and generous empty space around the cat. Natural continuous movement and expressive small reactions. Strict right-facing side view. Start standing, lower the body and accelerate into a cute realistic feline gallop with linked foreleg/hindleg pairs, a brief gathered suspension, then extended flight. Show a short enthusiastic speed burst, a small relaxation, then another two gallop strides and a natural deceleration. Clear contact timing and supple back, ears and tail follow-through. All four legs stay anatomically attached. Full body stays in frame.",
+      "reference_images": [
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ee195d86567e452590783e41901176f9/tuxedoFront.png",
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/4e193126060c48b5836d74e8654446dc/tuxedoSide.png"
+      ],
+      "used": true
+    },
+    {
+      "character": "tuxedo",
+      "action": "brake",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_8975de3e8a8141f9b23967b73541d068",
+      "credit_cost": 120,
+      "source_file": "sources/tuxedo-brake.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_8975de3e8a8141f9b23967b73541d068/output/output_0.mp4",
+      "prompt": "Animate the exact established desktop kitten in the two reference images. Preserve its face, proportions, eye color, coat pattern and soft detailed 3D illustration style. One fixed-camera full-body 6-second animation, no zoom, no cuts, no captions. Uniform bright green chroma-key background #00FF00 and generous empty space around the cat. Natural continuous movement and expressive small reactions. Strict right-facing side view. The kitten trots right for two steps, then applies a cute forceful natural brake: reaches and plants both forepaws forward, lowers the chest, shifts its weight back onto bent hind legs, leans the torso backward slightly as momentum dissipates, tail swings forward then settles, and rises to a relaxed four-paw stand. A short believable front-paw push and recovery. Preserve anatomy, face and fur. Full body stays in frame.",
+      "reference_images": [
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ee195d86567e452590783e41901176f9/tuxedoFront.png",
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/4e193126060c48b5836d74e8654446dc/tuxedoSide.png"
+      ],
+      "used": true
+    },
+    {
+      "character": "tuxedo",
+      "action": "slide",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_dd87c3883a264ab4a0c44740cdb21e82",
+      "credit_cost": 120,
+      "source_file": "sources/tuxedo-slide.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_dd87c3883a264ab4a0c44740cdb21e82/output/output_0.mp4",
+      "prompt": "Animate the exact established desktop kitten in the two reference images. Preserve its face, proportions, eye color, coat pattern and soft detailed 3D illustration style. One fixed-camera full-body 6-second animation, no zoom, no cuts, no captions. Uniform bright green chroma-key background #00FF00 and generous empty space around the cat. Natural continuous movement and expressive small reactions. Strict right-facing side view. The kitten runs right for one stride, tries to stop, then playfully slides a short distance with its forepaws stretched forward and hind paws gathered beneath the body, toes spread, surprised eyes, haunches low and tail balancing. Friction gradually slows the slide to a complete stop. The cat steadies itself and stands normally. Soft comic timing grounded in real weight and inertia, no body distortion and no human posture. Full body stays in frame.",
+      "reference_images": [
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ee195d86567e452590783e41901176f9/tuxedoFront.png",
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/4e193126060c48b5836d74e8654446dc/tuxedoSide.png"
+      ],
+      "used": true
+    },
+    {
+      "character": "tuxedo",
+      "action": "stumble",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_1d341aefa2d24293b1029158f0484130",
+      "credit_cost": 120,
+      "source_file": "sources/rejected/tuxedo-stumble.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_1d341aefa2d24293b1029158f0484130/output/output_0.mp4",
+      "prompt": "Animate the exact established desktop kitten in the two reference images. Preserve its face, proportions, eye color, coat pattern and soft detailed 3D illustration style. One fixed-camera full-body 6-second animation, no zoom, no cuts, no captions. Uniform bright green chroma-key background #00FF00 and generous empty space around the cat. Natural continuous movement and expressive small reactions. Strict right-facing side view. A kitten runs right for one short stride, makes a small harmless clumsy misstep while stopping, tips forward onto its soft chest and forepaws, briefly tumbles onto its side with all limbs anatomically connected, then rolls upright, shakes its head gently and sits with a slightly embarrassed cute expression. No injury, no violent impact. Continuous feline weight transfer and realistic soft recovery. Full body stays in frame.",
+      "reference_images": [
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ee195d86567e452590783e41901176f9/tuxedoFront.png",
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/4e193126060c48b5836d74e8654446dc/tuxedoSide.png"
+      ],
+      "used": false
+    },
+    {
+      "character": "tuxedo",
+      "action": "climb",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_f72786741b8a4a57a4e77ca668cccfab",
+      "credit_cost": 120,
+      "source_file": "sources/tuxedo-climb.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_f72786741b8a4a57a4e77ca668cccfab/output/output_0.mp4",
+      "prompt": "Animate the exact established desktop kitten in the two reference images. Preserve its face, proportions, eye color, coat pattern and soft detailed 3D illustration style. One fixed-camera full-body 6-second animation, no zoom, no cuts, no captions. Uniform bright green chroma-key background #00FF00 and generous empty space around the cat. Natural continuous movement and expressive small reactions. Strict side view of the reference kitten at the right vertical edge of a monitor, paws facing RIGHT. A thin neutral-gray vertical wall line is at the far right, clearly separated from the body. The kitten reaches both forepaws up to the edge, grips it, pushes upward with the hind paws and climbs vertically with two alternating forepaw/hindpaw steps, pauses while clinging, then releases and makes a gentle controlled hop back down onto all four paws. Keep the whole cat visible. Real cat climbing coordination and weight shifts. No clipping through the wall, no transformation.",
+      "reference_images": [
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ee195d86567e452590783e41901176f9/tuxedoFront.png",
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/4e193126060c48b5836d74e8654446dc/tuxedoSide.png"
+      ],
+      "used": true
+    },
+    {
+      "character": "cream",
+      "action": "stumble",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_704083dea13746d98c4e7b15925ec13f",
+      "credit_cost": 120,
+      "source_file": "sources/cream-stumble.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_704083dea13746d98c4e7b15925ec13f/output/output_0.mp4",
+      "prompt": "ISOLATED CHROMA GREEN ANIMATION. Solid uniform vivid neon green #00FF00 background, green floor, absolutely NO black, pastel, pink, blue or white scenery. Whole cat stays in center occupying only 45% image width, with wide empty green margin all around including tail and toes in every frame. Use ONLY the kitten identity of reference, ignore its background. Static camera. The exact orange cream kitten trots slowly two steps toward the right, brakes too fast, gently tips sideways onto its haunches, rolls onto its side once showing belly and all four paws, immediately rights itself and stands calmly. Natural weight, momentum, soft body compression and clear recovery, anatomically connected legs. Full-body shot, no camera motion, no cuts, no text. Neon GREEN background and floor for the entire 6 seconds.",
+      "reference_images": [
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ec78cb7704784b8ca677bfec8a7c25d1/creamSide.png"
+      ],
+      "used": true
+    },
+    {
+      "character": "tuxedo",
+      "action": "stumble",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_868188d420e548b08bad4ae7feb92b58",
+      "credit_cost": 120,
+      "source_file": "sources/tuxedo-stumble.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_868188d420e548b08bad4ae7feb92b58/output/output_0.mp4",
+      "prompt": "ISOLATED CHROMA GREEN ANIMATION. Solid uniform vivid neon green #00FF00 background, green floor, absolutely NO black, pastel, pink, blue or white scenery. Whole cat stays in center occupying only 45% image width, with wide empty green margin all around including tail and toes in every frame. Use ONLY the kitten identity of reference, ignore its background. Static camera. The exact black-and-white tuxedo kitten trots slowly two steps toward the right, brakes too fast, gently tips sideways onto its haunches, rolls onto its side once showing belly and all four paws, immediately rights itself and stands calmly. Natural weight, momentum, soft body compression and clear recovery, anatomically connected legs. Full-body shot, no camera motion, no cuts, no text. Neon GREEN background and floor for the entire 6 seconds.",
+      "reference_images": [
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/4e193126060c48b5836d74e8654446dc/tuxedoSide.png"
+      ],
+      "used": true
     }
   ]
 }

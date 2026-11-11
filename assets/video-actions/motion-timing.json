@@ -1,0 +1,94 @@
+{
+  "schema": 1,
+  "method": "manual timing landmarks observed in retained Dropshot motion references",
+  "pace": {
+    "walk_gain": [
+      0.78,
+      0.94,
+      1.12,
+      0.9,
+      1.16,
+      0.83,
+      1.03,
+      0.78
+    ],
+    "walk_period_ms": 4300,
+    "run_gain": [
+      0.62,
+      0.93,
+      1.25,
+      1.08,
+      0.76,
+      1.18,
+      0.88,
+      0.62
+    ],
+    "run_period_ms": 2850,
+    "interpolation": "smoothstep; physical acceleration and travel select the original user-video gait frames"
+  },
+  "stop": {
+    "brake_grip": 1.25,
+    "slide_grip": 0.18,
+    "stumble_grip": 0.38,
+    "selection_weights": [
+      5,
+      3,
+      2
+    ],
+    "world_root": "unchanged dynamic Box2D body; no relocations"
+  },
+  "wall": {
+    "edge_paw_x_logical": 48,
+    "motor_speed_keys_ms_px_s": [
+      [
+        0,
+        0
+      ],
+      [
+        1100,
+        62
+      ],
+      [
+        2050,
+        12
+      ],
+      [
+        2600,
+        70
+      ],
+      [
+        3650,
+        10
+      ],
+      [
+        4300,
+        0
+      ],
+      [
+        5000,
+        "release"
+      ]
+    ],
+    "max_rise_logical": 150,
+    "program_duration_ms": 6583,
+    "world_root": "prismatic joint grip, gravity after release, ordinary motor return"
+  },
+  "references": {
+    "cream-walk": {
+      "source": "sources/cream-walk.mp4",
+      "sha256": "122ec7d835e184b94f1b0fcf99ff8389d1a8537da856ab18ff516ed11d29317b"
+    },
+    "cream-run": {
+      "source": "sources/cream-run.mp4",
+      "sha256": "e6e4343ecfcd3e606625a03adf0d4192f82922fc26962a09346724f1fad22993"
+    },
+    "tuxedo-walk": {
+      "source": "sources/tuxedo-walk.mp4",
+      "sha256": "665f11f4681ab789a3cb0b2bd3c6084d6d2aeb82493b10aba1b0d5aa4544aaaf"
+    },
+    "tuxedo-run": {
+      "source": "sources/tuxedo-run.mp4",
+      "sha256": "0071ca84ae8d51c4b467c053322dba7d31908690f4585a87dbc5d9b8c43b79a3"
+    }
+  }
+}

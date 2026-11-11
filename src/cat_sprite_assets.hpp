@@ -13,7 +13,7 @@ constexpr unsigned kCharacters=11;
 constexpr unsigned AuthoredCharacter(unsigned character) { return (character==8||character==10)?0:character; }
 constexpr unsigned kMaxSide=16384;
 constexpr std::uint64_t kMaxImagePixels=32ull*1024*1024;
-constexpr std::uint64_t kMaxResidentPixels=48ull*1024*1024;
+constexpr std::uint64_t kMaxResidentPixels=64ull*1024*1024;
 constexpr std::uint64_t kMaxImageBytes=32ull*1024*1024;
 struct Rect { int x=0,y=0,width=0,height=0; };
 // Anchors are local to the frame rectangle, in unscaled source pixels.
@@ -50,6 +50,8 @@ constexpr int ResourceId(cat::sprite_sequence::Clip clip,unsigned character) {
     if(clip==cat::sprite_sequence::Clip::Run)return 401+static_cast<int>(character*2);
     if(clip==cat::sprite_sequence::Clip::Knead)return 440+static_cast<int>(character*2);
     if(clip==cat::sprite_sequence::Clip::Reach)return 441+static_cast<int>(character*2);
+    if(clip>=cat::sprite_sequence::Clip::BallPlay&&clip<=cat::sprite_sequence::Clip::Climb)
+        return 430+static_cast<int>(character*32+static_cast<unsigned>(clip)-static_cast<unsigned>(cat::sprite_sequence::Clip::BallPlay));
     return 0;
 }
 constexpr bool Valid(const Descriptor& asset) {

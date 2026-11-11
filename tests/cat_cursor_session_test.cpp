@@ -402,7 +402,10 @@ void AuthoredPawUsesItsPaintedEndpointFullClockAndPause() {
                 }
             }
             CHECK(pawed && paused && visibleCue);
-            CHECK(host.contacts==(height==38.89?1:0));
+            unsigned authoredContacts=0;
+            for(unsigned i=0;i<host.authoredPunch->program.cueCount;++i)
+                if(host.authoredPunch->program.cues[i].events&cat::sprite_sequence::Contact)++authoredContacts;
+            CHECK(host.contacts==(height==38.89?static_cast<int>(authoredContacts):0));
             CHECK(host.launches==0 && !host.session.Active());
         }
 }

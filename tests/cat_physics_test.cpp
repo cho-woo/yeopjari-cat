@@ -1,6 +1,7 @@
 #include "../src/cat_physics.hpp"
 #include "../src/cat_environment.hpp"
 #include "../src/cat_animation.hpp"
+#include "../src/cat_lively_motion.hpp"
 #include <box2d/box2d.h>
 
 #include <algorithm>
@@ -933,6 +934,48 @@ void HangingFixedStepsAndWorldCleanup() {
     CHECK(b2GetByteCount() == before);
 }
 
+void WallClimbAndSkid() {
+    for(bool running:{false,true}) {
+        double low=2,high=0,previous=cat::lively::Pace(0,running,3);
+        for(unsigned ms=16;ms<12000;ms+=16) {
+            const double gain=cat::lively::Pace(ms,running,3);
+            CHECK(gain>=.6&&gain<=1.26);CHECK(std::abs(gain-previous)<.04);
+            low=std::min(low,gain);high=std::max(high,gain);previous=gain;
+        }
+        CHECK(high-low>(running?.5:.3));
+    }
+    const int before=b2GetByteCount();
+    {
+        Controller cat;cat.Reset(499,20,500);cat.SetCeiling(400);Run(cat,.3);
+        CHECK(cat.BeginWallClimb(150));const auto origin=cat.CurrentPose();
+        Run(cat,1.5); // Initial grip can put the body to sleep before its first pull.
+        cat.SetWallClimbSpeed(60);Run(cat,1.5);
+        const auto raised=cat.CurrentPose();
+        CHECK(cat.WallClimbing()&&raised.hanging);
+        CHECK(std::abs(raised.x-origin.x)<.2);
+        CHECK(raised.lift>80&&raised.lift<100);
+        cat.SetWallClimbSpeed(0);Run(cat,.5);
+        CHECK(std::abs(cat.CurrentPose().lift-raised.lift)<1);
+        cat.Update(.2,true);CHECK(std::abs(cat.CurrentPose().lift-raised.lift)<1);
+        cat.EndWallClimb();CHECK(!cat.WallClimbing()&&!cat.Hanging());
+        CHECK(std::abs(cat.CurrentPose().lift-raised.lift)<1);
+        Run(cat,2);CHECK(cat.CurrentPose().grounded);CHECK(cat.CurrentPose().lift<.5);
+        CHECK(cat.BeginWallClimb(120));cat.SetWallClimbSpeed(50);Run(cat,.5);
+        cat.SetBounds(20,520);CHECK(!cat.WallClimbing());Run(cat,2);CHECK(cat.CurrentPose().grounded);
+        cat.Reset(100,20,2000);Run(cat,.2);CHECK(!cat.BeginWallClimb(150));
+        double distance[2]{};
+        for(int variant=0;variant<2;++variant) {
+            cat.Reset(200,20,2000);cat.SetTargetVelocity(120);Run(cat,2);
+            const double start=cat.CurrentPose().x;
+            cat.SetBrakeGrip(variant?.18:1.25);cat.SetTargetVelocity(0);Run(cat,2);
+            distance[variant]=cat.CurrentPose().x-start;
+            CHECK(std::abs(cat.CurrentPose().velocityX)<4);
+        }
+        CHECK(distance[1]>distance[0]*3);
+    }
+    CHECK(b2GetByteCount()==before);
+}
+
 void WorldLifetime() {
     const int before = b2GetByteCount();
     for (int i = 0; i < 10; ++i) {
@@ -977,6 +1020,7 @@ int main() {
         LedgeGripUsesJointAndReleasesMomentum();
         MovingOrClosingGripNeverTeleports();
         HangingFixedStepsAndWorldCleanup();
+        WallClimbAndSkid();
         WorldLifetime();
         std::cout << "Box2D physics: " << checks << " checks passed\n";
         return 0;

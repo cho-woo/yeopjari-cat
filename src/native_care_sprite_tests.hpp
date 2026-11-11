@@ -443,7 +443,7 @@ int NativeActualCareSpriteRenderTest(std::string& context) {
             }
             if(pose.groundContact&&actual[3]>bottom+cat::render::SpriteBottomSafetyInset(layout,desiredHeight,body.bodyHeight)+2)return 304;
         }
-        if(layout.clip!=Clip::Jump) {
+        if(layout.clip!=Clip::Jump&&layout.clip!=Clip::Climb) {
             cat::animation::Pose airborne;airborne.spriteClip=layout.clip;airborne.groundContact=false;
             if(CareSpriteFor(airborne,character))return 306;
         }

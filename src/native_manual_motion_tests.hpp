@@ -78,10 +78,10 @@ bool MenuCommands(bool enabled) {
         wchar_t label[80]{}; GetMenuStringW(menu,i,label,80,MF_BYPOSITION);
         if (std::wstring(label) == L"행동시키기") actions = GetSubMenu(menu,i);
     }
-    bool valid = actions && GetMenuItemCount(actions) == 3;
-    const UINT ids[]{kManualWalkCommand,kManualRunCommand,kManualJumpCommand};
-    const wchar_t* labels[]{L"걷기",L"달리기",L"점프하기"};
-    for (unsigned i = 0; valid && i < 3; ++i) {
+    bool valid = actions && GetMenuItemCount(actions) == 4;
+    const UINT ids[]{kManualWalkCommand,kManualRunCommand,kManualJumpCommand,kWallClimbCommand};
+    const wchar_t* labels[]{L"걷기",L"달리기",L"점프하기",L"오른쪽 가장자리 오르기"};
+    for (unsigned i = 0; valid && i < 4; ++i) {
         wchar_t label[80]{}; GetMenuStringW(actions,i,label,80,MF_BYPOSITION);
         const auto state = GetMenuState(actions,ids[i],MF_BYCOMMAND);
         valid = GetMenuItemID(actions,i) == ids[i] && std::wstring(label) == labels[i] &&
@@ -132,9 +132,11 @@ int Run(std::string& proof) {
             if (g.manualMotionActive || g.motion != Motion::Idle || !g.autonomousResting ||
                     host.Saved() != saved || !g.pet.roamingPaused ||
                     distances[action] < (action ? 180 : 80) ||
-                    std::abs(peaks[action]-(action ? expectedRunSpeed : expectedWalkSpeed)) > 1) return 524;
+                    peaks[action]<(action?expectedRunSpeed:expectedWalkSpeed)*1.03 ||
+                    peaks[action]>(action?expectedRunSpeed:expectedWalkSpeed)*1.28) return 524;
             g.workInterference = false;
-            for (unsigned frame = 0; frame < 50; ++frame) host.Frame();
+            // A source-backed skid or tumble owns up to2600ms of recovery.
+            for (unsigned frame = 0; frame < 230; ++frame) host.Frame();
             if (std::abs(WalkingVelocity(g.physics.CurrentPose())) > .5 || host.Saved() != saved) return 525;
         }
         // A moving request preserves the actual velocity from this same
@@ -248,7 +250,7 @@ int Run(std::string& proof) {
         if (ManualMotionAvailable() || !MenuCommands(false)) return 533;
         const auto saved = host.Saved(); const auto serial = g.motionSerial;
         const auto before = g.physics.CurrentPose();
-        for (const UINT id : {kManualWalkCommand,kManualRunCommand,kManualJumpCommand}) RunCommand(id);
+        for (const UINT id : {kManualWalkCommand,kManualRunCommand,kManualJumpCommand,kWallClimbCommand}) RunCommand(id);
         const auto after = g.physics.CurrentPose();
         if (g.motionSerial != serial || g.manualMotionActive || host.Saved() != saved ||
                 before.x != after.x || before.lift != after.lift ||
@@ -258,7 +260,7 @@ int Run(std::string& proof) {
     if(!EnsureCareCoats(cat::Character::Cream,cat::Character::Tuxedo))return 520;
     proof = "{\"schema\":1,\"test\":\"manual-motion-native\",\"status\":\"passed\",\"version\":\""
         YEOPJARI_VERSION_STRING "\",\"mesh_walk_default\":false,\"approved_walk_frames\":" +
-        std::to_string(approvedWalkFrames) + ",\"menu_commands\":[2800,2801,2802],\"menu_labels_checked\":true,\"unsafe_states_checked\":" +
+        std::to_string(approvedWalkFrames) + ",\"menu_commands\":[2800,2801,2802,2803],\"menu_labels_checked\":true,\"unsafe_states_checked\":" +
         std::to_string(unsafe) + ",\"pause_preference_preserved\":true,\"suspension_clock_preserved\":true,"
         "\"characters\":[" + characters.str() + "]}\n";
     return 0;

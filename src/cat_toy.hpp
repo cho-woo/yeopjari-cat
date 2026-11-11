@@ -101,7 +101,8 @@ inline double Duration(Kind kind, Phase phase) {
     case Phase::Inspect: return kind == Kind::Ball ? 150 : kind == Kind::FishingRod ? 350 : 700;
     case Phase::Interact:
         switch (kind) {
-        case Kind::Ball: case Kind::FishingRod: return 1050;
+        case Kind::Ball: return 1050;
+        case Kind::FishingRod: return 3300;
         case Kind::Box: return 1700;
         case Kind::PaperBag: return 2800;
         case Kind::Catnip: return 4300;
@@ -264,6 +265,7 @@ inline double SessionTarget(const Session& session, double toyX, double catX, do
                             double low, double high) {
     growth = std::max(.1, growth);
     if (session.phase == Phase::BoxExit) return ClampCenter(toyX, low, high);
+    if(session.kind==Kind::FishingRod)return ClampCenter(toyX,low,high);
     if (session.phase == Phase::Exit) {
         const double preferred = toyX - session.entryDirection * 100 * growth;
         const double alternate = toyX + session.entryDirection * 100 * growth;

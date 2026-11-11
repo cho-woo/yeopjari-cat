@@ -71,6 +71,11 @@ public:
     bool BeginHang(double edgeX, double height);
     bool EndHang(bool climb = true);
     bool Hanging() const;
+    bool BeginWallClimb(double risePixels);
+    void SetWallClimbSpeed(double pixelsPerSecond);
+    void EndWallClimb();
+    bool WallClimbing() const;
+    void SetBrakeGrip(double grip);
     void SetTargetVelocity(double logicalPixelsPerSecond);
     bool Jump(double apexPixels = 55.0);
     // Keep the actual horizontal takeoff momentum. Ground acceleration resumes

@@ -136,7 +136,10 @@ int Simulate(Row& row,std::string& context) {
         " walks="+std::to_string(row.walkFrames)+" brakes="+std::to_string(row.brakingFrames)+
         " turns="+std::to_string(row.turns)+" bounces="+std::to_string(row.ballBounces)+
         " balltravel="+std::to_string(row.ballTravel)+" cattravel="+std::to_string(row.catTravel)+
-        " maxcontact="+std::to_string(row.maxContactDistance);
+        " maxcontact="+std::to_string(row.maxContactDistance)+" phase="+std::to_string(static_cast<unsigned>(g.toySession.phase))+
+        " elapsed="+std::to_string(g.toySession.elapsedMs)+" ball="+std::to_string(g.toyBall.x)+
+        " root="+std::to_string(g.physics.CurrentPose().x)+" standoff="+std::to_string(BallPawStandOff())+
+        " motion="+std::to_string(static_cast<unsigned>(g.motion))+" wait="+std::to_string(g.waitingForStop);
     if(row.contacts<3||row.pawEntries<3||row.walkFrames<60||row.ballTravel<80||row.catTravel<40||
             !row.turns||!row.ballBounces||!row.brakingFrames||!row.profileUnchanged||!row.sourceImmutable||
             !row.duplicateContactRejected||row.contacts>row.pawEntries||row.maxFrameRootDelta>4)return 793;

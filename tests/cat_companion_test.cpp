@@ -125,17 +125,6 @@ void RequireMoving(Model& model,Context& c,double minimumSpeed) {
 }
 void RequireCareStarts(Model& model,Context& c,cat::sprite_sequence::Clip clip) {
     const auto began=c.ticks;
-    if(clip==cat::sprite_sequence::Clip::Groom) {
-        while((model.View(c.ticks).motion!=cat::animation::Motion::Groom ||
-                model.View(c.ticks).animation.cursorReach.groom!=1) &&
-                c.ticks-began<RegisteredGroundTransitionBudget())Step(model,c,1);
-        const auto view=model.View(c.ticks);
-        CHECK(view.motion==cat::animation::Motion::Groom && view.animation.cursorReach.groom==1);
-        CHECK(view.animation.frame==4 && view.animation.spriteClip==cat::sprite_sequence::Clip::None && !view.animation.spriteTimed);
-        CHECK(view.animation.cursorReach.rightLift==0); // connected arm starts at its exact resting source
-        CHECK(std::abs(view.physical.velocityX-view.physical.supportVelocityX)<cat::motion::kStoppedSpeed);
-        return;
-    }
     while(model.View(c.ticks).animation.spriteClip!=clip &&
             c.ticks-began<RegisteredGroundTransitionBudget())Step(model,c,1);
     const auto view=model.View(c.ticks);
@@ -143,7 +132,7 @@ void RequireCareStarts(Model& model,Context& c,cat::sprite_sequence::Clip clip) 
     CHECK(view.animation.spriteElapsedMs==0);
     CHECK(std::abs(view.physical.velocityX-view.physical.supportVelocityX)<cat::motion::kStoppedSpeed);
 }
-void CanonicalPoseTransitionUsesHostActionAndPause() {
+void AuthoredKneadDoesNotLeakLegacyJointsAcrossActions() {
     using M=cat::animation::Motion;
     for(unsigned reset=0;reset<5;++reset) {
         State s=NewState(born);s.pet.position=.2;s.nutrition.fullness=60;s.pet.hunger=60;
@@ -151,7 +140,7 @@ void CanonicalPoseTransitionUsesHostActionAndPause() {
         auto c=Frame(100,model.Physical().x+65);c.primaryMotion=M::Eat;
         CHECK(model.TrySocial(Interaction::FoodCompetition,c));model.Tick(c);Step(model,c,12);
         const auto kneading=model.View(c.ticks);
-        CHECK(kneading.motion==M::Knead && kneading.animation.joints.frontLeft>.9);
+        CHECK(kneading.motion==M::Knead && kneading.animation.spriteClip==cat::sprite_sequence::Clip::Knead && kneading.animation.joints.frontLeft==0);
         CHECK(model.Pet(c.nowUtc,c.ticks));
         const auto record=Serialize(s);
         const auto start=model.View(c.ticks);
@@ -160,7 +149,7 @@ void CanonicalPoseTransitionUsesHostActionAndPause() {
         CHECK(Serialize(s)==record); // Rendering never changes saved care/growth data.
         if(reset==0) {
             Step(model,c,3);const auto middle=model.View(c.ticks);
-            CHECK(middle.animation.joints.frontLeft>0 && middle.animation.joints.frontLeft<start.animation.joints.frontLeft);
+            CHECK(middle.animation.joints.frontLeft==0);
             const auto physical=model.Physical();
             c.ticks+=5000;c.nowUtc+=5;c.paused=true;c.elapsedSeconds=5;model.Tick(c);
             const auto paused=model.View(c.ticks);
@@ -769,7 +758,7 @@ void RegisteredCompanionCareFinishesItsWholeProgram() {
         CHECK(grooming.motion==cat::animation::Motion::Groom);
         const auto* groom=cat::sprite_assets::Find(Clip::Groom,0,cat::sprite_assets::kCareSprites);
         const auto groomDuration=cat::sprite_sequence::ProgramDuration(groom->program);
-        CHECK(grooming.animation.cursorReach.groom==1 && grooming.animation.spriteClip==Clip::None);
+        CHECK(grooming.animation.spriteClip==Clip::Groom && grooming.animation.spriteTimed);
         c.ticks+=groomDuration;c.nowUtc=born+static_cast<std::int64_t>(c.ticks/1000);model.Tick(c);
         const auto neutral=model.View(c.ticks);
         CHECK(neutral.motion==cat::animation::Motion::Idle);
@@ -901,7 +890,7 @@ void AuthoredSleepKeepsItsIdentityIncludingWindowRestAndWake() {
 }
 int main() {
     try { SeparateAdoptionAndRestart();IndividualStableTemperaments();StrictBundleParsing();RecoveryAndFaults();IndependentCareAndAge();FishCareKeepsTheExistingMealAndBusyContracts();AcceptedFoodRestartsItsClockAfterLongMenuPauses();SocialContactAndCompetition();RealWindowFollowingAndClosure();SpeciesLimitsAndBraking();ManualCareIsNotInterrupted();NaturalTakeoffAndLandingUsePhysicalMotion();SocialGesturesWaitForPlantedFeet();BrakingPreservesTheCompleteMeal();PairedRunningUsesOneSupportAndBodyMultiplier();HighWindowFollowingRespectsTheRealCeiling();
-        HighRefreshGaitFollowsRenderedTravel();CanonicalPoseTransitionUsesHostActionAndPause();
+        HighRefreshGaitFollowsRenderedTravel();AuthoredKneadDoesNotLeakLegacyJointsAcrossActions();
         AuthoredCompanionWalkRunUsesItsRealRegisteredTravel();RegisteredCompanionCareFinishesItsWholeProgram();
         OptionalWalkReviewKeepsBothCoatsOnTheRegisteredStride();
         ContactRecoveryFinishesBeforeAcceptedFishStarts();
