@@ -40,8 +40,8 @@ struct Host {
         g.groundArtBridge.RebaseClock(now);
     }
     void Command(UINT id) {
-        g.groundArtBridge.RebaseClock(GetTickCount64());
-        RunCommand(id); Rebase();
+        g.groundArtBridge.RebaseClock(now);
+        RunCommand(id,now); Rebase();
     }
     void Frame(ULONGLONG stepMs=16) {
         now += stepMs;

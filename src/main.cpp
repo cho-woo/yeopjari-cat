@@ -3963,11 +3963,11 @@ void UpdateKeyboardPlay(ULONGLONG ticks,double elapsed) {
     keyboardPlay.direction=direction;keyboardPlay.running=running;
 }
 
-void StartManualMotion(Motion motion) {
+void StartManualMotion(Motion motion,ULONGLONG actionTicks=0) {
     // Recheck at dispatch: a supporting window or update can change after the menu opens.
     if (!ManualMotionAvailable()) return;
     if(motion==Motion::Jump && g.jumpPending)return;
-    const auto ticks = GetTickCount64();
+    const auto ticks = actionTicks?actionTicks:GetTickCount64();
     if (g.brain) g.brain->Interrupt(ticks);
     cursorInteraction = {};
     g.prank.Clear(); g.bubbleUntil = 0;
@@ -3975,7 +3975,7 @@ void StartManualMotion(Motion motion) {
     const auto bounds = MovementBoundsLogical();
     if(motion!=Motion::Jump||std::abs(WalkingVelocity(g.physics.CurrentPose()))<8)
         g.direction = g.physics.CurrentPose().x <= (bounds.first + bounds.second) * .5 ? 1 : -1;
-    SetMotion(motion, motion == Motion::Walk ? 5000 : motion == Motion::Zoomies ? 3200 : 3000);
+    SetMotion(motion, motion == Motion::Walk ? 5000 : motion == Motion::Zoomies ? 3200 : 3000,ticks);
     g.speed = (motion == Motion::Walk ? RegisteredWalkSpeed() :
         motion == Motion::Zoomies ? RegisteredRunSpeed() : 0) * g.dpiScale;
     g.manualMotionActive = true;
@@ -3990,14 +3990,14 @@ void FinishManualMotion(ULONGLONG ticks) {
         BeginAutonomousRest(ticks);
 }
 
-void RunCommand(UINT command) {
+void RunCommand(UINT command,ULONGLONG actionTicks=0) {
     if(command==2305)return; // Retired mode command remains inert, including queued messages.
     if(command!=kKeyboardPlayCommand)StopKeyboardPlay(false,true);
     if(command>=kCharacterCommandBase && command<kCharacterCommandBase+cat::kCharacterCount){SelectCharacter(static_cast<cat::Character>(command-kCharacterCommandBase));return;}
     switch (command) {
-    case kManualWalkCommand: StartManualMotion(Motion::Walk); break;
-    case kManualRunCommand: StartManualMotion(Motion::Zoomies); break;
-    case kManualJumpCommand: StartManualMotion(Motion::Jump); break;
+    case kManualWalkCommand: StartManualMotion(Motion::Walk,actionTicks); break;
+    case kManualRunCommand: StartManualMotion(Motion::Zoomies,actionTicks); break;
+    case kManualJumpCommand: StartManualMotion(Motion::Jump,actionTicks); break;
     case kWorkInterferenceCommand: ChangeInteractionSettings(true); break;
     case kSeasonalEventsCommand: ChangeInteractionSettings(false); break;
     case kCursorPlayCommand: ChangeInteractionSettings(false,true); break;
@@ -5764,6 +5764,7 @@ int NativeMenuContractTest() {
 #include "native_cursor_tests.hpp"
 #include "native_perch_tests.hpp"
 #include "native_manual_motion_tests.hpp"
+#include "native_moving_jump_capture.hpp"
 #include "native_video_walk_capture.hpp"
 #include "native_video_motion_capture.hpp"
 #include "native_cute_idle_capture.hpp"
@@ -5808,6 +5809,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
     if(commandLine && wcsstr(commandLine,L"--render-walk-video"))return NativeVideoWalkCapture(instance);
     if(commandLine && wcsstr(commandLine,L"--render-motion-video"))return NativeVideoMotionCapture(instance);
     if(commandLine && wcsstr(commandLine,L"--render-idle-video"))return NativeCuteIdleCapture(instance);
+    if(commandLine && wcsstr(commandLine,L"--render-moving-jump-video"))return NativeMovingJumpCapture(instance);
     if(commandLine && wcsstr(commandLine,L"--render-cursor-play-video"))return NativeCursorPlayCapture(instance);
     if(commandLine && wcsstr(commandLine,L"--render-groom-review"))return NativeGroomReview(instance);
     if(commandLine && wcsstr(commandLine,L"--render-ball-play"))return NativeBallPlayCapture(instance);

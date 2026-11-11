@@ -139,6 +139,15 @@ jobs:
             Write-Host "::error::$detail"
             throw "Windows source-video meal/run capture failed: $($process.ExitCode)"
           }
+      - name: Capture moving walk and run jumps through Windows GDI+ and Box2D
+        if: ${{ !cancelled() && steps.selftest.outcome == 'success' }}
+        timeout-minutes: 4
+        shell: pwsh
+        run: |
+          $process = Start-Process -FilePath $env:TEST_EXE -ArgumentList '--render-moving-jump-video' -PassThru -Wait
+          $report = if (Test-Path render-self-test/moving-jump-report.txt) { Get-Content render-self-test/moving-jump-report.txt -Raw } else { 'No native moving jump capture report produced.' }
+          Write-Host $report
+          if ($process.ExitCode -ne 0) { throw "Native moving jump capture failed: $($process.ExitCode)" }
       - name: Capture cute idle gestures through Windows GDI+ and Box2D at 60 FPS
         if: ${{ !cancelled() && steps.selftest.outcome == 'success' }}
         timeout-minutes: 5

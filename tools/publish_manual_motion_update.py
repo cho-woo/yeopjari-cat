@@ -40,6 +40,7 @@ IDLE_CAPTURE_STEP = 'Capture cute idle gestures through Windows GDI+ and Box2D a
 CURSOR_CAPTURE_STEP = 'Capture nearby cursor play through Windows GDI+ and Box2D at 60 FPS'
 GROOM_REVIEW_STEP = 'Review connected grooming through Windows GDI+ and Box2D'
 BALL_CAPTURE_STEP = 'Capture ball play through Windows GDI+ and Box2D at 60 FPS'
+MOVING_JUMP_CAPTURE_STEP = 'Capture moving walk and run jumps through Windows GDI+ and Box2D'
 BENCHMARK_STEP = 'Compare baseline and candidate on the same Windows desktop'
 
 
@@ -89,7 +90,7 @@ def validated_source(run_id, head):
         if name == 'windows-smoke':
             for step_name in (SAVE_STEP, RENDER_STEP, CAPTURE_STEP, MOTION_CAPTURE_STEP,
                               MENU_STEP, IDLE_CAPTURE_STEP, CURSOR_CAPTURE_STEP, GROOM_REVIEW_STEP,
-                              BALL_CAPTURE_STEP, BENCHMARK_STEP):
+                              BALL_CAPTURE_STEP, MOVING_JUMP_CAPTURE_STEP, BENCHMARK_STEP):
                 step = exactly_one((s for s in job['steps'] if s['name'] == step_name), step_name)
                 require(step.get('status') == 'completed' and step.get('conclusion') == 'success',
                         f'Native Windows step did not pass: {step_name}')
@@ -754,6 +755,49 @@ def native_cursor_capture_contract(native_root):
     return path.parent, files, {'capture': data, 'capture_sha256': sha(path),
         'trace_sha256': sha(trace_path), 'native_capture_step': CURSOR_CAPTURE_STEP, 'images': images,
         'visual_quality': 'Native mode snapshots require separate visual review'}
+
+
+def native_moving_jump_contract(native_root):
+    path = exactly_one((p for p in native_root.rglob('capture.json') if p.parent.name == 'moving-jump'),
+                       'native moving jump capture')
+    data = json.loads(path.read_text(encoding='utf-8-sig'))
+    require(data.get('schema') == 1 and data.get('version') == VERSION and
+            data.get('render_source') == 'Windows GDI+ / Box2D' and data.get('desktop_recording') is False and
+            data.get('fps') == 30 and data.get('simulation_fps') == 60 and data.get('frame_count') == 600 and
+            data.get('canvas') == [1280, 320] and data.get('new_painted_frames') == 0,
+            'Moving jump capture must use actual current artwork at 60 Hz simulation / 30 FPS sampling')
+    trace_path = path.parent / 'trace.json'
+    trace = json.loads(trace_path.read_text(encoding='utf-8-sig'))
+    frames = trace.get('frames', [])
+    require(len(frames) == 600, 'Moving jump trace must contain both complete ten-second scenes')
+    files = [(path, 'moving-jump/capture.json'), (trace_path, 'moving-jump/trace.json')]
+    for scenario in (0, 1):
+        rows = frames[scenario*300:(scenario+1)*300]
+        for local, row in enumerate(rows):
+            require(row.get('frame') == scenario*300+local and row.get('scenario') == scenario and
+                    row.get('simulation_frame') == local*2 and row.get('elapsed_ms') == local*2000//60 and
+                    all(type(row.get(key)) in (int, float) and math.isfinite(row[key]) for key in
+                        ('physical_x', 'rendered_x', 'lift', 'velocity_x', 'velocity_y')) and
+                    all(type(row.get(key)) is bool for key in
+                        ('grounded', 'landed', 'moving_jump', 'waiting_for_stop')),
+                    'Moving jump trace clocks or physical coordinates are invalid')
+            require(not row['moving_jump'] or not row['waiting_for_stop'],
+                    'A moving jump unexpectedly entered the stationary braking gate')
+        airborne = [row for row in rows if not row['grounded']]
+        require(len(airborne) >= 12 and airborne[0]['velocity_x'] >= 8 and
+                max(row['lift'] for row in airborne) >= 30 and
+                max(abs(row['velocity_x'] - airborne[0]['velocity_x']) for row in airborne) <= 1 and
+                airborne[-1]['physical_x'] - airborne[0]['physical_x'] > airborne[0]['velocity_x']*.5 and
+                rows[-1]['grounded'], 'Moving jump did not preserve a real forward physical arc')
+    for index in range(600):
+        image = path.parent / f'frame-{index:05d}.png'
+        require(png_evidence(image, 'moving jump')['canvas'] == [1280, 320], 'Moving jump canvas changed')
+        files.append((image, 'moving-jump/'+image.name))
+    report = exactly_one(native_root.rglob('moving-jump-report.txt'), 'native moving jump exit report')
+    require(report.read_text(encoding='utf-8-sig').startswith('exit=0 '), 'Native moving jump capture failed')
+    return path.parent, files, {'capture': data, 'capture_sha256': sha(path), 'trace_sha256': sha(trace_path),
+        'native_capture_step': MOVING_JUMP_CAPTURE_STEP,
+        'scope': 'Existing artwork on actual product physics; Seedance replacement artwork is still pending'}
 
 
 def native_keyboard_contract(native_root):
@@ -1485,6 +1529,7 @@ def main(stage_only=False):
     ball_directory, ball_files, ball_contract = native_ball_capture_contract(native_root)
     groom_report, groom_files, groom_contract = native_groom_contract(native_root)
     keyboard_files, keyboard_contract = native_keyboard_contract(native_root)
+    moving_jump_directory, moving_jump_files, moving_jump_contract = native_moving_jump_contract(native_root)
     menu_report, menu_files, menu_contract = native_menu_contract(native_root)
     jump_report, jump_files, jump_contract = native_jump_contract(native_root, walk_contract,
         walk_contract['authored_appearance']['cream_reference'])
@@ -1535,7 +1580,7 @@ def main(stage_only=False):
             destination = stage / name
             shutil.copyfile(source, destination)
             files.append(destination)
-        interaction_files = menu_files + jump_files + zoomies_files + rest_files + benchmark_files + cursor_files + keyboard_files + three_coat_files + ball_files + groom_files + [
+        interaction_files = menu_files + jump_files + zoomies_files + rest_files + benchmark_files + cursor_files + keyboard_files + moving_jump_files + three_coat_files + ball_files + groom_files + [
             (coat_board, coat_contract['archive_path']), (reference_board, reference_contract['archive_path'])]
         interaction_hashes = {name: sha(path) for path, name in interaction_files}
         interaction_archive = stage / 'interaction-evidence.zip'
@@ -1549,7 +1594,8 @@ def main(stage_only=False):
                 (motion_directory, 'motions-native', motion_capture_contract),
                 (idle_directory, 'idle-native', idle_capture_contract),
                 (cursor_directory, 'cursor-play-native', cursor_contract),
-                (ball_directory, 'ball-play-native', ball_contract)):
+                (ball_directory, 'ball-play-native', ball_contract),
+                (moving_jump_directory, 'moving-jump-native', moving_jump_contract)):
             native_video = stage / (basename + '.mp4')
             contract['encoding'] = encode(directory, native_video)
             contract['video_sha256'] = sha(native_video)
@@ -1597,6 +1643,7 @@ def main(stage_only=False):
             'native_ball_play': ball_contract,
             'native_connected_groom': groom_contract,
             'native_keyboard_play': keyboard_contract,
+            'native_moving_jumps': moving_jump_contract,
             'native_menu_visibility': menu_contract,
             'native_jump_continuity': jump_contract,
             'native_random_zoomies': zoomies_contract,

@@ -58,6 +58,7 @@ jobs:
                            'Capture nearby cursor play through Windows GDI+ and Box2D at 60 FPS',
                            'Review connected grooming through Windows GDI+ and Box2D',
                            'Capture ball play through Windows GDI+ and Box2D at 60 FPS',
+                           'Capture moving walk and run jumps through Windows GDI+ and Box2D',
                            'Compare baseline and candidate on the same Windows desktop']:
                   if not any(s['name']==name and s['status']=='completed' and s['conclusion']=='success'
                              for s in native['steps']):
