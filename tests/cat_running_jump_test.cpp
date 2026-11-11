@@ -52,6 +52,20 @@ void RealBox2DArcKeepsMomentum() {
         CHECK(airDistance*speed>0&&std::abs(airDistance)>std::abs(speed)*.6);
     }
 }
+void TakeoffKeepsDisplayedPosition() {
+    for(double speed:{-177.23,-81.6,81.6,177.23})for(double fraction:{0.,.25,.5,.75,.95}) {
+        physics::Controller body;body.Reset(1000,96,3000);body.SetTargetVelocity(speed);
+        for(unsigned i=0;i<120;++i)body.Update(physics::kFixedStepSeconds);
+        body.Update(fraction*physics::kFixedStepSeconds);
+        const auto displayed=body.RenderPose(),physical=body.CurrentPose();
+        CHECK(body.JumpWithMomentum(55));
+        CHECK(body.CurrentPose().x==physical.x);
+        CHECK(std::abs(body.RenderPose().x-displayed.x)<1e-8);
+        CHECK(std::abs(body.RenderPose().velocityX-displayed.velocityX)<1e-8);
+        CHECK(std::abs(body.RenderPose().relativeTravelX-displayed.relativeTravelX)<1e-8);
+        CHECK(!body.RenderPose().grounded);
+    }
 }
-int main(){try{PlanningUsesActualMotion();RealBox2DArcKeepsMomentum();std::cout<<"Running jump: "<<checks<<" checks passed\n";return 0;}
+}
+int main(){try{PlanningUsesActualMotion();RealBox2DArcKeepsMomentum();TakeoffKeepsDisplayedPosition();std::cout<<"Running jump: "<<checks<<" checks passed\n";return 0;}
 catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

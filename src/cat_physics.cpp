@@ -521,7 +521,14 @@ bool Controller::Jump(double apexPixels) {
 }
 
 bool Controller::JumpWithMomentum(double apexPixels) {
+    const auto previous=impl_->previous;
     if(!Jump(apexPixels))return false;
+    // Jump makes vertical presentation airborne immediately. Horizontal
+    // interpolation must retain its current phase instead of snapping the
+    // displayed body forward to the latest 60 Hz position at takeoff.
+    impl_->previous.x=previous.x;
+    impl_->previous.velocityX=previous.velocityX;
+    impl_->previous.relativeTravelX=previous.relativeTravelX;
     impl_->ballistic=true;
     return true;
 }
