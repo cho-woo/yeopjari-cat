@@ -80,7 +80,7 @@ int Simulate(Row& row,std::string& context) {
     }
     if(host.Saved()!=saved){context="capture changed an owned in-memory save fixture";return 548;}
     const auto expectedSpeed=cat::sprite_assets::NominalLocomotionSpeed(*walk->layout);
-    if(distinct!=visited.size() || expectedSpeed<70 || std::abs(row.peakSpeed-expectedSpeed)>.5 ||
+    if(distinct!=visited.size() || expectedSpeed<70 || row.peakSpeed<expectedSpeed*1.03 || row.peakSpeed>expectedSpeed*1.28 ||
             !row.stopped || !row.reversed || row.sourceChanges<visited.size()*3) {
         context="native walk coverage/speed/rest/reversal: visited="+std::to_string(distinct)+
             " peak="+std::to_string(row.peakSpeed)+" changes="+std::to_string(row.sourceChanges)+

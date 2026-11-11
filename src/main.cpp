@@ -3005,15 +3005,31 @@ void DrawToyBackground(Graphics& graphics, REAL localX, REAL ground, ULONGLONG t
         Pen rod(Color(255, 105, 78, 63), 4*u), line(Color(200, 105, 111, 121), .9f*u);
         const bool pinned=g.toyEngaged&&g.toySession.phase==cat::toy::Phase::Interact&&
             g.motion==Motion::ToyPaw&&!g.waitingForStop&&g.physics.CurrentPose().grounded;
-        const REAL featherX=localX+static_cast<REAL>(g.toyLure.offset)*u;
-        const REAL featherY=ground-(3+static_cast<REAL>(std::abs(g.toyLure.offset))*.12f)*u;
+        REAL featherX=localX+static_cast<REAL>(g.toyLure.offset)*u;
+        REAL featherY=ground-(3+static_cast<REAL>(std::abs(g.toyLure.offset))*.12f)*u;
+        bool sourceFeather=false;
+        if(pinned) {
+            if(const auto* asset=LoadedCareSprite(cat::sprite_sequence::Clip::ToyPlay,g.preferences.character)) {
+                cat::sprite_sequence::Options options;options.sheetFrames=asset->layout->frameCount;
+                const auto frame=cat::sprite_sequence::SampleProgram(cat::sprite_sequence::Clip::ToyPlay,
+                    asset->layout->program,static_cast<std::uint64_t>(g.toySession.elapsedMs),options).frame;
+                const auto point=cat::video_actions::ToyProp(static_cast<unsigned>(g.preferences.character),frame);
+                sourceFeather=cat::video_actions::ToyPropVisible(static_cast<unsigned>(g.preferences.character),frame);
+                const auto body=cat::appearance::VisualModifiers(g.nutrition,g.preferences.character);
+                const auto growth=cat::GrowthScale(g.pet.bornUtc,UtcNow());
+                featherX=localX+static_cast<REAL>((g.centerX-g.toyX)/g.dpiScale+point.x*growth*body.bodyWidth)*u;
+                featherY=ground-static_cast<REAL>(point.y*growth*body.bodyHeight)*u;
+            }
+        }
         graphics.DrawLine(&rod,localX+49*u,ground-2*u,localX+34*u,ground-145*u);
         graphics.DrawLine(&line,localX+34*u,ground-145*u,featherX,featherY-6*u);
         SolidBrush base(Color(255, 138, 117, 99)); graphics.FillEllipse(&base,localX+34*u,ground-7*u,30*u,7*u);
-        if(pinned)return; // The extracted video includes the feather beneath the paws.
-        SolidBrush pink(Color(255, 152, 113, 84)), gold(Color(255, 209, 199, 170));
-        graphics.FillEllipse(&pink,featherX-11*u,featherY-7*u,13*u,20*u);
-        graphics.FillEllipse(&gold,featherX-1*u,featherY-7*u,10*u,18*u);
+        if(pinned&&sourceFeather)return;
+        SolidBrush feather(g.preferences.character==cat::Character::Tuxedo?Color(255,152,113,84):Color(255,216,207,184));
+        SolidBrush light(Color(255,233,224,201));Pen quill(Color(255,126,105,84),.8f*u);
+        graphics.FillEllipse(&feather,featherX-14*u,featherY-3*u,22*u,6*u);
+        graphics.FillEllipse(&light,featherX-2*u,featherY-2*u,15*u,4*u);
+        graphics.DrawLine(&quill,featherX-16*u,featherY+u,featherX+14*u,featherY-u);
     } else if (g.toy == ToyKind::Cushion) {
         const REAL s=static_cast<REAL>(g.dpiScale * std::max(.95, cat::GrowthScale(g.pet.bornUtc,UtcNow())));
         SolidBrush edge(Color(255, 135, 151, 190)), top(Color(255, 178, 192, 222));
@@ -4092,8 +4108,11 @@ void StartWallClimb(ULONGLONG actionTicks=0) {
     const double growth=cat::GrowthScale(g.pet.bornUtc,UtcNow());
     const auto bounds=MovementBoundsLogical();
     const auto body=cat::appearance::VisualModifiers(g.nutrition,g.preferences.character);
-    g.physics.SetBounds(bounds.first,std::max(bounds.second,width-48*growth*body.bodyWidth));
-    g.wallBounds=true;g.wallPhase=App::WallPhase::Approach;g.wallDeadline=ticks+45000;
+    const double edge=std::max(bounds.second,width-48*growth*body.bodyWidth);
+    const auto budget=static_cast<ULONGLONG>(std::max(45000.,
+        std::max(0.,edge-g.physics.CurrentPose().x)/std::max(10.,std::min(55.,RegisteredWalkSpeed()))*1000+15000));
+    g.physics.SetBounds(bounds.first,edge);
+    g.wallBounds=true;g.wallPhase=App::WallPhase::Approach;g.wallDeadline=ticks+budget;g.nextDecision=ticks+budget;
     g.direction=g.facing=1;g.speed=RegisteredWalkSpeed()*g.dpiScale;
     g.manualMotionActive=true;g.toyRewardPending=false;
 }
@@ -4760,7 +4779,6 @@ bool AdvanceWallMotion(ULONGLONG ticks,double elapsed) {
     ConfigurePrimaryAuthoredStride();
     g.gait.Advance(Motion::Walk,(rendered.relativeTravelX-before.relativeTravelX)/growth,elapsed,rendered.grounded);
     if(g.groundArtBridge.ConsumeLoopReady())g.gait.SetAuthoredPhase(0);
-    if(g.pendingCare>=0&&g.physics.CurrentPose().grounded&&g.wallPhase!=App::WallPhase::Climb)ResumePendingCare();
     return true;
 }
 
@@ -4822,6 +4840,12 @@ void AdvancePrimaryMotion(ULONGLONG ticks, double elapsed) {
             ApplyToyPhase(ticks);
             const bool arrived=g.toy==ToyKind::Ball?ballChase.arrived:
                 std::abs(distanceToTarget())<=2 && std::abs(WalkingVelocity(g.physics.CurrentPose()))<=3;
+            if(g.toy==ToyKind::FishingRod&&g.toySession.phase==cat::toy::Phase::Interact&&
+                    g.toySession.elapsedMs+elapsed*1000>=g.toySession.PhaseDuration()) {
+                const auto point=cat::video_actions::ToyProp(static_cast<unsigned>(g.preferences.character),255);
+                g.toyLure.offset=(g.centerX-g.toyX)/g.dpiScale+point.x*growth*body.bodyWidth;
+                g.toyLure.velocity=0;
+            }
             if (g.toySession.Advance(elapsed,true,arrived)) ApplyToyPhase(ticks);
         }
         targetSpeed=0;

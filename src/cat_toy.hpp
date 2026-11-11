@@ -288,9 +288,10 @@ struct Lure {
         const int steps = std::max(1, static_cast<int>(std::ceil(seconds * 240)));
         const double step = seconds / steps;
         for (int index = 0; index < steps; ++index) {
+            const double limit=std::max(26.,std::abs(offset)); // Preserve a recorded release outside the ordinary spring arc.
             velocity += (-18 * offset - 3.5 * velocity) * step;
             offset += velocity * step;
-            if (std::abs(offset) > 26) { offset = std::copysign(26.0, offset); velocity *= -.35; }
+            if (std::abs(offset) > limit) { offset = std::copysign(limit, offset); velocity *= -.35; }
         }
     }
 };

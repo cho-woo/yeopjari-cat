@@ -57,7 +57,7 @@ def background_palette(rgb):
     return cv2.kmeans(border[::4],12,None,(cv2.TERM_CRITERIA_EPS|cv2.TERM_CRITERIA_MAX_ITER,20,.5),1,cv2.KMEANS_PP_CENTERS)[2]
 
 
-def foreground(rgb, palette=None, remove_ball=False, remove_wall=False):
+def foreground(rgb, palette=None, remove_ball=False, remove_wall=False, keep_feather=False):
     values = rgb.astype(np.float32)
     red, green, blue = values.transpose(2, 0, 1)
     backdrop = green > np.maximum(red, blue) * 1.22 + 12
@@ -80,7 +80,15 @@ def foreground(rgb, palette=None, remove_ball=False, remove_wall=False):
     count, labels, stats, _ = cv2.connectedComponentsWithStats((~backdrop).astype(np.uint8), 8)
     if count < 2:
         raise ValueError('No character foreground')
-    mask = (labels == 1 + np.argmax(stats[1:, cv2.CC_STAT_AREA])).astype(np.uint8)
+    actor=1+np.argmax(stats[1:,cv2.CC_STAT_AREA])
+    mask = (labels == actor).astype(np.uint8)
+    if keep_feather:
+        left,top,width,height,area=stats[actor]
+        for component in range(1,count):
+            x,y,w,h,size=stats[component]
+            if component!=actor and 35<size<area*.15 and h<90 and w<240 and \
+                    left-70<x+w and x<left+width+70 and top+height-90<y<top+height+40:
+                mask[labels==component]=1
     if remove_ball:
         red_ball=(red>130)&(red>green*1.8)&(red>blue*1.8)
         count,labels,stats,_=cv2.connectedComponentsWithStats(red_ball.astype(np.uint8),8)
@@ -218,7 +226,7 @@ def bake(clip, character, indices):
     if max(indices) >= len(frames) or abs(fps - 24) > .01:
         raise ValueError('Unexpected original video cadence or duration')
     palette=None if clip=='climb' else background_palette(frames[0])
-    neutral = foreground(frames[0],palette,clip=='ball',clip=='climb')
+    neutral = foreground(frames[0],palette,clip=='ball',clip=='climb',clip=='toy')
     center, top, bottom = head_root(neutral)
     factor = REFERENCE_HEIGHT / (bottom - top)
     columns = 8
@@ -226,14 +234,26 @@ def bake(clip, character, indices):
     atlas = Image.new('RGBA', (columns * CELL, rows * CELL))
     records = []
     paws = []
+    props=[];prop_visible=[]
     for ordinal, source_index in enumerate(indices):
         local_palette=background_palette(frames[source_index]) if clip=='stumble' and character=='cream' else palette
-        image = foreground(frames[source_index],local_palette,clip=='ball',clip=='climb')
+        image = foreground(frames[source_index],local_palette,clip=='ball',clip=='climb',clip=='toy')
         anchor_x, anchor_y = center, float(image.getbbox()[3])
         if clip in ('ball','brake','slide','stumble','climb'):
             anchor_x,_,_=head_root(image)
         if clip=='climb':
             anchor_x=image.getbbox()[2]-48*REFERENCE_HEIGHT/110/factor
+        if clip=='toy':
+            rgba=np.asarray(image);red,green,blue,alpha=rgba.transpose(2,0,1).astype(float)
+            yy,xx=np.mgrid[:image.height,:image.width]
+            brown=(alpha>180)&(red>50)&(red<205)&(red>green*1.08)&(green>blue*1.08)&(yy>anchor_y-75)
+            count,labels,stats,centers=cv2.connectedComponentsWithStats(brown.astype(np.uint8),8)
+            candidates=[i for i in range(1,count) if 5<stats[i,cv2.CC_STAT_AREA]<10000]
+            if candidates:
+                picked=max(candidates,key=lambda i:stats[i,cv2.CC_STAT_AREA]);px,py=centers[picked]
+            else:px,py=anchor_x,anchor_y-8
+            props.append([(px-anchor_x)*factor*110/REFERENCE_HEIGHT,(anchor_y-py)*factor*110/REFERENCE_HEIGHT])
+            prop_visible.append(bool(candidates))
         if clip == 'jump' and 60 <= source_index <= 80:
             moving_x, _, _ = head_root(image)
             anchor_x += moving_x - center
@@ -256,12 +276,16 @@ def bake(clip, character, indices):
             keys=np.asarray(BALL_KEYS[character]);px,py=[np.interp(source_index,keys[:,0],keys[:,i]) for i in (1,2)]
             point=[(px-anchor_x)*factor*110/REFERENCE_HEIGHT,(anchor_y-py)*factor*110/REFERENCE_HEIGHT]
             paws.append([point,point])
+    if props and any(prop_visible):
+        known=np.flatnonzero(prop_visible)
+        for i,visible in enumerate(prop_visible):
+            if not visible:props[i]=[float(np.interp(i,known,[props[j][axis] for j in known])) for axis in (0,1)]
     output = DIRECTORY / f'{character}-{clip}.png'
     atlas.save(output)
     return output, records, columns, rows, {'source': path.relative_to(DIRECTORY).as_posix(),
         'sha256': sha(path), 'source_fps': fps, 'source_frame_count': len(frames),
         'selected_frame_indices': indices, 'scale': factor, 'neutral_root': [center, bottom],
-        'reference_height': REFERENCE_HEIGHT, 'paw_points_logical': paws}
+        'reference_height': REFERENCE_HEIGHT, 'paw_points_logical': paws,'prop_points_logical':props,'prop_visible':prop_visible}
 
 
 def main(only=None,materials_only=False):
@@ -378,6 +402,20 @@ def main(only=None,materials_only=False):
             f'    const auto& points=character==8?kTuxedo{action.title()}:kCream{action.title()};',
             '    return points[std::min<unsigned>(frame,points.size()-1)];', '}'])
     header.append('}')
+    header.pop()
+    for character in ('cream','tuxedo'):
+        points=evidence[character+'-toy']['prop_points_logical']
+        header.append(f'inline constexpr std::array<cat::deform::Point,{len(points)}> k{character.title()}ToyProp{{{{')
+        header.extend('    cat::deform::Point{'+','.join(f'{v:.5f}' for v in point)+'},' for point in points)
+        header.append('}};')
+        visible=evidence[character+'-toy']['prop_visible']
+        header.append(f'inline constexpr std::array<bool,{len(visible)}> k{character.title()}ToyPropVisible{{{{'+','.join('true' if v else 'false' for v in visible)+'}};')
+    header.extend(['inline cat::deform::Point ToyProp(unsigned character,unsigned frame) {',
+        '    const auto& points=character==8?kTuxedoToyProp:kCreamToyProp;',
+        '    return points[std::min<unsigned>(frame,points.size()-1)];','}',
+        'inline bool ToyPropVisible(unsigned character,unsigned frame) {',
+        '    const auto& points=character==8?kTuxedoToyPropVisible:kCreamToyPropVisible;',
+        '    return points[std::min<unsigned>(frame,points.size()-1)];','}','}'])
     (ROOT / 'src/video_action_contacts.generated.hpp').write_text('\n'.join(header) + '\n', encoding='utf-8', newline='\n')
     files = [p for p in sorted(DIRECTORY.rglob('*')) if p.is_file() and p.name not in ('manifest.json', 'provenance.json')]
     write_json(DIRECTORY / 'provenance.json', {'schema': 1, 'method': 'dropshot_video_extraction',

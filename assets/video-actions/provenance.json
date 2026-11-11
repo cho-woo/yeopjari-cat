@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "method": "dropshot_video_extraction",
-  "manifest_sha256": "c7600a558df9dca7eb673340db9377d5b58db412244824a4a78cd25c7892ae9d",
+  "manifest_sha256": "5083abf1928cc8c82b7d916b2ba7e5d18fae87b78e0cb6119845bf810ef49316",
   "precomputed_only": true,
   "files": [
     {
@@ -46,7 +46,7 @@
     },
     {
       "path": "cream-toy.png",
-      "sha256": "8af7cd745c9a72005d7d09826d7965d60ac0a099003043ffdeb520a6bfe35226"
+      "sha256": "8d40452c219b1dc4e5c6c875b88f8a08958acd2640cd06f3edd11a05cd905e41"
     },
     {
       "path": "generation.json",
@@ -58,7 +58,7 @@
     },
     {
       "path": "registration.json",
-      "sha256": "7364f544900ed0ec96e81ab9722aed41e521c06bd6ecaf48d377c58ab25ca29b"
+      "sha256": "a08468810f0ac33ef240e8793c2553dc94456221df9e77753f9304817f82fcc8"
     },
     {
       "path": "sources/cream-ball.mp4",
@@ -214,7 +214,7 @@
     },
     {
       "path": "tuxedo-toy.png",
-      "sha256": "8b3e293c905b131062be8239162cb63af67c4df16ee8a9879e5545630dfef0c4"
+      "sha256": "1086e6f0994ca44caef1dd8b6bd433e5b7e8ca4fd5c4e8874658d80d84f1aafb"
     }
   ]
 }

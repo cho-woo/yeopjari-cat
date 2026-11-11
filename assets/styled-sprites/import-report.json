@@ -1381,9 +1381,9 @@
       "source": "c8-r431.png",
       "image_width": 2560,
       "image_height": 2880,
-      "sha256": "8b3e293c905b131062be8239162cb63af67c4df16ee8a9879e5545630dfef0c4",
+      "sha256": "1086e6f0994ca44caef1dd8b6bd433e5b7e8ca4fd5c4e8874658d80d84f1aafb",
       "base_source": "assets/video-actions/cream-toy.png",
-      "base_sha256": "8af7cd745c9a72005d7d09826d7965d60ac0a099003043ffdeb520a6bfe35226",
+      "base_sha256": "8d40452c219b1dc4e5c6c875b88f8a08958acd2640cd06f3edd11a05cd905e41",
       "reference_height": 96,
       "anchors": [
         [
@@ -1460,7 +1460,7 @@
         ],
         [
           49,
-          83
+          86
         ],
         [
           52,
@@ -1476,7 +1476,7 @@
         ],
         [
           50,
-          82
+          84
         ],
         [
           52,
@@ -1532,11 +1532,11 @@
         ],
         [
           40,
-          90
+          94
         ],
         [
           42,
-          90
+          94
         ],
         [
           43,
@@ -3778,9 +3778,9 @@
       "source": "c10-r431.png",
       "image_width": 2560,
       "image_height": 2880,
-      "sha256": "35c165c7f19888f63bd45ed5efbd0b69931b37b47107a0016009cda6953dc36c",
+      "sha256": "de1817155d2c017beeee8fad0d0cc4f1899f85beab1e4b27b863cb6c3f612768",
       "base_source": "assets/video-actions/cream-toy.png",
-      "base_sha256": "8af7cd745c9a72005d7d09826d7965d60ac0a099003043ffdeb520a6bfe35226"
+      "base_sha256": "8d40452c219b1dc4e5c6c875b88f8a08958acd2640cd06f3edd11a05cd905e41"
     },
     {
       "character": 10,

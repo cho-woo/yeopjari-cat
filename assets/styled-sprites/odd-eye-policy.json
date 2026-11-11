@@ -275,18 +275,6 @@
       "skin_rgb_exact": true
     },
     {
-      "base_resource_id": 431,
-      "base_source": "assets/video-actions/cream-toy.png",
-      "source": "c10-r431.png",
-      "input_sha256": "8af7cd745c9a72005d7d09826d7965d60ac0a099003043ffdeb520a6bfe35226",
-      "output_sha256": "35c165c7f19888f63bd45ed5efbd0b69931b37b47107a0016009cda6953dc36c",
-      "source_alpha_sha256": "6da0e8a87a04be266e80e4c49353aa55a0153895486ab60e5f62cca9dec68bce",
-      "iris_mask": "odd-eye-masks/c10-r431.png",
-      "iris_mask_sha256": "40b68b2e3366d46294dd61c1c81f5f6dd61cb33a8ec781149a211fcce90b0a95",
-      "alpha_exact": true,
-      "skin_rgb_exact": true
-    },
-    {
       "base_resource_id": 432,
       "base_source": "assets/video-actions/cream-brake.png",
       "source": "c10-r432.png",
@@ -333,9 +321,21 @@
       "iris_mask_sha256": "5b0fbab06562ac30d64ef10d22aa766991a583179b269824ca560d0335c0c1f8",
       "alpha_exact": true,
       "skin_rgb_exact": true
+    },
+    {
+      "base_resource_id": 431,
+      "base_source": "assets/video-actions/cream-toy.png",
+      "source": "c10-r431.png",
+      "input_sha256": "8d40452c219b1dc4e5c6c875b88f8a08958acd2640cd06f3edd11a05cd905e41",
+      "output_sha256": "de1817155d2c017beeee8fad0d0cc4f1899f85beab1e4b27b863cb6c3f612768",
+      "source_alpha_sha256": "61fa06d36e85ffae014682363e6928e3ca6008392456bfb3e94e84b37cf50970",
+      "iris_mask": "odd-eye-masks/c10-r431.png",
+      "iris_mask_sha256": "7540a4d8740b24f74b90d9ed628cdbae6a70096a21d683bd4d07629285de497d",
+      "alpha_exact": true,
+      "skin_rgb_exact": true
     }
   ],
   "tool_sha256": "38aff80a6a8fe818168305d47c6f697ab0d9af7892119f3e5ab903e5c41c86c4",
   "additional_authoring_tool": "tools/pack_video_actions.py",
-  "additional_authoring_tool_sha256": "d854a1423df1390ef2b47e0a193e8645ca079eac78b00d2b11c6a0621ef7c607"
+  "additional_authoring_tool_sha256": "f0016123c4cd68dd8cb7374aa8011def1c59a95f4218d67761c2664f40a90171"
 }

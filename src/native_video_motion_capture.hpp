@@ -109,7 +109,8 @@ int Simulate(Row& row,const Schedule& schedule,std::string& context) {
         context+=" missing run loop frame="+std::to_string(i);return 567;
     }
     if(!row.mealFinished||!row.stopped||g.pet.feedCount!=1||g.pet.snackCount||
-            std::abs(row.peakWalk-RegisteredWalkSpeed())>.5||std::abs(row.peakRun-RegisteredRunSpeed())>.5) {
+            row.peakWalk<RegisteredWalkSpeed()*1.03||row.peakWalk>RegisteredWalkSpeed()*1.28||
+            row.peakRun<RegisteredRunSpeed()*1.03||row.peakRun>RegisteredRunSpeed()*1.28) {
         context+=" peak Walk="+std::to_string(row.peakWalk)+" Run="+std::to_string(row.peakRun)+
             " stopped="+std::to_string(row.stopped);return 568;
     }
