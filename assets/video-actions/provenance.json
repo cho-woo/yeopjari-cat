@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "method": "dropshot_video_extraction",
-  "manifest_sha256": "8827f734c2af64d52c10cfd97c8640743faf3ac02ca9026ea4aad6ee87afa6d7",
+  "manifest_sha256": "c7600a558df9dca7eb673340db9377d5b58db412244824a4a78cd25c7892ae9d",
   "precomputed_only": true,
   "files": [
     {
@@ -14,7 +14,7 @@
     },
     {
       "path": "cream-climb.png",
-      "sha256": "5202bee1d626bb4ee60a502c1ebd2826c3d4d352fde0c386694ed9c4b429f4e4"
+      "sha256": "7fd24ba1c012128e89daa474e5b147be74d51de502d23eeacc14cc3b71bc8fe3"
     },
     {
       "path": "cream-groom.png",
@@ -58,7 +58,7 @@
     },
     {
       "path": "registration.json",
-      "sha256": "8fc45b7ebc39ba73d9ce865a4bb029ecd69c00e854215291d2e4e21e09daec44"
+      "sha256": "7364f544900ed0ec96e81ab9722aed41e521c06bd6ecaf48d377c58ab25ca29b"
     },
     {
       "path": "sources/cream-ball.mp4",
@@ -182,7 +182,7 @@
     },
     {
       "path": "tuxedo-climb.png",
-      "sha256": "5ef9365bccfc94b8a95f94938ca0f749492a48b0d4da7b4f53878578baa34e4e"
+      "sha256": "5adff90748649b54783929e94abff629a8faaef6c73c8e6e3557485e6f42ef6b"
     },
     {
       "path": "tuxedo-groom.png",

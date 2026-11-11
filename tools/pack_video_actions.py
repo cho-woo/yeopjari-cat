@@ -119,19 +119,16 @@ def eye_material(source, rect, clip):
     rgba = np.asarray(source.crop((x, y, x + width, y + height)))
     red, green, blue, alpha = rgba.transpose(2, 0, 1).astype(np.float32)
     yy, xx = np.mgrid[:height, :width]
-    candidate = (alpha > 180) & (red > green * 1.15) & (green > blue * 1.15)
-    candidate &= (red > 35) & (red < 160) & (green < 120) & (blue < 90)
-    candidate &= (yy > height * .18) & (yy < height * .64)
+    # Find the pupil/eye outline first. Orange forehead and tail stripes can
+    # match iris hue, but cannot become an eye just because they are amber.
+    candidate = (alpha > 180) & (np.maximum.reduce((red,green,blue))<90)
+    candidate &= (yy > height * .10) & (yy < height * .68)
     candidate &= xx > width * (.55 if clip in ('jump','ball','brake','slide','stumble','climb') else .12)
     count, labels, stats, centers = cv2.connectedComponentsWithStats(candidate.astype(np.uint8), 8)
     regions = []
     for index in range(1, count):
         left, top, w, h, area = stats[index]
-        if clip=='climb':
-            neighborhood=rgba[max(0,top-2):top+h+2,max(0,left-2):left+w+2]
-            pupil=(neighborhood[:,:,:3].max(axis=2)<48)&(neighborhood[:,:,3]>180)
-            if pupil.sum()<max(4,w*h*.08):continue
-        if area >= 14 and w >= 6 and h >= 6 and .35 < w / h < 2.5 and area / (w * h) > .15:
+        if area >= 24 and w >= 6 and h >= 8 and .4 < w / h < 1.8 and area / (w * h) > .3:
             regions.append((area, left, top, w, h))
     regions = sorted(sorted(regions, reverse=True)[:2], key=lambda region: region[1])
     hsv = np.asarray(Image.fromarray(rgba).convert('RGB').convert('HSV'))
@@ -139,7 +136,7 @@ def eye_material(source, rect, clip):
     mask = np.zeros((height, width), np.uint8)
     eyes = []
     for ordinal, (_, left, top, w, h) in enumerate(regions):
-        region = ((xx - (left + w / 2)) / (w / 2 + 1)) ** 2 + ((yy - (top + h / 2)) / (h / 2 + 1)) ** 2 <= 1
+        region = ((xx - (left + w / 2)) / (w / 2 + 3)) ** 2 + ((yy - (top + h / 2)) / (h / 2 + 3)) ** 2 <= 1
         pigment = ordinal + 1
         mask[region & amber] = pigment
         eyes.append({'rect': [x + int(left), y + int(top), int(w), int(h)],
@@ -178,7 +175,7 @@ def snow_material(source, eyes):
 
 def selection(clip):
     extra={'ball':range(24,84,2),'toy':range(6,146,2),'brake':range(42,142,3),
-        'slide':range(42,144,2),'stumble':range(45,150,2),'climb':range(0,158,2)}
+        'slide':range(42,144,2),'stumble':range(45,150,2),'climb':range(0,158)}
     if clip in extra:return list(extra[clip])
     if clip == 'jump':
         return list(range(42, 104))
@@ -267,11 +264,12 @@ def bake(clip, character, indices):
         'reference_height': REFERENCE_HEIGHT, 'paw_points_logical': paws}
 
 
-def main(only=None):
+def main(only=None,materials_only=False):
     selected={clip:resource for clip,resource in RESOURCE.items() if not only or clip in only}
+    old_entries={entry['clip']:entry for entry in json.loads((DIRECTORY/'manifest.json').read_text(encoding='utf-8'))['clips']}
     entries = [entry for entry in json.loads((DIRECTORY/'manifest.json').read_text(encoding='utf-8'))['clips']
         if entry['clip'] not in selected] if only else []
-    evidence = json.loads((DIRECTORY/'registration.json').read_text(encoding='utf-8')) if only else {}
+    evidence = json.loads((DIRECTORY/'registration.json').read_text(encoding='utf-8')) if only or materials_only else {}
     styles_path = ROOT / 'assets/styled-sprites/manifest.json'
     styles = json.loads(styles_path.read_text(encoding='utf-8'))
     replaced = set(selected.values())
@@ -296,18 +294,27 @@ def main(only=None):
             if clip == 'punch':
                 events = [{'step': indices.index(index), 'offset_ms': 0, 'type': 'contact'} for index in (40, 102)]
             sequence = {'intro': steps, 'loop': [], 'outro': [], 'finish': 'complete', 'duration_ms': 0, 'events': events}
-        cream, records, columns, rows, registration = bake(clip, 'cream', indices)
+        if materials_only:
+            old=old_entries[clip];cream=DIRECTORY/old['source']
+            records=json.loads(json.dumps(old['frames']));columns,rows=old['columns'],old['rows']
+            registration=evidence['cream-'+clip]
+        else:
+            cream, records, columns, rows, registration = bake(clip, 'cream', indices)
         evidence['cream-' + clip] = registration
         entries.append({'clip': clip, 'character': 0, 'source': cream.name, 'columns': columns, 'rows': rows,
             'reference_height': REFERENCE_HEIGHT, 'frames': records, 'frame_count': len(records),
             'sha256': sha(cream), 'sequence': sequence})
-        tuxedo, _, _, _, registration = bake(clip, 'tuxedo', indices)
+        if materials_only:
+            tuxedo=DIRECTORY/f'tuxedo-{clip}.png';registration=evidence['tuxedo-'+clip]
+        else:
+            tuxedo, _, _, _, registration = bake(clip, 'tuxedo', indices)
         evidence['tuxedo-' + clip] = registration
         # Share one rectangle per pose while retaining both complete coats.
         # Tight source rectangles save decoded memory without fitting the
         # characters to independent bounding boxes or changing their scale.
         with Image.open(cream) as base, Image.open(tuxedo) as styled:
             for ordinal, record in enumerate(records):
+                if materials_only:continue
                 x, y, _, _ = record['rect']
                 boxes = [image.crop((x, y, x + CELL, y + CELL)).getbbox() for image in (base, styled)]
                 left = max(0, min(box[0] for box in boxes) - 2)
@@ -382,4 +389,6 @@ def main(only=None):
 if __name__ == '__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--only',nargs='+',choices=list(RESOURCE))
-    main(parser.parse_args().only)
+    parser.add_argument('--materials-only',action='store_true')
+    args=parser.parse_args()
+    main(args.only,args.materials_only)
