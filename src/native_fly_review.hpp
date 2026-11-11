@@ -41,6 +41,7 @@ int Run(std::string& context) {
                 for(int y=0;y<actor.height;++y)for(int x=0;x<actor.width;++x) {
                     const auto* pixel=actor.pixels+(static_cast<std::size_t>(y)*actor.width+x)*4;
                     if(pixel[0]>pixel[3]||pixel[1]>pixel[3]||pixel[2]>pixel[3])return 875;
+                    if(pixel[3]>32&&pixel[1]>std::max(pixel[0],pixel[2])*1.22+12)return 875;
                     if(pixel[3]>16) {
                         ++painted;if(x==0||y==0||x==actor.width-1||y==actor.height-1)return 875;
                     }

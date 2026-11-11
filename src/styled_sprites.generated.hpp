@@ -1181,7 +1181,7 @@ inline constexpr std::array<Atlas,50> kStyledAtlases{{
     Atlas{8,433,1133,2560,2240,"81dfd67f0bbf63d6396534fb2e41e41110e830d553b8af23466b0e413e67ea4d","assets/styled-sprites/c8-r433.png",kStyledAnchors8_433.data(),51,96},
     Atlas{8,434,1134,2560,2240,"0f883ddf7b43eff2ae3a0473b3d8fe4c93d3e87d6cc20680ea345a2ec7a6eb37","assets/styled-sprites/c8-r434.png",kStyledAnchors8_434.data(),53,96},
     Atlas{8,435,1135,2560,6400,"5adff90748649b54783929e94abff629a8faaef6c73c8e6e3557485e6f42ef6b","assets/styled-sprites/c8-r435.png",kStyledAnchors8_435.data(),158,96},
-    Atlas{8,436,1136,2560,6720,"76f6ec80f65ba61d45646d7cf5e13ba4c9001c991257236328cea0625985dad2","assets/styled-sprites/c8-r436.png",kStyledAnchors8_436.data(),166,96},
+    Atlas{8,436,1136,2560,6720,"c66258e64c2e74bf0cc5a087a9e9a9a868d404b7b5f37f8e08ef28c6e868ddc7","assets/styled-sprites/c8-r436.png",kStyledAnchors8_436.data(),166,96},
     Atlas{8,440,1140,2560,4800,"ab860544fde8256339d5cef21db90d5bb21385abcd23b5fe03c9cd404a9181cc","assets/styled-sprites/c8-r440.png",kStyledAnchors8_440.data(),120,96},
     Atlas{8,441,1141,2560,1920,"e2eafa39c57170472f10343e2415f52c7bfdadc49d6a4fcd15288cc78d9d4d90","assets/styled-sprites/c8-r441.png",kStyledAnchors8_441.data(),42,96},
     Atlas{10,101,600,1774,887,"af7b4edf5262e57b972fe4ec0032a87fa47a05eabed9562a3c23000a9ba45dc8","assets/styled-sprites/c10-r101.png",nullptr,0,0},
@@ -1206,7 +1206,7 @@ inline constexpr std::array<Atlas,50> kStyledAtlases{{
     Atlas{10,433,1333,2560,2240,"2fe80556ffccec8b3ffeff622f9289b7c9fe83766e1eb1742660f4b759eee098","assets/styled-sprites/c10-r433.png",nullptr,0,0},
     Atlas{10,434,1334,2560,2240,"c48c27ba7fcc67fa4fbac775edf13b9e3d2bc3196ba51b3fc0cee43070e2f611","assets/styled-sprites/c10-r434.png",nullptr,0,0},
     Atlas{10,435,1335,2560,6400,"0233bf40e91db5e7db3c099cb043fb174274f57b80b12ff1d1c1586eed34c76c","assets/styled-sprites/c10-r435.png",nullptr,0,0},
-    Atlas{10,436,1336,2560,6720,"51ed31d33d413e7e7363fe705dc34651ce1c585eeba0507940b8ce0ba6fd688f","assets/styled-sprites/c10-r436.png",nullptr,0,0},
+    Atlas{10,436,1336,2560,6720,"4099d007a95d1b685055e7d1c58edf0e36a7426e4d8906c9f26dd8cfc257ce3d","assets/styled-sprites/c10-r436.png",nullptr,0,0},
     Atlas{10,440,1340,2560,4800,"564eebda7dece6198e5e142a9bc9ecb82df0926a04aff9c39d584b7062c85de1","assets/styled-sprites/c10-r440.png",nullptr,0,0},
     Atlas{10,441,1341,2560,1920,"9d8439029715adb794e0eb2f790db7480c06dcd2b6ac52cea29bd87beac85373","assets/styled-sprites/c10-r441.png",nullptr,0,0},
 }};

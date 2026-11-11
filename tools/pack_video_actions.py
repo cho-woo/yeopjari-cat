@@ -111,7 +111,11 @@ def foreground(rgb, palette=None, remove_ball=False, remove_wall=False, keep_fea
     # Preserve dark eyes, mouth and fur enclosed by the character outline.
     exterior = (1 - mask).copy()
     cv2.floodFill(exterior, None, (0, 0), 2)
-    mask[exterior == 1] = 1
+    # The lifted hunting paw can enclose a real chroma-green gap. Retain
+    # enclosed dark facial features, but never turn that green gap into fur.
+    enclosed=exterior==1
+    if keep_fly:enclosed &= ~(green>np.maximum(red,blue)*1.22+12)
+    mask[enclosed] = 1
     alpha = cv2.GaussianBlur(mask.astype(np.float32), (0, 0), .36)
     alpha[cv2.distanceTransform(mask, cv2.DIST_L2, 5) > 1.2] = 1
     alpha = np.rint(alpha.clip(0, 1) * 255).astype(np.uint8)
@@ -273,6 +277,14 @@ def bake(clip, character, indices):
             moving_x, _, _ = head_root(image)
             anchor_x += moving_x - center
         image = image.resize((round(image.width * factor), round(image.height * factor)), Image.Resampling.LANCZOS)
+        if clip=='fly':
+            rgba=np.array(image)
+            # Downsampling can mix yellow fur with cyan antialias pixels.
+            # Despill that low-alpha fringe after the final sampling pass.
+            green=rgba[:,:,1].astype(float);other=np.maximum(rgba[:,:,0],rgba[:,:,2])
+            fringe=(rgba[:,:,3]>0)&(green>other*1.1+5)
+            rgba[:,:,1][fringe]=other[fringe]
+            image=Image.fromarray(rgba,'RGBA')
         shift = (round(ROOT_POINT[0] - anchor_x * factor), round(ROOT_POINT[1] - anchor_y * factor))
         bounds = image.getbbox()
         if bounds[0] + shift[0] < 0 or bounds[1] + shift[1] < 0 or bounds[2] + shift[0] > CELL or bounds[3] + shift[1] > CELL:

@@ -335,9 +335,9 @@
       "base_resource_id": 436,
       "base_source": "assets/video-actions/cream-fly.png",
       "source": "c10-r436.png",
-      "input_sha256": "8c3293f5a342031bef459ccff0fb3ba3cb3715d20554321c832ff76eacf514a4",
-      "output_sha256": "51ed31d33d413e7e7363fe705dc34651ce1c585eeba0507940b8ce0ba6fd688f",
-      "source_alpha_sha256": "e9fcbe720d2c5bf46a346f9de52958c78ac5adc84bab96e6d2388271ffe9ca00",
+      "input_sha256": "ff97e6f352fd0445be9246bee84122bfb70a1e69f5927e9cb86bdc69ce781a46",
+      "output_sha256": "4099d007a95d1b685055e7d1c58edf0e36a7426e4d8906c9f26dd8cfc257ce3d",
+      "source_alpha_sha256": "0bbe1cebe1cdda857536f966750f74675ab2fbcb2d9c974124ce6cc20e02ac91",
       "iris_mask": "odd-eye-masks/c10-r436.png",
       "iris_mask_sha256": "a07c01fe59ea554d5dea0288f976524c2b8d9999ce146a11166489abe11e1e38",
       "alpha_exact": true,
@@ -346,5 +346,5 @@
   ],
   "tool_sha256": "38aff80a6a8fe818168305d47c6f697ab0d9af7892119f3e5ab903e5c41c86c4",
   "additional_authoring_tool": "tools/pack_video_actions.py",
-  "additional_authoring_tool_sha256": "32a1733fc9d055536a4a9b24d032aaac788b912a60d6ad7c1bc5e7b3797841b5"
+  "additional_authoring_tool_sha256": "9e1935bafdf1f0f1d2c5034f493a461603d30a8a015e712a741f641eb1555b71"
 }

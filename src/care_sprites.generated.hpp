@@ -2547,7 +2547,7 @@ inline constexpr std::array<Descriptor,19> kCareSprites{{
         Frame{{1068,6538,119,107},{52,102}},
         Frame{{1388,6538,119,107},{52,102}},
         Frame{{1708,6538,119,107},{52,102}},
-    }},"8c3293f5a342031bef459ccff0fb3ba3cb3715d20554321c832ff76eacf514a4","assets/video-actions/cream-fly.png",cat::sprite_sequence::Program{166,{{
+    }},"ff97e6f352fd0445be9246bee84122bfb70a1e69f5927e9cb86bdc69ce781a46","assets/video-actions/cream-fly.png",cat::sprite_sequence::Program{166,{{
         cat::sprite_sequence::Step{0,42},
         cat::sprite_sequence::Step{1,41},
         cat::sprite_sequence::Step{2,42},

@@ -3552,9 +3552,9 @@
       "source": "c8-r436.png",
       "image_width": 2560,
       "image_height": 6720,
-      "sha256": "76f6ec80f65ba61d45646d7cf5e13ba4c9001c991257236328cea0625985dad2",
+      "sha256": "c66258e64c2e74bf0cc5a087a9e9a9a868d404b7b5f37f8e08ef28c6e868ddc7",
       "base_source": "assets/video-actions/cream-fly.png",
-      "base_sha256": "8c3293f5a342031bef459ccff0fb3ba3cb3715d20554321c832ff76eacf514a4",
+      "base_sha256": "ff97e6f352fd0445be9246bee84122bfb70a1e69f5927e9cb86bdc69ce781a46",
       "reference_height": 96,
       "anchors": [
         [
@@ -5148,9 +5148,9 @@
       "source": "c10-r436.png",
       "image_width": 2560,
       "image_height": 6720,
-      "sha256": "51ed31d33d413e7e7363fe705dc34651ce1c585eeba0507940b8ce0ba6fd688f",
+      "sha256": "4099d007a95d1b685055e7d1c58edf0e36a7426e4d8906c9f26dd8cfc257ce3d",
       "base_source": "assets/video-actions/cream-fly.png",
-      "base_sha256": "8c3293f5a342031bef459ccff0fb3ba3cb3715d20554321c832ff76eacf514a4"
+      "base_sha256": "ff97e6f352fd0445be9246bee84122bfb70a1e69f5927e9cb86bdc69ce781a46"
     },
     {
       "character": 10,

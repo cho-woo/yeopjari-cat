@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "method": "dropshot_video_extraction",
-  "manifest_sha256": "8d9c6fe833f79dbd270da2c2a0abb64e14debff346c846754f589d57196d05de",
+  "manifest_sha256": "72c966efdc4a01c38e37b6b52e73ced39c8f37d462c1c5355681cb79a006939a",
   "precomputed_only": true,
   "files": [
     {
@@ -22,7 +22,7 @@
     },
     {
       "path": "cream-fly.png",
-      "sha256": "8c3293f5a342031bef459ccff0fb3ba3cb3715d20554321c832ff76eacf514a4"
+      "sha256": "ff97e6f352fd0445be9246bee84122bfb70a1e69f5927e9cb86bdc69ce781a46"
     },
     {
       "path": "cream-groom.png",
@@ -254,7 +254,7 @@
     },
     {
       "path": "tuxedo-fly.png",
-      "sha256": "76f6ec80f65ba61d45646d7cf5e13ba4c9001c991257236328cea0625985dad2"
+      "sha256": "c66258e64c2e74bf0cc5a087a9e9a9a868d404b7b5f37f8e08ef28c6e868ddc7"
     },
     {
       "path": "tuxedo-groom.png",
