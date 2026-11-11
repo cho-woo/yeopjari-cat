@@ -64,6 +64,10 @@ int Run() {
             const auto elapsed=static_cast<ULONGLONG>(i)*1000/Fps;
             if(i)host.Frame(start+elapsed-host.now);
             if(i==30)host.Command(moving?kManualWalkCommand:kManualJumpCommand);
+            // This capture reviews stationary entry/exit after an explicit
+            // stop. Moving jumps have their own momentum/continuation checks
+            // in manual-motion and keyboard-play; never label this as one.
+            if(moving&&i==90){SetMotion(Motion::Idle,8000,host.now);host.Rebase();}
             if(moving&&i==120)host.Command(kManualJumpCommand);
             const auto physical=g.physics.CurrentPose(),rendered=g.physics.RenderPose();
             const auto pose=PrimaryDisplayedPose(host.now,rendered);
@@ -150,7 +154,7 @@ int Run() {
             if(!firstTrace)trace<<',';firstTrace=false;
             trace<<"{\"case\":"<<caseIndex<<",\"frame\":"<<i<<",\"elapsed_ms\":"<<elapsed
                 <<",\"character\":"<<static_cast<unsigned>(character)<<",\"facing\":"<<facing
-                <<",\"scenario\":\""<<(moving?"walk-jump":"idle-jump")<<"\",\"jump_root_locked\":"<<(locked?"true":"false")
+                <<",\"scenario\":\""<<(moving?"walk-stop-jump":"idle-jump")<<"\",\"jump_root_locked\":"<<(locked?"true":"false")
                 <<",\"root_delta_x\":"<<delta<<",\"predicted_delta_x\":"<<expected
                 <<",\"physical_x\":"<<physical.x<<",\"physical_lift\":"<<physical.lift
                 <<",\"rendered_x\":"<<rendered.x<<",\"rendered_lift\":"<<rendered.lift
@@ -183,7 +187,7 @@ int Run() {
         }
         if(caseIndex)report<<',';
         report<<"{\"character\":"<<static_cast<unsigned>(character)<<",\"facing\":"<<facing
-            <<",\"scenario\":\""<<(moving?"walk-jump":"idle-jump")<<"\",\"entry_from_side_turn_seen\":"<<(sideEntry?"true":"false")
+            <<",\"scenario\":\""<<(moving?"walk-stop-jump":"idle-jump")<<"\",\"entry_from_side_turn_seen\":"<<(sideEntry?"true":"false")
             <<",\"root_x_unchanged\":true,\"physical_height_only_once\":true,\"no_prelaunch_air_pose\":true,"
             "\"complete_landing_before_return\":true,\"entry_turn_seen\":true,\"return_turn_seen\":true,\"grounded_return\":true,\"reference_neutral_seen\":true,"
             "\"connected_jump_source\":[400,29],\"unique_new_painted_frames\":0,\"continuous_joint_deformation\":true,"

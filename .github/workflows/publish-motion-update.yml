@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       validation_run:
-        description: Successful Validate run for v2.0.26 with native cursor play, keyboard, coat, jump and rendering tests
+        description: Successful Validate run for v2.0.27 with moving jumps, keyboard, coat, cursor and rendering tests
         required: true
         type: string
       stage_only:

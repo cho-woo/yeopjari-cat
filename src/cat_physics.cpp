@@ -520,6 +520,12 @@ bool Controller::Jump(double apexPixels) {
     return true;
 }
 
+bool Controller::JumpWithMomentum(double apexPixels) {
+    if(!Jump(apexPixels))return false;
+    impl_->ballistic=true;
+    return true;
+}
+
 bool Controller::Pounce(int direction, double apexPixels, double speedPixelsPerSecond) {
     if (!Jump(apexPixels)) return false;
     SetTargetVelocity((direction < 0 ? -1.0 : 1.0)*std::abs(FiniteOr(speedPixelsPerSecond, 0.0)));

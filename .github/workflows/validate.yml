@@ -78,7 +78,7 @@ jobs:
         run: |
           $process = Start-Process -FilePath $env:TEST_EXE -ArgumentList '--self-test' -PassThru -Wait
           if ($process.ExitCode -ne 0) {
-            foreach ($path in @('render-self-test/jump-continuity/failure.txt', 'render-self-test/keyboard-super-report.json', 'render-self-test/manual-motion-self-test.json')) {
+            foreach ($path in @('render-self-test/jump-continuity/failure.txt', 'render-self-test/keyboard-play-report.json', 'render-self-test/manual-motion-self-test.json')) {
               if (Test-Path $path) {
                 $detail = (Get-Content $path -Raw).Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
                 Write-Host "::error::$path $detail"

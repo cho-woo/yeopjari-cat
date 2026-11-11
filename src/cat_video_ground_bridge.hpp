@@ -50,6 +50,11 @@ public:
     void Freeze(std::uint64_t milliseconds) {
         started_=Add(started_,milliseconds);lastTick_=Add(lastTick_,milliseconds);
     }
+    // A running jump returns directly to its side-view gait. It did not turn
+    // into the front neutral, so replaying that entrance would brake and pop.
+    void ContinueLocomotion(std::uint64_t ticks) {
+        Reset(ticks);phase_=Phase::Side;clockReady_=true;
+    }
     void RebaseClock(std::uint64_t ticks) {
         carriedAge_=Age();started_=lastTick_=ticks;clockReady_=true;
     }

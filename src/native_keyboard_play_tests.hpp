@@ -6,7 +6,6 @@
 namespace keyboard_native {
 void Clear() {
     StopKeyboardPlay(false,false);keyboardPlay.fixture=false;keyboardPlay.fixtureForeground=nullptr;
-    superMode.enabled=false;superMode.hitMaskValid=false;superMode.elapsedMs=0;
 }
 void Step(Host& host,unsigned count=1) {
     for(unsigned frame=0;frame<count;++frame) {
@@ -18,7 +17,7 @@ void Step(Host& host,unsigned count=1) {
 bool Start(Host& host,cat::Character character) {
     Clear();if(!EnsureCareCoats(character))return false;
     host.Reset(character,true);keyboardPlay.fixture=true;
-    // Keep this speed/boost fixture away from real edge braking even for the
+    // Keep this speed fixture away from real edge braking even for the
     // registered fast run cadence. Edge ownership has separate safety tests.
     g.work.right=g.work.left+3300;ResetMovement();
     for(unsigned frame=0;frame<12;++frame)g.physics.Update(1./60);
@@ -42,8 +41,8 @@ Jump Hop(Host& host) {
     }
     return jump;
 }
-int AuraScreens(Host& host,unsigned& clickThroughPixels) {
-    CreateDirectoryW(L"render-self-test",nullptr);CreateDirectoryW(L"render-self-test/keyboard-super",nullptr);
+int HitTestScreens(Host& host,unsigned& clickThroughPixels) {
+    CreateDirectoryW(L"render-self-test",nullptr);CreateDirectoryW(L"render-self-test/keyboard-play",nullptr);
     HWND hidden=CreateWindowExW(WS_EX_LAYERED|WS_EX_TOOLWINDOW|WS_EX_NOACTIVATE,L"STATIC",L"",WS_POPUP,
         0,0,480,450,nullptr,nullptr,g.instance,nullptr);
     if(!hidden)return 783;
@@ -55,30 +54,52 @@ int AuraScreens(Host& host,unsigned& clickThroughPixels) {
         SetMotion(Motion::Sleep,60000);g.motionStart=GetTickCount64()-8000;g.bubbleUntil=0;
         const auto& source=CurrentArt(character).base.skins[6].source;
         const auto sourceBefore=cat::Checksum(std::string(reinterpret_cast<const char*>(source.data()),source.size()*4));
-        superMode.enabled=true;superMode.elapsedMs=1100;Render();
-        if(!superMode.hitMaskValid||!superMode.actor.image){result=784;break;}
-        const auto stem=L"render-self-test/keyboard-super/character"+std::to_wstring(static_cast<unsigned>(character));
-        if(!SaveNativeWalkingReview(*g.surface.image,(stem+L"-aura.png").c_str())||
-            !SaveNativeWalkingReview(*superMode.actor.image,(stem+L"-unchanged-body.png").c_str())){result=784;break;}
+        Render();
+        const auto path=L"render-self-test/keyboard-play/character"+std::to_wstring(static_cast<unsigned>(character))+L"-body.png";
+        if(!SaveNativeWalkingReview(*g.surface.image,path.c_str())){result=784;break;}
         POINT origin{};ClientToScreen(hidden,&origin);
-        bool bodyHit=false,auraPass=false;
-        for(int y=0;y<g.surface.height&&(!bodyHit||!auraPass);++y)
-            for(int x=0;x<g.surface.width&&(!bodyHit||!auraPass);++x) {
+        bool bodyHit=false,emptyPass=false;
+        for(int y=0;y<g.surface.height&&(!bodyHit||!emptyPass);++y)
+            for(int x=0;x<g.surface.width&&(!bodyHit||!emptyPass);++x) {
                 const auto index=(static_cast<std::size_t>(y)*g.surface.width+x)*4;
-                const BYTE body=superMode.actor.pixels[index+3],final=g.surface.pixels[index+3];
-                if((!bodyHit&&body>245)||(!auraPass&&body==0&&final>22)) {
+                const BYTE alpha=g.surface.pixels[index+3];
+                if((!bodyHit&&alpha>245)||(!emptyPass&&alpha==0)) {
                     const auto hit=WindowProc(hidden,WM_NCHITTEST,0,MAKELPARAM(origin.x+x,origin.y+y));
-                    if(body>245){if(hit!=HTCLIENT){result=785;break;}bodyHit=true;}
-                    else{if(hit!=HTTRANSPARENT){result=785;break;}auraPass=true;++clickThroughPixels;}
+                    if(alpha>245){if(hit!=HTCLIENT){result=785;break;}bodyHit=true;}
+                    else{if(hit!=HTTRANSPARENT){result=785;break;}emptyPass=true;++clickThroughPixels;}
                 }
             }
-        if(result||!bodyHit||!auraPass){result=result?result:785;break;}
+        if(result||!bodyHit||!emptyPass){result=result?result:785;break;}
         const auto sourceAfter=cat::Checksum(std::string(reinterpret_cast<const char*>(source.data()),source.size()*4));
         if(sourceBefore!=sourceAfter){result=786;break;}
     }
-    g.window=nullptr;DestroyWindow(hidden);superMode.actor.Reset();g.surface.Reset();Clear();
+    g.window=nullptr;DestroyWindow(hidden);g.surface.Reset();Clear();
     return result;
 }
+struct MovingJump {double peak=0,distance=0,speed=0;bool returned=false;};
+MovingJump HopMoving(Host& host) {
+    MovingJump jump;jump.speed=WalkingVelocity(g.physics.CurrentPose());
+    const double origin=g.physics.CurrentPose().x;
+    Key(VK_SPACE);Key(VK_SPACE,false);
+    bool airborne=false;
+    for(unsigned frame=0;frame<160;++frame) {
+        Step(host);const auto physical=g.physics.CurrentPose();
+        jump.peak=std::max(jump.peak,physical.lift);
+        if(!physical.grounded) {
+            airborne=true;
+            if(std::abs(physical.velocityX-jump.speed)>1)return jump;
+        }
+        if(airborne&&physical.landed) {
+            jump.distance=physical.x-origin;
+            jump.returned=!keyboardPlay.jumping&&!keyboardPlay.returning&&!g.waitingForStop&&
+                cat::animation::Walking(g.motion)&&!g.groundArtBridge.Stopping()&&
+                std::abs(physical.velocityX-jump.speed)<1;
+            break;
+        }
+    }
+    return jump;
+}
+
 int Run() {
     Host host;
     std::string characters;
@@ -108,21 +129,26 @@ int Run() {
         if(std::abs(WalkingVelocity(g.physics.CurrentPose()))>.5||!g.groundArtBridge.Neutral()){result=775;break;}
         const auto normal=Hop(host);
         if(normal.launches!=1||normal.landings!=1||normal.peak<25||!normal.returned){result=776;break;}
-        Key('X');Step(host);Key('X',false);
-        if(!superMode.enabled){result=777;break;}
-        Key(VK_RIGHT);Key(VK_SHIFT);Step(host,160);
-        const double powered=WalkingVelocity(g.physics.CurrentPose());
-        if(powered<run*1.24||std::abs(powered-run*cat::keyboard_play::RunBoost)>2){result=777;break;}
+        if(Key('X')||Key('X',false)){result=777;break;} // Retired transform key belongs to the desktop.
+        RunCommand(2305);WindowProc(nullptr,WM_HOTKEY,0x2602,0);
+        if(!KeyboardPlayActive()||keyboardPlay.input.Direction()){result=777;break;}
+        Key(VK_RIGHT);Step(host,160);
+        const auto walkingJump=HopMoving(host);
+        if(!walkingJump.returned||walkingJump.distance<walkingJump.speed*.6||
+                std::abs(walkingJump.peak-normal.peak)>2){result=778;break;}
+        Key(VK_SHIFT);Step(host,150);
+        const auto runningJump=HopMoving(host);
+        if(!runningJump.returned||runningJump.distance<runningJump.speed*.6||
+                runningJump.speed<walkingJump.speed*1.4||std::abs(runningJump.peak-normal.peak)>2){result=778;break;}
         Key(VK_RIGHT,false);Key(VK_SHIFT,false);Step(host,170);
-        const auto power=Hop(host);
-        if(power.launches!=1||power.landings!=1||power.peak<normal.peak*1.16||!power.returned){result=778;break;}
         if(host.Saved()!=saved||!g.pet.roamingPaused){result=779;break;}
         Key(VK_RIGHT);Step(host,3);Key(VK_ESCAPE);
         if(KeyboardPlayActive()||keyboardPlay.hook||keyboardPlay.input.Direction()||keyboardPlay.input.Running()||g.manualMotionActive){result=780;break;}
         if(!characters.empty())characters+=",";
         characters+="{\"character\":"+std::to_string(static_cast<unsigned>(character))+",\"walk_speed\":"+
-            std::to_string(walk)+",\"run_speed\":"+std::to_string(run)+",\"super_run_speed\":"+std::to_string(powered)+
-            ",\"normal_jump_peak\":"+std::to_string(normal.peak)+",\"super_jump_peak\":"+std::to_string(power.peak)+"}";
+            std::to_string(walk)+",\"run_speed\":"+std::to_string(run)+
+            ",\"normal_jump_peak\":"+std::to_string(normal.peak)+",\"walk_jump_distance\":"+std::to_string(walkingJump.distance)+
+            ",\"run_jump_distance\":"+std::to_string(runningJump.distance)+"}";
     }
     unsigned safetyCases=0;
     if(!result)for(unsigned state=0;state<8;++state) {
@@ -145,15 +171,15 @@ int Run() {
             if(!keyboardPlay.input.Active())result=782;}
     }
     Clear();
-    if(!result)result=AuraScreens(host,clickThroughPixels);
+    if(!result)result=HitTestScreens(host,clickThroughPixels);
     CreateDirectoryW(L"render-self-test",nullptr);
-    const std::string proof="{\"schema\":1,\"test\":\"keyboard-super-native\",\"version\":\"" YEOPJARI_VERSION_STRING
+    const std::string proof="{\"schema\":1,\"test\":\"keyboard-play-native\",\"version\":\"" YEOPJARI_VERSION_STRING
         "\",\"status\":\""+(result?std::string("failed"):std::string("passed"))+"\",\"exit_code\":"+std::to_string(result)+
         ",\"input\":\"fake key edges, no OS injection\",\"render\":\"production Render to hidden layered window; native GDI+, not desktop recording\","
-        "\"controls\":\"CtrlAltM; arrows/AD; Shift; Space; X; Esc; CtrlAltS\",\"safety_cases\":"+std::to_string(safetyCases)+
+        "\"controls\":\"CtrlAltM; arrows/AD; Shift; Space; Esc\",\"safety_cases\":"+std::to_string(safetyCases)+
         ",\"pause_preference_preserved\":true,\"real_box2d_jump\":true,\"planted_reversal\":true,\"same_coat_source_hash\":true,"
-        "\"aura_click_through_characters\":"+std::to_string(clickThroughPixels)+",\"characters\":["+characters+"]}\n";
-    const bool written=WriteBytes(L"render-self-test/keyboard-super-report.json",proof);
+        "\"alpha_click_through_characters\":"+std::to_string(clickThroughPixels)+",\"characters\":["+characters+"]}\n";
+    const bool written=WriteBytes(L"render-self-test/keyboard-play-report.json",proof);
     Clear();keyboardPlay.fixture=false;g.initialized=false;g.window=nullptr;g.hidden=g.menuOpen=g.dragging=g.closing=false;
     updates.applying=false;g.manualMotionActive=false;
     return result?result:written?0:787;

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Publish the exact Windows-validated v2.0.26 play and appearance update as stable.
+"""Publish the exact Windows-validated v2.0.27 motion update as stable.
 
 CI-only. Uses a draft/tag prepared at the validated source commit. It never
 rebuilds, replaces a public release, or promotes the opt-in mesh walking study.
@@ -25,9 +25,9 @@ import release
 from verify_silent_exe import verify_silent_exe
 
 REPO = 'cho-woo/yeopjari-cat'
-VERSION = '2.0.26'
+VERSION = '2.0.27'
 TAG = 'v' + VERSION
-PREVIOUS_STABLE = 'v2.0.25'
+PREVIOUS_STABLE = 'v2.0.26'
 ROOT = Path(__file__).resolve().parents[1]
 FEED_URL = f'https://github.com/{REPO}/releases/latest/download/latest.txt'
 BASE_URL = f'https://github.com/{REPO}/releases/download/{TAG}/'
@@ -375,8 +375,14 @@ def manual_motion_contract(path, expected_walk_frames=None, expected_walk_speed=
         if expected_run_speed is not None:
             require(abs(character['run_peak_speed'] - expected_run_speed) <= max(.5, expected_run_speed * .005),
                     'Native running speed does not reproduce the source-video cadence')
-        for key in ('jump_landed', 'moving_jump_braked'):
+        for key in ('jump_landed', 'moving_jump_momentum_preserved', 'moving_jump_gait_continued'):
             require(character.get(key) is True, f'Native manual-motion check failed: {key}')
+        require(all(type(character.get(key)) in (int, float) and math.isfinite(character[key])
+                    for key in ('moving_jump_air_distance', 'moving_jump_launch_speed', 'moving_jump_max_air_speed_drift')) and
+                character['moving_jump_launch_speed'] >= 8 and
+                character['moving_jump_air_distance'] >= character['moving_jump_launch_speed'] * .55 and
+                0 <= character['moving_jump_max_air_speed_drift'] <= 1,
+                'Moving jump must retain actual horizontal momentum through its physical flight')
     return report
 
 
@@ -751,33 +757,33 @@ def native_cursor_capture_contract(native_root):
 
 
 def native_keyboard_contract(native_root):
-    path = exactly_one(native_root.rglob('keyboard-super-report.json'), 'native keyboard and power-mode report')
+    path = exactly_one(native_root.rglob('keyboard-play-report.json'), 'native keyboard report')
     data = json.loads(path.read_text(encoding='utf-8-sig'))
-    require(data.get('schema') == 1 and data.get('test') == 'keyboard-super-native' and
+    require(data.get('schema') == 1 and data.get('test') == 'keyboard-play-native' and
             data.get('version') == VERSION and data.get('status') == 'passed' and
             data.get('exit_code') == 0 and data.get('safety_cases') == 8 and
             data.get('input') == 'fake key edges, no OS injection' and
-            data.get('aura_click_through_characters') == 3 and
+            data.get('alpha_click_through_characters') == 3 and
             all(data.get(key) is True for key in ('pause_preference_preserved', 'real_box2d_jump',
                 'planted_reversal', 'same_coat_source_hash')),
-            'Keyboard controls, ownership cancellation, physics or aura hit-testing failed')
+            'Keyboard controls, ownership cancellation, physics or alpha hit-testing failed')
     rows = data.get('characters', [])
     require(len(rows) == 3 and {r.get('character') for r in rows} == {0, 8, 10},
-            'Keyboard and power mode must cover all three available characters')
-    files = [(path, 'keyboard-super/report.json')]
+            'Keyboard play must cover all three available characters')
+    files = [(path, 'keyboard-play/report.json')]
     images = {}
     for row in rows:
         require(all(type(row.get(key)) in (int, float) and math.isfinite(row[key]) and row[key] > 0
-                    for key in ('walk_speed', 'run_speed', 'super_run_speed', 'normal_jump_peak', 'super_jump_peak')) and
+                    for key in ('walk_speed', 'run_speed', 'normal_jump_peak', 'walk_jump_distance', 'run_jump_distance')) and
                 row['run_speed'] > row['walk_speed'] * 1.4 and
-                row['super_run_speed'] > row['run_speed'] * 1.24 and
-                row['super_jump_peak'] > row['normal_jump_peak'] * 1.16,
-                'Manual physical walk, run or powered jump did not run')
-        for suffix in ('aura', 'unchanged-body'):
+                row['walk_jump_distance'] > row['walk_speed'] * .6 and
+                row['run_jump_distance'] > row['run_speed'] * .6,
+                'Manual physical walk, run or moving jump did not run')
+        for suffix in ('body',):
             name = f"character{row['character']}-{suffix}.png"
-            image = path.parent / 'keyboard-super' / name
+            image = path.parent / 'keyboard-play' / name
             images[name] = png_evidence(image, name)
-            files.append((image, 'keyboard-super/' + name))
+            files.append((image, 'keyboard-play/' + name))
     return files, {'report': data, 'sha256': sha(path), 'images': images,
         'scope': 'Real production host and renderer driven by fake key edges; no OS key injection or desktop recording'}
 
@@ -1204,7 +1210,7 @@ def native_jump_contract(native_root, artwork, reference):
     cases = report.get('cases', [])
     require(len(cases) == 8 and {(c.get('character'), c.get('facing'), c.get('scenario')) for c in cases} ==
             {(character, facing, scenario) for character in (0, 8) for facing in (1, -1)
-             for scenario in ('idle-jump', 'walk-jump')},
+             for scenario in ('idle-jump', 'walk-stop-jump')},
             'Native jump test must cover idle and moving jumps in both characters and directions')
     invariants = ('root_x_unchanged', 'physical_height_only_once', 'no_prelaunch_air_pose',
                   'complete_landing_before_return', 'entry_turn_seen', 'return_turn_seen', 'grounded_return')
@@ -1217,7 +1223,7 @@ def native_jump_contract(native_root, artwork, reference):
                 0 <= case['max_root_dx'] <= .01 and case['max_lift'] >= 30 and
                 case['max_frame_root_delta'] >= 0 and 0 <= case['max_integration_error'] <= .35 and
                 type(case.get('entry_from_side_turn_seen')) is bool and
-                (case['scenario'] != 'walk-jump' or case['entry_from_side_turn_seen']) and
+                (case['scenario'] != 'walk-stop-jump' or case['entry_from_side_turn_seen']) and
                 case.get('reference_neutral_seen') is True and
                 case.get('connected_jump_source') == [400, 29] and
                 case.get('unique_new_painted_frames') == 0 and
@@ -1590,7 +1596,7 @@ def main(stage_only=False):
             'native_cursor_play': cursor_contract,
             'native_ball_play': ball_contract,
             'native_connected_groom': groom_contract,
-            'native_keyboard_super': keyboard_contract,
+            'native_keyboard_play': keyboard_contract,
             'native_menu_visibility': menu_contract,
             'native_jump_continuity': jump_contract,
             'native_random_zoomies': zoomies_contract,

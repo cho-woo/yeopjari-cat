@@ -49,6 +49,7 @@
 #include "cat_articulated_walk.hpp"
 #include "cat_motion_gate.hpp"
 #include "cat_physics.hpp"
+#include "cat_running_jump.hpp"
 #include "cat_environment.hpp"
 #include "cat_cursor_attack.hpp"
 #include "cat_cursor_reach_hop.hpp"
@@ -93,11 +94,11 @@ constexpr UINT kShowExisting = WM_APP + 2;
 constexpr UINT_PTR kTickTimer = 1;
 constexpr int kFeedHotkey = 1, kSnackHotkey = 2, kHideHotkey = 3;
 // Retired motion/toy IDs stay inert, including queued older WM_HOTKEYs.
-constexpr int kKeyboardHotkey=0x2601, kSuperHotkey=0x2602;
+constexpr int kKeyboardHotkey=0x2601;
 constexpr UINT kCharacterCommandBase = 2500, kOutfitCommandBase = 2520;
 constexpr UINT kWorkInterferenceCommand = 2300, kSeasonalEventsCommand = 2301,kCursorPlayCommand=2303;
 constexpr UINT kFishCommand = 2302;
-constexpr UINT kKeyboardPlayCommand=2304, kSuperModeCommand=2305;
+constexpr UINT kKeyboardPlayCommand=2304;
 // Fresh IDs: installed action/toy IDs and the companion's 2600 range stay retired/reserved.
 constexpr UINT kManualWalkCommand = 2800, kManualRunCommand = 2801, kManualJumpCommand = 2802;
 // Keep the original IDs: retired action, toy and sound IDs are never reused.
@@ -357,6 +358,7 @@ struct App {
     cat::motion::GroundDrive groundDrive;
     cat::animation::PoseTransition poseTransition;
     cat::jump_animation::Driver jumpPresentation;
+    cat::running_jump::Plan runningJump;
     cat::video_ground_bridge::GroundBridge groundArtBridge;
     bool physicsReady = false, jumpPending = false, jumpLaunched = false;
     bool waitingForStop = false;
@@ -410,43 +412,7 @@ struct KeyboardPlayHost {
     int direction=0;
     bool running=false,jumping=false,returning=false;
 } keyboardPlay;
-struct SuperModeHost {
-    bool enabled=false,hitMaskValid=false;
-    std::uint64_t elapsedMs=0;
-    Surface actor; // One display-sized reusable body layer; aura pixels never capture clicks.
-} superMode;
 bool KeyboardPlayActive(){return keyboardPlay.requested||keyboardPlay.input.Active();}
-double SuperMovementMultiplier(){return superMode.enabled&&g.motion==Motion::Zoomies?cat::keyboard_play::RunBoost:1.0;}
-double SuperJumpMultiplier(){return superMode.enabled?cat::keyboard_play::JumpBoost:1.0;}
-void ToggleSuperMode() {
-    if(g.closing||updates.applying)return;
-    superMode.enabled=!superMode.enabled;superMode.elapsedMs=0;
-}
-
-void DrawSuperAura(Graphics& graphics,REAL center,REAL bottom,double bodyScale) {
-    if(!superMode.enabled||g.hidden)return;
-    const double strength=cat::keyboard_play::Charge(superMode.elapsedMs)*cat::keyboard_play::Pulse(superMode.elapsedMs);
-    const REAL unit=static_cast<REAL>(bodyScale);
-    // Every shape stays above the registered floor and inside the existing
-    // bounded layered window. No desktop-sized overlay, image decode or cache churn.
-    for(int ring=6;ring>0;--ring) {
-        const REAL w=(117+ring*7)*unit,h=(108+ring*4)*unit;
-        SolidBrush glow(Color(static_cast<BYTE>((4+6-ring)*strength),255,205,85));
-        graphics.FillEllipse(&glow,center-w/2,bottom-h-2*unit,w,h);
-    }
-    for(unsigned i=0;i<12;++i) {
-        const double phase=static_cast<double>((superMode.elapsedMs+i*137)%1600)/1600;
-        const double side=(i&1)?1.0:-1.0;
-        const REAL x=static_cast<REAL>(center+side*(48+7*std::sin(i*1.7+phase*3.14))*bodyScale);
-        const REAL y=static_cast<REAL>(bottom-(9+phase*108)*bodyScale);
-        const BYTE alpha=static_cast<BYTE>(100*strength*std::sin(phase*3.141592653589793));
-        Pen sparkle(Color(alpha,255,215,107),std::max(.7f,unit));
-        graphics.DrawLine(&sparkle,x-2*unit,y,x+2*unit,y);
-        graphics.DrawLine(&sparkle,x,y-3*unit,x,y+3*unit);
-    }
-    Pen halo(Color(static_cast<BYTE>(85*strength),255,207,97),1.2f*unit);
-    graphics.DrawArc(&halo,center-65*unit,bottom-17*unit,130*unit,14*unit,8.0f,164.0f);
-}
 
 bool WorkInterferenceEnabled() { return g.workInterference; }
 
@@ -469,8 +435,6 @@ bool WorkInterferenceEnabled();
 bool EnvironmentBusy();
 bool KeyboardPlayActive();
 void StopKeyboardPlay(bool announce=false,bool settle=true);
-double SuperMovementMultiplier();
-double SuperJumpMultiplier();
 bool ApplyCursorAttackPose(cat::animation::Pose& pose, ULONGLONG ticks, const cat::physics::Pose& physical);
 bool ApplyBallToyPose(cat::animation::Pose& pose,ULONGLONG ticks,const cat::physics::Pose& physical);
 bool ToyInteractionAvailable();
@@ -1746,6 +1710,7 @@ void ResetMovement() {
     g.groundDrive.Reset(g.direction);
     g.poseTransition.Reset();
     g.jumpPresentation.Reset();
+    g.runningJump={};
     g.groundArtBridge.Reset();
     ResetPrimaryCarePresentation();
     g.jumpPending = g.jumpLaunched = false;
@@ -1787,6 +1752,7 @@ bool PrimaryVideoSideMeal() {
     return g.motion==Motion::Eat && !g.fishMeal && eat && eat->layout->nominalFramesPerSecond>0;
 }
 void UpdatePrimaryGroundArt(ULONGLONG ticks) {
+    if(g.runningJump.active)return;
     const auto* walk=PrimaryVideoGroundArt();
     const bool meal=PrimaryVideoSideMeal();
     const auto jumpTurn=walk?cat::video_ground_bridge::JumpTurns(*walk):cat::video_ground_bridge::JumpTurnProfile{};
@@ -1894,6 +1860,11 @@ double Random(double low, double high) { return std::uniform_real_distribution<d
 void SetMotion(Motion motion, ULONGLONG duration,ULONGLONG actionTicks=0) {
     if(motion==Motion::BoxSit)motion=Motion::Idle; // Retired box/bag events cannot re-enter through legacy queues.
     const auto ticks=actionTicks?actionTicks:g.autonomousDispatching?g.autonomousTick:GetTickCount64();
+    const auto body=cat::appearance::VisualModifiers(g.nutrition,g.preferences.character);
+    const double scale=body.speed*cat::species::ProfileFor(g.preferences.character).movementSpeedMultiplier;
+    const auto carried=motion==Motion::Jump && g.physicsReady && !g.perch.active && !g.perch.transitioning?
+        cat::running_jump::Begin(g.motion,g.physics.CurrentPose(),scale,
+            g.nextDecision>ticks?g.nextDecision-ticks:2400):cat::running_jump::Plan{};
     const auto* returnWalk=PrimaryVideoGroundArt();
     const auto returnTurn=returnWalk?cat::video_ground_bridge::JumpTurns(*returnWalk):cat::video_ground_bridge::JumpTurnProfile{};
     const auto* returnJump=LoadedCareSprite(cat::sprite_sequence::Clip::Jump,g.preferences.character);
@@ -1945,6 +1916,11 @@ void SetMotion(Motion motion, ULONGLONG duration,ULONGLONG actionTicks=0) {
     g.waitingForStop = g.physicsReady && cat::motion::BeginGroundStop(motion,
         g.physics.CurrentPose().grounded, WalkingVelocity(g.physics.CurrentPose()),
         WalkingVelocity(g.physics.RenderPose()),g.groundDrive,g.perch.transitioning);
+    g.runningJump=carried;
+    if(carried.active){
+        g.waitingForStop=false;g.direction=g.facing=carried.velocityX<0?-1:1;
+        g.groundArtBridge.ContinueLocomotion(ticks);
+    }
     g.motion = motion; g.motionStart = ticks; g.nextDecision = ticks + duration;
     if (!g.toyDispatching && g.toyEngaged) {
         g.toyEngaged = false;
@@ -2002,7 +1978,7 @@ void BeginAutonomousRest(ULONGLONG ticks=0) {
     SetMotion(Motion::Idle,cat::behavior::Brain::NeutralRestDuration(g.random()),ticks);
     g.autonomousResting=true;g.speed=0;
 }
-struct PerchCandidate { HWND hwnd = nullptr; RECT rect{}; double score = 0.0; };
+struct PerchCandidate { HWND hwnd = nullptr; RECT rect{}; };
 
 double PerchJumpScale() {
     return cat::species::ProfileFor(g.preferences.character).jumpHeightMultiplier *
@@ -2052,33 +2028,46 @@ bool QueryPerchRect(HWND hwnd, RECT& rect) {
     return true;
 }
 
-BOOL CALLBACK CollectPerchWindows(HWND hwnd, LPARAM parameter) {
-    auto* list = reinterpret_cast<std::vector<PerchCandidate>*>(parameter);
-    if (hwnd == g.perch.hwnd) return TRUE;
-    RECT rect{};
-    if (!QueryPerchRect(hwnd, rect)) return TRUE;
-    double targetX = 0;
-    if (!PlanPerchLanding(rect, targetX)) {
-        if ((g.work.bottom - rect.top) / g.dpiScale - g.physics.CurrentPose().lift > PerchRiseLimit())
-            g.perch.sawUnreachableLedge = true;
-        return TRUE;
+BOOL CALLBACK FindFrontApplicationWindow(HWND hwnd,LPARAM parameter) {
+    if(hwnd==g.window || !IsWindowVisible(hwnd) || IsIconic(hwnd) ||
+            MonitorFromWindow(hwnd,MONITOR_DEFAULTTONEAREST)!=g.monitor)return TRUE;
+    const auto style=GetWindowLongPtrW(hwnd,GWL_STYLE),extended=GetWindowLongPtrW(hwnd,GWL_EXSTYLE);
+    if((style&WS_CHILD)||(extended&(WS_EX_TOOLWINDOW|WS_EX_TRANSPARENT))||GetWindowTextLengthW(hwnd)<=0)return TRUE;
+    wchar_t name[80]{};GetClassNameW(hwnd,name,ARRAYSIZE(name));
+    if(wcscmp(name,L"Shell_TrayWnd")==0||wcscmp(name,L"Shell_SecondaryTrayWnd")==0||
+            wcscmp(name,L"Progman")==0||wcscmp(name,L"WorkerW")==0)return TRUE;
+    DWORD cloaked=0;
+    if(SUCCEEDED(DwmGetWindowAttribute(hwnd,DWMWA_CLOAKED,&cloaked,sizeof(cloaked)))&&cloaked)return TRUE;
+    if(extended&WS_EX_LAYERED) {
+        COLORREF key=0;BYTE alpha=255;DWORD flags=0;
+        if(GetLayeredWindowAttributes(hwnd,&key,&alpha,&flags)&&(flags&LWA_ALPHA)&&alpha==0)return TRUE;
     }
-    const double horizontal = std::abs(targetX - g.physics.CurrentPose().x);
-    const double vertical = std::abs((g.work.bottom - rect.top) / g.dpiScale - g.physics.CurrentPose().lift);
-    // Prefer a nearby window, with a small bias toward lower/easier ledges.
-    list->push_back({hwnd, rect, horizontal + vertical * .18});
-    return TRUE;
+    RECT bounds{},intersection{};
+    if(!GetWindowRect(hwnd,&bounds)||!IntersectRect(&intersection,&bounds,&g.work)||
+            intersection.right<=intersection.left||intersection.bottom<=intersection.top)return TRUE;
+    // EnumWindows visits top to bottom. Pick the visible front application
+    // BEFORE testing jump geometry: an unreachable/maximized front window
+    // must never cause a fallback to a hidden window behind it.
+    *reinterpret_cast<HWND*>(parameter)=hwnd;
+    return FALSE;
 }
-
+HWND FrontApplicationWindow() {
+    HWND front=nullptr;EnumWindows(FindFrontApplicationWindow,reinterpret_cast<LPARAM>(&front));return front;
+}
+bool QueryFrontPerchRect(HWND hwnd,RECT& rect) {
+    return hwnd && hwnd==FrontApplicationWindow() && QueryPerchRect(hwnd,rect);
+}
 bool FindPerch(PerchCandidate& choice) {
-    std::vector<PerchCandidate> candidates;
-    g.perch.sawUnreachableLedge = false;
-    EnumWindows(CollectPerchWindows, reinterpret_cast<LPARAM>(&candidates));
-    if (candidates.empty()) return false;
-    std::sort(candidates.begin(), candidates.end(), [](const auto& a, const auto& b) { return a.score < b.score; });
-    const std::size_t pool = std::min<std::size_t>(3, candidates.size());
-    choice = candidates[static_cast<std::size_t>(Random(0, static_cast<double>(pool) - .0001))];
-    return true;
+    g.perch.sawUnreachableLedge=false;
+    const HWND front=FrontApplicationWindow();
+    RECT rect{};
+    if(!front||front==g.perch.hwnd||!QueryPerchRect(front,rect))return false;
+    double target=0;
+    if(!PlanPerchLanding(rect,target)) {
+        g.perch.sawUnreachableLedge=(g.work.bottom-rect.top)/g.dpiScale-g.physics.CurrentPose().lift>PerchRiseLimit();
+        return false;
+    }
+    choice={front,rect};return true;
 }
 
 LONG CurrentGroundY(ULONGLONG) {
@@ -2173,7 +2162,7 @@ void FinishPerchTransition(ULONGLONG ticks) {
 
 void AbortPlannedPerchTransfer(ULONGLONG ticks) {
     RECT source{};
-    const bool supported = g.perch.sourceHwnd && QueryPerchRect(g.perch.sourceHwnd, source);
+    const bool supported = g.perch.sourceHwnd && QueryFrontPerchRect(g.perch.sourceHwnd, source);
     g.perch.hwnd = supported ? g.perch.sourceHwnd : nullptr;
     g.perch.rect = supported ? source : RECT{};
     g.perch.active = supported;
@@ -2199,7 +2188,7 @@ void UpdatePerchTransition(ULONGLONG ticks, double elapsed) {
     }
     if (g.perch.preparing && g.perch.sourceHwnd) {
         RECT source{};
-        if (!QueryPerchRect(g.perch.sourceHwnd, source)) {
+        if (!QueryFrontPerchRect(g.perch.sourceHwnd, source)) {
             g.perch.startled = true;
             AbortPlannedPerchTransfer(ticks);
             return;
@@ -2209,7 +2198,7 @@ void UpdatePerchTransition(ULONGLONG ticks, double elapsed) {
     }
     if (g.perch.landingOnWindow) {
         RECT current{};
-        if (!QueryPerchRect(g.perch.hwnd, current)) {
+        if (!QueryFrontPerchRect(g.perch.hwnd, current)) {
             if (g.perch.preparing) { AbortPlannedPerchTransfer(ticks); return; }
             g.physics.RemovePlatform();
             g.perch.landingOnWindow = g.perch.preparing = false;
@@ -2259,7 +2248,7 @@ void UpdatePerchTransition(ULONGLONG ticks, double elapsed) {
 void MaintainPerch(ULONGLONG ticks) {
     if (!g.perch.active || g.perch.transitioning) return;
     RECT current{};
-    if (!QueryPerchRect(g.perch.hwnd, current)) {
+    if (!QueryFrontPerchRect(g.perch.hwnd, current)) {
         g.perch.startled = true;
         BeginPerchTransition(nullptr, {}, false);
         return;
@@ -3227,22 +3216,7 @@ void Render() {
     }
     const REAL toyLocalX = static_cast<REAL>(g.toyX - windowLeft);
     RenderToy();
-    superMode.hitMaskValid=false;
-    const bool powered=superMode.enabled && ((superMode.actor.image&&superMode.actor.width==g.surface.width&&
-        superMode.actor.height==g.surface.height)||superMode.actor.Create(g.surface.width,g.surface.height));
-    if(powered) {
-        Graphics actor(superMode.actor.image.get());
-        actor.SetCompositingMode(CompositingModeSourceCopy);actor.Clear(Color(0,0,0,0));
-        actor.SetCompositingMode(CompositingModeSourceOver);
-        actor.SetCompositingQuality(CompositingQualityHighQuality);
-        actor.SetInterpolationMode(InterpolationModeHighQualityBicubic);actor.SetSmoothingMode(SmoothingModeAntiAlias);
-        actor.SetPixelOffsetMode(PixelOffsetModeHighQuality);
-        DrawAnimatedPet(actor,pose,static_cast<REAL>(center+pose.x*bodyScale),bottom,scale,&PrimaryCarePresentation(),ticks);
-        actor.Flush(FlushIntentionSync);
-        DrawSuperAura(graphics,center,bottom,bodyScale);
-        graphics.DrawImage(superMode.actor.image.get(),0,0);
-        superMode.hitMaskValid=true;
-    } else DrawAnimatedPet(graphics, pose, static_cast<REAL>(center + pose.x * bodyScale), bottom, scale,
+    DrawAnimatedPet(graphics, pose, static_cast<REAL>(center + pose.x * bodyScale), bottom, scale,
         &PrimaryCarePresentation(),ticks);
     DrawToyForeground(graphics, toyLocalX, static_cast<REAL>(g.surface.height - 1-bottomInset));
     if (g.motion == Motion::Sleep) {
@@ -3917,7 +3891,7 @@ bool BeginKeyboardCapture(ULONGLONG ticks) {
     keyboardPlay.ownsMotion=true;keyboardPlay.serial=g.motionSerial;
     keyboardPlay.direction=0;keyboardPlay.running=false;keyboardPlay.jumping=false;
     keyboardPlay.returning=false;
-    Speak(L"← → 걷기 · Shift 달리기\nSpace 점프 · X 변신 · Esc 끝",6500);
+    Speak(L"← → 걷기 · Shift 달리기\nSpace 점프 · Esc 끝",6500);
     return true;
 }
 void ToggleKeyboardPlay() {
@@ -3936,8 +3910,7 @@ void ToggleKeyboardPlay() {
     Speak(L"잠깐만, 발부터 가지런히 ♡",1700);
 }
 void UpdateKeyboardPlay(ULONGLONG ticks,double elapsed) {
-    if(superMode.enabled&&!g.hidden&&!g.menuOpen&&!g.dragging&&std::isfinite(elapsed)&&elapsed>0&&elapsed<=.25)
-        superMode.elapsedMs+=static_cast<std::uint64_t>(std::lround(elapsed*1000));
+    (void)elapsed;
     if(!KeyboardPlayActive())return;
     const HWND foreground=keyboardPlay.fixture?keyboardPlay.fixtureForeground:GetForegroundWindow();
     if(!keyboardPlay.foreground&&foreground!=g.window)keyboardPlay.foreground=foreground;
@@ -3955,9 +3928,6 @@ void UpdateKeyboardPlay(ULONGLONG ticks,double elapsed) {
             BeginKeyboardCapture(ticks);
         else if(ticks-keyboardPlay.requestedAt>30000)StopKeyboardPlay(false,false);
         return;
-    }
-    if(keyboardPlay.input.TakeTransform()) {
-        ToggleSuperMode();Speak(superMode.enabled?L"초싸이언냥… 파워 업! ✦":L"후우… 다시 말랑냥 ♡",1900);
     }
     const bool jumpRequest=keyboardPlay.input.TakeJump();
     const auto physical=g.physics.CurrentPose();
@@ -3996,13 +3966,15 @@ void UpdateKeyboardPlay(ULONGLONG ticks,double elapsed) {
 void StartManualMotion(Motion motion) {
     // Recheck at dispatch: a supporting window or update can change after the menu opens.
     if (!ManualMotionAvailable()) return;
+    if(motion==Motion::Jump && g.jumpPending)return;
     const auto ticks = GetTickCount64();
     if (g.brain) g.brain->Interrupt(ticks);
     cursorInteraction = {};
     g.prank.Clear(); g.bubbleUntil = 0;
     // Use the existing safe motor bounds and head toward the larger clear space.
     const auto bounds = MovementBoundsLogical();
-    g.direction = g.physics.CurrentPose().x <= (bounds.first + bounds.second) * .5 ? 1 : -1;
+    if(motion!=Motion::Jump||std::abs(WalkingVelocity(g.physics.CurrentPose()))<8)
+        g.direction = g.physics.CurrentPose().x <= (bounds.first + bounds.second) * .5 ? 1 : -1;
     SetMotion(motion, motion == Motion::Walk ? 5000 : motion == Motion::Zoomies ? 3200 : 3000);
     g.speed = (motion == Motion::Walk ? RegisteredWalkSpeed() :
         motion == Motion::Zoomies ? RegisteredRunSpeed() : 0) * g.dpiScale;
@@ -4019,7 +3991,8 @@ void FinishManualMotion(ULONGLONG ticks) {
 }
 
 void RunCommand(UINT command) {
-    if(command!=kKeyboardPlayCommand&&command!=kSuperModeCommand)StopKeyboardPlay(false,true);
+    if(command==2305)return; // Retired mode command remains inert, including queued messages.
+    if(command!=kKeyboardPlayCommand)StopKeyboardPlay(false,true);
     if(command>=kCharacterCommandBase && command<kCharacterCommandBase+cat::kCharacterCount){SelectCharacter(static_cast<cat::Character>(command-kCharacterCommandBase));return;}
     switch (command) {
     case kManualWalkCommand: StartManualMotion(Motion::Walk); break;
@@ -4029,8 +4002,6 @@ void RunCommand(UINT command) {
     case kSeasonalEventsCommand: ChangeInteractionSettings(false); break;
     case kCursorPlayCommand: ChangeInteractionSettings(false,true); break;
     case kKeyboardPlayCommand: ToggleKeyboardPlay(); break;
-    case kSuperModeCommand:
-        ToggleSuperMode();Speak(superMode.enabled?L"초싸이언냥… 파워 업! ✦":L"후우… 다시 말랑냥 ♡",1900);break;
     case kCompanionToggle: ToggleCompanion(); break;
     case kCompanionFeed: FeedCompanion(false); break;
     case kCompanionTreat: FeedCompanion(true); break;
@@ -4091,7 +4062,6 @@ HMENU BuildPetMenu() {
     AppendMenuW(menu, MF_STRING | (g.workInterference ? MF_CHECKED : MF_UNCHECKED), kWorkInterferenceCommand, L"업무 방해 모드 · 커서와 놀기");
     AppendMenuW(menu, MF_STRING | (g.cursorPlay ? MF_CHECKED : MF_UNCHECKED),kCursorPlayCommand,L"마우스 포인터와 놀기");
     AppendMenuW(menu, MF_STRING | (KeyboardPlayActive()?MF_CHECKED:MF_UNCHECKED),kKeyboardPlayCommand,L"키보드로 놀기\tCtrl+Alt+M");
-    AppendMenuW(menu, MF_STRING | (superMode.enabled?MF_CHECKED:MF_UNCHECKED),kSuperModeCommand,L"초싸이언 모드\tCtrl+Alt+S");
     AppendMenuW(menu, MF_STRING | (g.interactionSettings.seasonalEvents ? MF_CHECKED : MF_UNCHECKED), kSeasonalEventsCommand, L"계절·기념일 이벤트");
     AppendMenuW(menu, MF_STRING, HideCommand, g.hidden ? L"고양이 보이기\tCtrl+Alt+H" : L"잠깐 숨기기\tCtrl+Alt+H");
     AppendMenuW(menu, MF_SEPARATOR, 0, nullptr); AppendMenuW(menu, MF_STRING, BackupCommand, L"성장 기록 따로 백업하기…");
@@ -4690,8 +4660,9 @@ void AdvancePrimaryMotion(ULONGLONG ticks, double elapsed) {
             }
         }
     }
-    targetSpeed *= cat::species::ProfileFor(g.preferences.character).movementSpeedMultiplier*SuperMovementMultiplier();
-    if (g.physics.CurrentPose().grounded && targetSpeed != 0) {
+    targetSpeed *= cat::species::ProfileFor(g.preferences.character).movementSpeedMultiplier;
+    if(g.runningJump.active)targetSpeed=g.runningJump.velocityX;
+    if (!g.runningJump.active && g.physics.CurrentPose().grounded && targetSpeed != 0) {
         const auto support = g.physics.CurrentPose();
         const auto [low, high] = MovementBoundsLogical();
         if (cat::motion::BrakeBeforeEdge(support.x, WalkingVelocity(support), targetSpeed, low, high)) {
@@ -4706,8 +4677,8 @@ void AdvancePrimaryMotion(ULONGLONG ticks, double elapsed) {
         }
     }
     if (g.waitingForStop) targetSpeed = 0;
-    if(g.groundArtBridge.HoldMotor())targetSpeed=0;
-    else if(g.groundArtBridge.Starting())
+    if(!g.runningJump.active && g.groundArtBridge.HoldMotor())targetSpeed=0;
+    else if(!g.runningJump.active && g.groundArtBridge.Starting())
         targetSpeed=std::clamp(targetSpeed,-RegisteredWalkSpeed()*body.speed,
             RegisteredWalkSpeed()*body.speed);
     const auto motorPose=g.physics.CurrentPose();
@@ -4716,17 +4687,20 @@ void AdvancePrimaryMotion(ULONGLONG ticks, double elapsed) {
     if(motorPose.grounded)g.facing=g.groundDrive.Facing();
     g.physics.SetTargetVelocity(targetSpeed);
     if (!g.waitingForStop && g.jumpPending) {
-        const ULONGLONG takeoff = PrimaryTakeoffMs(g.motion==Motion::Pounce);
+        const ULONGLONG takeoff = g.runningJump.active?cat::running_jump::Plan::PreparationMs:PrimaryTakeoffMs(g.motion==Motion::Pounce);
         if (actionElapsed >= takeoff) {
             g.jumpPending = false;
             const double speciesJump = cat::species::ProfileFor(g.preferences.character).jumpHeightMultiplier;
             const bool cursorPounce = cursorInteraction.session.Action() == cat::environment::CursorAction::Pounce;
             const bool launched = cursorPounce ? TryCursorPounce(ticks) :
-                g.motion == Motion::Jump ? g.physics.Jump(55 * growth * body.jump * speciesJump*SuperJumpMultiplier()) :
+                g.motion == Motion::Jump ? (g.runningJump.active?
+                    g.physics.JumpWithMomentum(55 * growth * body.jump * speciesJump):
+                    g.physics.Jump(55 * growth * body.jump * speciesJump)) :
                 g.physics.Pounce(g.direction, 30 * growth * body.jump * speciesJump, g.pet.roamingPaused ? 0 : std::abs(targetSpeed));
             if (launched) {
                 g.jumpLaunched = true; g.airborneMotion = g.motion;
-            }
+                if(g.runningJump.active){g.runningJump.launched=true;g.runningJump.velocityX=g.physics.CurrentPose().velocityX;}
+            } else g.runningJump={};
         }
     }
     const auto previousRendered = g.physics.RenderPose();
@@ -4753,7 +4727,20 @@ void AdvancePrimaryMotion(ULONGLONG ticks, double elapsed) {
     if (physical.landed) {
         g.landedAt = ticks;
         g.landingStrength = std::clamp(physical.landingSpeed / 230.0, .35, 1.0);
-        if(g.motion==Motion::Jump || g.motion==Motion::Pounce) {
+        if(g.runningJump.active && g.runningJump.launched) {
+            const auto carried=g.runningJump;
+            const bool manual=g.manualMotionActive;
+            g.runningJump={};g.jumpLaunched=false;g.landedAt=0;
+            Motion resume=carried.resume;
+            if(KeyboardPlayActive())resume=keyboardPlay.input.Direction()?
+                (keyboardPlay.input.Running()?Motion::Zoomies:Motion::Walk):Motion::Idle;
+            SetMotion(resume,carried.resumeDurationMs,ticks);
+            g.speed=carried.baseSpeed*g.dpiScale;g.manualMotionActive=manual;
+            g.groundArtBridge.ContinueLocomotion(ticks);
+            if(KeyboardPlayActive()){
+                keyboardPlay.serial=g.motionSerial;keyboardPlay.jumping=keyboardPlay.returning=false;
+            }
+        } else if(g.motion==Motion::Jump || g.motion==Motion::Pounce) {
             if(const auto* jump=LoadedCareSprite(cat::sprite_sequence::Clip::Jump,g.preferences.character))
                 g.nextDecision=std::max<ULONGLONG>(g.nextDecision,ticks+
                     cat::sprite_sequence::Duration(jump->layout->program,jump->layout->program.outro));
@@ -4925,9 +4912,7 @@ LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
         if (g.perch.active && PtInRect(&g.perch.rect, point)) return HTTRANSPARENT;
         ScreenToClient(window, &point);
         if (g.surface.pixels && point.x >= 0 && point.y >= 0 && point.x < g.surface.width && point.y < g.surface.height) {
-            const BYTE* pixels=superMode.hitMaskValid&&superMode.actor.width==g.surface.width&&
-                superMode.actor.height==g.surface.height?superMode.actor.pixels:g.surface.pixels;
-            const BYTE alpha = pixels[(static_cast<size_t>(point.y) * g.surface.width + point.x) * 4 + 3];
+            const BYTE alpha = g.surface.pixels[(static_cast<size_t>(point.y) * g.surface.width + point.x) * 4 + 3];
             if (alpha > 22) return HTCLIENT;
         }
         return HTTRANSPARENT;
@@ -4967,7 +4952,6 @@ LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
         else if (wParam == kSnackHotkey) Care(true);
         else if (wParam == kHideHotkey) ToggleHidden();
         else if (wParam == kKeyboardHotkey) ToggleKeyboardPlay();
-        else if (wParam == kSuperHotkey) {ToggleSuperMode();Speak(superMode.enabled?L"초싸이언냥… 파워 업! ✦":L"다시 말랑냥 ♡",1900);}
         return 0;
     case kShowExisting:
         if (g.hidden) ToggleHidden();
@@ -4991,7 +4975,7 @@ LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
         g.prank.Shutdown();
         if (g.preciseTimer) { timeEndPeriod(1); g.preciseTimer = false; }
         KillTimer(window, kTickTimer); UnregisterHotKey(window, kFeedHotkey); UnregisterHotKey(window, kSnackHotkey); UnregisterHotKey(window, kHideHotkey);
-        UnregisterHotKey(window,kKeyboardHotkey);UnregisterHotKey(window,kSuperHotkey);
+        UnregisterHotKey(window,kKeyboardHotkey);
         if (g.tray.hWnd) Shell_NotifyIconW(NIM_DELETE, &g.tray);
         PostQuitMessage(0); return 0;
     }
@@ -5627,7 +5611,7 @@ int NativeMenuContractTest() {
         "Deferred food kinds and new IDs must not reuse retired commands");
     // Old installed versions used these IDs for manual motions, sound and toys.
     constexpr UINT retired[]{1018, 1019, 1022, 1023, 1027, 1028, 1029, 1030, 1031,
-        1032, 1033, 1034, 1035, 1036, 1037, 1038, 1039, 1040, 1041, 1042, 1043, 1044, 1045};
+        1032, 1033, 1034, 1035, 1036, 1037, 1038, 1039, 1040, 1041, 1042, 1043, 1044, 1045, 2305};
     struct Item { UINT id, state, type; };
     const auto collect = [](auto&& self, HMENU menu, std::vector<Item>& items) -> bool {
         const int count = GetMenuItemCount(menu);
@@ -5670,7 +5654,7 @@ int NativeMenuContractTest() {
         DestroyMenu(menu);
         if (!read) return 221;
         std::vector<UINT> actual, expected{1010, 1011, 1012, 1013, 1014, 1015, 1016, 1017,
-            1024, 1026, 2300, 2301, 2302, 2303, 2304, 2305, 2400, 2800, 2801, 2802};
+            1024, 1026, 2300, 2301, 2302, 2303, 2304, 2400, 2800, 2801, 2802};
         if (enabled) expected.push_back(1025);
         if (variant != 2) for (UINT id : {2401u, 2402u, 2403u, 2405u}) expected.push_back(id);
         for (auto c:cat::kAvailableCharacters) expected.push_back(2500 + static_cast<int>(c));
@@ -5885,7 +5869,6 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
     if (!RegisterHotKey(g.window, kSnackHotkey, modifiers, 'T')) g.hotkeyFailures.push_back(L"Ctrl+Alt+T (츄르)");
     if (!RegisterHotKey(g.window, kHideHotkey, modifiers, 'H')) g.hotkeyFailures.push_back(L"Ctrl+Alt+H (숨기기)");
     if (!RegisterHotKey(g.window, kKeyboardHotkey, modifiers, 'M')) g.hotkeyFailures.push_back(L"Ctrl+Alt+M (키보드 놀이)");
-    if (!RegisterHotKey(g.window, kSuperHotkey, modifiers, 'S')) g.hotkeyFailures.push_back(L"Ctrl+Alt+S (초싸이언)");
     g.initialized = true; g.lastTick = GetTickCount64(); g.nextMaintenance = g.lastTick + 1500; g.nextSave = g.lastTick + 60000;
     g.foodRequestAfter = g.lastTick + 180000;
     g.updateAnnounceAfter = g.lastTick + 30000;
@@ -5913,7 +5896,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
     g.companionWindow.Close();
     if (g.toyWindow) DestroyWindow(g.toyWindow);
     g.toySurface.Reset();
-    StopKeyboardPlay(false,false);superMode.actor.Reset();
+    StopKeyboardPlay(false,false);
     g.prank.Shutdown(); g.surface.Reset(); g.blendFrom.Reset(); g.blendTo.Reset(); ReleaseAtlases();
     if (g.trayIcon) DestroyIcon(g.trayIcon); GdiplusShutdown(g.gdiplusToken);
     ReleaseMutex(g.instanceMutex); CloseHandle(g.instanceMutex); if (SUCCEEDED(com)) CoUninitialize();

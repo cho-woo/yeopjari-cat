@@ -9,7 +9,7 @@ constexpr UINT kCompanionCharacterFirst = 2600;
 
 cat::companion::Platform CompanionPlatform(HWND hwnd, RECT* actual = nullptr) {
     RECT rect{};
-    if (!QueryPerchRect(hwnd, rect)) return {};
+    if (!QueryFrontPerchRect(hwnd, rect)) return {};
     if (actual) *actual = rect;
     return {reinterpret_cast<std::uintptr_t>(hwnd),
         (std::max(rect.left, g.work.left) - g.work.left) / g.dpiScale,

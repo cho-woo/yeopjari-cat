@@ -73,6 +73,9 @@ public:
     bool Hanging() const;
     void SetTargetVelocity(double logicalPixelsPerSecond);
     bool Jump(double apexPixels = 55.0);
+    // Keep the actual horizontal takeoff momentum. Ground acceleration resumes
+    // only after physical contact; changing a motor target cannot bend the arc.
+    bool JumpWithMomentum(double apexPixels = 55.0);
     bool Pounce(int direction, double apexPixels = 30.0,
                 double speedPixelsPerSecond = 72.0);
 

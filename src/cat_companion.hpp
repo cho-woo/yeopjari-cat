@@ -10,6 +10,7 @@
 #include "cat_appearance_visual.hpp"
 #include "cat_fish.hpp"
 #include "cat_physics.hpp"
+#include "cat_running_jump.hpp"
 #include "cat_motion_gate.hpp"
 #include "cat_pose_transition.hpp"
 #include "cat_video_ground_bridge.hpp"
@@ -247,6 +248,7 @@ struct Context {
 };
 struct Snapshot {
     bool enabled = false;
+    bool travellingJump = false;
     cat::physics::Pose physical;
     cat::animation::Pose animation;
     cat::animation::Motion motion = cat::animation::Motion::Idle;
@@ -283,7 +285,7 @@ public:
         feedingKind_=cat::feeding::FoodKind::Meal;
         groomVariant_=0;
         motionStart_=lastTicks_=careUntil_=landedAt_=jumpTurnHandledLanding_=0; direction_=facing_=1; speed_=0; support_={}; gait_.Reset(); groundDrive_.Reset(facing_);
-        poseTransition_.Reset(); jumpPresentation_.Reset(); groundArtBridge_.Reset(); motionSerial_=0;
+        poseTransition_.Reset(); jumpPresentation_.Reset(); groundArtBridge_.Reset(); runningJump_={}; motionSerial_=0;
         waitingForStop_=jumpPending_=wakingFromSleep_=false;
         storyActive_=quietActive_=false;
         presentationTicks_=0;presentationPaused_=false;++presentationGeneration_;
@@ -302,13 +304,14 @@ public:
         minX_=std::isfinite(minX)?minX:40; maxX_=std::isfinite(maxX)?std::max(maxX,minX_+1):minX_+800;
         physics_.Reset(minX_+std::clamp(state_->pet.position,0.0,1.0)*(maxX_-minX_),minX_,maxX_);
         maxLift_=std::isfinite(maxLift)?std::max(1.0,maxLift):1;
-        physics_.SetCeiling(maxLift_); gait_.Reset(); groundDrive_.Reset(facing_); poseTransition_.Reset(); jumpPresentation_.Reset(); groundArtBridge_.Reset(); ready_=true; supportId_=0;
+        physics_.SetCeiling(maxLift_); gait_.Reset(); groundDrive_.Reset(facing_); poseTransition_.Reset(); jumpPresentation_.Reset(); groundArtBridge_.Reset(); runningJump_={}; ready_=true; supportId_=0;
         ++presentationGeneration_;
     }
     void Relocate(double minX,double maxX,double maxLift,double deltaX=0) {
         if(!ready_) { Reset(minX,maxX,maxLift); return; }
         minX_=minX; maxX_=std::max(minX+1,maxX); maxLift_=std::isfinite(maxLift)?std::max(1.0,maxLift):1;
         physics_.RelocateBounds(minX_,maxX_,deltaX); physics_.SetCeiling(maxLift_); gait_.Reset(); groundDrive_.Reset(facing_); poseTransition_.Reset(); jumpPresentation_.Reset(); groundArtBridge_.Reset();
+        runningJump_={};
         ++presentationGeneration_;
     }
     std::uintptr_t SupportId() const { return supportId_; }
@@ -359,7 +362,7 @@ public:
             if(careUntil_)careUntil_+=held;
         }
         if(c.ticks < lastTicks_) {
-            interaction_=Interaction::None; socialUntil_=0; poseTransition_.Reset(); jumpPresentation_.Reset(); groundArtBridge_.Reset();
+            interaction_=Interaction::None; socialUntil_=0; poseTransition_.Reset(); jumpPresentation_.Reset(); groundArtBridge_.Reset(); runningJump_={};
             brain_->Interrupt(c.ticks); BeginQuiet(c.ticks);
         }
         lastTicks_=c.ticks;
@@ -388,7 +391,7 @@ public:
         const auto* videoWalk=RegisteredVideoWalk();
         PrepareGroundArt(c.ticks,!landingRecovery);
         double velocity=0;
-        if(!landingRecovery && interaction_!=Interaction::None) velocity=SocialVelocity(c);
+        if(!landingRecovery && !runningJump_.active && interaction_!=Interaction::None) velocity=SocialVelocity(c);
         else if(!landingRecovery && cat::animation::Walking(motion_) && !state_->pet.roamingPaused) velocity=direction_*speed_;
         // Keep the complete action and care interval after the moving body has
         // actually braked. Rendering alone must not hide a sliding meal/crouch.
@@ -400,7 +403,7 @@ public:
             if(careUntil_>start) careUntil_+=motionStart_-start;
             velocity=0;
         }
-        if(before.grounded && !before.onPlatform && cat::motion::BrakeBeforeEdge(
+        if(!runningJump_.active && before.grounded && !before.onPlatform && cat::motion::BrakeBeforeEdge(
                 before.x,before.velocityX-before.supportVelocityX,velocity,minX_,maxX_)) {
             direction_=velocity<0?1:-1; velocity=0;
         }
@@ -411,8 +414,9 @@ public:
                     support_.left+30,support_.right-30)) velocity=0;
         }
         velocity*=cat::appearance::VisualModifiers(state_->nutrition,state_->preferences.character).speed*species.movementSpeedMultiplier;
-        if(groundArtBridge_.HoldMotor())velocity=0;
-        else if(groundArtBridge_.Starting() && videoWalk) {
+        if(runningJump_.active)velocity=runningJump_.velocityX; // Captured actual speed already includes all modifiers.
+        if(!runningJump_.active && groundArtBridge_.HoldMotor())velocity=0;
+        else if(!runningJump_.active && groundArtBridge_.Starting() && videoWalk) {
             const double maximum=cat::sprite_assets::NominalLocomotionSpeed(*videoWalk)*
                 cat::appearance::VisualModifiers(state_->nutrition,state_->preferences.character).speed*species.movementSpeedMultiplier;
             velocity=std::clamp(velocity,-maximum,maximum);
@@ -422,7 +426,7 @@ public:
             displayedPhysical.velocityX-displayedPhysical.supportVelocityX,before.grounded,c.elapsedSeconds);
         if(before.grounded) {facing_=groundDrive_.Facing();physics_.SetTargetVelocity(velocity);}
         const auto* jumpArt=Registered(cat::sprite_sequence::Clip::Jump);
-        const auto takeoff=jumpArt && jumpArt->program.stepCount?
+        const auto takeoff=runningJump_.active?cat::running_jump::Plan::PreparationMs:jumpArt && jumpArt->program.stepCount?
             cat::sprite_sequence::Duration(jumpArt->program,jumpArt->program.intro):
             (motion_==cat::animation::Motion::Jump?220U:240U);
         if(!waitingForStop_ && jumpPending_ && before.grounded && c.ticks>=motionStart_ &&
@@ -431,15 +435,29 @@ public:
             const auto body=cat::appearance::VisualModifiers(state_->nutrition,state_->preferences.character);
             const double growth=cat::GrowthScale(state_->pet.bornUtc,state_->pet.updatedUtc);
             const double jump=growth*body.jump*species.jumpHeightMultiplier;
-            const bool launched=motion_==cat::animation::Motion::Jump?physics_.Jump(55*jump):
+            const bool launched=motion_==cat::animation::Motion::Jump?(runningJump_.active?
+                physics_.JumpWithMomentum(55*jump):physics_.Jump(55*jump)):
                 physics_.Pounce(direction_,30*jump,state_->pet.roamingPaused?0:72*body.speed*species.movementSpeedMultiplier);
-            if(launched) facing_=direction_;
+            if(launched) {
+                facing_=direction_;
+                if(runningJump_.active){runningJump_.launched=true;runningJump_.velocityX=physics_.CurrentPose().velocityX;}
+            } else runningJump_={};
         }
         const auto beforeRendered=physics_.RenderPose();
         physics_.Update(c.elapsedSeconds);
         const auto after=physics_.CurrentPose();
         const auto rendered=physics_.RenderPose();
-        if(after.landed) { landedAt_=c.ticks; landingStrength_=std::clamp(after.landingSpeed/300.0,.2,1.0); }
+        if(after.landed) {
+            landedAt_=c.ticks; landingStrength_=std::clamp(after.landingSpeed/300.0,.2,1.0);
+            if(runningJump_.active && runningJump_.launched) {
+                const auto carried=runningJump_;runningJump_={};
+                // A travelling landing continues its side-view gait. It must
+                // never enter the stationary jump's front-facing recovery.
+                landedAt_=0;
+                SetMotion(carried.resume,c.ticks,carried.resumeDurationMs,carried.baseSpeed);
+                groundArtBridge_.ContinueLocomotion(c.ticks);
+            }
+        }
         if(after.grounded && !after.onPlatform && supportId_) { supportId_=0; support_={}; physics_.RemovePlatform(); }
         // Advance paws from the same interpolated displacement used by View.
         // At120Hz the body moves between60Hz Box2D steps; current-pose deltas
@@ -538,6 +556,7 @@ public:
     void DragTo(double x) {
         if(!ready_) return;
         physics_.Reset(std::clamp(x,minX_,maxX_),minX_,maxX_); supportId_=0; support_={}; gait_.Reset(); groundDrive_.Reset(facing_); poseTransition_.Reset(); jumpPresentation_.Reset(); groundArtBridge_.Reset();
+        runningJump_={};
         physics_.SetCeiling(maxLift_);
         state_->pet.position=std::clamp((physics_.CurrentPose().x-minX_)/(maxX_-minX_),0.0,1.0);
         interaction_=Interaction::None; nextDecision_=careUntil_=landedAt_=0;
@@ -552,7 +571,7 @@ public:
     Snapshot View(std::uint64_t ticks) const {
         Snapshot s;
         if(!Bound() || !ready_) return s;
-        s.enabled=state_->enabled; s.physical=physics_.RenderPose(); s.preferences=state_->preferences;
+        s.enabled=state_->enabled; s.travellingJump=runningJump_.active; s.physical=physics_.RenderPose(); s.preferences=state_->preferences;
         s.body=cat::appearance::VisualModifiers(state_->nutrition,state_->preferences.character); s.growthScale=cat::GrowthScale(state_->pet.bornUtc,state_->pet.updatedUtc);
         s.life=cat::life::Summarize(state_->life,state_->memory.bond); s.temperament=state_->life.temperament;
         s.bond=state_->memory.bond; s.archetype=brain_->GetArchetype(); s.motion=motion_; s.interaction=interaction_;
@@ -675,6 +694,7 @@ private:
         } else if(motion_!=Motion::Jump&&motion_!=Motion::Pounce)jumpTurnHandledLanding_=landedAt_;
     }
     void PrepareGroundArt(std::uint64_t ticks,bool eligible=true) {
+        if(runningJump_.active)return;
         const auto* videoWalk=RegisteredVideoWalk();
         const bool sideMeal=VideoSideMeal();
         const auto jumpTurn=videoWalk?cat::video_ground_bridge::JumpTurns(*videoWalk):cat::video_ground_bridge::JumpTurnProfile{};
@@ -712,6 +732,7 @@ private:
     mutable cat::animation::PoseTransition poseTransition_;
     mutable cat::jump_animation::Driver jumpPresentation_;
     cat::video_ground_bridge::GroundBridge groundArtBridge_;
+    cat::running_jump::Plan runningJump_;
     bool ready_=false,contactRecorded_=false,waitingForStop_=false,jumpPending_=false;
     bool wakingFromSleep_=false,storyActive_=false,quietActive_=false;
     bool presentationPaused_=false;
@@ -807,6 +828,11 @@ private:
     void SetMotion(cat::animation::Motion m,std::uint64_t ticks,std::uint64_t duration,double speed,bool alreadyAirborne=false,
                    cat::sprite_sequence::Clip requestedClip=cat::sprite_sequence::Clip::None) {
         using Clip=cat::sprite_sequence::Clip;
+        const auto body=cat::appearance::VisualModifiers(state_->nutrition,state_->preferences.character);
+        const double scale=body.speed*cat::species::ProfileFor(state_->preferences.character).movementSpeedMultiplier;
+        const auto carried=m==cat::animation::Motion::Jump && !alreadyAirborne?
+            cat::running_jump::Begin(motion_,physics_.CurrentPose(),scale,
+                nextDecision_>ticks?nextDecision_-ticks:2400):cat::running_jump::Plan{};
         const auto* returnWalk=RegisteredVideoWalk();
         const auto returnTurn=returnWalk?cat::video_ground_bridge::JumpTurns(*returnWalk):cat::video_ground_bridge::JumpTurnProfile{};
         const auto* returnJump=Registered(Clip::Jump);
@@ -850,6 +876,11 @@ private:
             const auto rendered=physics_.RenderPose();
             waitingForStop_=cat::motion::BeginGroundStop(m,physical.grounded,physical.velocityX-physical.supportVelocityX,
                 rendered.velocityX-rendered.supportVelocityX,groundDrive_,alreadyAirborne);
+            runningJump_=carried;
+            if(carried.active){
+                waitingForStop_=false;direction_=facing_=carried.velocityX<0?-1:1;
+                groundArtBridge_.ContinueLocomotion(ticks);
+            }
             jumpPending_=jumping && !alreadyAirborne;
         }
         if(cat::animation::Walking(m)) walkingMotion_=m;

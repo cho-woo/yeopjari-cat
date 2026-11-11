@@ -37,7 +37,7 @@ int Run(HINSTANCE instance) {
         g.motion,g.motionSerial,g.motionStart,g.nextDecision,g.walkingMotion,g.waitingForStop,
         g.jumpPending,g.jumpLaunched,g.punchHits,g.lifeSequenceCount,g.smallBoxEvent,
         g.lifeCrossing,g.lifeHangUntil,g.approachingToy,g.toyContact,g.approachingUser,
-        g.memorySequenceCount,g.landedAt,g.landingStrength,g.gait,g.random);
+        g.memorySequenceCount,g.landedAt,g.landingStrength,g.gait,g.random,g.runningJump);
     PhysicsReset resetPhysics;
     g.instance=instance;
     g.monitor=MonitorFromPoint({0,0},MONITOR_DEFAULTTOPRIMARY);
@@ -54,17 +54,47 @@ int Run(HINSTANCE instance) {
     klass.hInstance=instance;klass.lpszClassName=name;
     if(!RegisterClassExW(&klass))return 273;
     const int result=[&]() -> int {
+        {
+            Window back,front;
+            const int left=g.work.left+20,top=std::max(g.work.top+300,g.work.bottom-400);
+            for(auto* window:{&back,&front}) {
+                window->value=CreateWindowExW(WS_EX_LAYERED|WS_EX_NOACTIVATE,name,L"Front window selection fixture",
+                    WS_POPUP|WS_MAXIMIZEBOX,left,top,360,180,nullptr,nullptr,instance,nullptr);
+                if(!window->value||!SetLayeredWindowAttributes(window->value,0,1,LWA_ALPHA)||
+                    !SetWindowPos(window->value,HWND_TOPMOST,left,top,360,180,SWP_SHOWWINDOW|SWP_NOACTIVATE))return 294;
+            }
+            g.perch={};g.physics.Reset(left+90-g.work.left,96,g.work.right-g.work.left-96);
+            g.physics.SetCeiling(g.work.bottom-g.work.top-160);g.physicsReady=true;
+            for(unsigned order=0;order<6;++order) {
+                const HWND expected=order%2?back.value:front.value;
+                if(!SetWindowPos(expected,HWND_TOPMOST,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE))return 294;
+                DwmFlush();
+                PerchCandidate selected;
+                if(FrontApplicationWindow()!=expected||!FindPerch(selected)||selected.hwnd!=expected||
+                    GetForegroundWindow()==expected)return 295;
+            }
+            // A front window that cannot be perched on blocks selection of
+            // the otherwise reachable rear window. No background fallback.
+            const auto style=GetWindowLongPtrW(back.value,GWL_STYLE);
+            SetWindowLongPtrW(back.value,GWL_STYLE,style|WS_MAXIMIZE);
+            if(!SetWindowPos(back.value,nullptr,g.work.left,g.work.top,
+                g.work.right-g.work.left,g.work.bottom-g.work.top,SWP_FRAMECHANGED|SWP_NOZORDER|SWP_NOACTIVATE))return 296;
+            DwmFlush();PerchCandidate selected;
+            if(FindPerch(selected)||FrontApplicationWindow()!=back.value)return 296;
+            ShowWindow(back.value,SW_HIDE);
+            if(!FindPerch(selected)||selected.hwnd!=front.value)return 297;
+        }
         // Control landing, moved target, resized/raised target, maximized
-        // style/geometry, and actual destruction during the descending arc.
-        for(int scenario=0;scenario<5;++scenario) {
-            Window window;
+        // style/geometry, destruction and a new front window during descent.
+        for(int scenario=0;scenario<6;++scenario) {
+            Window window,cover;
             const int left=g.work.left+20,top=std::max(g.work.top+300,g.work.bottom-400);
             window.value=CreateWindowExW(WS_EX_LAYERED|WS_EX_NOACTIVATE,name,L"Perch transition fixture",
                 WS_POPUP|WS_MAXIMIZEBOX,left,top,360,180,
                 nullptr,nullptr,instance,nullptr);
             if(!window.value)return 274;
-            if(!SetLayeredWindowAttributes(window.value,0,0,LWA_ALPHA)||
-                !SetWindowPos(window.value,HWND_BOTTOM,left,top,360,180,SWP_SHOWWINDOW|SWP_NOACTIVATE))return 275;
+            if(!SetLayeredWindowAttributes(window.value,0,1,LWA_ALPHA)||
+                !SetWindowPos(window.value,HWND_TOPMOST,left,top,360,180,SWP_SHOWWINDOW|SWP_NOACTIVATE))return 275;
             DwmFlush();
             if(GetForegroundWindow()==window.value)return 276;
             RECT initial{};
@@ -101,9 +131,14 @@ int Run(HINSTANCE instance) {
                         if(!SetWindowPos(window.value,nullptr,g.work.left,g.work.top,
                             g.work.right-g.work.left,g.work.bottom-g.work.top,
                             SWP_FRAMECHANGED|SWP_NOZORDER|SWP_NOACTIVATE)||!IsZoomed(window.value))return 282;
-                    } else {
+                    } else if(scenario==4) {
                         if(!DestroyWindow(window.value))return 283;
                         window.value=nullptr;
+                    } else {
+                        cover.value=CreateWindowExW(WS_EX_LAYERED|WS_EX_NOACTIVATE,name,L"New foreground fixture",
+                            WS_POPUP,left,top,360,180,nullptr,nullptr,instance,nullptr);
+                        if(!cover.value||!SetLayeredWindowAttributes(cover.value,0,1,LWA_ALPHA)||
+                            !SetWindowPos(cover.value,HWND_TOPMOST,left,top,360,180,SWP_SHOWWINDOW|SWP_NOACTIVATE))return 283;
                     }
                     DwmFlush();
                     RECT updated{};
@@ -111,6 +146,8 @@ int Run(HINSTANCE instance) {
                         if(!QueryPerchRect(window.value,updated))return 284;
                         if((scenario==1&&updated.left<=initial.left+150)||
                            (scenario==2&&updated.top>=initial.top-65))return 285;
+                    } else if(scenario==5) {
+                        if(!QueryPerchRect(window.value,updated)||QueryFrontPerchRect(window.value,updated))return 286;
                     } else if(QueryPerchRect(window.value,updated))return 286;
                     if(window.value&&GetForegroundWindow()==window.value)return 276;
                     changed=true;

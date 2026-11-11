@@ -69,7 +69,7 @@ struct Host {
 
 #include "native_jump_continuity_tests.hpp"
 #include "native_random_zoomies_tests.hpp"
-#include "native_keyboard_super_tests.hpp"
+#include "native_keyboard_play_tests.hpp"
 
 bool MenuCommands(bool enabled) {
     HMENU menu = BuildPetMenu(); if (!menu) return false;
@@ -91,7 +91,7 @@ bool MenuCommands(bool enabled) {
 }
 
 int Run(std::string& proof) {
-    if(const int keyboardSuper=keyboard_native::Run())return keyboardSuper;
+    if(const int keyboardResult=keyboard_native::Run())return keyboardResult;
     if(!EnsureCareCoats(cat::Character::Cream,cat::Character::Tuxedo))return 520;
     if(const int randomZoomies=random_zoomies_native::Run())return randomZoomies;
     if(const int jumpContinuity=jump_continuity::Run())return jumpContinuity;
@@ -137,37 +137,42 @@ int Run(std::string& proof) {
             for (unsigned frame = 0; frame < 50; ++frame) host.Frame();
             if (std::abs(WalkingVelocity(g.physics.CurrentPose())) > .5 || host.Saved() != saved) return 525;
         }
-        // A moving manual jump must first brake, plant, and play the complete
-        // crouch. The production helper then applies a genuine Box2D impulse.
+        // A moving request preserves the actual velocity from this same
+        // production host; there is no stop gate or air steering motor.
         host.Reset(character,true); const auto saved = host.Saved();
         host.Command(kManualRunCommand);
-        for (unsigned frame = 0; frame < 60; ++frame) host.Frame();
+        for (unsigned frame = 0; frame < 120; ++frame) host.Frame();
+        const auto requested=g.physics.CurrentPose();
         host.Command(kManualJumpCommand);
-        if (!g.waitingForStop || !g.jumpPending || !g.manualMotionActive) return 526;
-        bool launched = false, landed = false, sawBrake = false;
-        double lift = 0;
-        for (unsigned frame = 0; frame < 500 && (g.manualMotionActive || !landed); ++frame) {
-            const auto before = g.physics.CurrentPose(); const bool waiting = g.waitingForStop;
+        if (g.waitingForStop || !g.runningJump.active || !g.jumpPending || !g.manualMotionActive ||
+                g.physics.CurrentPose().x!=requested.x || std::abs(requested.velocityX)<8) return 526;
+        bool launched = false, landed = false, continued=false;
+        double lift = 0,flightStart=0,airDistance=0,maxDrift=0,launchSpeed=0;
+        for (unsigned frame = 0; frame < 600 && (g.manualMotionActive || !landed); ++frame) {
             host.Frame(); const auto after = g.physics.CurrentPose();
-            sawBrake = sawBrake || waiting;
             if (!launched && !after.grounded) {
-                if (g.waitingForStop || host.now-g.motionStart < PrimaryTakeoffMs() ||
-                        std::abs(before.velocityX) > .5 || std::abs(after.x-before.x) > .1 ||
-                        after.lift-before.lift > 8) return 527;
-                launched = g.jumpLaunched;
+                if (g.waitingForStop || host.now-g.motionStart < cat::running_jump::Plan::PreparationMs ||
+                        std::abs(after.velocityX-requested.velocityX)>1) return 527;
+                launched = g.jumpLaunched;flightStart=after.x;launchSpeed=after.velocityX;
             }
-            if (waiting && !launched && !after.grounded) return 527;
+            if(launched&&!after.grounded)maxDrift=std::max(maxDrift,std::abs(after.velocityX-launchSpeed));
+            if(launched&&after.landed) {
+                landed=true;airDistance=after.x-flightStart;
+                continued=cat::animation::Walking(g.motion)&&!g.waitingForStop&&!g.runningJump.active&&
+                    !g.groundArtBridge.Stopping()&&std::abs(after.velocityX-launchSpeed)<1;
+            }
             lift = std::max(lift,after.lift);
-            landed = landed || (launched && after.landed);
             if (!std::isfinite(after.x) || !std::isfinite(after.lift)) return 528;
         }
-        if (!launched || !landed || !sawBrake || lift < 30 || g.manualMotionActive ||
-                !g.physics.CurrentPose().grounded || g.motion != Motion::Idle || host.Saved() != saved) return 529;
+        if (!launched || !landed || !continued || maxDrift>1 || airDistance<launchSpeed*.55 || lift < 30 ||
+                g.manualMotionActive || !g.physics.CurrentPose().grounded || g.motion != Motion::Idle || host.Saved() != saved) return 529;
         if (!first) characters << ','; first = false;
         characters << "{\"character\":" << static_cast<int>(character)
             << ",\"walk_distance\":" << distances[0] << ",\"run_distance\":" << distances[1]
             << ",\"walk_peak_speed\":" << peaks[0] << ",\"run_peak_speed\":" << peaks[1]
-            << ",\"jump_max_lift\":" << lift << ",\"jump_landed\":true,\"moving_jump_braked\":true}";
+            << ",\"jump_max_lift\":" << lift << ",\"jump_landed\":true,\"moving_jump_momentum_preserved\":true"
+            << ",\"moving_jump_air_distance\":" << airDistance << ",\"moving_jump_launch_speed\":" << launchSpeed
+            << ",\"moving_jump_max_air_speed_drift\":" << maxDrift << ",\"moving_jump_gait_continued\":true}";
     }
     // Explicit movement interrupts safe floor stories, including a long held
     // sleep/box pose, without awarding care or modifying any serialized record.

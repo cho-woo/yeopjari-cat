@@ -442,7 +442,8 @@ void NaturalTakeoffAndLandingUsePhysicalMotion() {
     Model m;m.Bind(s);m.Reset(0,1600,700);
     Context c;c.primaryVisible=false;c.elapsedSeconds=1.0/60;
     bool wasGrounded=true,badSliding=false,badFacing=false;
-    unsigned takeoffs=0;std::uint64_t crouchStarted=0;
+    unsigned takeoffs=0,movingTakeoffs=0;std::uint64_t crouchStarted=0;
+    double previousVelocity=0,flightVelocity=0;bool travelling=false;
     for(unsigned frame=1;frame<24000;++frame) {
         c.ticks=frame*17;c.nowUtc=birthday+static_cast<std::int64_t>(c.ticks/1000);m.Tick(c);
         const auto view=m.View(c.ticks);
@@ -465,13 +466,20 @@ void NaturalTakeoffAndLandingUsePhysicalMotion() {
             const auto preparation=jump && jump->program.stepCount?
                 cat::sprite_sequence::Duration(jump->program,jump->program.intro):
                 (view.motion==M::Jump?220U:240U);
-            CHECK(crouchStarted>0 && c.ticks-crouchStarted+34>=preparation);
+            if(view.travellingJump) {
+                ++movingTakeoffs;travelling=true;flightVelocity=physical.velocityX;
+                CHECK(std::abs(flightVelocity)>=8);
+                CHECK(std::abs(flightVelocity-previousVelocity)<1);
+            } else CHECK(crouchStarted>0 && c.ticks-crouchStarted+34>=preparation);
             CHECK(!view.animation.groundContact);
             crouchStarted=0;
         }
+        if(travelling && !physical.grounded)CHECK(std::abs(physical.velocityX-flightVelocity)<1);
+        if(physical.landed)travelling=false;
+        previousVelocity=physical.velocityX;
         wasGrounded=physical.grounded;
     }
-    CHECK(takeoffs>0);CHECK(!badSliding);CHECK(!badFacing);CHECK(Valid(s));
+    CHECK(takeoffs>0);CHECK(movingTakeoffs>0);CHECK(!badSliding);CHECK(!badFacing);CHECK(Valid(s));
     }
 }
 void SocialGesturesWaitForPlantedFeet() {
