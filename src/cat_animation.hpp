@@ -43,6 +43,8 @@ struct Pose {
     bool spriteTimed=false;
     std::uint64_t spriteElapsedMs=0;
     cat::sprite_sequence::Options spriteOptions{};
+    std::array<cat::deform::Point,2> spritePaws{};
+    bool spritePawsValid=false;
     int frame = 4;
     double x = 0, lift = 0, scaleX = 1, scaleY = 1, angle = 0;
     bool flip = false;
@@ -570,6 +572,7 @@ inline Pose Evaluate(Motion motion, std::uint64_t elapsed, std::uint64_t ticks, 
     using Clip=cat::sprite_sequence::Clip;
     switch(motion) {
     case Motion::Groom:AttachSprite(p,Clip::Groom,elapsed);break;
+    case Motion::Knead:AttachSprite(p,Clip::Knead,elapsed);break;
     case Motion::Sleep:AttachSprite(p,Clip::Sleep,elapsed);break;
     case Motion::Eat:AttachSprite(p,Clip::Eat,elapsed);break;
     case Motion::Treat:AttachSprite(p,Clip::Treat,elapsed);break;

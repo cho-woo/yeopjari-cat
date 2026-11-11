@@ -113,21 +113,6 @@
       "skin_rgb_sha256": "df7383fd51fd778974746f9cf42701f6854bb130e0776e1482caac13330a68a9"
     },
     {
-      "base_resource_id": 113,
-      "base_source": "assets/care-sprites/c0-groom.png",
-      "source": "c10-r113.png",
-      "input_sha256": "d26e8495f42da710c4f9a0b9488ecc4666513146dcc5268ef5311e253cd654f4",
-      "output_sha256": "d925435d12ee883b34d5657a7f0ea911478924b58d04c51291f6360c0b236ccb",
-      "source_alpha_sha256": "a72a22dc9284d01313f9736b1c746827476b6d4f86ad44c9694705248d8fe902",
-      "iris_mask": "odd-eye-masks/c10-r113.png",
-      "iris_mask_sha256": "33d8a7b8895360b7495c1da8859e7c964338650602b1d171678a21e15a808935",
-      "alpha_exact": true,
-      "props_rgb_exact": true,
-      "skin_rgb_exact": true,
-      "props_rgb_sha256": "44e2c834009a29696792a3ec8035a6b38a98ce0dbafcb6a1275beabeab5954ee",
-      "skin_rgb_sha256": "9f68556afbe85f6513120960a0eff3e87a2d0bccc4b352e180a47124fb24fe31"
-    },
-    {
       "base_resource_id": 114,
       "base_source": "assets/care-sprites/c0-sleep.png",
       "source": "c10-r114.png",
@@ -158,21 +143,6 @@
       "skin_rgb_sha256": "672b53fc38a51e5096c579abd68a1ff7ca9619d51eefde2613d7977086078b28"
     },
     {
-      "base_resource_id": 117,
-      "base_source": "assets/care-sprites/c0-punch.png",
-      "source": "c10-r117.png",
-      "input_sha256": "580e91c043ace82a4f04ba8de95b2511b3a6fe764e5def82b91b3da95b9b00c0",
-      "output_sha256": "81d57d6db8b0a0dc4e118d89b6023cbf331e40efcc2a4555c2f4f6ad40035e41",
-      "source_alpha_sha256": "b88da05634fc72d9cd2252bc41f3c87add1012f331bd115a7bb9c38c9fc42302",
-      "iris_mask": "odd-eye-masks/c10-r117.png",
-      "iris_mask_sha256": "bd1396009aadcf9cf77b4f94b7abbfe8c7f0b45d3ca2a125948b48513b332eff",
-      "alpha_exact": true,
-      "props_rgb_exact": true,
-      "skin_rgb_exact": true,
-      "props_rgb_sha256": "1cb86612c4139fdc0c895cab81b15c1e80477310c3218ea339aed60a4fb7bb3c",
-      "skin_rgb_sha256": "2e1716a75ef83fd79331cddba33cac0cbc4f5f64366c10abffaa0428eb8a0575"
-    },
-    {
       "base_resource_id": 118,
       "base_source": "assets/natural-gait/cream-video-eat.png",
       "source": "c10-r118.png",
@@ -186,21 +156,6 @@
       "skin_rgb_exact": true,
       "props_rgb_sha256": "f931a02c928b49c202406b90b8d0a1d413dfc5341f3d711a69e4c3101629e4e2",
       "skin_rgb_sha256": "fce48b1f78baba4866992cc8a7c6364316e525fa7dbce4661e19ed6a28ab1d8d"
-    },
-    {
-      "base_resource_id": 119,
-      "base_source": "assets/care-sprites/c0-jump.png",
-      "source": "c10-r119.png",
-      "input_sha256": "8d1f2bf8e3502381061df15a28f0fca85ee2db57ef963cf72554ec44ff6b4fd7",
-      "output_sha256": "95ebd149c634e54232a81dd0843bb992db92e8b0faf5755412dfed277cfe1763",
-      "source_alpha_sha256": "b995bae5d7daebcf632c55df60fe24de97c399ba8ba970da1fa7adfd4581bf57",
-      "iris_mask": "odd-eye-masks/c10-r119.png",
-      "iris_mask_sha256": "425142753a4e55007d76b0d117e0be18a2339b7ca8b784f98a70241139afb3dd",
-      "alpha_exact": true,
-      "props_rgb_exact": true,
-      "skin_rgb_exact": true,
-      "props_rgb_sha256": "44e2c834009a29696792a3ec8035a6b38a98ce0dbafcb6a1275beabeab5954ee",
-      "skin_rgb_sha256": "ffb95781565b4fc544034f37af7be3ef35a9296fea00d322c9d5b0ebe0ff2aea"
     },
     {
       "base_resource_id": 120,
@@ -246,7 +201,69 @@
       "skin_rgb_exact": true,
       "props_rgb_sha256": "93d1a6e7f9b6dccd71984162bd2ca78edf63b8c84368154b3a17205049e1132f",
       "skin_rgb_sha256": "0fd659cbfdb6461241e3de62d60faf8e037af0552ddd48284f7276f63dac80ab"
+    },
+    {
+      "base_resource_id": 113,
+      "base_source": "assets/video-actions/cream-groom.png",
+      "source": "c10-r113.png",
+      "input_sha256": "45764ce768366ee5bdd378b74c9c9c60d8c3ea5f4b2280dd995626738cf7fd55",
+      "output_sha256": "88e57747c3ce40d5174ef91be55b2407fde0764962813a5e84ab56a435857d06",
+      "source_alpha_sha256": "748a10b25917789b47d0013bae90e3986d7ce16cf2c0d3eca7e8347765affe12",
+      "iris_mask": "odd-eye-masks/c10-r113.png",
+      "iris_mask_sha256": "7c022ee3e146d1aad91f2ae71b65751972722677b3b5419325108c38689805a8",
+      "alpha_exact": true,
+      "skin_rgb_exact": true
+    },
+    {
+      "base_resource_id": 117,
+      "base_source": "assets/video-actions/cream-punch.png",
+      "source": "c10-r117.png",
+      "input_sha256": "6430ce188461ecde07399ea8af56fd5e620d6ed35e445e92180f849d0578f323",
+      "output_sha256": "e6a176471fc4228e3bcef4e6ade6dd61d25175dc3455c5477ddb0f1b7958b581",
+      "source_alpha_sha256": "db796466d13c5766735d4a1d31601f4d761d9dd50c54d4a124d88977007813fa",
+      "iris_mask": "odd-eye-masks/c10-r117.png",
+      "iris_mask_sha256": "e8037fc4e46315accd7d7aea4f9daaca7db68dd5fd6c7e51138b941af769ce52",
+      "alpha_exact": true,
+      "skin_rgb_exact": true
+    },
+    {
+      "base_resource_id": 119,
+      "base_source": "assets/video-actions/cream-jump.png",
+      "source": "c10-r119.png",
+      "input_sha256": "b59ab9eb461594434912248617f3eb52dfae5ff393dc0d017ba0e2a3871ec1e3",
+      "output_sha256": "7c7fe423455229180244a3eb43db674e092fec55fe3b572365b1107a31fac979",
+      "source_alpha_sha256": "8b31abe24d0fe2f9d8f61e112b0deebd6b26f28ad0b30db87483048b458bfd12",
+      "iris_mask": "odd-eye-masks/c10-r119.png",
+      "iris_mask_sha256": "767fdfe909e6e49a099254dc1fce95d003eeb7800a6314477b8e57a48c6e1bae",
+      "alpha_exact": true,
+      "skin_rgb_exact": true
+    },
+    {
+      "base_resource_id": 440,
+      "base_source": "assets/video-actions/cream-knead.png",
+      "source": "c10-r440.png",
+      "input_sha256": "fee7ea53bd858e0b54b35f9f58910cc0878d0c9317356ab804ce65e45c4a53ba",
+      "output_sha256": "25f2afe3e57bd36df7802209606b5c158a0d612d94c738d0936448cc8e2d1518",
+      "source_alpha_sha256": "c28398a2b3f3ed1089aab9697afa1d71f8663bc4fc5fe34037831e71f474d8ba",
+      "iris_mask": "odd-eye-masks/c10-r440.png",
+      "iris_mask_sha256": "06650457bb80e489b771840016e25770ab01a382a30fa0e4fec34f444aac7512",
+      "alpha_exact": true,
+      "skin_rgb_exact": true
+    },
+    {
+      "base_resource_id": 441,
+      "base_source": "assets/video-actions/cream-reach.png",
+      "source": "c10-r441.png",
+      "input_sha256": "15d9ab55cbb9c9c022360b201130e983b1b079ca0916ce63bb9281d79d41dade",
+      "output_sha256": "95d8d1d5f67f4f81c0785e587a4bb787680546727006b314b3f21310c863e083",
+      "source_alpha_sha256": "81b4e2beac8076743127fcccb36d0188e8584560d2ba3c006228b7bd79e83fc8",
+      "iris_mask": "odd-eye-masks/c10-r441.png",
+      "iris_mask_sha256": "eda0dc97e72378776b98a67d7fd098095bb3c201087dde3eb1fcc0d7bb6d3349",
+      "alpha_exact": true,
+      "skin_rgb_exact": true
     }
   ],
-  "tool_sha256": "38aff80a6a8fe818168305d47c6f697ab0d9af7892119f3e5ab903e5c41c86c4"
+  "tool_sha256": "38aff80a6a8fe818168305d47c6f697ab0d9af7892119f3e5ab903e5c41c86c4",
+  "additional_authoring_tool": "tools/pack_video_actions.py",
+  "additional_authoring_tool_sha256": "26d3da58b2ac9f68a3041848a56a36cdf8fa4e532419a6e3f70a1e51fb38c5cb"
 }

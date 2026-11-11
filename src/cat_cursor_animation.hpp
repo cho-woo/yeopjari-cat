@@ -125,6 +125,10 @@ inline animation::Pose BallPawPose(std::uint64_t elapsed,int direction,double ta
     p.face.wide=.10*reach;return p;
 }
 inline deform::Point PawPosition(const animation::Pose& pose,Geometry geometry={}) {
+    if(pose.spritePawsValid) {
+        const auto point=pose.spritePaws[1];
+        return {(pose.flip?-1:1)*point.x,point.y};
+    }
     const auto g=Bounded(geometry);
     if(cursor_rig::Active(pose.cursorReach)) {
         const auto point=cursor_rig::PawUV(pose.cursorReach,1);
@@ -139,6 +143,11 @@ inline deform::Point PawPosition(const animation::Pose& pose,Geometry geometry={
     return {(pose.flip?-1:1)*(point.x-.5)*g.width,(1-point.y)*g.height};
 }
 inline std::array<deform::Point,2> PawPositions(const animation::Pose& pose,Geometry geometry={}) {
+    if(pose.spritePawsValid) {
+        auto points=pose.spritePaws;
+        for(auto& point:points)point.x*=pose.flip?-1:1;
+        return points;
+    }
     const auto g=Bounded(geometry);
     if(cursor_rig::Active(pose.cursorReach)) {
         std::array<deform::Point,2> paws{};

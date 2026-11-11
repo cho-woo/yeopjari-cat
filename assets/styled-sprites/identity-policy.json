@@ -181,26 +181,6 @@
       "iris_rgb_sha256": "f50bcf5128a292915fee8e328f752b26d23bd6dc9d83b54f3a9fb18f064824ed"
     },
     {
-      "base_resource_id": 113,
-      "source": "c8-r113.png",
-      "input_sha256": "c173510dd85dc20ec7c22c713e3d66485fbdca768452ba7b4227e68b841a5e42",
-      "output_sha256": "e6500a5a83f3d0d63921a3dade99ce8391f697af5cae1bc8d1d9c9ece603c312",
-      "source_alpha_sha256": "5f7b9028d1c4c8d1b00b45a20f352197faae6d0c2b4b6b2b641f4abdc898f08b",
-      "prop_mask": null,
-      "prop_mask_sha256": null,
-      "fur_pixels": 685896,
-      "alpha_exact": true,
-      "protected_props_pixels": 0,
-      "props_rgb_exact": true,
-      "props_rgb_sha256": "44e2c834009a29696792a3ec8035a6b38a98ce0dbafcb6a1275beabeab5954ee",
-      "protected_skin_pixels": 51013,
-      "skin_rgb_exact": true,
-      "skin_rgb_sha256": "86bda9f153c1f31bc3a69193b1a600daa0fadbd2f6792cdb1d9cea5511848443",
-      "protected_iris_pixels": 10376,
-      "iris_rgb_exact": true,
-      "iris_rgb_sha256": "acaa0a486d2c78064dc000634a5749de59a6099f9607b1fc6007669cf24672b6"
-    },
-    {
       "base_resource_id": 114,
       "source": "c8-r114.png",
       "input_sha256": "658e351b2afa73adc8f65550598370728a740c44ee157f11ae4e84f345fcb8ac",
@@ -241,26 +221,6 @@
       "iris_rgb_sha256": "7bc5cf55b6105581ecaab286b6c09784c662ff91d494a2e66ca25c8384c94193"
     },
     {
-      "base_resource_id": 117,
-      "source": "c8-r117.png",
-      "input_sha256": "ef5d7cabef389c0303ab35a3a481749d93917575e935b4f245bf0493b70f5121",
-      "output_sha256": "d6f7aa4c8f300a4ab9c9437e6ef434d999cc72b094678b9420ed3770f380ebf4",
-      "source_alpha_sha256": "507ac22116831f8c8fab81c5d424031c7d495a2f0d1ad99f1c3de6942a4235af",
-      "prop_mask": null,
-      "prop_mask_sha256": null,
-      "fur_pixels": 577495,
-      "alpha_exact": true,
-      "protected_props_pixels": 0,
-      "props_rgb_exact": true,
-      "props_rgb_sha256": "1cb86612c4139fdc0c895cab81b15c1e80477310c3218ea339aed60a4fb7bb3c",
-      "protected_skin_pixels": 45356,
-      "skin_rgb_exact": true,
-      "skin_rgb_sha256": "d028fe40a033224b8dcfe16ff23e4e01813401d3041e5d6d34fada888f7cabbe",
-      "protected_iris_pixels": 32264,
-      "iris_rgb_exact": true,
-      "iris_rgb_sha256": "8c53b8cc363c64749bfbcad3b9d56a36a8d61c2194caed89ae5f9cb8c47c259e"
-    },
-    {
       "base_resource_id": 118,
       "source": "c8-r118.png",
       "input_sha256": "c2bd228564746f20fcd8f8a02f9f7a20424751099a537b7fcd59533e8971f34e",
@@ -279,26 +239,6 @@
       "protected_iris_pixels": 142322,
       "iris_rgb_exact": true,
       "iris_rgb_sha256": "9f8a9af8ce64735dd5b0afb7159ea4c435f4ea121211d60dceb197ddfe44d43e"
-    },
-    {
-      "base_resource_id": 119,
-      "source": "c8-r119.png",
-      "input_sha256": "1fd1b3f1b5b8025b6dd44ee3dbfea1f03d3cb1aad3e18cfb60a2f1f20727bd0a",
-      "output_sha256": "d8d2776163884531e0023f3ca0a98dcfe13d74aa24cf5ae098859fa08c9978ca",
-      "source_alpha_sha256": "ec338a2a548674891261437355c7544054ae0b7f8b9a2468b423086e54d55f43",
-      "prop_mask": null,
-      "prop_mask_sha256": null,
-      "fur_pixels": 551731,
-      "alpha_exact": true,
-      "protected_props_pixels": 0,
-      "props_rgb_exact": true,
-      "props_rgb_sha256": "44e2c834009a29696792a3ec8035a6b38a98ce0dbafcb6a1275beabeab5954ee",
-      "protected_skin_pixels": 31678,
-      "skin_rgb_exact": true,
-      "skin_rgb_sha256": "bdafdf0a40dc137ba01befcfe006f32a8d9b5530b788acf4c5ad28175a67179f",
-      "protected_iris_pixels": 26922,
-      "iris_rgb_exact": true,
-      "iris_rgb_sha256": "d76353cf9ef61b55aec2ae5c264109ce93b6ea6ae79762bb17820e6bfa494ba0"
     },
     {
       "base_resource_id": 120,
@@ -362,5 +302,13 @@
     }
   ],
   "tool_sha256": "29de307ea12506b59312c702052c8fc173220c79268fa9cef01d0facae7e318f",
-  "input_git_revision": "a53829dc6c24563a549d6542cbe6e83d497810f3"
+  "input_git_revision": "a53829dc6c24563a549d6542cbe6e83d497810f3",
+  "separate_video_action_resources": [
+    113,
+    117,
+    119,
+    440,
+    441
+  ],
+  "video_action_provenance": "assets/video-actions/provenance.json"
 }

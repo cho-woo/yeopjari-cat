@@ -1,0 +1,96 @@
+{
+  "schema": 1,
+  "method": "dropshot_video_extraction",
+  "manifest_sha256": "d743ef5d51b679533f87b3a34f11d8a6fc611985ff923e953a71af96ded80977",
+  "precomputed_only": true,
+  "files": [
+    {
+      "path": "cream-groom.png",
+      "sha256": "45764ce768366ee5bdd378b74c9c9c60d8c3ea5f4b2280dd995626738cf7fd55"
+    },
+    {
+      "path": "cream-jump.png",
+      "sha256": "b59ab9eb461594434912248617f3eb52dfae5ff393dc0d017ba0e2a3871ec1e3"
+    },
+    {
+      "path": "cream-knead.png",
+      "sha256": "fee7ea53bd858e0b54b35f9f58910cc0878d0c9317356ab804ce65e45c4a53ba"
+    },
+    {
+      "path": "cream-punch.png",
+      "sha256": "6430ce188461ecde07399ea8af56fd5e620d6ed35e445e92180f849d0578f323"
+    },
+    {
+      "path": "cream-reach.png",
+      "sha256": "15d9ab55cbb9c9c022360b201130e983b1b079ca0916ce63bb9281d79d41dade"
+    },
+    {
+      "path": "generation.json",
+      "sha256": "e4c0ecb342dcbb246e3dc102dd6ab4b5cd8b18dd098f041b23c80295e6c58a16"
+    },
+    {
+      "path": "registration.json",
+      "sha256": "88dc14d449f27a624d92987c606a49032976b5547dd967de254c1e321f439fd6"
+    },
+    {
+      "path": "sources/cream-jump.mp4",
+      "sha256": "ead3bc992f94578d38886a3421623e132c11bfcd56f19efe11114721b4d10d6a"
+    },
+    {
+      "path": "sources/cream-knead.mp4",
+      "sha256": "977008b87d2494109bc3ff191452d74abea040a72f754dad9e9ea706509e1a68"
+    },
+    {
+      "path": "sources/cream-punch.mp4",
+      "sha256": "a7d959ae1e792626ac735394785acf8def004c07ce354af0c038b0f945585ec6"
+    },
+    {
+      "path": "sources/cream-reach.mp4",
+      "sha256": "032d7e76399c70f7e6c7f48949f8ff0326c7a864097d4a69b24919d30c17bfe8"
+    },
+    {
+      "path": "sources/cream-wipe.mp4",
+      "sha256": "7de9ec2dbf5b0cddc8decf5026da2f7919ef05c25d250c2530c59b4f619f082f"
+    },
+    {
+      "path": "sources/tuxedo-jump.mp4",
+      "sha256": "a098d0ab9e74653cc1bf75070e897d1e9ac202f1ae325b86285880ca5ae81d03"
+    },
+    {
+      "path": "sources/tuxedo-knead.mp4",
+      "sha256": "25f3be77646c9012eb23b305e7e3ccdae1b0e10e25cd857231bed01894f800df"
+    },
+    {
+      "path": "sources/tuxedo-punch.mp4",
+      "sha256": "61f351fd06a1759876c55dbc125ffef5ab9406f7656dfa31c669d260477bbf17"
+    },
+    {
+      "path": "sources/tuxedo-reach.mp4",
+      "sha256": "3c8c41525c9e1d1cc36d47b6e3053248b13ec430d9810bc3eedc9577bcb76012"
+    },
+    {
+      "path": "sources/tuxedo-wipe.mp4",
+      "sha256": "e6bb26b98bb06c4419656a8dd3ff638f2d88bf893eeeb50c632264dc9b8d1eea"
+    },
+    {
+      "path": "tuxedo-groom.png",
+      "sha256": "cbf9e17cc42ca5833c893b5ee362187f35484e483e8916514a68d22f6b9327a6"
+    },
+    {
+      "path": "tuxedo-jump.png",
+      "sha256": "1b8349b85aef314d8c4921ecbc106ce616ab2d96a1622fbeff9200abaac9a7a5"
+    },
+    {
+      "path": "tuxedo-knead.png",
+      "sha256": "bbe70d8e3612da07797ccc657d97e86c71d5551b349e5e3d4275c5eb390faaaf"
+    },
+    {
+      "path": "tuxedo-punch.png",
+      "sha256": "e2a79abe30a8ee714215808662f1f8fc3fd671401f7b07c52e01862d76fc76fe"
+    },
+    {
+      "path": "tuxedo-reach.png",
+      "sha256": "13ed6e67ba72352e3819e725b5ed0ed20d61442d0a7be36a980e54d0c7f21c8e"
+    }
+  ]
+}

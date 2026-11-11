@@ -59,6 +59,7 @@ inline Region Head(sprite_sequence::Clip clip,unsigned frame) {
         {.533,.287,.30,.30,false,.118},{.522,.362,.30,.30,false,.084}};
     switch(clip) {
     case C::Groom:return groom[frame%16];
+    case C::Knead:case C::Reach:return {.5,.30,.34,.32,false};
     case C::Punch:return punch[frame%12];
     case C::Eat:return eat[frame%12];
     case C::Treat:return {.537,.295,.44,.34,false,-.16};

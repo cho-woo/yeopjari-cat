@@ -49,6 +49,7 @@ CLIPS=(('groom','Groom',4,4),('sleep','Sleep',4,3),('box','Box',4,2),('fish','Fi
        ('punch','Punch',4,3),('eat','Eat',3,4),('jump','Jump',4,4),('treat','Treat',6,4))
 LAYOUT={name:(index,enum,columns,rows) for index,(name,enum,columns,rows) in enumerate(CLIPS)}
 LAYOUT.update({'walk':(9,'Walk',4,2),'run':(10,'Run',4,2)})
+LAYOUT.update({'knead':(11,'Knead',8,1),'reach':(12,'Reach',8,1)})
 MAX_FRAMES=256
 MAX_STEPS=512
 MAX_CUES=64
@@ -277,7 +278,10 @@ def load_entries(manifest_path):
             frames.append({'rect':[x,y,fw,fh],'anchor':fixed_anchor})
         filename=f'c{character}-{name}.png'
         # 301..314 remain reserved by the retired-audio compatibility checks.
-        resource=400+character*2+(name=='run') if name in ('walk','run') else 113+character*8+clip_index
+        if name in ('knead','reach'):
+            resource=440+character*2+(name=='reach')
+        else:
+            resource=400+character*2+(name=='run') if name in ('walk','run') else 113+character*8+clip_index
         entries.append({'clip':name,'enum':enum,'character':character,'resource':resource,'schema':schema,
                         'columns':columns,'rows':rows,'reference_height':reference,'width':width,'height':height,
                         'frames':frames,'filename':filename,'sha256':digest,'data':data,'program':program,'stride_pixels':stride,
@@ -417,6 +421,34 @@ def natural_locomotion(root,originals):
     return result,len(replacements)
 
 
+def video_action_entries(root,originals):
+    directory=Path(root)/'assets/video-actions'
+    manifest=directory/'manifest.json'
+    if not manifest.exists():return originals
+    proof=json.loads((directory/'provenance.json').read_text(encoding='utf-8'))
+    require(proof.get('schema')==1 and proof.get('method')=='dropshot_video_extraction',
+            'Invalid video action provenance')
+    for record in proof['files']:
+        path=(directory/record['path']).resolve()
+        require(path.is_relative_to(directory.resolve()) and path.is_file(), 'Missing video action source')
+        require(hashlib.sha256(path.read_bytes()).hexdigest()==record['sha256'],
+                'Video action source or atlas drift: '+record['path'])
+    require(hashlib.sha256(manifest.read_bytes()).hexdigest()==proof['manifest_sha256'],
+            'Video action manifest drift')
+    replacements=load_entries(manifest)
+    sources={entry['clip']:entry['source'] for entry in json.loads(manifest.read_text(encoding='utf-8'))['clips']}
+    require({entry['clip'] for entry in replacements}=={'jump','groom','punch','knead','reach'} and
+            all(entry['character']==0 for entry in replacements), 'Incomplete video action family')
+    for entry in replacements:
+        entry['asset_path']=(Path('assets/video-actions')/sources[entry['clip']]).as_posix()
+    replaced={(entry['clip'],entry['character']) for entry in replacements}
+    result=[entry for entry in originals if (entry['clip'],entry['character']) not in replaced]+replacements
+    result.sort(key=lambda entry:(entry['character'],LAYOUT[entry['clip']][0]))
+    require(sum(frame['rect'][2]*frame['rect'][3] for entry in result for frame in entry['frames'])<=MAX_RESIDENT_PIXELS,
+            'Video actions exceed the resident frame budget')
+    return result
+
+
 def runtime_locomotion(root,originals):
     # A new authored pose family takes precedence over the archived flow bake.
     manifest=Path(root)/NATURAL
@@ -428,8 +460,10 @@ def runtime_locomotion(root,originals):
         # A complete new family has no dependency on archived flow files. A
         # Walk-only replacement keeps the existing derived Run exactly.
         base=originals if {('walk',0),('run',0)}<=keys else derived_locomotion(root,originals)[0]
-        return natural_locomotion(root,base)
-    return derived_locomotion(root,originals)
+        entries,count=natural_locomotion(root,base)
+    else:
+        entries,count=derived_locomotion(root,originals)
+    return video_action_entries(root,entries),count
 
 
 def derived_locomotion(root,originals):

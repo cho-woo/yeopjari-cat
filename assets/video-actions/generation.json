@@ -1,0 +1,148 @@
+{
+  "schema": 1,
+  "created_date": "2026-11-11",
+  "provider": "Dropshot",
+  "total_credits": 1200,
+  "jobs": [
+    {
+      "character": "cream",
+      "action": "jump",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_67a8aac9ceef485a97510a651deaf976",
+      "credit_cost": 120,
+      "source_file": "sources/cream-jump.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_67a8aac9ceef485a97510a651deaf976/output/output_0.mp4",
+      "prompt": "Use the attached images as the exact same established desktop kitten character, preserving its face, eye colors, fur color and markings, rounded paws, proportions, soft detailed 3D illustration style, and small body. First image is the front identity and second image the side identity. A single fixed-camera full-body animation, no camera movement, no zoom, no cuts, no text, no props, no shadows. Completely uniform saturated chroma green (#00FF00) background, no gradient or floor texture. Character is centered and occupies 55 percent of canvas height in the neutral pose with empty space on every side. Smooth continuous anatomically correct motion at normal speed. Side profile facing RIGHT. A cute physically natural cat jump cycle in place: stand on four paws for 0.7s, deeply load the hind legs and lower the haunches, push off with hind paws, extend front legs forward, draw all four paws up beneath the belly at the apex, reach front paws down, land front paws then hind paws, absorb weight with bent legs, and settle back into the identical four-paw side standing pose for the last second. The body follows one smooth small parabolic hop. Keep the tail continuous, head proportions fixed and four anatomical legs throughout. No rotating into a front view. Full cat stays on screen with generous headroom.",
+      "reference_images": [
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/a949da2973c84558bbbd2d1c06bdd2ac/creamFront.png",
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ec78cb7704784b8ca677bfec8a7c25d1/creamSide.png"
+      ]
+    },
+    {
+      "character": "cream",
+      "action": "wipe",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_d3fccefb74664d93923830be731e53ba",
+      "credit_cost": 120,
+      "source_file": "sources/cream-wipe.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_d3fccefb74664d93923830be731e53ba/output/output_0.mp4",
+      "prompt": "Use the attached images as the exact same established desktop kitten character, preserving its face, eye colors, fur color and markings, rounded paws, proportions, soft detailed 3D illustration style, and small body. First image is the front identity and second image the side identity. A single fixed-camera full-body animation, no camera movement, no zoom, no cuts, no text, no props, no shadows. Completely uniform saturated chroma green (#00FF00) background, no gradient or floor texture. Character is centered and occupies 55 percent of canvas height in the neutral pose with empty space on every side. Smooth continuous anatomically correct motion at normal speed. Front three-quarter seated kitten. Start calmly seated for 0.6s. Raise one forepaw, give the paw a quick lick, then gently wipe the mouth and cheek with that same paw twice, close the eyes happily, lower the paw and end sitting exactly like the reference for the last second. The supporting paw and hindquarters stay planted. Clear soft paw-to-mouth contact, connected shoulder and wrist motion. Tiny tongue visible only during the lick. Tail gently follows.",
+      "reference_images": [
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/a949da2973c84558bbbd2d1c06bdd2ac/creamFront.png",
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ec78cb7704784b8ca677bfec8a7c25d1/creamSide.png"
+      ]
+    },
+    {
+      "character": "cream",
+      "action": "reach",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_3febeaf7bd6646a09d937b4600cd805c",
+      "credit_cost": 120,
+      "source_file": "sources/cream-reach.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_3febeaf7bd6646a09d937b4600cd805c/output/output_0.mp4",
+      "prompt": "Use the attached images as the exact same established desktop kitten character, preserving its face, eye colors, fur color and markings, rounded paws, proportions, soft detailed 3D illustration style, and small body. First image is the front identity and second image the side identity. A single fixed-camera full-body animation, no camera movement, no zoom, no cuts, no text, no props, no shadows. Completely uniform saturated chroma green (#00FF00) background, no gradient or floor texture. Character is centered and occupies 55 percent of canvas height in the neutral pose with empty space on every side. Smooth continuous anatomically correct motion at normal speed. Front three-quarter kitten. Start seated for 0.6s, look up toward a tiny imaginary mouse pointer, straighten onto the toes of both hind paws, lift both forepaws together, cup both paws toward the imaginary target above its face, make two cute gentle grasping attempts, then lower its paws and sit exactly like the reference for the last second. Full body including toes stays in frame. Maintain two forepaws, two hind paws, correct joints, same face and coat.",
+      "reference_images": [
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/a949da2973c84558bbbd2d1c06bdd2ac/creamFront.png",
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ec78cb7704784b8ca677bfec8a7c25d1/creamSide.png"
+      ]
+    },
+    {
+      "character": "cream",
+      "action": "knead",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_b986891f5f2c47669b640f1cbcdbc49e",
+      "credit_cost": 120,
+      "source_file": "sources/cream-knead.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_b986891f5f2c47669b640f1cbcdbc49e/output/output_0.mp4",
+      "prompt": "Use the attached images as the exact same established desktop kitten character, preserving its face, eye colors, fur color and markings, rounded paws, proportions, soft detailed 3D illustration style, and small body. First image is the front identity and second image the side identity. A single fixed-camera full-body animation, no camera movement, no zoom, no cuts, no text, no props, no shadows. Completely uniform saturated chroma green (#00FF00) background, no gradient or floor texture. Character is centered and occupies 55 percent of canvas height in the neutral pose with empty space on every side. Smooth continuous anatomically correct motion at normal speed. Front three-quarter seated kitten. Start sitting for 0.6s, lower its chest slightly and perform four slow alternating front-paw kneading presses on the floor: left press while right lifts, right press while left lifts, repeat. Toes splay softly on contact, shoulder weight transfers gently, eyes half closed, tail curls gently. Hindquarters stay planted and the body stays in place. End returning to the exact reference seated pose for the last second. Each paw remains connected with natural fur and joints.",
+      "reference_images": [
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/a949da2973c84558bbbd2d1c06bdd2ac/creamFront.png",
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ec78cb7704784b8ca677bfec8a7c25d1/creamSide.png"
+      ]
+    },
+    {
+      "character": "cream",
+      "action": "punch",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_e2d227856f694d848286b56fd86eeeaf",
+      "credit_cost": 120,
+      "source_file": "sources/cream-punch.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_e2d227856f694d848286b56fd86eeeaf/output/output_0.mp4",
+      "prompt": "Use the attached images as the exact same established desktop kitten character, preserving its face, eye colors, fur color and markings, rounded paws, proportions, soft detailed 3D illustration style, and small body. First image is the front identity and second image the side identity. A single fixed-camera full-body animation, no camera movement, no zoom, no cuts, no text, no props, no shadows. Completely uniform saturated chroma green (#00FF00) background, no gradient or floor texture. Character is centered and occupies 55 percent of canvas height in the neutral pose with empty space on every side. Smooth continuous anatomically correct motion at normal speed. Front three-quarter seated kitten. Start sitting for 0.6s, playfully wind up the near forepaw, make a quick gentle forward paw tap toward an imaginary screen in front of it, retract, then make a second tap with the opposite paw and retract. Cute springy cat swats with anticipation, fast contact and slower recovery, never human fists. Keep the seated hindquarters planted and face proportions constant. End seated in the exact reference pose for the last second.",
+      "reference_images": [
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/a949da2973c84558bbbd2d1c06bdd2ac/creamFront.png",
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ec78cb7704784b8ca677bfec8a7c25d1/creamSide.png"
+      ]
+    },
+    {
+      "character": "tuxedo",
+      "action": "jump",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_3a7d757e08ec4e49a8f3695c940170c3",
+      "credit_cost": 120,
+      "source_file": "sources/tuxedo-jump.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_3a7d757e08ec4e49a8f3695c940170c3/output/output_0.mp4",
+      "prompt": "Use the attached images as the exact same established desktop kitten character, preserving its face, eye colors, fur color and markings, rounded paws, proportions, soft detailed 3D illustration style, and small body. First image is the front identity and second image the side identity. A single fixed-camera full-body animation, no camera movement, no zoom, no cuts, no text, no props, no shadows. Completely uniform saturated chroma green (#00FF00) background, no gradient or floor texture. Character is centered and occupies 55 percent of canvas height in the neutral pose with empty space on every side. Smooth continuous anatomically correct motion at normal speed. Side profile facing RIGHT. A cute physically natural cat jump cycle in place: stand on four paws for 0.7s, deeply load the hind legs and lower the haunches, push off with hind paws, extend front legs forward, draw all four paws up beneath the belly at the apex, reach front paws down, land front paws then hind paws, absorb weight with bent legs, and settle back into the identical four-paw side standing pose for the last second. The body follows one smooth small parabolic hop. Keep the tail continuous, head proportions fixed and four anatomical legs throughout. No rotating into a front view. Full cat stays on screen with generous headroom.",
+      "reference_images": [
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ee195d86567e452590783e41901176f9/tuxedoFront.png",
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/4e193126060c48b5836d74e8654446dc/tuxedoSide.png"
+      ]
+    },
+    {
+      "character": "tuxedo",
+      "action": "wipe",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_c51ba85489e14df5bbcf827c4d9005fb",
+      "credit_cost": 120,
+      "source_file": "sources/tuxedo-wipe.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_c51ba85489e14df5bbcf827c4d9005fb/output/output_0.mp4",
+      "prompt": "Use the attached images as the exact same established desktop kitten character, preserving its face, eye colors, fur color and markings, rounded paws, proportions, soft detailed 3D illustration style, and small body. First image is the front identity and second image the side identity. A single fixed-camera full-body animation, no camera movement, no zoom, no cuts, no text, no props, no shadows. Completely uniform saturated chroma green (#00FF00) background, no gradient or floor texture. Character is centered and occupies 55 percent of canvas height in the neutral pose with empty space on every side. Smooth continuous anatomically correct motion at normal speed. Front three-quarter seated kitten. Start calmly seated for 0.6s. Raise one forepaw, give the paw a quick lick, then gently wipe the mouth and cheek with that same paw twice, close the eyes happily, lower the paw and end sitting exactly like the reference for the last second. The supporting paw and hindquarters stay planted. Clear soft paw-to-mouth contact, connected shoulder and wrist motion. Tiny tongue visible only during the lick. Tail gently follows.",
+      "reference_images": [
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ee195d86567e452590783e41901176f9/tuxedoFront.png",
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/4e193126060c48b5836d74e8654446dc/tuxedoSide.png"
+      ]
+    },
+    {
+      "character": "tuxedo",
+      "action": "reach",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_74f755d319944a50834f488d94f23d45",
+      "credit_cost": 120,
+      "source_file": "sources/tuxedo-reach.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_74f755d319944a50834f488d94f23d45/output/output_0.mp4",
+      "prompt": "Use the attached images as the exact same established desktop kitten character, preserving its face, eye colors, fur color and markings, rounded paws, proportions, soft detailed 3D illustration style, and small body. First image is the front identity and second image the side identity. A single fixed-camera full-body animation, no camera movement, no zoom, no cuts, no text, no props, no shadows. Completely uniform saturated chroma green (#00FF00) background, no gradient or floor texture. Character is centered and occupies 55 percent of canvas height in the neutral pose with empty space on every side. Smooth continuous anatomically correct motion at normal speed. Front three-quarter kitten. Start seated for 0.6s, look up toward a tiny imaginary mouse pointer, straighten onto the toes of both hind paws, lift both forepaws together, cup both paws toward the imaginary target above its face, make two cute gentle grasping attempts, then lower its paws and sit exactly like the reference for the last second. Full body including toes stays in frame. Maintain two forepaws, two hind paws, correct joints, same face and coat.",
+      "reference_images": [
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ee195d86567e452590783e41901176f9/tuxedoFront.png",
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/4e193126060c48b5836d74e8654446dc/tuxedoSide.png"
+      ]
+    },
+    {
+      "character": "tuxedo",
+      "action": "knead",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_eaac6f68b7e94336a818a73501f16ad0",
+      "credit_cost": 120,
+      "source_file": "sources/tuxedo-knead.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_eaac6f68b7e94336a818a73501f16ad0/output/output_0.mp4",
+      "prompt": "Use the attached images as the exact same established desktop kitten character, preserving its face, eye colors, fur color and markings, rounded paws, proportions, soft detailed 3D illustration style, and small body. First image is the front identity and second image the side identity. A single fixed-camera full-body animation, no camera movement, no zoom, no cuts, no text, no props, no shadows. Completely uniform saturated chroma green (#00FF00) background, no gradient or floor texture. Character is centered and occupies 55 percent of canvas height in the neutral pose with empty space on every side. Smooth continuous anatomically correct motion at normal speed. Front three-quarter seated kitten. Start sitting for 0.6s, lower its chest slightly and perform four slow alternating front-paw kneading presses on the floor: left press while right lifts, right press while left lifts, repeat. Toes splay softly on contact, shoulder weight transfers gently, eyes half closed, tail curls gently. Hindquarters stay planted and the body stays in place. End returning to the exact reference seated pose for the last second. Each paw remains connected with natural fur and joints.",
+      "reference_images": [
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ee195d86567e452590783e41901176f9/tuxedoFront.png",
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/4e193126060c48b5836d74e8654446dc/tuxedoSide.png"
+      ]
+    },
+    {
+      "character": "tuxedo",
+      "action": "punch",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_fd8e17af93cb41109ffc3eac7df397ef",
+      "credit_cost": 120,
+      "source_file": "sources/tuxedo-punch.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_fd8e17af93cb41109ffc3eac7df397ef/output/output_0.mp4",
+      "prompt": "Use the attached images as the exact same established desktop kitten character, preserving its face, eye colors, fur color and markings, rounded paws, proportions, soft detailed 3D illustration style, and small body. First image is the front identity and second image the side identity. A single fixed-camera full-body animation, no camera movement, no zoom, no cuts, no text, no props, no shadows. Completely uniform saturated chroma green (#00FF00) background, no gradient or floor texture. Character is centered and occupies 55 percent of canvas height in the neutral pose with empty space on every side. Smooth continuous anatomically correct motion at normal speed. Front three-quarter seated kitten. Start sitting for 0.6s, playfully wind up the near forepaw, make a quick gentle forward paw tap toward an imaginary screen in front of it, retract, then make a second tap with the opposite paw and retract. Cute springy cat swats with anticipation, fast contact and slower recovery, never human fists. Keep the seated hindquarters planted and face proportions constant. End seated in the exact reference pose for the last second.",
+      "reference_images": [
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ee195d86567e452590783e41901176f9/tuxedoFront.png",
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/4e193126060c48b5836d74e8654446dc/tuxedoSide.png"
+      ]
+    }
+  ]
+}

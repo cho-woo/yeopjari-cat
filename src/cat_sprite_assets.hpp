@@ -48,6 +48,8 @@ constexpr int ResourceId(cat::sprite_sequence::Clip clip,unsigned character) {
     // the silent-build verification. Locomotion must never reuse those IDs.
     if(clip==cat::sprite_sequence::Clip::Walk)return 400+static_cast<int>(character*2);
     if(clip==cat::sprite_sequence::Clip::Run)return 401+static_cast<int>(character*2);
+    if(clip==cat::sprite_sequence::Clip::Knead)return 440+static_cast<int>(character*2);
+    if(clip==cat::sprite_sequence::Clip::Reach)return 441+static_cast<int>(character*2);
     return 0;
 }
 constexpr bool Valid(const Descriptor& asset) {

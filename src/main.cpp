@@ -54,6 +54,7 @@
 #include "cat_cursor_attack.hpp"
 #include "cat_cursor_reach_hop.hpp"
 #include "cat_cursor_animation.hpp"
+#include "video_action_contacts.generated.hpp"
 #include "cat_toy.hpp"
 #include "cat_ball_physics.hpp"
 #include "cat_ball_play.hpp"
@@ -2696,7 +2697,7 @@ bool DrawCareSprite(Graphics& graphics,const cat::animation::Pose& pose,REAL cen
     const auto* sprite=CareSpriteFor(pose,character);
     if(!sprite)return false;
     unsigned index=SpriteFrameFor(pose,*sprite->layout);
-    if(pose.jumpRig) {
+    if(pose.jumpRig && std::string_view(sprite->layout->sourcePath).find("assets/video-actions/")!=0) {
         const auto* walk=LoadedCareSprite(cat::sprite_sequence::Clip::Walk,character);
         if(walk&&cat::video_ground_bridge::JumpTurns(*walk->layout).valid) {
             sprite=walk;index=cat::jump_animation::kSourceFrame;
@@ -3098,6 +3099,9 @@ cat::animation::Pose PrimaryDisplayedPose(ULONGLONG ticks,const cat::physics::Po
     if(displayed==Motion::Groom && physical.grounded && !g.waitingForStop) {
         pose=cat::cursor::GroomPose(actionElapsed,g.facing,
             g.nextDecision>=g.motionStart?g.nextDecision-g.motionStart:0);
+        if(const auto* groom=LoadedCareSprite(cat::sprite_sequence::Clip::Groom,g.preferences.character))
+            if(std::string_view(groom->layout->sourcePath).find("assets/video-actions/")==0)
+                cat::animation::AttachSprite(pose,cat::sprite_sequence::Clip::Groom,actionElapsed);
     }
     const bool cursorAttack = ApplyCursorAttackPose(pose,ticks,physical);
     if(!cursorAttack)ApplyBallToyPose(pose,ticks,physical);
@@ -3651,6 +3655,15 @@ bool ApplyCursorAttackPose(cat::animation::Pose& pose, ULONGLONG ticks, const ca
         pose=cat::cursor::HopPose(visualElapsed,interaction.hopFlightLaunched,physical.grounded,physical.velocityY,
             interaction.hopLandedAt&&ticks>=interaction.hopLandedAt?ticks-interaction.hopLandedAt:0,g.direction,
             (targetX-physical.x)/growth,(targetHeight-physical.lift)/growth,CursorAttackGeometry());
+        if(jump&&std::string_view(jump->layout->sourcePath).find("assets/video-actions/")==0) {
+            cat::sprite_sequence::Options options;
+            options.grounded=physical.grounded;options.velocityY=physical.velocityY;
+            options.jump=interaction.hopFlightLaunched?cat::sprite_sequence::JumpPhase::Landing:
+                cat::sprite_sequence::JumpPhase::Crouch;
+            options.contactElapsedMs=interaction.hopLandedAt&&ticks>=interaction.hopLandedAt?ticks-interaction.hopLandedAt:0;
+            cat::animation::AttachSprite(pose,cat::sprite_sequence::Clip::Jump,
+                std::min<ULONGLONG>(visualElapsed,cat::sprite_sequence::Duration(jump->layout->program,jump->layout->program.intro)),options);
+        }
         return true;
     }
     if (!interaction.session.Active() || !interaction.session.ContactAllowed() || !CursorPlaybackAllowed() ||
@@ -3665,6 +3678,16 @@ bool ApplyCursorAttackPose(cat::animation::Pose& pose, ULONGLONG ticks, const ca
     const double growth = cat::GrowthScale(g.pet.bornUtc, UtcNow());
     pose = cat::cursor::AttackPose(kind, ticks >= g.motionStart ? ticks-g.motionStart : 0, g.direction,
         (interaction.cursorX-physical.x)/growth, (interaction.cursorWorldHeight-physical.lift)/growth, CursorAttackGeometry());
+    if(kind==cat::cursor::AttackKind::Tiptoe||kind==cat::cursor::AttackKind::BothPaws) {
+        if(const auto* reach=LoadedCareSprite(cat::sprite_sequence::Clip::Reach,g.preferences.character)) {
+            const auto elapsed=ticks>=g.motionStart?ticks-g.motionStart:0;
+            cat::animation::AttachSprite(pose,cat::sprite_sequence::Clip::Reach,
+                elapsed*1550/cat::cursor::DurationMs(kind));
+            pose.spritePaws=cat::video_actions::ReachPaws(static_cast<unsigned>(g.preferences.character),
+                SpriteFrameFor(pose,*reach->layout));
+            pose.spritePawsValid=true;
+        }
+    }
     return true;
 }
 
