@@ -3,17 +3,17 @@
 일하는 동안 Windows 작업표시줄과 창 위에서 함께 지내는 작은 고양이입니다. 현재 버전은 크림치즈냥·부드러운 차콜색 턱시도냥·오드아이 눈꽃냥을 제공하며, 두 마리를 각자의 성장·성격·기억과 함께 키우는 기능은 유지합니다.
 
 
-**v2.0.26:** 공은 실제 앞발 접촉에 맞춰 굴러가고, 고양이는 공간을 잡고 멈춘 뒤 방향을 바꿔 다시 장난칩니다. 가까운 포인터에는 앞발·까치발·두 앞발·짧은 도약을 반복합니다. 점프 착지와 그루밍 연결을 보완했고, 부드러운 턱시도냥·오드아이냥과 키보드 놀이를 추가했습니다. 박스·종이봉투 이벤트는 제거했습니다.
+**v2.0.27:** 걷거나 달리는 속도를 유지하며 앞으로 점프하고, 착지 후 이동을 이어갑니다. 창 위로 올라갈 때는 현재 화면에서 가장 앞에 보이는 창만 선택하며, 가려진 창 위로 순간이동하지 않습니다. 초싸이언 모드·X 변신·Ctrl+Alt+S는 제거했습니다. 새 영상 기반 점프·앞발 원화는 아직 미적용이며, 이번 버전은 기존 그림의 이동과 연결 로직을 개선했습니다.
 
-[공놀이25초](https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.26/ball-play-native.mp4) · [포인터 놀이30초](https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.26/cursor-play-native.mp4) · [점프 비교](https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.26/jump-native.mp4) · [3종 캐릭터 실제 출력](docs/previews/v2.0.26/three-cats-native.png) · [그루밍 연결](docs/previews/v2.0.26/groom-native-board.png). 영상은 실제 앱의 Windows GDI+·Box2D 경로로 출력한 자료이며 바탕화면 녹화는 아닙니다. 놀이 영상은60FPS, 점프 비교는60Hz 표본의30FPS 출력입니다. 점프 비교 왼쪽은 현재 물리 경로에 기존16장 그림을 표시한 것으로 이전 앱 실행 녹화가 아닙니다.
+[이동 점프20초](https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.27/moving-jump-native.mp4) · [공놀이25초](https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.27/ball-play-native.mp4) · [포인터 놀이30초](https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.27/cursor-play-native.mp4) · [제자리 점프 비교](https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.27/jump-native.mp4) · [3종 캐릭터 실제 출력](docs/previews/v2.0.26/three-cats-native.png) · [그루밍 연결](docs/previews/v2.0.26/groom-native-board.png). 영상은 실제 앱의 Windows GDI+·Box2D 경로로 출력한 자료이며 바탕화면 녹화는 아닙니다. 놀이 영상은60FPS, 이동 점프와 제자리 점프 비교는60Hz 표본의30FPS 출력입니다. 점프 비교 왼쪽은 현재 물리 경로에 기존16장 그림을 표시한 것으로 이전 앱 실행 녹화가 아닙니다.
 
 ## 다운로드와 실행
 
 **[최신 버전 다운로드](https://github.com/cho-woo/yeopjari-cat/releases/latest)**
 
-[2.0.26 사용자용 ZIP 바로 받기](https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.26/YeopjariCat-Windows-2.0.26.zip)
+[2.0.27 사용자용 ZIP 바로 받기](https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.27/YeopjariCat-Windows-2.0.27.zip)
 
-**현재 공개 정식 버전은 v2.0.26입니다.** 새 공놀이·포인터 반복 놀이·연결된 점프와 그루밍, 오드아이냥·키보드 놀이를 포함합니다. 고양이 또는 트레이 아이콘 우클릭 → **프로그램 업데이트 → 업데이트 확인…**에서 받을 수 있습니다. [전체 Windows 검사·공개 배포 확인](docs/validation/v2.0.26-published.json).
+**현재 공개 정식 버전은 v2.0.27입니다.** 이동 중 점프·앞 창 올라타기와 초싸이언 모드 제거를 반영했습니다. 고양이 또는 트레이 아이콘 우클릭 → **프로그램 업데이트 → 업데이트 확인…**에서 받을 수 있습니다. [전체 Windows 검사·공개 배포 확인](docs/validation/v2.0.27-published.json) · [이동 점프 실제 출력](docs/previews/v2.0.27/moving-jump-native-board.png).
 
 실행 대상은 **Windows 10/11 x64**입니다. 사용자 ZIP의 압축을 완전히 풀고 `YeopjariCat.exe`를 실행하세요. Python이나 게임 엔진 설치는 필요하지 않습니다. 프로그램이 업데이트될 수 있도록 바탕화면·문서 폴더 등 본인이 파일을 수정할 수 있는 위치에 두세요.
 
