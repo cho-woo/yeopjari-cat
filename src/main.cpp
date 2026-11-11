@@ -5793,7 +5793,7 @@ int NativeMenuContractTest() {
         OutfitBowCommand == 1033 && OutfitScarfCommand == 1034 && OutfitCrownCommand == 1035,
         "Retired command IDs must not renumber the remaining commands");
     static_assert(kManualWalkCommand==2800 && kManualRunCommand==2801 && kManualJumpCommand==2802 &&
-        kFishCommand==2302 && kCompanionFish==2405 &&
+        kWallClimbCommand==2803 && kFishCommand==2302 && kCompanionFish==2405 &&
         static_cast<int>(cat::feeding::FoodKind::Meal)==0 &&
         static_cast<int>(cat::feeding::FoodKind::Treat)==1 &&
         static_cast<int>(cat::feeding::FoodKind::Fish)==2,
@@ -5843,7 +5843,7 @@ int NativeMenuContractTest() {
         DestroyMenu(menu);
         if (!read) return 221;
         std::vector<UINT> actual, expected{1010, 1011, 1012, 1013, 1014, 1015, 1016, 1017,
-            1024, 1026, 2300, 2301, 2302, 2303, 2304, 2400, 2800, 2801, 2802};
+            1024, 1026, 2300, 2301, 2302, 2303, 2304, 2400, 2800, 2801, 2802, 2803};
         if (enabled) expected.push_back(1025);
         if (variant != 2) for (UINT id : {2401u, 2402u, 2403u, 2405u}) expected.push_back(id);
         for (auto c:cat::kAvailableCharacters) expected.push_back(2500 + static_cast<int>(c));
