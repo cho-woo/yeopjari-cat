@@ -1686,12 +1686,16 @@ def main(stage_only=False):
                          f'- [눈·귀·꼬리·앞발 대기 동작 영상]({BASE_URL}idle-native.mp4)\n'
                          f'- [가까운 커서와 앞발·까치발·도약 놀이]({BASE_URL}cursor-play-native.mp4)\n'
                          f'- [공을 건드리고 굴러가는 공을 따라가는 놀이]({BASE_URL}ball-play-native.mp4)\n'
-                         f'- [같은 그림으로 이어지는 점프 비교]({BASE_URL}jump-native.mp4)\n'
+                         f'- [걸으며 점프·달리며 점프 20초 영상]({BASE_URL}moving-jump-native.mp4)\n'
+                         f'- [제자리 점프의 준비·착지·돌아오기 비교]({BASE_URL}jump-native.mp4)\n'
                          f'- [메뉴·점프·동작별 캐릭터 확인 자료]({BASE_URL}interaction-evidence.zip)\n'
                          f'- [검증 출처와 SHA-256]({BASE_URL}windows-validation.json)\n\n'
-                         '눈 깜빡임과 귀·꼬리·앞발 움직임으로 대기 동작을 보강했습니다.\n'
+                         '이동 중 점프는 실제 수평 속도를 유지하고 착지 뒤 이동을 이어갑니다. '
+                         '앞에 보이는 창만 올라타며, 초싸이언 모드는 제거했습니다.\n'
+                         '이번 버전의 영상은 기존 원화로 물리 개선을 보여 줍니다. '
+                         '드롭샷 시댄스 2.5로 제작할 새 점프·입 닦기·양앞발·꾹꾹이·펀치 원화는 아직 적용 전입니다.\n'
                          '미리보기는 실제 앱 그리기와 물리 경로로 출력한 영상이며 바탕화면 녹화는 아닙니다. '
-                         '걷기·놀이 영상은60FPS, 점프 비교는60Hz 출력에서 매 두 번째 표본을 고른30FPS입니다.\n'
+                         '걷기·놀이 영상은60FPS, 이동 점프와 제자리 점프 비교는60Hz 출력에서 매 두 번째 표본을 고른30FPS입니다.\n'
                          f'검증 소스: `{head}` · [Windows 실행 검사](https://github.com/{REPO}/actions/runs/{run_id}).\n',
                          encoding='utf-8')
         if already_public:
@@ -1740,7 +1744,7 @@ def main(stage_only=False):
                                  'Inspect the draft evidence, then run without `stage_only` to promote these exact bytes.\n')
             return
         gh('release', 'edit', TAG, '--repo', REPO, '--notes-file', str(notes),
-           '--title', f'옆자리 고양이 {VERSION} — 귀여운 대기 동작과 자연스러운 움직임',
+           '--title', f'옆자리 고양이 {VERSION} — 앞으로 이어지는 점프와 앞 창 올라타기',
            '--draft=false', '--prerelease=false', '--latest=true')
         published = json.loads(gh('release', 'view', TAG, '--repo', REPO,
                                  '--json', 'isDraft,isPrerelease,targetCommitish,url'))
