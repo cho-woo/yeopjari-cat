@@ -3,9 +3,13 @@
 일하는 동안 Windows 작업표시줄과 창 위에서 함께 지내는 작은 고양이입니다. 현재 버전은 크림치즈냥·부드러운 차콜색 턱시도냥·오드아이 눈꽃냥을 제공하며, 두 마리를 각자의 성장·성격·기억과 함께 키우는 기능은 유지합니다.
 
 
-**v2.0.28:** 현재 캐릭터를 참조로 생성한 드롭샷 영상에서 점프·입 닦기·양앞발 잡기·꾹꾹이·펀치를 연결했습니다. 크림냥·턱시도냥과 눈꽃냥에서 같은 동작을 사용할 수 있으며, 이동 중 점프는 실제 물리 상태를 따릅니다.
+**v2.0.28:** 현재 캐릭터를 참조로 생성한 드롭샷 영상에서 파리 사냥·생선 먹기·공과 깃털 놀이·제동·미끄러짐·넘어지기·오른쪽 가장자리 오르기와 점프·그루밍을 연결했습니다. 크림냥·턱시도냥과 눈꽃냥에서 같은 동작을 사용할 수 있으며, 이동 중 점프는 실제 물리 상태를 따릅니다.
 
 [이동 점프20초](https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.27/moving-jump-native.mp4) · [공놀이25초](https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.27/ball-play-native.mp4) · [포인터 놀이30초](https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.27/cursor-play-native.mp4) · [제자리 점프 비교](https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.27/jump-native.mp4) · [3종 캐릭터 실제 출력](docs/previews/v2.0.26/three-cats-native.png) · [그루밍 연결](docs/previews/v2.0.26/groom-native-board.png). 영상은 실제 앱의 Windows GDI+·Box2D 경로로 출력한 자료이며 바탕화면 녹화는 아닙니다. 놀이 영상은60FPS, 이동 점프와 제자리 점프 비교는60Hz 표본의30FPS 출력입니다. 점프 비교 왼쪽은 현재 물리 경로에 기존16장 그림을 표시한 것으로 이전 앱 실행 녹화가 아닙니다.
+
+[파리 사냥 미리보기](docs/previews/v2.0.28/fly-native.mp4) · [생선 먹기 미리보기](docs/previews/v2.0.28/fish-native.mp4) · [세 고양이 사냥 동작](docs/previews/v2.0.28/fly-native-board.png). 실제 앱 렌더러 출력입니다.
+
+파리 사냥은 **우클릭 → 행동시키기 → 파리 사냥하기**에서 볼 수 있습니다. 파리를 노려보며 앞발을 천천히 들었다가 네 번 연속으로 빠르게 칩니다. 자동 이동 중에도 가끔 실행됩니다. 새 버전이 있으면 “업데이트해줘” 말풍선을 설치할 때까지 유지합니다.
 
 ## 다운로드와 실행
 
@@ -13,7 +17,7 @@
 
 [2.0.28 사용자용 ZIP 바로 받기](https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.28/YeopjariCat-Windows-2.0.28.zip)
 
-**v2.0.28 업데이트를 준비하고 있습니다.** 고양이 또는 트레이 아이콘 우클릭 → **프로그램 업데이트 → 업데이트 확인…**에서 공개 후 받을 수 있습니다.
+고양이 또는 트레이 아이콘 우클릭 → **프로그램 업데이트 → 업데이트 확인…**에서 v2.0.28을 받을 수 있습니다.
 
 실행 대상은 **Windows 10/11 x64**입니다. 사용자 ZIP의 압축을 완전히 풀고 `YeopjariCat.exe`를 실행하세요. Python이나 게임 엔진 설치는 필요하지 않습니다. 프로그램이 업데이트될 수 있도록 바탕화면·문서 폴더 등 본인이 파일을 수정할 수 있는 위치에 두세요.
 

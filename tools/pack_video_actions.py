@@ -24,9 +24,11 @@ REFERENCE_HEIGHT = 96
 RESOURCE = {'groom': 113, 'punch': 117, 'jump': 119, 'knead': 440, 'reach': 441}
 RESOURCE.update({'ball':430,'toy':431,'brake':432,'slide':433,'stumble':434,'climb':435})
 RESOURCE['fish']=116
+RESOURCE['fly']=436
 SOURCE_ACTION = {'groom': 'wipe', 'punch': 'punch', 'jump': 'jump', 'knead': 'knead', 'reach': 'reach'}
 SOURCE_ACTION.update({name:name for name in ('ball','toy','brake','slide','stumble','climb')})
 SOURCE_ACTION['fish']='fish'
+SOURCE_ACTION['fly']='fly'
 REACH_KEYS = {
     'cream': [(18, 300, 651, 369, 651), (36, 300, 651, 369, 651),
         (54, 243, 360, 378, 360), (72, 282, 228, 396, 306),
@@ -59,7 +61,7 @@ def background_palette(rgb):
     return cv2.kmeans(border[::4],12,None,(cv2.TERM_CRITERIA_EPS|cv2.TERM_CRITERIA_MAX_ITER,20,.5),1,cv2.KMEANS_PP_CENTERS)[2]
 
 
-def foreground(rgb, palette=None, remove_ball=False, remove_wall=False, keep_feather=False):
+def foreground(rgb, palette=None, remove_ball=False, remove_wall=False, keep_feather=False, keep_fly=False):
     values = rgb.astype(np.float32)
     red, green, blue = values.transpose(2, 0, 1)
     backdrop = green > np.maximum(red, blue) * 1.22 + 12
@@ -84,6 +86,13 @@ def foreground(rgb, palette=None, remove_ball=False, remove_wall=False, keep_fea
         raise ValueError('No character foreground')
     actor=1+np.argmax(stats[1:,cv2.CC_STAT_AREA])
     mask = (labels == actor).astype(np.uint8)
+    if keep_fly:
+        left,top,width,height,area=stats[actor]
+        for component in range(1,count):
+            x,y,w,h,size=stats[component]
+            if component!=actor and 4<size<area*.035 and w<85 and h<65 and \
+                    left-180<x+w and x<left+width+220 and top-140<y<top+height-40:
+                mask[labels==component]=1
     if keep_feather:
         left,top,width,height,area=stats[actor]
         for component in range(1,count):
@@ -184,6 +193,7 @@ def snow_material(source, eyes):
 
 
 def selection(clip):
+    if clip=='fly':return list(range(144))+list(range(170,192))
     extra={'ball':range(24,84,2),'toy':range(6,146,2),'brake':range(42,142,3),
         'slide':range(42,144,2),'stumble':range(45,150,2),'climb':range(0,158),'fish':range(0,158)}
     if clip in extra:return list(extra[clip])
@@ -199,6 +209,9 @@ def selection(clip):
 
 
 def durations(clip, indices):
+    if clip=='fly':
+        return [30 if 96<=index<144 else round((ordinal+1)*1000/24)-round(ordinal*1000/24)
+            for ordinal,index in enumerate(indices)]
     if clip == 'jump':
         return [20 if index<81 else 40 for index in indices]
     total = {'groom':5250,'knead':5200,'reach':1550,'punch':2900,
@@ -239,7 +252,7 @@ def bake(clip, character, indices):
     props=[];prop_visible=[]
     for ordinal, source_index in enumerate(indices):
         local_palette=background_palette(frames[source_index]) if clip=='stumble' and character=='cream' else palette
-        image = foreground(frames[source_index],local_palette,clip=='ball',clip=='climb',clip in ('toy','fish'))
+        image = foreground(frames[source_index],local_palette,clip=='ball',clip=='climb',clip in ('toy','fish'),clip=='fly')
         anchor_x, anchor_y = center, float(image.getbbox()[3])
         if clip in ('ball','brake','slide','stumble','climb'):
             anchor_x,_,_=head_root(image)
@@ -287,7 +300,9 @@ def bake(clip, character, indices):
     return output, records, columns, rows, {'source': path.relative_to(DIRECTORY).as_posix(),
         'sha256': sha(path), 'source_fps': fps, 'source_frame_count': len(frames),
         'selected_frame_indices': indices, 'scale': factor, 'neutral_root': [center, bottom],
-        'reference_height': REFERENCE_HEIGHT, 'paw_points_logical': paws,'prop_points_logical':props,'prop_visible':prop_visible}
+        'reference_height': REFERENCE_HEIGHT, 'paw_points_logical': paws,'prop_points_logical':props,'prop_visible':prop_visible,
+        **({'source_contact_frames':[96,112,124,136] if character=='cream' else [104,116,128,140],
+            'edited_source_ranges':[[0,143],[170,191]],'attack_exposure_ms':30} if clip=='fly' else {})}
 
 
 def main(only=None,materials_only=False):
@@ -319,6 +334,8 @@ def main(only=None,materials_only=False):
         else:
             if clip == 'punch':
                 events = [{'step': indices.index(index), 'offset_ms': 0, 'type': 'contact'} for index in (40, 102)]
+            if clip == 'fly':
+                events = [{'step':indices.index(index),'offset_ms':0,'type':'contact'} for index in (96,112,124,136)]
             sequence = {'intro': steps, 'loop': [], 'outro': [], 'finish': 'complete', 'duration_ms': 0, 'events': events}
         if materials_only:
             old=old_entries[clip];cream=DIRECTORY/old['source']

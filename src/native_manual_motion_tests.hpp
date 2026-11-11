@@ -78,10 +78,10 @@ bool MenuCommands(bool enabled) {
         wchar_t label[80]{}; GetMenuStringW(menu,i,label,80,MF_BYPOSITION);
         if (std::wstring(label) == L"행동시키기") actions = GetSubMenu(menu,i);
     }
-    bool valid = actions && GetMenuItemCount(actions) == 4;
-    const UINT ids[]{kManualWalkCommand,kManualRunCommand,kManualJumpCommand,kWallClimbCommand};
-    const wchar_t* labels[]{L"걷기",L"달리기",L"점프하기",L"오른쪽 가장자리 오르기"};
-    for (unsigned i = 0; valid && i < 4; ++i) {
+    bool valid = actions && GetMenuItemCount(actions) == 5;
+    const UINT ids[]{kManualWalkCommand,kManualRunCommand,kManualJumpCommand,kWallClimbCommand,kFlyHuntCommand};
+    const wchar_t* labels[]{L"걷기",L"달리기",L"점프하기",L"오른쪽 가장자리 오르기",L"파리 사냥하기"};
+    for (unsigned i = 0; valid && i < 5; ++i) {
         wchar_t label[80]{}; GetMenuStringW(actions,i,label,80,MF_BYPOSITION);
         const auto state = GetMenuState(actions,ids[i],MF_BYCOMMAND);
         valid = GetMenuItemID(actions,i) == ids[i] && std::wstring(label) == labels[i] &&
@@ -250,7 +250,7 @@ int Run(std::string& proof) {
         if (ManualMotionAvailable() || !MenuCommands(false)) return 533;
         const auto saved = host.Saved(); const auto serial = g.motionSerial;
         const auto before = g.physics.CurrentPose();
-        for (const UINT id : {kManualWalkCommand,kManualRunCommand,kManualJumpCommand,kWallClimbCommand}) RunCommand(id);
+        for (const UINT id : {kManualWalkCommand,kManualRunCommand,kManualJumpCommand,kWallClimbCommand,kFlyHuntCommand}) RunCommand(id);
         const auto after = g.physics.CurrentPose();
         if (g.motionSerial != serial || g.manualMotionActive || host.Saved() != saved ||
                 before.x != after.x || before.lift != after.lift ||
@@ -260,7 +260,7 @@ int Run(std::string& proof) {
     if(!EnsureCareCoats(cat::Character::Cream,cat::Character::Tuxedo))return 520;
     proof = "{\"schema\":1,\"test\":\"manual-motion-native\",\"status\":\"passed\",\"version\":\""
         YEOPJARI_VERSION_STRING "\",\"mesh_walk_default\":false,\"approved_walk_frames\":" +
-        std::to_string(approvedWalkFrames) + ",\"menu_commands\":[2800,2801,2802,2803],\"menu_labels_checked\":true,\"unsafe_states_checked\":" +
+        std::to_string(approvedWalkFrames) + ",\"menu_commands\":[2800,2801,2802,2803,2804],\"menu_labels_checked\":true,\"unsafe_states_checked\":" +
         std::to_string(unsafe) + ",\"pause_preference_preserved\":true,\"suspension_clock_preserved\":true,"
         "\"characters\":[" + characters.str() + "]}\n";
     return 0;

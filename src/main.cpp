@@ -104,6 +104,7 @@ constexpr UINT kKeyboardPlayCommand=2304;
 // Fresh IDs: installed action/toy IDs and the companion's 2600 range stay retired/reserved.
 constexpr UINT kManualWalkCommand = 2800, kManualRunCommand = 2801, kManualJumpCommand = 2802;
 constexpr UINT kWallClimbCommand=2803;
+constexpr UINT kFlyHuntCommand=2804;
 // Keep the original IDs: retired action, toy and sound IDs are never reused.
 enum Command {
     FeedCommand = 1010, SnackCommand = 1011, StatusCommand = 1012,
@@ -394,6 +395,10 @@ struct App {
     std::uint64_t motionSerial = 0; // Transient ownership; clocks can be rebased during pauses.
     bool autonomousResting = false, autonomousDispatching = false, companionReaction = false;
     bool manualMotionActive = false; // Transient ownership; never changes the saved roaming preference.
+    bool flyActive=false;
+    std::uint64_t flySerial=0;
+    int flyFacing=1;
+    ULONGLONG nextFlyHunt=0;
     cat::random_zoomies::Scheduler randomZoomies;
     std::uint64_t randomZoomiesSerial=0;
     std::mt19937 randomZoomiesRandom{std::random_device{}()};
@@ -1733,6 +1738,7 @@ void ResetMovement() {
     ResetPrimaryCarePresentation();
     g.jumpPending = g.jumpLaunched = false;
     g.manualMotionActive = false;
+    g.flyActive=false;g.nextFlyHunt=MotionClock()+90000;
     g.waitingForStop = false;
     g.landedAt = 0;
     g.facing = g.direction;
@@ -1877,6 +1883,7 @@ void KeepOnWorkArea(bool reposition = false) {
 }
 double Random(double low, double high) { return std::uniform_real_distribution<double>(low, high)(g.random); }
 void SetMotion(Motion motion, ULONGLONG duration,ULONGLONG actionTicks=0,bool continueManualMotion=false) {
+    g.flyActive=false;
     if(motion==Motion::BoxSit)motion=Motion::Idle; // Retired box/bag events cannot re-enter through legacy queues.
     const auto ticks=actionTicks?actionTicks:g.autonomousDispatching?g.autonomousTick:GetTickCount64();
     g.stopClip=cat::sprite_sequence::Clip::None;g.stopUntil=0;g.physics.SetBrakeGrip(1);
@@ -3233,6 +3240,11 @@ cat::animation::Pose PrimaryDisplayedPose(ULONGLONG ticks,const cat::physics::Po
         cat::animation::AttachSprite(pose,ActionClip::Climb,ticks-g.wallStarted);
         pose.flip=false;pose.groundContact=physical.grounded;
     }
+    if(g.flyActive&&g.flySerial==g.motionSerial&&physical.grounded&&!g.waitingForStop&&
+            std::abs(WalkingVelocity(physical))<=2&&!cursorAttack) {
+        cat::animation::AttachSprite(pose,ActionClip::FlyHunt,actionElapsed);
+        pose.flip=g.flyFacing<0;
+    }
     const auto* authored=CareSpriteFor(pose,g.preferences.character);
     g.authoredBoxVisible=authored && authored->layout->clip==cat::sprite_sequence::Clip::Box;
     if(authored)cat::animation::UseAuthoredSprite(pose);
@@ -4117,6 +4129,21 @@ void StartWallClimb(ULONGLONG actionTicks=0) {
     g.manualMotionActive=true;g.toyRewardPending=false;
 }
 
+void StartFlyHunt(ULONGLONG actionTicks=0) {
+    if(!ManualMotionAvailable())return;
+    using C=cat::sprite_sequence::Clip;
+    const auto* asset=LoadedCareSprite(C::FlyHunt,g.preferences.character);
+    if(!asset)return;
+    const auto ticks=actionTicks?actionTicks:GetTickCount64();
+    if(g.brain)g.brain->Interrupt(ticks);
+    cursorInteraction={};g.prank.Clear();g.bubbleUntil=0;
+    SetMotion(Motion::Watch,cat::sprite_sequence::ProgramDuration(asset->layout->program),ticks);
+    g.flyActive=true;g.flySerial=g.motionSerial;
+    g.flyFacing=g.physics.CurrentPose().x<(g.work.right-g.work.left)/g.dpiScale/2?1:-1;
+    g.manualMotionActive=true;g.speed=0;g.toyRewardPending=false;
+    g.nextFlyHunt=ticks+static_cast<ULONGLONG>(Random(120000,300000));
+}
+
 void FinishManualMotion(ULONGLONG ticks) {
     if (g.wallPhase==App::WallPhase::None && !KeyboardPlayActive() && g.manualMotionActive && ticks >= g.nextDecision && !g.waitingForStop &&
             g.physics.CurrentPose().grounded && !g.jumpPending)
@@ -4132,6 +4159,7 @@ void RunCommand(UINT command,ULONGLONG actionTicks=0) {
     case kManualRunCommand: StartManualMotion(Motion::Zoomies,actionTicks); break;
     case kManualJumpCommand: StartManualMotion(Motion::Jump,actionTicks); break;
     case kWallClimbCommand: StartWallClimb(actionTicks); break;
+    case kFlyHuntCommand: StartFlyHunt(actionTicks); break;
     case kWorkInterferenceCommand: ChangeInteractionSettings(true); break;
     case kSeasonalEventsCommand: ChangeInteractionSettings(false); break;
     case kCursorPlayCommand: ChangeInteractionSettings(false,true); break;
@@ -4173,6 +4201,7 @@ HMENU BuildPetMenu() {
     AppendMenuW(actions, MF_STRING | actionEnabled, kManualRunCommand, L"달리기");
     AppendMenuW(actions, MF_STRING | actionEnabled, kManualJumpCommand, L"점프하기");
     AppendMenuW(actions, MF_STRING | actionEnabled, kWallClimbCommand, L"오른쪽 가장자리 오르기");
+    AppendMenuW(actions, MF_STRING | actionEnabled, kFlyHuntCommand, L"파리 사냥하기");
     AppendMenuW(menu, MF_POPUP | MF_STRING, reinterpret_cast<UINT_PTR>(actions), L"행동시키기");
     HMENU companionMenu = CreatePopupMenu();
     AppendMenuW(companionMenu, MF_STRING | (g.companionStore.enabled() ? MF_CHECKED : MF_UNCHECKED),
@@ -4716,6 +4745,9 @@ void DispatchAutonomousMotion(ULONGLONG ticks) {
             BeginAutonomousRest();return;
         }
         if(!CanStartAutonomousStory(ticks))return;
+        if(!g.pet.roamingPaused&&g.toy==ToyKind::None&&ticks>=g.nextFlyHunt) {
+            StartFlyHunt(ticks);if(g.flyActive)return;
+        }
         const auto before=g.motionSerial;
         MaybeVisitWindow(ticks);
         if(g.motionSerial!=before)return;
@@ -5817,7 +5849,7 @@ int NativeMenuContractTest() {
         OutfitBowCommand == 1033 && OutfitScarfCommand == 1034 && OutfitCrownCommand == 1035,
         "Retired command IDs must not renumber the remaining commands");
     static_assert(kManualWalkCommand==2800 && kManualRunCommand==2801 && kManualJumpCommand==2802 &&
-        kWallClimbCommand==2803 && kFishCommand==2302 && kCompanionFish==2405 &&
+        kWallClimbCommand==2803 && kFlyHuntCommand==2804 && kFishCommand==2302 && kCompanionFish==2405 &&
         static_cast<int>(cat::feeding::FoodKind::Meal)==0 &&
         static_cast<int>(cat::feeding::FoodKind::Treat)==1 &&
         static_cast<int>(cat::feeding::FoodKind::Fish)==2,
@@ -5867,7 +5899,7 @@ int NativeMenuContractTest() {
         DestroyMenu(menu);
         if (!read) return 221;
         std::vector<UINT> actual, expected{1010, 1011, 1012, 1013, 1014, 1015, 1016, 1017,
-            1024, 1026, 2300, 2301, 2302, 2303, 2304, 2400, 2800, 2801, 2802, 2803};
+            1024, 1026, 2300, 2301, 2302, 2303, 2304, 2400, 2800, 2801, 2802, 2803, 2804};
         if (enabled) expected.push_back(1025);
         if (variant != 2) for (UINT id : {2401u, 2402u, 2403u, 2405u}) expected.push_back(id);
         for (auto c:cat::kAvailableCharacters) expected.push_back(2500 + static_cast<int>(c));
@@ -5985,6 +6017,7 @@ int NativeMenuContractTest() {
 #include "native_groom_review.hpp"
 #include "native_ball_play_capture.hpp"
 #include "native_fish_review.hpp"
+#include "native_fly_review.hpp"
 #include "native_lively_review.hpp"
 #include "native_menu_visibility_tests.hpp"
 
@@ -6020,6 +6053,7 @@ int SelfTest(HINSTANCE instance) {
 }
 
 int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
+    if(commandLine && wcsstr(commandLine,L"--render-fly-review"))return NativeFlyReview(instance);
     if(commandLine && wcsstr(commandLine,L"--render-fish-review"))return NativeFishReview(instance);
     if(commandLine && wcsstr(commandLine,L"--manual-motion-self-test"))return NativeManualMotionTest(instance);
     if(commandLine && wcsstr(commandLine,L"--render-lively-review"))return NativeLivelyReview(instance);
@@ -6039,7 +6073,9 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
         const int standard=RenderSelfTest();
         if(standard)return standard;
         const int lively=NativeLivelyReview(instance);
-        return lively?lively:NativeFishReview(instance);
+        if(lively)return lively;
+        const int fish=NativeFishReview(instance);
+        return fish?fish:NativeFlyReview(instance);
     }
     if (const auto helperResult = cat::update::HandleUpdateHelperCommandLine()) return *helperResult;
     if (commandLine && wcsstr(commandLine, L"--self-test")) return SelfTest(instance);

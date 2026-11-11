@@ -330,9 +330,21 @@
       "iris_mask_sha256": "2ae5143043d3c410626bd05a19413c7636f715d37540e0c74550efd08559d42d",
       "alpha_exact": true,
       "skin_rgb_exact": true
+    },
+    {
+      "base_resource_id": 436,
+      "base_source": "assets/video-actions/cream-fly.png",
+      "source": "c10-r436.png",
+      "input_sha256": "8c3293f5a342031bef459ccff0fb3ba3cb3715d20554321c832ff76eacf514a4",
+      "output_sha256": "51ed31d33d413e7e7363fe705dc34651ce1c585eeba0507940b8ce0ba6fd688f",
+      "source_alpha_sha256": "e9fcbe720d2c5bf46a346f9de52958c78ac5adc84bab96e6d2388271ffe9ca00",
+      "iris_mask": "odd-eye-masks/c10-r436.png",
+      "iris_mask_sha256": "a07c01fe59ea554d5dea0288f976524c2b8d9999ce146a11166489abe11e1e38",
+      "alpha_exact": true,
+      "skin_rgb_exact": true
     }
   ],
   "tool_sha256": "38aff80a6a8fe818168305d47c6f697ab0d9af7892119f3e5ab903e5c41c86c4",
   "additional_authoring_tool": "tools/pack_video_actions.py",
-  "additional_authoring_tool_sha256": "725ed5952a57632ee9f9625d482f4311fccba8aafc3f415c74abea36e6500f25"
+  "additional_authoring_tool_sha256": "32a1733fc9d055536a4a9b24d032aaac788b912a60d6ad7c1bc5e7b3797841b5"
 }

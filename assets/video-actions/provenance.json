@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "method": "dropshot_video_extraction",
-  "manifest_sha256": "9f9fdf64e25d2289198dc26ba89f012ccbe2100348bc9b5844228af9e9d22b85",
+  "manifest_sha256": "8d9c6fe833f79dbd270da2c2a0abb64e14debff346c846754f589d57196d05de",
   "precomputed_only": true,
   "files": [
     {
@@ -19,6 +19,10 @@
     {
       "path": "cream-fish.png",
       "sha256": "2a2b1152d6e6b20674e5189bf6ad42445f49552e883beadf1f6298f68fa60713"
+    },
+    {
+      "path": "cream-fly.png",
+      "sha256": "8c3293f5a342031bef459ccff0fb3ba3cb3715d20554321c832ff76eacf514a4"
     },
     {
       "path": "cream-groom.png",
@@ -54,7 +58,7 @@
     },
     {
       "path": "generation.json",
-      "sha256": "8730f0f21821f9637fb5a6d683e8e996e2c3d2772966c190ef46563c5092c329"
+      "sha256": "1f019fe4e664ae44f793beaf369c21dda06f23ea817f05106c40e545fb47f161"
     },
     {
       "path": "motion-timing.json",
@@ -63,6 +67,10 @@
     {
       "path": "references/cream-fish-wide.png",
       "sha256": "77889fbf29d6fa018e7e70a2542b524a13e6b444dd685933060174ab61021740"
+    },
+    {
+      "path": "references/cream-fly-wide.png",
+      "sha256": "f1b9dc3b68ad3004b35cb62fae1827ba6cccbbf6ab586d062efa6cf1f7481c6c"
     },
     {
       "path": "references/fish-prop-reference.png",
@@ -77,8 +85,12 @@
       "sha256": "ba702f3a7bcab77225f8466442bc966d656c1070240d5515bca1725fc4984da0"
     },
     {
+      "path": "references/tuxedo-fly-wide.png",
+      "sha256": "f58563827415fd051424664e0bcb6035f31fec5711df7488e97899adeeeabda8"
+    },
+    {
       "path": "registration.json",
-      "sha256": "aebf1ebb05d2107fe469bca6a936088a9b2a05f5e0d659bbd4ac6a549f02f8fd"
+      "sha256": "3985e2052a3dd05f429ce8acb801f7ba713309f3b4418b228eb9bf1f1ec85043"
     },
     {
       "path": "sources/cream-ball.mp4",
@@ -95,6 +107,10 @@
     {
       "path": "sources/cream-fish.mp4",
       "sha256": "880273a3af25105c812291998af01f2817bfa13f38dbb1412f1a8092695f67b2"
+    },
+    {
+      "path": "sources/cream-fly.mp4",
+      "sha256": "44b718e79f7fe1e21d1a49387b2ef7041bb125dd54a33f175359a61c286448b7"
     },
     {
       "path": "sources/cream-jump.mp4",
@@ -141,12 +157,20 @@
       "sha256": "402fad43f65f0ea6d597e95534fe777232a8c7a56f34e71afdade015de4f6d2e"
     },
     {
+      "path": "sources/rejected/cream-fly-first.mp4",
+      "sha256": "785268fff57dfe3dba4389392526be7c86d54bfa2dd189349384dc7a5502aadb"
+    },
+    {
       "path": "sources/rejected/cream-stumble.mp4",
       "sha256": "7e7b64043857bbc331805b2b44cdaded1b04b70f3c8b5a6fe59f092bdc892988"
     },
     {
       "path": "sources/rejected/tuxedo-fish.mp4",
       "sha256": "062175c95622f6f575b37d632373d8ec1e59d032e5f1ebe7ce2ac5bb1eb272f8"
+    },
+    {
+      "path": "sources/rejected/tuxedo-fly-first.mp4",
+      "sha256": "e93ef8056dee0079ad64d76ead7cc2fd6f7a95799316e0f817a028006549aaff"
     },
     {
       "path": "sources/rejected/tuxedo-stumble.mp4",
@@ -167,6 +191,10 @@
     {
       "path": "sources/tuxedo-fish.mp4",
       "sha256": "0a07686e4ae2245175562027939561207600410ae020f249dc323572b71739ca"
+    },
+    {
+      "path": "sources/tuxedo-fly.mp4",
+      "sha256": "0c1224ded954136750678e6fcb8762d75df1f9296dc8135cd1edab0800a156ee"
     },
     {
       "path": "sources/tuxedo-jump.mp4",
@@ -223,6 +251,10 @@
     {
       "path": "tuxedo-fish.png",
       "sha256": "c805d255489f00894730cd73546a36bcc8f11abdd2f8faabb92da0875b92fdf5"
+    },
+    {
+      "path": "tuxedo-fly.png",
+      "sha256": "76f6ec80f65ba61d45646d7cf5e13ba4c9001c991257236328cea0625985dad2"
     },
     {
       "path": "tuxedo-groom.png",

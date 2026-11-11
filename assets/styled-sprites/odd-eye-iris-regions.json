@@ -22282,6 +22282,4391 @@
           ]
         }
       ]
+    },
+    {
+      "base_resource_id": 436,
+      "source": "c10-r436.png",
+      "frames": [
+        {
+          "frame": 0,
+          "eyes": [
+            {
+              "rect": [
+                139,
+                182,
+                17,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 46
+            },
+            {
+              "rect": [
+                170,
+                179,
+                16,
+                12
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 42
+            }
+          ]
+        },
+        {
+          "frame": 1,
+          "eyes": [
+            {
+              "rect": [
+                459,
+                182,
+                17,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 45
+            },
+            {
+              "rect": [
+                490,
+                179,
+                16,
+                12
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 40
+            }
+          ]
+        },
+        {
+          "frame": 2,
+          "eyes": [
+            {
+              "rect": [
+                779,
+                182,
+                17,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 46
+            },
+            {
+              "rect": [
+                810,
+                179,
+                16,
+                12
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 40
+            }
+          ]
+        },
+        {
+          "frame": 3,
+          "eyes": [
+            {
+              "rect": [
+                1099,
+                182,
+                17,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 45
+            },
+            {
+              "rect": [
+                1130,
+                179,
+                16,
+                12
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 39
+            }
+          ]
+        },
+        {
+          "frame": 4,
+          "eyes": [
+            {
+              "rect": [
+                1419,
+                182,
+                17,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 46
+            },
+            {
+              "rect": [
+                1450,
+                179,
+                16,
+                12
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 41
+            }
+          ]
+        },
+        {
+          "frame": 5,
+          "eyes": [
+            {
+              "rect": [
+                1739,
+                182,
+                17,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 46
+            },
+            {
+              "rect": [
+                1770,
+                178,
+                16,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 36
+            }
+          ]
+        },
+        {
+          "frame": 6,
+          "eyes": [
+            {
+              "rect": [
+                2059,
+                182,
+                17,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 54
+            },
+            {
+              "rect": [
+                2090,
+                178,
+                16,
+                14
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 42
+            }
+          ]
+        },
+        {
+          "frame": 7,
+          "eyes": [
+            {
+              "rect": [
+                2379,
+                182,
+                17,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 58
+            },
+            {
+              "rect": [
+                2410,
+                178,
+                16,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 37
+            }
+          ]
+        },
+        {
+          "frame": 8,
+          "eyes": [
+            {
+              "rect": [
+                139,
+                502,
+                17,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 55
+            },
+            {
+              "rect": [
+                171,
+                498,
+                15,
+                14
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 45
+            }
+          ]
+        },
+        {
+          "frame": 9,
+          "eyes": [
+            {
+              "rect": [
+                460,
+                501,
+                17,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 62
+            },
+            {
+              "rect": [
+                492,
+                498,
+                14,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 42
+            }
+          ]
+        },
+        {
+          "frame": 10,
+          "eyes": [
+            {
+              "rect": [
+                781,
+                501,
+                17,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 54
+            },
+            {
+              "rect": [
+                812,
+                498,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 48
+            }
+          ]
+        },
+        {
+          "frame": 11,
+          "eyes": [
+            {
+              "rect": [
+                1101,
+                501,
+                17,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 64
+            },
+            {
+              "rect": [
+                1133,
+                498,
+                14,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 48
+            }
+          ]
+        },
+        {
+          "frame": 12,
+          "eyes": [
+            {
+              "rect": [
+                1422,
+                501,
+                17,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 59
+            },
+            {
+              "rect": [
+                1453,
+                498,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 48
+            }
+          ]
+        },
+        {
+          "frame": 13,
+          "eyes": [
+            {
+              "rect": [
+                1742,
+                501,
+                17,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 63
+            },
+            {
+              "rect": [
+                1774,
+                498,
+                14,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 36
+            }
+          ]
+        },
+        {
+          "frame": 14,
+          "eyes": [
+            {
+              "rect": [
+                2063,
+                501,
+                17,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 59
+            },
+            {
+              "rect": [
+                2094,
+                498,
+                14,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 47
+            }
+          ]
+        },
+        {
+          "frame": 15,
+          "eyes": [
+            {
+              "rect": [
+                2383,
+                500,
+                17,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 59
+            },
+            {
+              "rect": [
+                2415,
+                498,
+                14,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 41
+            }
+          ]
+        },
+        {
+          "frame": 16,
+          "eyes": [
+            {
+              "rect": [
+                143,
+                820,
+                17,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 60
+            },
+            {
+              "rect": [
+                175,
+                818,
+                14,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 40
+            }
+          ]
+        },
+        {
+          "frame": 17,
+          "eyes": [
+            {
+              "rect": [
+                464,
+                820,
+                17,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 56
+            },
+            {
+              "rect": [
+                495,
+                819,
+                14,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 38
+            }
+          ]
+        },
+        {
+          "frame": 18,
+          "eyes": [
+            {
+              "rect": [
+                784,
+                820,
+                17,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 55
+            },
+            {
+              "rect": [
+                815,
+                819,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 38
+            }
+          ]
+        },
+        {
+          "frame": 19,
+          "eyes": [
+            {
+              "rect": [
+                1104,
+                820,
+                17,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 59
+            },
+            {
+              "rect": [
+                1135,
+                819,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 39
+            }
+          ]
+        },
+        {
+          "frame": 20,
+          "eyes": [
+            {
+              "rect": [
+                1424,
+                820,
+                17,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 60
+            },
+            {
+              "rect": [
+                1455,
+                819,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 37
+            }
+          ]
+        },
+        {
+          "frame": 21,
+          "eyes": [
+            {
+              "rect": [
+                1744,
+                820,
+                17,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 55
+            },
+            {
+              "rect": [
+                1775,
+                819,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 36
+            }
+          ]
+        },
+        {
+          "frame": 22,
+          "eyes": [
+            {
+              "rect": [
+                2064,
+                820,
+                17,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 51
+            },
+            {
+              "rect": [
+                2095,
+                819,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 36
+            }
+          ]
+        },
+        {
+          "frame": 23,
+          "eyes": [
+            {
+              "rect": [
+                2384,
+                820,
+                17,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 46
+            },
+            {
+              "rect": [
+                2415,
+                819,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 36
+            }
+          ]
+        },
+        {
+          "frame": 24,
+          "eyes": [
+            {
+              "rect": [
+                145,
+                1140,
+                16,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 51
+            },
+            {
+              "rect": [
+                175,
+                1139,
+                15,
+                14
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 34
+            }
+          ]
+        },
+        {
+          "frame": 25,
+          "eyes": [
+            {
+              "rect": [
+                465,
+                1140,
+                16,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 45
+            },
+            {
+              "rect": [
+                495,
+                1140,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 37
+            }
+          ]
+        },
+        {
+          "frame": 26,
+          "eyes": [
+            {
+              "rect": [
+                785,
+                1140,
+                16,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 46
+            },
+            {
+              "rect": [
+                815,
+                1140,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 42
+            }
+          ]
+        },
+        {
+          "frame": 27,
+          "eyes": [
+            {
+              "rect": [
+                1105,
+                1140,
+                16,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 48
+            },
+            {
+              "rect": [
+                1135,
+                1140,
+                16,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 39
+            }
+          ]
+        },
+        {
+          "frame": 28,
+          "eyes": [
+            {
+              "rect": [
+                1424,
+                1140,
+                17,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 52
+            },
+            {
+              "rect": [
+                1455,
+                1140,
+                16,
+                14
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 37
+            }
+          ]
+        },
+        {
+          "frame": 29,
+          "eyes": [
+            {
+              "rect": [
+                1744,
+                1140,
+                17,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 45
+            },
+            {
+              "rect": [
+                1775,
+                1141,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 43
+            }
+          ]
+        },
+        {
+          "frame": 30,
+          "eyes": [
+            {
+              "rect": [
+                2064,
+                1140,
+                17,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 41
+            },
+            {
+              "rect": [
+                2095,
+                1141,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 41
+            }
+          ]
+        },
+        {
+          "frame": 31,
+          "eyes": [
+            {
+              "rect": [
+                2384,
+                1140,
+                17,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 43
+            },
+            {
+              "rect": [
+                2415,
+                1141,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 34
+            }
+          ]
+        },
+        {
+          "frame": 32,
+          "eyes": [
+            {
+              "rect": [
+                144,
+                1460,
+                17,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 45
+            },
+            {
+              "rect": [
+                175,
+                1461,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 33
+            }
+          ]
+        },
+        {
+          "frame": 33,
+          "eyes": [
+            {
+              "rect": [
+                464,
+                1460,
+                16,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 45
+            },
+            {
+              "rect": [
+                495,
+                1461,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 31
+            }
+          ]
+        },
+        {
+          "frame": 34,
+          "eyes": [
+            {
+              "rect": [
+                784,
+                1460,
+                16,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 41
+            },
+            {
+              "rect": [
+                814,
+                1461,
+                16,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 34
+            }
+          ]
+        },
+        {
+          "frame": 35,
+          "eyes": [
+            {
+              "rect": [
+                1103,
+                1460,
+                17,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 45
+            },
+            {
+              "rect": [
+                1134,
+                1461,
+                16,
+                12
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 35
+            }
+          ]
+        },
+        {
+          "frame": 36,
+          "eyes": [
+            {
+              "rect": [
+                1423,
+                1460,
+                16,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 43
+            },
+            {
+              "rect": [
+                1454,
+                1461,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 33
+            }
+          ]
+        },
+        {
+          "frame": 37,
+          "eyes": [
+            {
+              "rect": [
+                1742,
+                1461,
+                17,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 44
+            },
+            {
+              "rect": [
+                1773,
+                1461,
+                16,
+                12
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 36
+            }
+          ]
+        },
+        {
+          "frame": 38,
+          "eyes": [
+            {
+              "rect": [
+                2062,
+                1461,
+                16,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 47
+            },
+            {
+              "rect": [
+                2092,
+                1461,
+                16,
+                12
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 30
+            }
+          ]
+        },
+        {
+          "frame": 39,
+          "eyes": [
+            {
+              "rect": [
+                2381,
+                1461,
+                16,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 43
+            },
+            {
+              "rect": [
+                2411,
+                1461,
+                16,
+                12
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 32
+            }
+          ]
+        },
+        {
+          "frame": 40,
+          "eyes": [
+            {
+              "rect": [
+                140,
+                1782,
+                16,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 47
+            },
+            {
+              "rect": [
+                170,
+                1781,
+                16,
+                12
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 32
+            }
+          ]
+        },
+        {
+          "frame": 41,
+          "eyes": [
+            {
+              "rect": [
+                459,
+                1782,
+                17,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 48
+            },
+            {
+              "rect": [
+                490,
+                1781,
+                16,
+                12
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 30
+            }
+          ]
+        },
+        {
+          "frame": 42,
+          "eyes": [
+            {
+              "rect": [
+                778,
+                1783,
+                17,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 48
+            },
+            {
+              "rect": [
+                809,
+                1781,
+                16,
+                12
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 33
+            }
+          ]
+        },
+        {
+          "frame": 43,
+          "eyes": [
+            {
+              "rect": [
+                1097,
+                1783,
+                17,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 44
+            },
+            {
+              "rect": [
+                1128,
+                1781,
+                16,
+                12
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 30
+            }
+          ]
+        },
+        {
+          "frame": 44,
+          "eyes": [
+            {
+              "rect": [
+                1417,
+                1784,
+                17,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 50
+            },
+            {
+              "rect": [
+                1447,
+                1781,
+                17,
+                12
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 33
+            }
+          ]
+        },
+        {
+          "frame": 45,
+          "eyes": [
+            {
+              "rect": [
+                1736,
+                1784,
+                17,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 40
+            },
+            {
+              "rect": [
+                1767,
+                1781,
+                16,
+                12
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 32
+            }
+          ]
+        },
+        {
+          "frame": 46,
+          "eyes": [
+            {
+              "rect": [
+                2056,
+                1785,
+                17,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 53
+            },
+            {
+              "rect": [
+                2087,
+                1781,
+                16,
+                12
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 27
+            }
+          ]
+        },
+        {
+          "frame": 47,
+          "eyes": [
+            {
+              "rect": [
+                2376,
+                1785,
+                17,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 50
+            },
+            {
+              "rect": [
+                2406,
+                1781,
+                16,
+                12
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 37
+            }
+          ]
+        },
+        {
+          "frame": 48,
+          "eyes": [
+            {
+              "rect": [
+                136,
+                2105,
+                16,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 43
+            },
+            {
+              "rect": [
+                166,
+                2101,
+                16,
+                12
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 34
+            }
+          ]
+        },
+        {
+          "frame": 49,
+          "eyes": [
+            {
+              "rect": [
+                456,
+                2105,
+                16,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 41
+            },
+            {
+              "rect": [
+                486,
+                2101,
+                16,
+                12
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 27
+            }
+          ]
+        },
+        {
+          "frame": 50,
+          "eyes": [
+            {
+              "rect": [
+                776,
+                2106,
+                16,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 42
+            },
+            {
+              "rect": [
+                806,
+                2101,
+                16,
+                12
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 29
+            }
+          ]
+        },
+        {
+          "frame": 51,
+          "eyes": [
+            {
+              "rect": [
+                1096,
+                2106,
+                16,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 46
+            },
+            {
+              "rect": [
+                1126,
+                2101,
+                16,
+                12
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 33
+            }
+          ]
+        },
+        {
+          "frame": 52,
+          "eyes": [
+            {
+              "rect": [
+                1416,
+                2106,
+                16,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 46
+            },
+            {
+              "rect": [
+                1446,
+                2101,
+                16,
+                12
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 31
+            }
+          ]
+        },
+        {
+          "frame": 53,
+          "eyes": [
+            {
+              "rect": [
+                1735,
+                2106,
+                17,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 48
+            },
+            {
+              "rect": [
+                1766,
+                2101,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 28
+            }
+          ]
+        },
+        {
+          "frame": 54,
+          "eyes": [
+            {
+              "rect": [
+                2055,
+                2106,
+                17,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 52
+            },
+            {
+              "rect": [
+                2085,
+                2101,
+                16,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 25
+            }
+          ]
+        },
+        {
+          "frame": 55,
+          "eyes": [
+            {
+              "rect": [
+                2375,
+                2106,
+                17,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 50
+            },
+            {
+              "rect": [
+                2405,
+                2101,
+                16,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 25
+            }
+          ]
+        },
+        {
+          "frame": 56,
+          "eyes": [
+            {
+              "rect": [
+                135,
+                2427,
+                16,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 38
+            },
+            {
+              "rect": [
+                165,
+                2421,
+                16,
+                12
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 29
+            }
+          ]
+        },
+        {
+          "frame": 57,
+          "eyes": [
+            {
+              "rect": [
+                454,
+                2427,
+                17,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 49
+            },
+            {
+              "rect": [
+                485,
+                2421,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 22
+            }
+          ]
+        },
+        {
+          "frame": 58,
+          "eyes": [
+            {
+              "rect": [
+                774,
+                2428,
+                17,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 41
+            },
+            {
+              "rect": [
+                804,
+                2421,
+                16,
+                12
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 26
+            }
+          ]
+        },
+        {
+          "frame": 59,
+          "eyes": [
+            {
+              "rect": [
+                1093,
+                2428,
+                17,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 39
+            },
+            {
+              "rect": [
+                1123,
+                2421,
+                16,
+                12
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 29
+            }
+          ]
+        },
+        {
+          "frame": 60,
+          "eyes": [
+            {
+              "rect": [
+                1413,
+                2428,
+                16,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 48
+            },
+            {
+              "rect": [
+                1443,
+                2421,
+                15,
+                11
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 27
+            }
+          ]
+        },
+        {
+          "frame": 61,
+          "eyes": [
+            {
+              "rect": [
+                1733,
+                2429,
+                16,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 37
+            },
+            {
+              "rect": [
+                1762,
+                2420,
+                16,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 26
+            }
+          ]
+        },
+        {
+          "frame": 62,
+          "eyes": [
+            {
+              "rect": [
+                2052,
+                2429,
+                16,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 45
+            },
+            {
+              "rect": [
+                2081,
+                2420,
+                16,
+                12
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 22
+            }
+          ]
+        },
+        {
+          "frame": 63,
+          "eyes": [
+            {
+              "rect": [
+                2372,
+                2429,
+                16,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 33
+            },
+            {
+              "rect": [
+                2401,
+                2420,
+                15,
+                11
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 25
+            }
+          ]
+        },
+        {
+          "frame": 64,
+          "eyes": [
+            {
+              "rect": [
+                131,
+                2749,
+                17,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 46
+            },
+            {
+              "rect": [
+                160,
+                2739,
+                16,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 27
+            }
+          ]
+        },
+        {
+          "frame": 65,
+          "eyes": [
+            {
+              "rect": [
+                451,
+                2749,
+                16,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 42
+            },
+            {
+              "rect": [
+                480,
+                2739,
+                15,
+                12
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 24
+            }
+          ]
+        },
+        {
+          "frame": 66,
+          "eyes": [
+            {
+              "rect": [
+                771,
+                2749,
+                16,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 40
+            },
+            {
+              "rect": [
+                799,
+                2739,
+                16,
+                12
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 22
+            }
+          ]
+        },
+        {
+          "frame": 67,
+          "eyes": [
+            {
+              "rect": [
+                1091,
+                2749,
+                16,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 37
+            },
+            {
+              "rect": [
+                1119,
+                2739,
+                15,
+                12
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 24
+            }
+          ]
+        },
+        {
+          "frame": 68,
+          "eyes": [
+            {
+              "rect": [
+                1411,
+                2749,
+                16,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 38
+            },
+            {
+              "rect": [
+                1439,
+                2738,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 32
+            }
+          ]
+        },
+        {
+          "frame": 69,
+          "eyes": [
+            {
+              "rect": [
+                1730,
+                2750,
+                16,
+                11
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 39
+            },
+            {
+              "rect": [
+                1758,
+                2738,
+                16,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 20
+            }
+          ]
+        },
+        {
+          "frame": 70,
+          "eyes": [
+            {
+              "rect": [
+                2050,
+                2750,
+                16,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 40
+            },
+            {
+              "rect": [
+                2078,
+                2738,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 27
+            }
+          ]
+        },
+        {
+          "frame": 71,
+          "eyes": [
+            {
+              "rect": [
+                2370,
+                2750,
+                16,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 39
+            },
+            {
+              "rect": [
+                2398,
+                2738,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 21
+            }
+          ]
+        },
+        {
+          "frame": 72,
+          "eyes": [
+            {
+              "rect": [
+                130,
+                3070,
+                16,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 34
+            },
+            {
+              "rect": [
+                158,
+                3058,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 22
+            }
+          ]
+        },
+        {
+          "frame": 73,
+          "eyes": [
+            {
+              "rect": [
+                450,
+                3070,
+                16,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 27
+            },
+            {
+              "rect": [
+                478,
+                3058,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 22
+            }
+          ]
+        },
+        {
+          "frame": 74,
+          "eyes": [
+            {
+              "rect": [
+                770,
+                3070,
+                16,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 27
+            },
+            {
+              "rect": [
+                798,
+                3058,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 24
+            }
+          ]
+        },
+        {
+          "frame": 75,
+          "eyes": [
+            {
+              "rect": [
+                1090,
+                3070,
+                16,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 27
+            },
+            {
+              "rect": [
+                1118,
+                3058,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 23
+            }
+          ]
+        },
+        {
+          "frame": 76,
+          "eyes": [
+            {
+              "rect": [
+                1410,
+                3070,
+                16,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 27
+            },
+            {
+              "rect": [
+                1438,
+                3058,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 26
+            }
+          ]
+        },
+        {
+          "frame": 77,
+          "eyes": [
+            {
+              "rect": [
+                1730,
+                3070,
+                16,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 27
+            },
+            {
+              "rect": [
+                1758,
+                3058,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 25
+            }
+          ]
+        },
+        {
+          "frame": 78,
+          "eyes": [
+            {
+              "rect": [
+                2050,
+                3070,
+                16,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 28
+            },
+            {
+              "rect": [
+                2078,
+                3058,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 25
+            }
+          ]
+        },
+        {
+          "frame": 79,
+          "eyes": [
+            {
+              "rect": [
+                2370,
+                3070,
+                16,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 29
+            },
+            {
+              "rect": [
+                2398,
+                3058,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 23
+            }
+          ]
+        },
+        {
+          "frame": 80,
+          "eyes": [
+            {
+              "rect": [
+                130,
+                3390,
+                16,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 30
+            },
+            {
+              "rect": [
+                158,
+                3378,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 23
+            }
+          ]
+        },
+        {
+          "frame": 81,
+          "eyes": [
+            {
+              "rect": [
+                450,
+                3390,
+                16,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 30
+            },
+            {
+              "rect": [
+                478,
+                3378,
+                15,
+                12
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 22
+            }
+          ]
+        },
+        {
+          "frame": 82,
+          "eyes": [
+            {
+              "rect": [
+                770,
+                3390,
+                16,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 31
+            },
+            {
+              "rect": [
+                797,
+                3378,
+                16,
+                12
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 23
+            }
+          ]
+        },
+        {
+          "frame": 83,
+          "eyes": [
+            {
+              "rect": [
+                1090,
+                3390,
+                16,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 33
+            },
+            {
+              "rect": [
+                1117,
+                3378,
+                16,
+                12
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 25
+            }
+          ]
+        },
+        {
+          "frame": 84,
+          "eyes": [
+            {
+              "rect": [
+                1410,
+                3390,
+                16,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 34
+            },
+            {
+              "rect": [
+                1437,
+                3378,
+                16,
+                12
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 25
+            }
+          ]
+        },
+        {
+          "frame": 85,
+          "eyes": [
+            {
+              "rect": [
+                1730,
+                3390,
+                16,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 31
+            },
+            {
+              "rect": [
+                1757,
+                3378,
+                16,
+                12
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 28
+            }
+          ]
+        },
+        {
+          "frame": 86,
+          "eyes": [
+            {
+              "rect": [
+                2050,
+                3390,
+                16,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 29
+            },
+            {
+              "rect": [
+                2078,
+                3378,
+                15,
+                12
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 23
+            }
+          ]
+        },
+        {
+          "frame": 87,
+          "eyes": [
+            {
+              "rect": [
+                2370,
+                3390,
+                16,
+                11
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 28
+            },
+            {
+              "rect": [
+                2397,
+                3378,
+                15,
+                12
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 19
+            }
+          ]
+        },
+        {
+          "frame": 88,
+          "eyes": [
+            {
+              "rect": [
+                129,
+                3710,
+                16,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 33
+            },
+            {
+              "rect": [
+                157,
+                3698,
+                15,
+                12
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 27
+            }
+          ]
+        },
+        {
+          "frame": 89,
+          "eyes": [
+            {
+              "rect": [
+                449,
+                3710,
+                16,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 32
+            },
+            {
+              "rect": [
+                476,
+                3698,
+                16,
+                12
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 20
+            }
+          ]
+        },
+        {
+          "frame": 90,
+          "eyes": [
+            {
+              "rect": [
+                768,
+                3711,
+                16,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 34
+            },
+            {
+              "rect": [
+                796,
+                3698,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 22
+            }
+          ]
+        },
+        {
+          "frame": 91,
+          "eyes": [
+            {
+              "rect": [
+                1088,
+                3711,
+                15,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 30
+            },
+            {
+              "rect": [
+                1115,
+                3698,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 22
+            }
+          ]
+        },
+        {
+          "frame": 92,
+          "eyes": [
+            {
+              "rect": [
+                1408,
+                3712,
+                15,
+                11
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 31
+            },
+            {
+              "rect": [
+                1434,
+                3698,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 18
+            }
+          ]
+        },
+        {
+          "frame": 93,
+          "eyes": [
+            {
+              "rect": [
+                1728,
+                3711,
+                16,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 30
+            },
+            {
+              "rect": [
+                1754,
+                3697,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 22
+            }
+          ]
+        },
+        {
+          "frame": 94,
+          "eyes": [
+            {
+              "rect": [
+                2050,
+                3711,
+                15,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 28
+            },
+            {
+              "rect": [
+                2075,
+                3695,
+                14,
+                12
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 25
+            }
+          ]
+        },
+        {
+          "frame": 95,
+          "eyes": [
+            {
+              "rect": [
+                2372,
+                3709,
+                16,
+                14
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 34
+            },
+            {
+              "rect": [
+                2397,
+                3692,
+                14,
+                14
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 28
+            }
+          ]
+        },
+        {
+          "frame": 96,
+          "eyes": [
+            {
+              "rect": [
+                135,
+                4028,
+                16,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 35
+            },
+            {
+              "rect": [
+                159,
+                4010,
+                14,
+                14
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 32
+            }
+          ]
+        },
+        {
+          "frame": 97,
+          "eyes": [
+            {
+              "rect": [
+                457,
+                4026,
+                16,
+                14
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 34
+            },
+            {
+              "rect": [
+                481,
+                4009,
+                14,
+                14
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 32
+            }
+          ]
+        },
+        {
+          "frame": 98,
+          "eyes": [
+            {
+              "rect": [
+                778,
+                4025,
+                16,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 30
+            },
+            {
+              "rect": [
+                803,
+                4009,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 33
+            }
+          ]
+        },
+        {
+          "frame": 99,
+          "eyes": [
+            {
+              "rect": [
+                1099,
+                4024,
+                16,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 30
+            },
+            {
+              "rect": [
+                1125,
+                4009,
+                14,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 29
+            }
+          ]
+        },
+        {
+          "frame": 100,
+          "eyes": [
+            {
+              "rect": [
+                1419,
+                4023,
+                16,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 30
+            },
+            {
+              "rect": [
+                1446,
+                4010,
+                14,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 34
+            }
+          ]
+        },
+        {
+          "frame": 101,
+          "eyes": [
+            {
+              "rect": [
+                1738,
+                4023,
+                16,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 27
+            },
+            {
+              "rect": [
+                1766,
+                4012,
+                14,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 24
+            }
+          ]
+        },
+        {
+          "frame": 102,
+          "eyes": [
+            {
+              "rect": [
+                2057,
+                4024,
+                16,
+                11
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 25
+            },
+            {
+              "rect": [
+                2085,
+                4013,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 26
+            }
+          ]
+        },
+        {
+          "frame": 103,
+          "eyes": [
+            {
+              "rect": [
+                2375,
+                4024,
+                17,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 31
+            },
+            {
+              "rect": [
+                2404,
+                4014,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 30
+            }
+          ]
+        },
+        {
+          "frame": 104,
+          "eyes": [
+            {
+              "rect": [
+                134,
+                4345,
+                16,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 26
+            },
+            {
+              "rect": [
+                163,
+                4335,
+                14,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 37
+            }
+          ]
+        },
+        {
+          "frame": 105,
+          "eyes": [
+            {
+              "rect": [
+                453,
+                4346,
+                16,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 32
+            },
+            {
+              "rect": [
+                481,
+                4335,
+                14,
+                14
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 34
+            }
+          ]
+        },
+        {
+          "frame": 106,
+          "eyes": [
+            {
+              "rect": [
+                772,
+                4347,
+                16,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 35
+            },
+            {
+              "rect": [
+                799,
+                4335,
+                15,
+                14
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 37
+            }
+          ]
+        },
+        {
+          "frame": 107,
+          "eyes": [
+            {
+              "rect": [
+                1092,
+                4348,
+                16,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 36
+            },
+            {
+              "rect": [
+                1118,
+                4334,
+                15,
+                14
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 42
+            }
+          ]
+        },
+        {
+          "frame": 108,
+          "eyes": [
+            {
+              "rect": [
+                1413,
+                4348,
+                16,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 40
+            },
+            {
+              "rect": [
+                1438,
+                4333,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 39
+            }
+          ]
+        },
+        {
+          "frame": 109,
+          "eyes": [
+            {
+              "rect": [
+                1736,
+                4347,
+                15,
+                14
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 42
+            },
+            {
+              "rect": [
+                1760,
+                4330,
+                15,
+                14
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 30
+            }
+          ]
+        },
+        {
+          "frame": 110,
+          "eyes": [
+            {
+              "rect": [
+                2059,
+                4345,
+                16,
+                14
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 36
+            },
+            {
+              "rect": [
+                2083,
+                4328,
+                14,
+                14
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 40
+            }
+          ]
+        },
+        {
+          "frame": 111,
+          "eyes": [
+            {
+              "rect": [
+                2381,
+                4344,
+                16,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 37
+            },
+            {
+              "rect": [
+                2406,
+                4327,
+                14,
+                14
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 44
+            }
+          ]
+        },
+        {
+          "frame": 112,
+          "eyes": [
+            {
+              "rect": [
+                142,
+                4663,
+                16,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 38
+            },
+            {
+              "rect": [
+                167,
+                4648,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 48
+            }
+          ]
+        },
+        {
+          "frame": 113,
+          "eyes": [
+            {
+              "rect": [
+                461,
+                4662,
+                16,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 33
+            },
+            {
+              "rect": [
+                488,
+                4650,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 38
+            }
+          ]
+        },
+        {
+          "frame": 114,
+          "eyes": [
+            {
+              "rect": [
+                780,
+                4662,
+                17,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 37
+            },
+            {
+              "rect": [
+                808,
+                4652,
+                15,
+                12
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 40
+            }
+          ]
+        },
+        {
+          "frame": 115,
+          "eyes": [
+            {
+              "rect": [
+                1099,
+                4663,
+                16,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 33
+            },
+            {
+              "rect": [
+                1127,
+                4653,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 43
+            }
+          ]
+        },
+        {
+          "frame": 116,
+          "eyes": [
+            {
+              "rect": [
+                1417,
+                4664,
+                17,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 44
+            },
+            {
+              "rect": [
+                1446,
+                4654,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 49
+            }
+          ]
+        },
+        {
+          "frame": 117,
+          "eyes": [
+            {
+              "rect": [
+                1736,
+                4665,
+                16,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 35
+            },
+            {
+              "rect": [
+                1765,
+                4655,
+                14,
+                12
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 42
+            }
+          ]
+        },
+        {
+          "frame": 118,
+          "eyes": [
+            {
+              "rect": [
+                2055,
+                4666,
+                16,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 39
+            },
+            {
+              "rect": [
+                2083,
+                4655,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 41
+            }
+          ]
+        },
+        {
+          "frame": 119,
+          "eyes": [
+            {
+              "rect": [
+                2373,
+                4667,
+                17,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 47
+            },
+            {
+              "rect": [
+                2401,
+                4655,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 37
+            }
+          ]
+        },
+        {
+          "frame": 120,
+          "eyes": [
+            {
+              "rect": [
+                133,
+                4988,
+                16,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 41
+            },
+            {
+              "rect": [
+                160,
+                4974,
+                14,
+                14
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 37
+            }
+          ]
+        },
+        {
+          "frame": 121,
+          "eyes": [
+            {
+              "rect": [
+                453,
+                4988,
+                16,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 50
+            },
+            {
+              "rect": [
+                479,
+                4974,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 38
+            }
+          ]
+        },
+        {
+          "frame": 122,
+          "eyes": [
+            {
+              "rect": [
+                774,
+                4988,
+                16,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 42
+            },
+            {
+              "rect": [
+                799,
+                4972,
+                15,
+                14
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 38
+            }
+          ]
+        },
+        {
+          "frame": 123,
+          "eyes": [
+            {
+              "rect": [
+                1097,
+                4986,
+                16,
+                14
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 36
+            },
+            {
+              "rect": [
+                1121,
+                4970,
+                14,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 36
+            }
+          ]
+        },
+        {
+          "frame": 124,
+          "eyes": [
+            {
+              "rect": [
+                1420,
+                4984,
+                16,
+                14
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 48
+            },
+            {
+              "rect": [
+                1444,
+                4968,
+                14,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 51
+            }
+          ]
+        },
+        {
+          "frame": 125,
+          "eyes": [
+            {
+              "rect": [
+                1742,
+                4983,
+                16,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 50
+            },
+            {
+              "rect": [
+                1767,
+                4967,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 39
+            }
+          ]
+        },
+        {
+          "frame": 126,
+          "eyes": [
+            {
+              "rect": [
+                2062,
+                4982,
+                16,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 55
+            },
+            {
+              "rect": [
+                2089,
+                4968,
+                14,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 30
+            }
+          ]
+        },
+        {
+          "frame": 127,
+          "eyes": [
+            {
+              "rect": [
+                2382,
+                4981,
+                16,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 43
+            },
+            {
+              "rect": [
+                2409,
+                4970,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 32
+            }
+          ]
+        },
+        {
+          "frame": 128,
+          "eyes": [
+            {
+              "rect": [
+                141,
+                5302,
+                17,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 49
+            },
+            {
+              "rect": [
+                169,
+                5292,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 31
+            }
+          ]
+        },
+        {
+          "frame": 129,
+          "eyes": [
+            {
+              "rect": [
+                459,
+                5303,
+                17,
+                11
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 49
+            },
+            {
+              "rect": [
+                488,
+                5294,
+                15,
+                12
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 39
+            }
+          ]
+        },
+        {
+          "frame": 130,
+          "eyes": [
+            {
+              "rect": [
+                778,
+                5304,
+                16,
+                11
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 41
+            },
+            {
+              "rect": [
+                807,
+                5294,
+                14,
+                14
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 38
+            }
+          ]
+        },
+        {
+          "frame": 131,
+          "eyes": [
+            {
+              "rect": [
+                1096,
+                5305,
+                17,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 49
+            },
+            {
+              "rect": [
+                1125,
+                5294,
+                14,
+                14
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 45
+            }
+          ]
+        },
+        {
+          "frame": 132,
+          "eyes": [
+            {
+              "rect": [
+                1415,
+                5306,
+                16,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 52
+            },
+            {
+              "rect": [
+                1443,
+                5294,
+                14,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 39
+            }
+          ]
+        },
+        {
+          "frame": 133,
+          "eyes": [
+            {
+              "rect": [
+                1735,
+                5306,
+                16,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 53
+            },
+            {
+              "rect": [
+                1761,
+                5293,
+                15,
+                12
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 38
+            }
+          ]
+        },
+        {
+          "frame": 134,
+          "eyes": [
+            {
+              "rect": [
+                2057,
+                5306,
+                15,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 48
+            },
+            {
+              "rect": [
+                2081,
+                5291,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 33
+            }
+          ]
+        },
+        {
+          "frame": 135,
+          "eyes": [
+            {
+              "rect": [
+                2379,
+                5304,
+                16,
+                14
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 52
+            },
+            {
+              "rect": [
+                2403,
+                5288,
+                15,
+                14
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 32
+            }
+          ]
+        },
+        {
+          "frame": 136,
+          "eyes": [
+            {
+              "rect": [
+                142,
+                5623,
+                16,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 56
+            },
+            {
+              "rect": [
+                167,
+                5607,
+                14,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 33
+            }
+          ]
+        },
+        {
+          "frame": 137,
+          "eyes": [
+            {
+              "rect": [
+                463,
+                5621,
+                16,
+                14
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 52
+            },
+            {
+              "rect": [
+                489,
+                5607,
+                15,
+                14
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 28
+            }
+          ]
+        },
+        {
+          "frame": 138,
+          "eyes": [
+            {
+              "rect": [
+                783,
+                5621,
+                16,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 54
+            },
+            {
+              "rect": [
+                810,
+                5609,
+                14,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 31
+            }
+          ]
+        },
+        {
+          "frame": 139,
+          "eyes": [
+            {
+              "rect": [
+                1102,
+                5621,
+                16,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 44
+            },
+            {
+              "rect": [
+                1130,
+                5611,
+                15,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 36
+            }
+          ]
+        },
+        {
+          "frame": 140,
+          "eyes": [
+            {
+              "rect": [
+                1420,
+                5622,
+                17,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 56
+            },
+            {
+              "rect": [
+                1449,
+                5613,
+                14,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 38
+            }
+          ]
+        },
+        {
+          "frame": 141,
+          "eyes": [
+            {
+              "rect": [
+                1738,
+                5623,
+                17,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 48
+            },
+            {
+              "rect": [
+                1767,
+                5614,
+                14,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 37
+            }
+          ]
+        },
+        {
+          "frame": 142,
+          "eyes": [
+            {
+              "rect": [
+                2056,
+                5624,
+                17,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 53
+            },
+            {
+              "rect": [
+                2085,
+                5614,
+                14,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 42
+            }
+          ]
+        },
+        {
+          "frame": 143,
+          "eyes": [
+            {
+              "rect": [
+                2375,
+                5625,
+                17,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 53
+            },
+            {
+              "rect": [
+                2403,
+                5613,
+                14,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 41
+            }
+          ]
+        },
+        {
+          "frame": 144,
+          "eyes": [
+            {
+              "rect": [
+                142,
+                5947,
+                17,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 49
+            },
+            {
+              "rect": [
+                172,
+                5940,
+                14,
+                12
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 40
+            }
+          ]
+        },
+        {
+          "frame": 145,
+          "eyes": [
+            {
+              "rect": [
+                492,
+                5944,
+                14,
+                9
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 25
+            }
+          ]
+        },
+        {
+          "frame": 146,
+          "eyes": []
+        },
+        {
+          "frame": 147,
+          "eyes": []
+        },
+        {
+          "frame": 148,
+          "eyes": []
+        },
+        {
+          "frame": 149,
+          "eyes": []
+        },
+        {
+          "frame": 150,
+          "eyes": [
+            {
+              "rect": [
+                2060,
+                5944,
+                16,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 43
+            },
+            {
+              "rect": [
+                2090,
+                5940,
+                16,
+                12
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 41
+            }
+          ]
+        },
+        {
+          "frame": 151,
+          "eyes": [
+            {
+              "rect": [
+                2379,
+                5943,
+                17,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 46
+            },
+            {
+              "rect": [
+                2410,
+                5939,
+                16,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 44
+            }
+          ]
+        },
+        {
+          "frame": 152,
+          "eyes": [
+            {
+              "rect": [
+                139,
+                6263,
+                17,
+                12
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 46
+            },
+            {
+              "rect": [
+                170,
+                6259,
+                16,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 46
+            }
+          ]
+        },
+        {
+          "frame": 153,
+          "eyes": [
+            {
+              "rect": [
+                459,
+                6262,
+                17,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 47
+            },
+            {
+              "rect": [
+                490,
+                6259,
+                16,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 43
+            }
+          ]
+        },
+        {
+          "frame": 154,
+          "eyes": [
+            {
+              "rect": [
+                779,
+                6262,
+                17,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 55
+            },
+            {
+              "rect": [
+                810,
+                6259,
+                16,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 44
+            }
+          ]
+        },
+        {
+          "frame": 155,
+          "eyes": [
+            {
+              "rect": [
+                1099,
+                6262,
+                17,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 54
+            },
+            {
+              "rect": [
+                1130,
+                6259,
+                16,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 43
+            }
+          ]
+        },
+        {
+          "frame": 156,
+          "eyes": [
+            {
+              "rect": [
+                1419,
+                6262,
+                17,
+                13
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 53
+            },
+            {
+              "rect": [
+                1450,
+                6259,
+                16,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 43
+            }
+          ]
+        },
+        {
+          "frame": 157,
+          "eyes": [
+            {
+              "rect": [
+                1739,
+                6262,
+                17,
+                14
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 53
+            },
+            {
+              "rect": [
+                1770,
+                6259,
+                16,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 42
+            }
+          ]
+        },
+        {
+          "frame": 158,
+          "eyes": [
+            {
+              "rect": [
+                2059,
+                6262,
+                17,
+                14
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 53
+            },
+            {
+              "rect": [
+                2090,
+                6259,
+                16,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 43
+            }
+          ]
+        },
+        {
+          "frame": 159,
+          "eyes": [
+            {
+              "rect": [
+                2379,
+                6262,
+                17,
+                14
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 52
+            },
+            {
+              "rect": [
+                2410,
+                6259,
+                16,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 41
+            }
+          ]
+        },
+        {
+          "frame": 160,
+          "eyes": [
+            {
+              "rect": [
+                139,
+                6582,
+                17,
+                14
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 52
+            },
+            {
+              "rect": [
+                170,
+                6579,
+                16,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 41
+            }
+          ]
+        },
+        {
+          "frame": 161,
+          "eyes": [
+            {
+              "rect": [
+                459,
+                6582,
+                17,
+                14
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 53
+            },
+            {
+              "rect": [
+                490,
+                6579,
+                16,
+                12
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 43
+            }
+          ]
+        },
+        {
+          "frame": 162,
+          "eyes": [
+            {
+              "rect": [
+                779,
+                6582,
+                17,
+                14
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 47
+            },
+            {
+              "rect": [
+                810,
+                6579,
+                16,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 38
+            }
+          ]
+        },
+        {
+          "frame": 163,
+          "eyes": [
+            {
+              "rect": [
+                1099,
+                6582,
+                17,
+                14
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 52
+            },
+            {
+              "rect": [
+                1130,
+                6579,
+                16,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 37
+            }
+          ]
+        },
+        {
+          "frame": 164,
+          "eyes": [
+            {
+              "rect": [
+                1419,
+                6582,
+                17,
+                14
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 50
+            },
+            {
+              "rect": [
+                1450,
+                6579,
+                16,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 37
+            }
+          ]
+        },
+        {
+          "frame": 165,
+          "eyes": [
+            {
+              "rect": [
+                1739,
+                6582,
+                17,
+                14
+              ],
+              "anatomical_side": "right",
+              "material": "gold",
+              "pixels": 51
+            },
+            {
+              "rect": [
+                1770,
+                6579,
+                16,
+                13
+              ],
+              "anatomical_side": "left",
+              "material": "blue",
+              "pixels": 38
+            }
+          ]
+        }
+      ]
     }
   ]
 }

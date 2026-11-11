@@ -2,7 +2,7 @@
   "schema": 1,
   "created_date": "2026-11-11",
   "provider": "Dropshot",
-  "total_credits": 3840,
+  "total_credits": 4480,
   "jobs": [
     {
       "character": "cream",
@@ -505,6 +505,84 @@
         "generation_mode": "frame"
       },
       "used": true
+    },
+    {
+      "character": "cream",
+      "action": "fly",
+      "model": "minimax/h3-lite",
+      "options": {
+        "prompt": "Animate the exact established cream orange desktop kitten from the reference, preserving its face, eyes, proportions and detailed cute3D fur style. Fixed camera, full body, side three-quarter view facing RIGHT. Entire cat and all tail/paws stay visible with generous green margin; kitten occupies only45percent of image width. Uniform vivid neon GREEN #00FF00 background and floor throughout. No camera movement, no zoom, no cuts or text. A tiny black housefly buzzes irregularly in front of and just above the kitten's muzzle, never obscuring its face. The kitten behaves like a focused real hunting cat: first freeze and stare intensely, slowly track the fly with eyes and a slight head turn; lower shoulders and shift weight to the hindquarters, very slowly lift one connected front paw and curl it beside the cheek as if charging a powerful cat punch; hold one brief tense anticipation, then deliver exactly FOUR very fast strong connected forepaw swats at the fly: POW POW POW POW. Each swat has clear extension, brief target contact, elastic recoil and immediately reloads, with visible shoulder/chest weight transfer and the planted supporting paws balancing the body. No detached limbs. After the fourth strike, settle the paw back to the floor, stare at the fly and finish in a calm seated posture. Fly darts away after each strike, remains visible against green, never merges with the cat. Natural live feline focus, ears forward, tiny tail-tip twitch, irregular realistic timing and expressive force. One smooth continuous8second performance.",
+        "reference_image": [
+          "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/a949da2973c84558bbbd2d1c06bdd2ac/creamFront.png",
+          "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ec78cb7704784b8ca677bfec8a7c25d1/creamSide.png"
+        ],
+        "duration": 8,
+        "resolution": "768p",
+        "aspect_ratio": "1:1",
+        "generation_mode": "reference"
+      },
+      "job_id": "mcp_502d43afedfd4206ba426a07dae3e124",
+      "creditCost": 160,
+      "reused": false,
+      "credit_cost": 160,
+      "source_file": "sources/rejected/cream-fly-first.mp4",
+      "accepted": false,
+      "rejection_reason": "Cropped tail / unwanted airborne pounce"
+    },
+    {
+      "character": "tuxedo",
+      "action": "fly",
+      "model": "minimax/h3-lite",
+      "options": {
+        "prompt": "Animate the exact established black-and-white tuxedo desktop kitten from the reference, preserving its face, eyes, proportions and detailed cute3D fur style. Fixed camera, full body, side three-quarter view facing RIGHT. Entire cat and all tail/paws stay visible with generous green margin; kitten occupies only45percent of image width. Uniform vivid neon GREEN #00FF00 background and floor throughout. No camera movement, no zoom, no cuts or text. A tiny black housefly buzzes irregularly in front of and just above the kitten's muzzle, never obscuring its face. The kitten behaves like a focused real hunting cat: first freeze and stare intensely, slowly track the fly with eyes and a slight head turn; lower shoulders and shift weight to the hindquarters, very slowly lift one connected front paw and curl it beside the cheek as if charging a powerful cat punch; hold one brief tense anticipation, then deliver exactly FOUR very fast strong connected forepaw swats at the fly: POW POW POW POW. Each swat has clear extension, brief target contact, elastic recoil and immediately reloads, with visible shoulder/chest weight transfer and the planted supporting paws balancing the body. No detached limbs. After the fourth strike, settle the paw back to the floor, stare at the fly and finish in a calm seated posture. Fly darts away after each strike, remains visible against green, never merges with the cat. Natural live feline focus, ears forward, tiny tail-tip twitch, irregular realistic timing and expressive force. One smooth continuous8second performance.",
+        "reference_image": [
+          "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ee195d86567e452590783e41901176f9/tuxedoFront.png",
+          "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/4e193126060c48b5836d74e8654446dc/tuxedoSide.png"
+        ],
+        "duration": 8,
+        "resolution": "768p",
+        "aspect_ratio": "1:1",
+        "generation_mode": "reference"
+      },
+      "job_id": "mcp_4cb0afa1fc24470a8aaf7ce8f6e07b2b",
+      "creditCost": 160,
+      "reused": false,
+      "credit_cost": 160,
+      "source_file": "sources/rejected/tuxedo-fly-first.mp4",
+      "accepted": false,
+      "rejection_reason": "Cropped tail / unwanted airborne pounce"
+    },
+    {
+      "character": "cream",
+      "action": "fly",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_67cd939670e84197830be9cd6d8d8cf0",
+      "credit_cost": 160,
+      "source_file": "sources/cream-fly.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_67cd939670e84197830be9cd6d8d8cf0/output/output_0.mp4",
+      "prompt": "One continuous full-body animation of this exact cream kitten hunting the tiny buzzing fly in the reference. Locked camera and identical wide framing with generous green margin on all sides. Solid pure chroma green background. Keep entire tail, ears and all paws inside frame. 0-1.5 seconds: hindquarters and supporting paws planted, cat stares intensely and slowly tracks the fly with eyes/head. 1.5-3.5 seconds: slowly raises one front paw beside its cheek, shoulder tenses, preparing a cat punch. 3.5-4 seconds: brief anticipation hold. 4-5.6 seconds: EXACTLY FOUR distinct very fast strong forepaw swats toward the fly, each with full extension and clear recoil between strikes, punch at 4.1, 4.5, 4.9, 5.3 seconds. Fly darts irregularly near that paw after each strike, never leaves the frame. 5.6-8 seconds: lowers paw, watches fly, returns smoothly to the original seated pose. Supporting paws and hindquarters stay grounded throughout, NO JUMP, NO LEAP, no body spin, no zoom, no camera movement, no text, no extra limbs. Natural cat anatomy and lively overlapping ear and tail motion. Preserve the exact face, coat, eye color and body proportions.",
+      "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f309d08f8984431089df3c3fcdb387e3/cream-fly-wide.png",
+      "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f309d08f8984431089df3c3fcdb387e3/cream-fly-wide.png",
+      "generation_mode": "frame",
+      "duration": 8,
+      "accepted": true,
+      "edit": "Retain first four swats; omit extra generated swats144..169; attack frames96..143 use30ms/exposure. Full original retained."
+    },
+    {
+      "character": "tuxedo",
+      "action": "fly",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_63f0700fc44a47a28af9d719fcdfd220",
+      "credit_cost": 160,
+      "source_file": "sources/tuxedo-fly.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_63f0700fc44a47a28af9d719fcdfd220/output/output_0.mp4",
+      "prompt": "One continuous full-body animation of this exact tuxedo kitten hunting the tiny buzzing fly in the reference. Locked camera and identical wide framing with generous green margin on all sides. Solid pure chroma green background. Keep entire tail, ears and all paws inside frame. 0-1.5 seconds: hindquarters and supporting paws planted, cat stares intensely and slowly tracks the fly with eyes/head. 1.5-3.5 seconds: slowly raises one front paw beside its cheek, shoulder tenses, preparing a cat punch. 3.5-4 seconds: brief anticipation hold. 4-5.6 seconds: EXACTLY FOUR distinct very fast strong forepaw swats toward the fly, each with full extension and clear recoil between strikes, punch at 4.1, 4.5, 4.9, 5.3 seconds. Fly darts irregularly near that paw after each strike, never leaves the frame. 5.6-8 seconds: lowers paw, watches fly, returns smoothly to the original seated pose. Supporting paws and hindquarters stay grounded throughout, NO JUMP, NO LEAP, no body spin, no zoom, no camera movement, no text, no extra limbs. Natural cat anatomy and lively overlapping ear and tail motion. Preserve the exact face, coat, eye color and body proportions.",
+      "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/da30720421a24dba897e07ab7e96fce7/tuxedo-fly-wide.png",
+      "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/da30720421a24dba897e07ab7e96fce7/tuxedo-fly-wide.png",
+      "generation_mode": "frame",
+      "duration": 8,
+      "accepted": true,
+      "edit": "Retain first four swats; omit extra generated swats144..169; attack frames96..143 use30ms/exposure. Full original retained."
     }
   ]
 }
