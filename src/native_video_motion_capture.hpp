@@ -130,7 +130,7 @@ int Run(std::string& context) {
     schedule.walk=schedule.meal+walk->layout->movementDelayMs+
         cat::sprite_sequence::ProgramDuration(meal->layout->program)+
         cat::sprite_sequence::Duration(walk->layout->program,walk->layout->program.outro)+600;
-    schedule.run=schedule.walk+5000+1200;
+    schedule.run=schedule.walk+5000+cat::sprite_sequence::Duration(walk->layout->program,walk->layout->program.outro)+800;
     for(const auto clip:{Clip::Brake,Clip::Slide,Clip::Stumble}) {
         const auto* stop=LoadedCareSprite(clip,cat::Character::Cream);if(!stop)return 562;
         schedule.recovery=std::max<ULONGLONG>(schedule.recovery,cat::sprite_sequence::ProgramDuration(stop->layout->program));

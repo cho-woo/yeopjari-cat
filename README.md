@@ -3,6 +3,10 @@
 일하는 동안 Windows 작업표시줄과 창 위에서 함께 지내는 작은 고양이입니다. 현재 버전은 크림치즈냥·부드러운 차콜색 턱시도냥·오드아이 눈꽃냥을 제공하며, 두 마리를 각자의 성장·성격·기억과 함께 키우는 기능은 유지합니다.
 
 
+**v2.0.30:** 걷기에서 짧은 구간을 반복하던 처리를 걷기 전용 드롭샷 영상 전체로 교체했습니다. 시작·마무리 동작을 따로 연결하고, 고정된 좌우 기준점과 발 접촉 속도에 맞춰 이동을 보정했습니다.
+
+[걷기 수정 미리보기](docs/previews/v2.0.30/walk-native.mp4) · [세 외형의 걷기](docs/previews/v2.0.30/walk-native-board.png). 실제 앱 렌더러 출력입니다.
+
 **v2.0.29:** 행동별로 달라지던 얼굴·체형을 같은 원본 디자인과 공통 배율로 맞췄습니다. 자동 행동 사이에는45~100초 쉬며, 달리기 방향을 바꿀 때 앉는 대신 제동·발 짚기·몸 돌리기·재가속으로 이어집니다.
 
 [달리기와 턴 미리보기](docs/previews/v2.0.29/running-turn-native.mp4) · [같은 배율의 행동별 디자인](docs/previews/v2.0.29/identity-native-board.png) · [세 외형의 턴](docs/previews/v2.0.29/turn-native-board.png). v2.0.29 앱 렌더러의 실제 출력이며 바탕화면 녹화는 아닙니다.
@@ -17,9 +21,9 @@
 
 **[최신 버전 다운로드](https://github.com/cho-woo/yeopjari-cat/releases/latest)**
 
-[2.0.29 사용자용 ZIP 바로 받기](https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.29/YeopjariCat-Windows-2.0.29.zip)
+[2.0.30 사용자용 ZIP 바로 받기](https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.30/YeopjariCat-Windows-2.0.30.zip)
 
-고양이 또는 트레이 아이콘 우클릭 → **프로그램 업데이트 → 업데이트 확인…**에서 v2.0.29를 받을 수 있습니다.
+고양이 또는 트레이 아이콘 우클릭 → **프로그램 업데이트 → 업데이트 확인…**에서 v2.0.30을 받을 수 있습니다.
 
 실행 대상은 **Windows 10/11 x64**입니다. 사용자 ZIP의 압축을 완전히 풀고 `YeopjariCat.exe`를 실행하세요. Python이나 게임 엔진 설치는 필요하지 않습니다. 프로그램이 업데이트될 수 있도록 바탕화면·문서 폴더 등 본인이 파일을 수정할 수 있는 위치에 두세요.
 

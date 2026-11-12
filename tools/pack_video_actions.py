@@ -243,18 +243,27 @@ def durations(clip, indices):
 def bake(clip, character, indices):
     if clip in IDENTITY['clips']:indices=IDENTITY['clips'][clip]['source_indices'][character]
     elif clip=='ball' and character=='tuxedo':indices=[i+18 for i in indices]
-    path = DIRECTORY / 'sources' / f'{character}-{SOURCE_ACTION[clip]}.mp4'
-    video = cv2.VideoCapture(str(path))
-    if not video.isOpened():
-        raise ValueError('Cannot decode ' + str(path))
-    frames = []
-    while True:
-        valid, bgr = video.read()
-        if not valid:
-            break
-        frames.append(cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB))
-    fps = video.get(cv2.CAP_PROP_FPS)
-    video.release()
+    settings=IDENTITY.get('clips',{}).get(clip,{})
+    selected_files=settings.get('source_files',{}).get(character)
+    default_source='sources/'+f'{character}-{SOURCE_ACTION[clip]}.mp4'
+    selected_files=selected_files or [default_source]*len(indices)
+    if len(selected_files)!=len(indices):raise ValueError('Source file/frame registration mismatch')
+    decoded={};source_records=[]
+    for filename in dict.fromkeys(selected_files):
+        source=DIRECTORY/filename
+        video=cv2.VideoCapture(str(source))
+        if not video.isOpened():raise ValueError('Cannot decode '+str(source))
+        source_frames=[]
+        while True:
+            valid,bgr=video.read()
+            if not valid:break
+            source_frames.append(cv2.cvtColor(bgr,cv2.COLOR_BGR2RGB))
+        fps=video.get(cv2.CAP_PROP_FPS);video.release()
+        if abs(fps-24)>.01:raise ValueError('Unexpected source cadence')
+        decoded[filename]=source_frames
+        source_records.append({'path':filename,'sha256':sha(source),'frame_count':len(source_frames),'fps':fps})
+    path=DIRECTORY/selected_files[0];frames=decoded[selected_files[0]]
+    chosen=[decoded[filename][index] for filename,index in zip(selected_files,indices)]
     if max(indices) >= len(frames) or abs(fps - 24) > .01:
         raise ValueError('Unexpected original video cadence or duration')
     palette=None if clip=='climb' else background_palette(frames[0])
@@ -270,14 +279,17 @@ def bake(clip, character, indices):
     atlas = Image.new('RGBA', (columns * CELL, rows * CELL))
     records = []
     paws = []
-    props=[];prop_visible=[]
+    props=[];prop_visible=[];source_roots=[]
     for ordinal, source_index in enumerate(indices):
-        local_palette=background_palette(frames[source_index]) if clip=='stumble' and character=='cream' else palette
-        image = foreground(frames[source_index],local_palette,clip=='ball',clip=='climb',clip in ('toy','fish','eat'),clip=='fly')
+        original=chosen[ordinal]
+        local_palette=background_palette(original) if clip=='stumble' and character=='cream' else palette
+        image = foreground(original,local_palette,clip=='ball',clip=='climb',clip in ('toy','fish','eat'),clip=='fly')
         anchor_x, anchor_y = center, float(image.getbbox()[3])
         if clip in ('ball','brake','slide','stumble','climb'):
             anchor_x,_,_=head_root(image)
-        if clip in ('walk','run'):
+        if clip=='walk' and settings.get('fixed_horizontal_root'):
+            anchor_x=settings['fixed_horizontal_root'][character]
+        elif clip in ('walk','run'):
             alpha=np.asarray(image.getchannel('A'));x0,y0,x1,y1=image.getbbox()
             yy,xx=np.where((alpha>180)&(np.indices(alpha.shape)[0]>y0+(y1-y0)*.60)&
                 (np.indices(alpha.shape)[0]<y0+(y1-y0)*.84))
@@ -298,6 +310,7 @@ def bake(clip, character, indices):
         if clip == 'jump' and (18<=ordinal<39 if clip in IDENTITY['clips'] else 60<=source_index<=80):
             moving_x, _, _ = head_root(image)
             anchor_x += moving_x - center
+        source_roots.append([anchor_x,anchor_y])
         image = image.resize((round(image.width * factor), round(image.height * factor)), Image.Resampling.LANCZOS)
         if image.mode=='RGBA':
             rgba=np.array(image)
@@ -361,6 +374,9 @@ def bake(clip, character, indices):
     return output, records, columns, rows, {'source': path.relative_to(DIRECTORY).as_posix(),
         'sha256': sha(path), 'source_fps': fps, 'source_frame_count': len(frames),
         'selected_frame_indices': indices, 'scale': factor, 'neutral_root': [center, bottom],
+        **({'selected_source_files':selected_files,'source_files':source_records,
+            'fixed_horizontal_root':settings['fixed_horizontal_root'][character],
+            'source_roots':source_roots,'ground_registration':'painted_sole'} if settings.get('source_files') else {}),
         'reference_height': REFERENCE_HEIGHT, 'paw_points_logical': paws,'prop_points_logical':props,'prop_visible':prop_visible,
         **({'source_contact_frames':[96,112,124,136] if character=='cream' else [104,116,128,140],
             'edited_source_ranges':[[0,143],[170,191]],'attack_exposure_ms':30} if clip=='fly' else {})}
@@ -392,7 +408,8 @@ def main(only=None,materials_only=False):
         steps = [{'frame': index, 'ms': milliseconds} for index, milliseconds in enumerate(exposure)]
         events = []
         if clip == 'walk' and clip in IDENTITY['clips']:
-            sequence={'intro':steps[20:48],'loop':steps[:20],'outro':steps[48:],
+            layout=IDENTITY['clips'][clip];loop=layout.get('loop_frames',20);intro=layout.get('intro_frames',28)
+            sequence={'intro':steps[loop:loop+intro],'loop':steps[:loop],'outro':steps[loop+intro:],
                 'finish':'hold','duration_ms':0,'events':[]}
         elif clip == 'run' and clip in IDENTITY['clips']:
             sequence={'intro':[],'loop':steps,'outro':[],'finish':'hold','duration_ms':0,'events':[]}
@@ -418,8 +435,8 @@ def main(only=None,materials_only=False):
         entries.append({'clip': clip, 'character': 0, 'source': cream.name, 'columns': columns, 'rows': rows,
             'reference_height': REFERENCE_HEIGHT, 'frames': records, 'frame_count': len(records),
             'sha256': sha(cream), 'sequence': sequence,
-            **({'stride_pixels':40 if clip=='walk' else 82,'standing_frame':0,
-                'movement_delay_ms':1176 if clip=='walk' else 0} if clip in ('walk','run') else {})})
+            **({'stride_pixels':IDENTITY['clips'].get(clip,{}).get('stride_pixels',40 if clip=='walk' else 82),'standing_frame':0,
+                'movement_delay_ms':sum(step['ms'] for step in sequence['intro']) if clip=='walk' else 0} if clip in ('walk','run') else {})})
         if materials_only:
             tuxedo=DIRECTORY/f'tuxedo-{clip}.png';registration=evidence['tuxedo-'+clip]
         else:
@@ -502,6 +519,13 @@ def main(only=None,materials_only=False):
         header.extend([f'inline unsigned {action.title()}SourceFrame(unsigned character,unsigned frame) {{',
             f'    const auto& frames=character==8?kTuxedo{action.title()}Source:kCream{action.title()}Source;',
             '    return frames[std::min<unsigned>(frame,frames.size()-1)];','}'])
+        if action=='walk' and IDENTITY['clips'][action].get('source_files'):
+            for character in ('cream','tuxedo'):
+                files=IDENTITY['clips'][action]['source_files'][character]
+                header.append(f'inline constexpr std::array<const char*,{len(files)}> k{character.title()}WalkFiles{{{{'+','.join(json.dumps(p) for p in files)+'}};')
+            header.extend(['inline const char* WalkSourceFile(unsigned character,unsigned frame) {',
+                '    const auto& files=character==8?kTuxedoWalkFiles:kCreamWalkFiles;',
+                '    return files[std::min<unsigned>(frame,files.size()-1)];','}'])
     for character in ('cream','tuxedo'):
         points=evidence[character+'-toy']['prop_points_logical']
         header.append(f'inline constexpr std::array<cat::deform::Point,{len(points)}> k{character.title()}ToyProp{{{{')

@@ -311,18 +311,6 @@
       "skin_rgb_exact": true
     },
     {
-      "base_resource_id": 400,
-      "base_source": "assets/video-actions/cream-walk.png",
-      "source": "c10-r400.png",
-      "input_sha256": "7084c0482a418448dc621d7c7ccaa3b68a1632576cbc9bee691e7d10b1c4afde",
-      "output_sha256": "eafb524b7feb39cd008c1fca8e0436defcc6e8e293a0f2abbd30130bdaed86e6",
-      "source_alpha_sha256": "766300e718b4a071fd4e1bdf95f7533a47490bcde84e3384c5651f547ad073fd",
-      "iris_mask": "odd-eye-masks/c10-r400.png",
-      "iris_mask_sha256": "f49b1dcca919092240a11e56fa567e2cd6abdca4ce1b1dca093e0ee2001a259d",
-      "alpha_exact": true,
-      "skin_rgb_exact": true
-    },
-    {
       "base_resource_id": 116,
       "base_source": "assets/video-actions/cream-fish.png",
       "source": "c10-r116.png",
@@ -345,9 +333,21 @@
       "iris_mask_sha256": "33c566179cd91ed92d8c8c9af60786cc1085420cc06e0429350f8a31801c0e2a",
       "alpha_exact": true,
       "skin_rgb_exact": true
+    },
+    {
+      "base_resource_id": 400,
+      "base_source": "assets/video-actions/cream-walk.png",
+      "source": "c10-r400.png",
+      "input_sha256": "820fa68b23a90a7a75d9a8bc7e408b15bb66d974384edd5bea66ebfcb51950ef",
+      "output_sha256": "a37de7a84d57c09f2d850d829abcb3cdb78ce4e88bf92f58a920fe2ecbb6a97b",
+      "source_alpha_sha256": "a205c1662a97066c8b6b0f43177c90585fd6d93818daec272cd20041527a26c6",
+      "iris_mask": "odd-eye-masks/c10-r400.png",
+      "iris_mask_sha256": "352b275f3caccfc266ed5c73cff990f815948985bf1e283c155990321e123cdc",
+      "alpha_exact": true,
+      "skin_rgb_exact": true
     }
   ],
   "tool_sha256": "38aff80a6a8fe818168305d47c6f697ab0d9af7892119f3e5ab903e5c41c86c4",
   "additional_authoring_tool": "tools/pack_video_actions.py",
-  "additional_authoring_tool_sha256": "3303999db13b0ecf2a9cfe62b1cb64114469a094663d9aed778da22881908f73"
+  "additional_authoring_tool_sha256": "45f894d8ba1b01e09426209c9cd3be940d55ca74b5d6c924136da145320fe2dc"
 }

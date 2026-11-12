@@ -22,11 +22,11 @@ struct JumpTurnProfile {
 inline JumpTurnProfile JumpTurns(const cat::sprite_assets::Descriptor& walk) {
     // Front20..29 reaches the rig's exact painted source29. From a side gait
     // reverse47..30 instead of sitting/front-turning48..55 before a jump.
-    if(walk.clip!=cat::sprite_sequence::Clip::Walk || walk.nominalFramesPerSecond!=24 ||
-            walk.frameCount!=61 || walk.program.intro.count!=28 || walk.program.outro.count!=13 ||
-            !walk.sourcePath || (std::string_view(walk.sourcePath).find("assets/natural-gait/")!=0 && std::string_view(walk.sourcePath).find("assets/video-actions/")!=0))return {};
-    if(std::string_view(walk.sourcePath).find("assets/video-actions/")==0)
+    if(walk.clip!=cat::sprite_sequence::Clip::Walk || walk.nominalFramesPerSecond!=24 || !walk.sourcePath)return {};
+    if(std::string_view(walk.sourcePath).find("assets/video-actions/")==0 && walk.program.intro.count && walk.program.outro.count)
         return {true,cat::sprite_sequence::Duration(walk.program,walk.program.intro),0,0};
+    if(walk.frameCount!=61 || walk.program.intro.count!=28 || walk.program.outro.count!=13 ||
+            std::string_view(walk.sourcePath).find("assets/natural-gait/")!=0)return {};
     return {true,cat::sprite_sequence::Duration(walk.program,{walk.program.intro.first,10}),
         cat::sprite_sequence::Duration(walk.program,{walk.program.outro.first,9}),
         cat::sprite_sequence::Duration(walk.program,{walk.program.intro.first+10,18})};

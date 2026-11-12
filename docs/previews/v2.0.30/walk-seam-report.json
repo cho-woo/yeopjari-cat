@@ -1,0 +1,34 @@
+{
+  "cream": {
+    "v29": {
+      "drawings": 20,
+      "mean_adjacent_delta": 20.648928170925,
+      "largest_adjacent_delta": 37.70771686653169,
+      "seam_delta": 43.59490811638591,
+      "seam_to_mean": 2.1112431480957112
+    },
+    "v30": {
+      "drawings": 157,
+      "mean_adjacent_delta": 13.160765662169489,
+      "largest_adjacent_delta": 31.293821712268315,
+      "seam_delta": 10.302761071623838,
+      "seam_to_mean": 0.7828390335403539
+    }
+  },
+  "tuxedo": {
+    "v29": {
+      "drawings": 20,
+      "mean_adjacent_delta": 16.13061910126926,
+      "largest_adjacent_delta": 27.803743398570983,
+      "seam_delta": 25.18611911623439,
+      "seam_to_mean": 1.561385769393847
+    },
+    "v30": {
+      "drawings": 157,
+      "mean_adjacent_delta": 13.683648022249427,
+      "largest_adjacent_delta": 28.36095865349433,
+      "seam_delta": 5.426373418916368,
+      "seam_to_mean": 0.3965589739003194
+    }
+  }
+}

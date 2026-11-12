@@ -3,7 +3,7 @@
 // Included inside native_manual_motion_tests, after its production Host.
 namespace jump_continuity {
 using Clip=cat::sprite_sequence::Clip;
-constexpr unsigned Fps=60,Frames=420;
+constexpr unsigned Fps=60,Frames=540;
 struct Alpha {
     int left=420,top=320,right=-1,bottom=-1;
     double x=0,y=0;
@@ -45,7 +45,7 @@ int Run() {
     trace<<"{\"schema\":1,\"fps\":60,\"frames\":[";
     report<<"{\"schema\":1,\"test\":\"jump-continuity-native\",\"status\":\"passed\",\"version\":\""
         YEOPJARI_VERSION_STRING "\",\"render_source\":\"Windows GDI+ / Box2D\",\"desktop_recording\":false,"
-        "\"comparison_baseline\":false,\"fps\":60,\"frames_per_case\":420,\"trace\":\"trace.json\",\"board\":\"entry-exit-board.png\",\"cases\":[";
+        "\"comparison_baseline\":false,\"fps\":60,\"frames_per_case\":540,\"trace\":\"trace.json\",\"board\":\"entry-exit-board.png\",\"cases\":[";
     bool firstTrace=true;unsigned caseIndex=0;
     for(const auto character:{cat::Character::Cream,cat::Character::Tuxedo})for(const int facing:{1,-1})for(const bool moving:{false,true}) {
         Host host;host.Reset(character,true);if(!host.artworkReady)return 581;g.workInterference=false;g.cursorPlay=false;
@@ -119,7 +119,7 @@ int Run() {
             const bool entering=g.jumpPending&&pose.spriteClip==Clip::Walk&&g.groundArtBridge.StartingForSideAction();
             const bool returning=!g.jumpPending&&g.landedAt&&pose.spriteClip==Clip::Walk&&g.groundArtBridge.Stopping();
             entry=entry||entering;flight=flight||!rendered.grounded;landing=landing||physical.landed;
-            sideEntry=sideEntry||(entering&&source>=30&&source<=60);
+            sideEntry=sideEntry||(entering&&source>=walk->layout->program.loop.count);
             if(returning) {
                 if(host.now<g.landedAt || host.now-g.landedAt<
                         cat::sprite_sequence::Duration(jump->layout->program,jump->layout->program.outro))return 585;
