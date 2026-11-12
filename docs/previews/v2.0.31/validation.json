@@ -14,7 +14,9 @@
     "--render-fly-review",
     "--render-identity-turn-review",
     "--cursor-host-self-test",
-    "--render-groom-review"
+    "--render-groom-review",
+    "--render-self-test",
+    "--render-motion-video"
   ],
   "reference_master_unchanged": true,
   "comparison_families": 17,
@@ -23,5 +25,6 @@
   "coats": 3,
   "new_dropshot_jobs": 2,
   "new_credits": 160,
-  "ball_contact_arrival_tolerance_px": 3
+  "ball_contact_arrival_tolerance_px": 3,
+  "full_frame_review_pages": 10
 }
