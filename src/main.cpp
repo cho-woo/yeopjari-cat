@@ -1929,7 +1929,8 @@ void SetMotion(Motion motion, ULONGLONG duration,ULONGLONG actionTicks=0,bool co
     g.manualMotionActive = continueManualMotion && g.manualMotionActive;
     using Clip=cat::sprite_sequence::Clip;
     const auto clip=motion==Motion::Groom?Clip::Groom:motion==Motion::Eat?Clip::Eat:
-        motion==Motion::Treat?Clip::Treat:motion==Motion::Punch?Clip::Punch:Clip::None;
+        motion==Motion::Treat?Clip::Treat:motion==Motion::Punch?Clip::Punch:
+        motion==Motion::Knead?Clip::Knead:Clip::None;
     if(const auto* asset=LoadedCareSprite(clip,g.preferences.character);asset && asset->layout->program.stepCount)
         duration=std::max<ULONGLONG>(duration,cat::sprite_sequence::ProgramDuration(asset->layout->program));
     if(motion==Motion::Jump || motion==Motion::Pounce) {
@@ -3820,7 +3821,8 @@ cat::deform::Point BallToyPawWorldPoint(ULONGLONG ticks,const cat::physics::Pose
 double BallPawStandOff() {
     const double growth=cat::GrowthScale(g.pet.bornUtc,UtcNow());
     if(LoadedCareSprite(cat::sprite_sequence::Clip::BallPlay,g.preferences.character)) {
-        const auto paw=cat::video_actions::BallPaws(static_cast<unsigned>(g.preferences.character),12)[1];
+        const auto paw=cat::video_actions::BallPaws(static_cast<unsigned>(g.preferences.character),
+            g.preferences.character==cat::Character::Tuxedo?66:48)[1];
         const auto body=cat::appearance::VisualModifiers(g.nutrition,g.preferences.character);
         const double dy=paw.y*growth*body.bodyHeight-cat::toy::PhysicsBall::Radius;
         const double radius=cat::toy::PhysicsBall::Radius+3*growth;
@@ -3843,7 +3845,11 @@ bool UpdateBallPlayContact(ULONGLONG ticks,const cat::physics::Pose& physical) {
     const double growth=cat::GrowthScale(g.pet.bornUtc,UtcNow());
     const bool available=ToyInteractionAvailable()&&physical.grounded&&!physical.onPlatform&&
         std::abs(WalkingVelocity(physical))<=2&&!g.waitingForStop&&!EnvironmentBusy();
-    if(!cat::toy::BallPawContactAt(ticks>=g.motionStart?ticks-g.motionStart:0,g.toyContact,paw.x,paw.y,ball,growth,available))return false;
+    const bool video=LoadedCareSprite(cat::sprite_sequence::Clip::BallPlay,g.preferences.character)!=nullptr;
+    const auto contactStart=video?(g.preferences.character==cat::Character::Tuxedo?54:36)*1000/24:cat::toy::kPawContactMs;
+    const auto contactEnd=video?(g.preferences.character==cat::Character::Tuxedo?102:84)*1000/24:cat::toy::kPawContactEndMs;
+    if(!cat::toy::BallPawContactAt(ticks>=g.motionStart?ticks-g.motionStart:0,g.toyContact,paw.x,paw.y,ball,growth,available,
+            contactStart,contactEnd))return false;
     g.lastBallPawDistance=std::hypot(ball.x-paw.x,ball.lift+cat::toy::PhysicsBall::Radius-paw.y);
     const int direction=std::abs(ball.x-paw.x)>1?(ball.x<paw.x?-1:1):g.facing;
     const double speed=45+(g.toySession.rounds%3)*13;
@@ -4409,6 +4415,12 @@ void ApplyToyPhase(ULONGLONG ticks) {
         return;
     }
     g.toyMotion=ToySessionMotion();
+    using Clip=cat::sprite_sequence::Clip;
+    const auto phaseClip=g.toyMotion==Motion::Groom?Clip::Groom:g.toyMotion==Motion::Knead?Clip::Knead:
+        phase==cat::toy::Phase::Interact&&g.toy==ToyKind::Ball?Clip::BallPlay:
+        phase==cat::toy::Phase::Interact&&g.toy==ToyKind::FishingRod?Clip::ToyPlay:Clip::None;
+    if(const auto* asset=LoadedCareSprite(phaseClip,g.preferences.character))
+        g.toySession.authoredPhaseMs=cat::sprite_sequence::ProgramDuration(asset->layout->program);
     if (g.toyMotion==Motion::ToyPaw) {
         const double target=g.toyX+(g.toy==ToyKind::FishingRod ? g.toyLure.offset*g.dpiScale : 0);
         g.direction=target<g.centerX ? -1 : 1;
@@ -6057,6 +6069,7 @@ int NativeMenuContractTest() {
 #include "native_fly_review.hpp"
 #include "native_identity_turn_review.hpp"
 #include "native_lively_review.hpp"
+#include "native_source_audit.hpp"
 #include "native_menu_visibility_tests.hpp"
 
 int SelfTest(HINSTANCE instance) {
@@ -6097,6 +6110,7 @@ int SelfTest(HINSTANCE instance) {
 
 int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
     if(commandLine && wcsstr(commandLine,L"--cursor-host-self-test"))return NativeCursorHostTest(instance);
+    if(commandLine && wcsstr(commandLine,L"--render-source-audit"))return NativeSourceAudit(instance);
     if(commandLine && wcsstr(commandLine,L"--render-identity-turn-review"))return NativeIdentityTurnReview(instance);
     if(commandLine && wcsstr(commandLine,L"--render-fly-review"))return NativeFlyReview(instance);
     if(commandLine && wcsstr(commandLine,L"--render-fish-review"))return NativeFishReview(instance);
@@ -6122,7 +6136,9 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
         const int fish=NativeFishReview(instance);
         if(fish)return fish;
         const int fly=NativeFlyReview(instance);
-        return fly?fly:NativeIdentityTurnReview(instance);
+        if(fly)return fly;
+        const int identity=NativeIdentityTurnReview(instance);
+        return identity?identity:NativeSourceAudit(instance);
     }
     if (const auto helperResult = cat::update::HandleUpdateHelperCommandLine()) return *helperResult;
     if (commandLine && wcsstr(commandLine, L"--self-test")) return SelfTest(instance);

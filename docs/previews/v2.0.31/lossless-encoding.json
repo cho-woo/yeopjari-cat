@@ -1,0 +1,308 @@
+[
+  {
+    "path": "assets/video-actions/cream-jump.png",
+    "pixel_sha256": "3e7628098edfa88eb167650b2c5300c7a453f33ff1761661203aa99e70c0b356",
+    "before_bytes": 978475,
+    "after_bytes": 942510
+  },
+  {
+    "path": "assets/video-actions/tuxedo-jump.png",
+    "pixel_sha256": "c8f9435cbf783c2dbd1704c748c5a449e4711d16810d2238aefb9dee79818b45",
+    "before_bytes": 930947,
+    "after_bytes": 907981
+  },
+  {
+    "path": "assets/styled-sprites/c10-r119.png",
+    "pixel_sha256": "32c9893be8282e58e8b0ce5468c22ecdcd49ec25e3e493a80d96b24e037b9b21",
+    "before_bytes": 732233,
+    "after_bytes": 729092
+  },
+  {
+    "path": "assets/video-actions/cream-climb.png",
+    "pixel_sha256": "06889d69216a9a8fa3136c974219b4e0eb375b35633effb57fd6baa36ddf7229",
+    "before_bytes": 2543153,
+    "after_bytes": 2453118
+  },
+  {
+    "path": "assets/video-actions/tuxedo-climb.png",
+    "pixel_sha256": "4a8889ffa5cdbfa7f51f8744cce9971d822aa6be2b9001cc01134cd6b246110a",
+    "before_bytes": 2371056,
+    "after_bytes": 2312042
+  },
+  {
+    "path": "assets/styled-sprites/c10-r435.png",
+    "pixel_sha256": "8355672384c3778c7118ff42b08a555fa8cbe5c62f535fe0890f42e142c1f8cb",
+    "before_bytes": 2001145,
+    "after_bytes": 1995044
+  },
+  {
+    "path": "assets/video-actions/cream-fish.png",
+    "pixel_sha256": "195bc3e0e5f431f56e65a6aecdf2cfe712aeb7f9d32ed53d55200cf226fe2bf7",
+    "before_bytes": 2638467,
+    "after_bytes": 2552235
+  },
+  {
+    "path": "assets/video-actions/tuxedo-fish.png",
+    "pixel_sha256": "a0eefa0362932fa52a70e64814041a1410d46342b4921820cdb24d3c5084be1f",
+    "before_bytes": 2486909,
+    "after_bytes": 2432360
+  },
+  {
+    "path": "assets/styled-sprites/c10-r116.png",
+    "pixel_sha256": "c94738a75b14cd1dc1d37afb8a01798d440c7ce96c119541554e2d1e1bd42602",
+    "before_bytes": 1902666,
+    "after_bytes": 1902666
+  },
+  {
+    "path": "assets/video-actions/cream-walk.png",
+    "pixel_sha256": "b98915616cd71ee86773b12d9bf04c76a115042a655e1d9fa01ebb7c96be3d11",
+    "before_bytes": 4111520,
+    "after_bytes": 3957571
+  },
+  {
+    "path": "assets/video-actions/tuxedo-walk.png",
+    "pixel_sha256": "6730b53419815faa408f3f4276474a7f58ed58e49988e9dfb6ef6d3429866470",
+    "before_bytes": 3837224,
+    "after_bytes": 3742737
+  },
+  {
+    "path": "assets/styled-sprites/c10-r400.png",
+    "pixel_sha256": "bbd37c4dc4c7bd3be0f23a12a601827897f7f8766839b4ee8410a65ac112a5c2",
+    "before_bytes": 3100438,
+    "after_bytes": 3089586
+  },
+  {
+    "path": "assets/video-actions/cream-groom.png",
+    "pixel_sha256": "fb136e8acf32ad1c741732c001a33119021ec9a42f371ed8893e0bea4f27b5d7",
+    "before_bytes": 2433971,
+    "after_bytes": 2334046
+  },
+  {
+    "path": "assets/video-actions/tuxedo-groom.png",
+    "pixel_sha256": "466305797c1b2c23417b8ce39c6786d758a804757ab392b01bbc707edaef7dd1",
+    "before_bytes": 2196057,
+    "after_bytes": 2146794
+  },
+  {
+    "path": "assets/styled-sprites/c10-r113.png",
+    "pixel_sha256": "4db9e7232a685581fc8d60aaed646976744bcae8ba9dffe009404ed93b917762",
+    "before_bytes": 1684718,
+    "after_bytes": 1675964
+  },
+  {
+    "path": "assets/video-actions/cream-punch.png",
+    "pixel_sha256": "81e6287042684323bdfc974fbc8ead344de868fddf78d4ecc202673cf47a24cc",
+    "before_bytes": 2497770,
+    "after_bytes": 2405782
+  },
+  {
+    "path": "assets/video-actions/tuxedo-punch.png",
+    "pixel_sha256": "801db2199bd571089b66b3d1dee81138930ccbf4a7782c464be25e6522111baa",
+    "before_bytes": 2414134,
+    "after_bytes": 2355408
+  },
+  {
+    "path": "assets/styled-sprites/c10-r117.png",
+    "pixel_sha256": "3b323d7151f21e0d87bd49b5f8d1d6046e82c59c7172d9dfb79def4bc1d73319",
+    "before_bytes": 1841469,
+    "after_bytes": 1832952
+  },
+  {
+    "path": "assets/video-actions/cream-knead.png",
+    "pixel_sha256": "970929b8d96adbefb6346fc3177e9c8507742003c80af87544b35decc14e88f2",
+    "before_bytes": 2454527,
+    "after_bytes": 2353832
+  },
+  {
+    "path": "assets/video-actions/tuxedo-knead.png",
+    "pixel_sha256": "ff205e00446d3a3d102e4ae02f826bd63039a6991f289c363e61c1f6b59f0c0e",
+    "before_bytes": 2308689,
+    "after_bytes": 2244582
+  },
+  {
+    "path": "assets/styled-sprites/c10-r440.png",
+    "pixel_sha256": "600bc15d1c478faee81ca8e8694f24c53431470b456ba4915abb39a5a19b6a9e",
+    "before_bytes": 1862748,
+    "after_bytes": 1850375
+  },
+  {
+    "path": "assets/video-actions/cream-reach.png",
+    "pixel_sha256": "0442312500407f92b9a230452035a317b0762b4f4f8ba32d47bd429c947f2983",
+    "before_bytes": 2478724,
+    "after_bytes": 2384370
+  },
+  {
+    "path": "assets/video-actions/tuxedo-reach.png",
+    "pixel_sha256": "fdf5b94d0829a8bedeffa7a6c415c0a5d451a3448e342521b95383f8f9ce8bbb",
+    "before_bytes": 2649631,
+    "after_bytes": 2588442
+  },
+  {
+    "path": "assets/styled-sprites/c10-r441.png",
+    "pixel_sha256": "d1425ab28605a9c2576ec3b788868c23412232691fc51f34328046902148b7c9",
+    "before_bytes": 1879832,
+    "after_bytes": 1869268
+  },
+  {
+    "path": "assets/video-actions/cream-ball.png",
+    "pixel_sha256": "6fc57a28ddbf1c0a1a2ac168f5e700d8f12cdbf7a6f4c909b5bd7f68be81ef7d",
+    "before_bytes": 2339573,
+    "after_bytes": 2258544
+  },
+  {
+    "path": "assets/video-actions/tuxedo-ball.png",
+    "pixel_sha256": "686c2028d0239f9bde89134de40e8d71817afb2e5a2da3110d16068b69864c0d",
+    "before_bytes": 2211447,
+    "after_bytes": 2151051
+  },
+  {
+    "path": "assets/styled-sprites/c10-r430.png",
+    "pixel_sha256": "dfa77e7a44f0a92f73efd671cc8e4125f3e9fbc09b1b0836cc08b1fb5d997d10",
+    "before_bytes": 1657063,
+    "after_bytes": 1657063
+  },
+  {
+    "path": "assets/video-actions/cream-toy.png",
+    "pixel_sha256": "958606b8129fd8626f781473f167c3f85cab031faf32fb6cc4cba0b78c02916a",
+    "before_bytes": 2369839,
+    "after_bytes": 2277232
+  },
+  {
+    "path": "assets/video-actions/tuxedo-toy.png",
+    "pixel_sha256": "27a16bf5a3cc76fc1077af8c18afecbc8c0081fc05f463c46d37433b9f697ed0",
+    "before_bytes": 2378858,
+    "after_bytes": 2309835
+  },
+  {
+    "path": "assets/styled-sprites/c10-r431.png",
+    "pixel_sha256": "d59a2091d91df926e773e3f7ec3399f43bdda681d5ab7e8bf314376eed83ab9b",
+    "before_bytes": 1731214,
+    "after_bytes": 1731214
+  },
+  {
+    "path": "assets/video-actions/cream-brake.png",
+    "pixel_sha256": "1fbe4f217c0136362e5685d9d88012df188fd7a714debe7da9e256e8e934a4b9",
+    "before_bytes": 1677860,
+    "after_bytes": 1616226
+  },
+  {
+    "path": "assets/video-actions/tuxedo-brake.png",
+    "pixel_sha256": "add7c70a03ee247e399b070bf83f3fac8dcb52237fb57bd55ac3118c6d0d0d45",
+    "before_bytes": 1505318,
+    "after_bytes": 1464788
+  },
+  {
+    "path": "assets/styled-sprites/c10-r432.png",
+    "pixel_sha256": "5d2902b03ddf6fe3ffde6822409b928c51cb12181716454579cdf98c26a96e27",
+    "before_bytes": 1245256,
+    "after_bytes": 1240301
+  },
+  {
+    "path": "assets/video-actions/cream-slide.png",
+    "pixel_sha256": "51147cc0f7e909f0a680ef4964edf1023a63072dc16bc8567f0e0a4131522ce7",
+    "before_bytes": 1770479,
+    "after_bytes": 1711994
+  },
+  {
+    "path": "assets/video-actions/tuxedo-slide.png",
+    "pixel_sha256": "8face17d12c8abf5b0580d377b738d2a75dbdb6e2af059c79a54393c93503849",
+    "before_bytes": 1704002,
+    "after_bytes": 1667004
+  },
+  {
+    "path": "assets/styled-sprites/c10-r433.png",
+    "pixel_sha256": "9f585981071744da76941d5940fd2dc1dd0a102affc2b6b4896c40668f987b65",
+    "before_bytes": 1300513,
+    "after_bytes": 1293608
+  },
+  {
+    "path": "assets/video-actions/cream-stumble.png",
+    "pixel_sha256": "5b8aaedaeb9ae9a6ebb3d9b23bacabafd7696d957d731ca620d5a20995d4b92d",
+    "before_bytes": 1572974,
+    "after_bytes": 1517168
+  },
+  {
+    "path": "assets/video-actions/tuxedo-stumble.png",
+    "pixel_sha256": "f2b4ecfdce7ae4379022639bbd52e5aec1122d40af97c00f6cd3ad66c8e1018a",
+    "before_bytes": 1483652,
+    "after_bytes": 1453289
+  },
+  {
+    "path": "assets/styled-sprites/c10-r434.png",
+    "pixel_sha256": "8839a0c637f1c8167f985a6d8bfb40e551c517859eb0df078d97a65392e7e0ab",
+    "before_bytes": 1164524,
+    "after_bytes": 1164524
+  },
+  {
+    "path": "assets/video-actions/cream-fly.png",
+    "pixel_sha256": "71b56ec7fb6abf18140663ac5be9c7cba239c4f9600119551db5ff5bae4191e4",
+    "before_bytes": 3182277,
+    "after_bytes": 3052288
+  },
+  {
+    "path": "assets/video-actions/tuxedo-fly.png",
+    "pixel_sha256": "c14badfd0257a855a3f9a63c9b93f602ea423b31d0a7d9ee0936ddae08f447c8",
+    "before_bytes": 3031008,
+    "after_bytes": 2963370
+  },
+  {
+    "path": "assets/styled-sprites/c10-r436.png",
+    "pixel_sha256": "af34a2925b6d5cc8adbdc25bb15fffe369215a3dc06a53b168b6ee6ad06c6be8",
+    "before_bytes": 2328594,
+    "after_bytes": 2313722
+  },
+  {
+    "path": "assets/video-actions/cream-turn.png",
+    "pixel_sha256": "6e12ba999dff228b4df57f63b7539edac38138c16c318580eb3f11d6909f260a",
+    "before_bytes": 1691702,
+    "after_bytes": 1628002
+  },
+  {
+    "path": "assets/video-actions/tuxedo-turn.png",
+    "pixel_sha256": "3e58ba790e2f0afe28b033b518315e6476c12d70b5a9d0a6cc1dc3c7d30c29bd",
+    "before_bytes": 1492439,
+    "after_bytes": 1452213
+  },
+  {
+    "path": "assets/styled-sprites/c10-r437.png",
+    "pixel_sha256": "7ce932de690d87cfe1d0e6916866ea2f1b15421c09e19289cf5bba4bc3d3be1d",
+    "before_bytes": 1265457,
+    "after_bytes": 1265457
+  },
+  {
+    "path": "assets/video-actions/cream-eat.png",
+    "pixel_sha256": "db3f8cc8b5485bf42215b808c0294cac35983ab1ef4c81c1862b941d725ae32f",
+    "before_bytes": 2494412,
+    "after_bytes": 2399067
+  },
+  {
+    "path": "assets/video-actions/tuxedo-eat.png",
+    "pixel_sha256": "3b0ef4eb8f5e483430d659392dac411a8ca1b14ad397fde6fa7aeed0866b7819",
+    "before_bytes": 2150427,
+    "after_bytes": 2092631
+  },
+  {
+    "path": "assets/styled-sprites/c10-r118.png",
+    "pixel_sha256": "91fd2baa0144fbf063142de912c9973a46ca203de609f14758a035a92ea9a33f",
+    "before_bytes": 1809100,
+    "after_bytes": 1809100
+  },
+  {
+    "path": "assets/video-actions/cream-run.png",
+    "pixel_sha256": "486e70facb7c8114bed58492a2ddb47e5a1b1575cabccc08df1e6467b61a6889",
+    "before_bytes": 1787416,
+    "after_bytes": 1722671
+  },
+  {
+    "path": "assets/video-actions/tuxedo-run.png",
+    "pixel_sha256": "9f9e709df7cdb830d699c7f945855f37da7112dee17da3e93d815dcf55b638cc",
+    "before_bytes": 1686139,
+    "after_bytes": 1640183
+  },
+  {
+    "path": "assets/styled-sprites/c10-r401.png",
+    "pixel_sha256": "28eb3339478c4f4b5749b5893d356e15082aaaf70a398e7dbd08e358258d06aa",
+    "before_bytes": 1381410,
+    "after_bytes": 1371323
+  }
+]

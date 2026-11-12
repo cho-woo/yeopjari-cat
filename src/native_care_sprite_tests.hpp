@@ -313,9 +313,21 @@ int NativeActualCareSpriteRenderTest(std::string& context) {
     };
     if(!CreateDirectoryW(L"render-self-test",nullptr)&&GetLastError()!=ERROR_ALREADY_EXISTS)return 310;
     Surface review;
-    if(!review.Create(1920,static_cast<int>((totalFrames+2+7)/8)*260))return 310;
+    // Full-source imports can exceed 65,535px in a single contact sheet.
+    // Keep every drawing and assertion, exporting bounded pages instead.
+    constexpr unsigned pageCells=256;
+    if(!review.Create(1920,static_cast<int>((std::min<std::size_t>(totalFrames+2,pageCells)+7)/8)*260))return 310;
     {Graphics graphics(review.image.get());graphics.Clear(Color(255,235,239,243));}
     unsigned reviewCell=0;
+    unsigned page=0;CLSID png{};if(!NativeCarePngEncoder(png))return 310;
+    const auto savePage=[&]() {
+        wchar_t path[160]{};
+        if(!page)swprintf(path,160,L"render-self-test/care-sprites-gdi.png");
+        else swprintf(path,160,L"render-self-test/care-sprites-gdi-%03u.png",page+1);
+        context="save care review page="+std::to_string(page+1);
+        if(review.image->Save(path,&png,nullptr)!=Ok)return false;
+        ++page;Graphics graphics(review.image.get());graphics.Clear(Color(255,235,239,243));return true;
+    };
     for(const auto& asset:g.careSprites) {
         const auto& layout=*asset->layout;
         const auto character=static_cast<cat::Character>(layout.character);
@@ -350,6 +362,7 @@ int NativeActualCareSpriteRenderTest(std::string& context) {
             }
         }
         for(unsigned frame=0;frame<layout.frameCount;++frame) {
+            if(reviewCell&&reviewCell%pageCells==0&&!savePage())return 310;
             context="actual care selected ROI clip="+std::to_string(static_cast<unsigned>(layout.clip))+" frame="+std::to_string(frame);
             cat::animation::Pose pose;pose.spriteTimed=false;pose.spriteClip=layout.clip;pose.spriteFrame=frame;
             pose.groundContact=layout.clip!=Clip::Jump;
@@ -394,7 +407,7 @@ int NativeActualCareSpriteRenderTest(std::string& context) {
             {
                 Graphics graphics(review.image.get());graphics.SetInterpolationMode(InterpolationModeNearestNeighbor);
                 graphics.SetPixelOffsetMode(PixelOffsetModeHalf);
-                const int left=static_cast<int>(reviewCell%8)*240,top=static_cast<int>(reviewCell/8)*260;
+                const int left=static_cast<int>(reviewCell%8)*240,top=static_cast<int>((reviewCell%pageCells)/8)*260;
                 Pen ground(Color(255,145,154,165),1);graphics.DrawLine(&ground,left,top+220,left+240,top+220);
                 graphics.DrawImage(canvas.image.get(),Rect(left,top+20,240,240),200,200,240,240,UnitPixel);
                 Font font(L"Segoe UI",10,FontStyleRegular,UnitPixel);SolidBrush ink(Color(255,30,43,57));
@@ -452,6 +465,7 @@ int NativeActualCareSpriteRenderTest(std::string& context) {
     // Include the very same masked cardboard asset and front strip used by
     // the desktop toy renderer, rather than an independently redrawn box.
     for(const bool foreground:{false,true}) {
+        if(reviewCell&&reviewCell%pageCells==0&&!savePage())return 310;
         bool drawn=false;
         {
             struct RestoreBoxContext {
@@ -462,18 +476,17 @@ int NativeActualCareSpriteRenderTest(std::string& context) {
             Graphics graphics(canvas.image.get());configure(graphics);
             drawn=DrawAuthoredBoxProp(graphics,center,bottom,foreground);graphics.Flush(FlushIntentionSync);
         }
-        if(!drawn)return 310;
+        if(!drawn){context="retired box prop source review";return 310;}
         Graphics graphics(review.image.get());graphics.SetInterpolationMode(InterpolationModeNearestNeighbor);
         graphics.SetPixelOffsetMode(PixelOffsetModeHalf);
-        const int left=static_cast<int>(reviewCell%8)*240,top=static_cast<int>(reviewCell/8)*260;
+        const int left=static_cast<int>(reviewCell%8)*240,top=static_cast<int>((reviewCell%pageCells)/8)*260;
         Pen ground(Color(255,145,154,165),1);graphics.DrawLine(&ground,left,top+220,left+240,top+220);
         graphics.DrawImage(canvas.image.get(),Rect(left,top+20,240,240),200,200,240,240,UnitPixel);
         Font font(L"Segoe UI",10,FontStyleRegular,UnitPixel);SolidBrush ink(Color(255,30,43,57));
         graphics.DrawString(foreground?L"Runtime box prop / front strip":L"Runtime box prop / background",-1,&font,
             PointF(static_cast<REAL>(left+4),static_cast<REAL>(top+3)),&ink);++reviewCell;
     }
-    CLSID png{};
-    if(!NativeCarePngEncoder(png)||review.image->Save(L"render-self-test/care-sprites-gdi.png",&png,nullptr)!=Ok)return 310;
+    if(!savePage())return 310;
     context="actual care sheet declared species ownership";
     for(const auto clip:cat::sprite_sequence::kAuthoredClips)for(unsigned character=0;character<cat::kCharacterCount;++character) {
         const CareSpriteAtlas* expected=nullptr;

@@ -13,7 +13,7 @@ int main(){try{
         turn.Advance(1./fps,true,0,1);check(!turn.Released());
         turn.Advance(1./fps,true,0,0);check(turn.CurrentPhase()==Turn::Phase::Pivot);
         unsigned releases=0;double elapsed=0,prior=0;
-        while(turn.Active()&&elapsed<3){
+        while(turn.Active()&&elapsed<(Turn::PivotMs+Turn::LaunchMs)/1000.+1){
             releases+=turn.Advance(1./fps,true,0,0);elapsed+=1./fps;
             if(turn.Active()&&turn.Released()){
                 const auto motor=turn.Motor(180);check(motor*(-direction)>=prior-1e-8);check(std::abs(motor)<=180);prior=motor*(-direction);

@@ -21,9 +21,19 @@ void ContactNeedsTheActualCircleAndAVisibleStroke() {
     CHECK(!BallPawContactAt(400,consumed,438,52,ball,1,true)&&!consumed);
     ball.lift=0;CHECK(!BallPawContactAt(660,consumed,438,12,ball,1,true)&&consumed);
     consumed=false;CHECK(!BallPawContactAt(450,consumed,std::numeric_limits<double>::quiet_NaN(),12,ball,1,true));
+    consumed=false;
+    CHECK(!BallPawContactAt(400,consumed,438,12,ball,1,true,1500,3500)&&!consumed);
+    CHECK(BallPawContactAt(2000,consumed,438,12,ball,1,true,1500,3500)&&consumed);
+    consumed=false;CHECK(!BallPawContactAt(3500,consumed,438,12,ball,1,true,1500,3500)&&consumed);
 }
 void ReversalBrakesBeforeChangingTheApproachSide() {
     BallPose ball;ball.x=350;ball.velocity=-20;
+    ball.x=408;ball.velocity=0;
+    const auto underPaw=ChaseBall(400,0,ball,19,1,96,960,81.6);
+    CHECK(!underPaw.arrived&&underPaw.velocity<0); // Make room to match the source toe.
+    ball.x=419;
+    CHECK(ChaseBall(400,0,ball,19,1,96,960,81.6).arrived);
+    ball.x=350;ball.velocity=-20;
     const auto braking=ChaseBall(400,65,ball,44,1,96,960,81.6);
     CHECK(braking.braking&&braking.velocity==0&&braking.direction==1&&braking.target==400);
     const auto turned=ChaseBall(400,0,ball,44,1,96,960,81.6);

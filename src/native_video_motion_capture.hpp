@@ -24,13 +24,18 @@ struct Row {
     bool mealFinished=false,stopped=false;
 };
 struct Schedule {
-    ULONGLONG meal=500,walk=0,run=0,recovery=0,duration=0;
+    ULONGLONG meal=500,walk=0,run=0,runAction=0,recovery=0,duration=0;
     unsigned frames=0;
 };
 
 int Simulate(Row& row,const Schedule& schedule,std::string& context) {
     native_manual_motion_tests::Host host;
     host.Reset(row.character,true);g.workInterference=false;g.cursorPlay=false;
+    // A complete multi-stride source loop needs more room than the ordinary
+    // short menu run. This fixture extends that same command for inspection;
+    // edge turns are separately exercised by the normal turn review.
+    g.work.right=g.work.left+static_cast<LONG>(3000*g.dpiScale);ResetMovement();
+    for(unsigned i=0;i<12;++i)g.physics.Update(1./60);
     // CareFood deliberately persists accepted meals. Its real dispatcher is
     // exercised against an isolated fixture, without loading a user profile.
     g.directory=L"render-self-test/motion-video/fixture-"+std::to_wstring(static_cast<unsigned>(row.character));
@@ -72,6 +77,7 @@ int Simulate(Row& row,const Schedule& schedule,std::string& context) {
         if(!runStarted&&elapsed>=schedule.run) {
             if(g.manualMotionActive||std::abs(WalkingVelocity(g.physics.CurrentPose()))>.5)return 565;
             host.Command(kManualRunCommand);runStarted=true;
+            g.nextDecision=host.now+schedule.runAction;
             if(!g.manualMotionActive||g.motion!=Motion::Zoomies)return 565;
         }
         const auto physical=g.physics.RenderPose();
@@ -92,7 +98,7 @@ int Simulate(Row& row,const Schedule& schedule,std::string& context) {
         if(pose.spriteClip==Clip::Run&&!seenRun[source]){seenRun[source]=true;++row.runFramesUsed;}
         if(g.motion==Motion::Walk)row.peakWalk=std::max(row.peakWalk,std::abs(velocity));
         if(g.motion==Motion::Zoomies)row.peakRun=std::max(row.peakRun,std::abs(velocity));
-        if(elapsed>schedule.run+3200+schedule.recovery&&!g.manualMotionActive&&
+        if(elapsed>schedule.run+schedule.runAction+schedule.recovery&&!g.manualMotionActive&&
                 g.stopClip==Clip::None&&std::abs(velocity)<.5)row.stopped=true;
         row.frames.push_back({pose,physical.x,velocity,g.gait.AuthoredPhase(),
             asset?asset->layout->referenceHeight:CurrentArt(row.character).base.standingHeight,source,
@@ -125,20 +131,23 @@ int Run(std::string& context) {
         if(!CreateDirectoryW(path,nullptr)&&GetLastError()!=ERROR_ALREADY_EXISTS)return 561;
     const auto* meal=LoadedCareSprite(Clip::Eat,cat::Character::Cream);
     const auto* walk=LoadedCareSprite(Clip::Walk,cat::Character::Cream);
-    if(!meal||!walk||!meal->layout->program.stepCount)return 562;
+    const auto* run=LoadedCareSprite(Clip::Run,cat::Character::Cream);
+    if(!meal||!walk||!run||!meal->layout->program.stepCount)return 562;
     Schedule schedule;
     schedule.walk=schedule.meal+walk->layout->movementDelayMs+
         cat::sprite_sequence::ProgramDuration(meal->layout->program)+
         cat::sprite_sequence::Duration(walk->layout->program,walk->layout->program.outro)+600;
     schedule.run=schedule.walk+5000+cat::sprite_sequence::Duration(walk->layout->program,walk->layout->program.outro)+800;
+    schedule.runAction=walk->layout->movementDelayMs+
+        2*cat::sprite_sequence::Duration(run->layout->program,run->layout->program.loop);
     for(const auto clip:{Clip::Brake,Clip::Slide,Clip::Stumble}) {
         const auto* stop=LoadedCareSprite(clip,cat::Character::Cream);if(!stop)return 562;
         schedule.recovery=std::max<ULONGLONG>(schedule.recovery,cat::sprite_sequence::ProgramDuration(stop->layout->program));
     }
     // Capture the complete longest source recovery AND physical settling;
     // the former1800ms tail could randomly truncate a real skid/tumble.
-    schedule.duration=schedule.run+3200+schedule.recovery+1400;
-    if(schedule.duration>30000)return 562;
+    schedule.duration=schedule.run+schedule.runAction+schedule.recovery+1400;
+    if(schedule.duration>60000)return 562;
     schedule.frames=static_cast<unsigned>((schedule.duration*Fps+999)/1000);
     std::array<Row,2> rows{};rows[0].character=cat::Character::Cream;rows[1].character=cat::Character::Tuxedo;
     for(auto& row:rows)if(const int result=Simulate(row,schedule,context))return result;
@@ -204,9 +213,9 @@ int Run(std::string& context) {
     metadata<<"{\"schema\":1,\"render_source\":\"Windows GDI+ / Box2D\",\"desktop_recording\":false,\"fps\":"<<Fps
         <<",\"frame_count\":"<<schedule.frames<<",\"canvas\":["<<Width<<','<<Height<<"],\"reference_height_px\":110"
         <<",\"camera\":\"display-only pan keeps the complete cat visible; trace retains unchanged Box2D world coordinates\""
-        <<",\"scenario\":\"real meal command, complete meal, rest, manual walk, brake and rest, manual run, brake and rest\""
+        <<",\"scenario\":\"real meal command, complete meal, rest, manual walk, brake and rest, manual run extended for full source-loop coverage, brake and rest\""
         <<",\"schedule_ms\":{\"meal\":"<<schedule.meal<<",\"walk\":"<<schedule.walk<<",\"run\":"<<schedule.run
-        <<",\"recovery\":"<<schedule.recovery<<",\"duration\":"<<schedule.duration<<"},\"clips\":[";
+        <<",\"run_action\":"<<schedule.runAction<<",\"recovery\":"<<schedule.recovery<<",\"duration\":"<<schedule.duration<<"},\"clips\":[";
     bool first=true;
     for(const auto clip:{Clip::Walk,Clip::Run,Clip::Eat}) {
         const auto* asset=LoadedCareSprite(clip,cat::Character::Cream);if(!asset)return 562;

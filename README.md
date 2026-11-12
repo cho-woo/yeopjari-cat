@@ -3,6 +3,8 @@
 일하는 동안 Windows 작업표시줄과 창 위에서 함께 지내는 작은 고양이입니다. 현재 버전은 크림치즈냥·부드러운 차콜색 턱시도냥·오드아이 눈꽃냥을 제공하며, 두 마리를 각자의 성장·성격·기억과 함께 키우는 기능은 유지합니다.
 
 
+**v2.0.31:** 드롭샷 원본 17종과 실제 앱 출력의 재생 속도·등록 기준점·발 접촉·회복 구간을 대조해 수정했습니다. 공놀이 잔상과 눈꽃냥 소품 색 변환도 바로잡았습니다. [전체 모션 비교 자료](docs/motion-source-audit-v31.md).
+
 **v2.0.30:** 걷기에서 짧은 구간을 반복하던 처리를 걷기 전용 드롭샷 영상 전체로 교체했습니다. 시작·마무리 동작을 따로 연결하고, 고정된 좌우 기준점과 발 접촉 속도에 맞춰 이동을 보정했습니다.
 
 [걷기 수정 미리보기](docs/previews/v2.0.30/walk-native.mp4) · [세 외형의 걷기](docs/previews/v2.0.30/walk-native-board.png). 실제 앱 렌더러 출력입니다.
@@ -21,7 +23,7 @@
 
 **[최신 버전 다운로드](https://github.com/cho-woo/yeopjari-cat/releases/latest)**
 
-[2.0.30 사용자용 ZIP 바로 받기](https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.30/YeopjariCat-Windows-2.0.30.zip)
+[2.0.31 사용자용 ZIP 바로 받기](https://github.com/cho-woo/yeopjari-cat/releases/download/v2.0.31/YeopjariCat-Windows-2.0.31.zip)
 
 고양이 또는 트레이 아이콘 우클릭 → **프로그램 업데이트 → 업데이트 확인…**에서 v2.0.30을 받을 수 있습니다.
 

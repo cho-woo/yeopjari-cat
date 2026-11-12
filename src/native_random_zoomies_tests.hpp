@@ -83,7 +83,11 @@ int Run() {
         for(unsigned i=0;i<80;++i)AdvanceRandomZoomies(host.now+i*50,.05);
         if(g.randomZoomies.WaitMs()!=wait||g.randomZoomies.Active())return 636;
         g.hidden=false;
-        for(unsigned i=0;i<100;++i)host.Frame(50); // Finish the real braking/standing outro.
+        for(unsigned i=0;i<300;++i) {
+            host.Frame(50);
+            if(g.stopClip==cat::sprite_sequence::Clip::None&&g.groundArtBridge.Neutral()&&
+                    !g.waitingForStop&&std::abs(WalkingVelocity(g.physics.RenderPose()))<=.5)break;
+        } // Finish the complete source recovery and standing outro.
         // A direct command interrupts an owned random run. Its preference and
         // ownership survive the scheduler noticing the new serial next frame.
         while(!g.randomZoomies.Due()) {

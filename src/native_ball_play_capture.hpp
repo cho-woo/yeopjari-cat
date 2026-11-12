@@ -5,7 +5,7 @@
 // post-placement ball warps, OS input or profile loading/saving are involved.
 namespace native_ball_play_capture {
 using Phase=cat::toy::Phase;
-constexpr unsigned Fps=60,Count=1500;
+constexpr unsigned Fps=60,Count=3600;
 constexpr int Width=900,Height=620;
 struct Frame {
     cat::animation::Pose pose;
@@ -35,7 +35,7 @@ const char* PhaseName(Phase phase) {
 }
 // At this edge a placed ball is initially too close for a stroke. The shipping
 // chase must make room, stop and turn toward it before the first real contact.
-void Configure(native_manual_motion_tests::Host& host,cat::Character character,double center=1180) {
+void Configure(native_manual_motion_tests::Host& host,cat::Character character,double center=1184) {
     native_manual_motion_tests::keyboard_native::Clear();host.Reset(character,false);
     g.cursorPlay=false;g.workInterference=false;g.random.seed(5921);g.randomZoomiesRandom.seed(1831);
     g.work={0,0,1280,720};g.dpiScale=1;g.centerX=center;g.direction=g.facing=1;ResetMovement();
@@ -70,7 +70,7 @@ int ContactGuards(std::string& context) {
     return 0;
 }
 int Simulate(Row& row,std::string& context,bool edgeCase=true) {
-    native_manual_motion_tests::Host host;Configure(host,row.character,edgeCase?1180:1000);
+    native_manual_motion_tests::Host host;Configure(host,row.character,edgeCase?1184:1000);
     const auto saved=host.Saved();row.body=cat::appearance::VisualModifiers(g.nutrition,row.character);
     row.contactThreshold=cat::toy::PhysicsBall::Radius+4*cat::GrowthScale(g.pet.bornUtc,UtcNow());
     const auto& source=CurrentArt(row.character).base.skins[4].source;
@@ -232,7 +232,7 @@ int Run(std::string& context) {
     std::ostringstream report;report.imbue(std::locale::classic());
     report<<"{\"schema\":1,\"test\":\"ball-play-native\",\"status\":\"passed\",\"version\":\"" YEOPJARI_VERSION_STRING
         "\",\"render_source\":\"Windows GDI+ / Box2D\",\"desktop_recording\":false,\"os_input_injected\":false"
-        ",\"fps\":60,\"frame_count\":"<<Count<<",\"canvas\":["<<Width<<','<<Height<<"],\"duration_seconds\":25"
+        ",\"fps\":60,\"frame_count\":"<<Count<<",\"canvas\":["<<Width<<','<<Height<<"],\"duration_seconds\":60"
         ",\"app_active_timer_ms\":16,\"reference_height_px\":110,\"profile\":\"no profile loaded or saved\""
         ",\"scenario\":\"one ball at the work-area edge: make paw room, planted turn, real bat, physical roll/bounce, pursuit, braking and repeat\""
         ",\"guard_cases\":{\"circle_threshold\":true,\"contact_once\":true,\"late_window_no_kick\":true,\"body_near_paw_far_no_kick\":true,\"airborne_no_kick\":true,\"profile_preserved\":true}"
@@ -246,7 +246,7 @@ int Run(std::string& context) {
             <<",\"duplicate_contact_rejected\":true,\"source_immutable\":true,\"profile_unchanged\":true}";}
     report<<"],\"review_images\":[\"review-bat.png\",\"review-pursue.png\",\"review-brake.png\",\"review-turn.png\",\"review-repeat.png\"]}\n";
     if(!WriteBytes(L"render-self-test/ball-play/trace.json",trace.str())||!WriteBytes(L"render-self-test/ball-play/capture.json",report.str()))return 796;
-    context="Cream/Tuxedo production toy/physics/render path: one placement, real contacts/roll/pursuit/braking/turn/repeat; 1500 frames at 60 FPS";
+    context="Cream/Tuxedo production toy/physics/render path: one placement, real contacts/roll/pursuit/braking/turn/repeat; 3600 frames at 60 FPS";
     return 0;
 }
 } // namespace native_ball_play_capture

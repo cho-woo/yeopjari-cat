@@ -42,6 +42,12 @@ inline std::uint64_t CursorPounceTimeout(const CursorInput& input) {
         std::min<std::uint64_t>(input.pouncePreparationMs,86400000):240;
     return preparation+1160;
 }
+inline std::uint64_t CursorEpisodeMinimum(const CursorInput& input) {
+    // A longer source stroke must leave room for the following punch/chase
+    // and real pounce, rather than spending their entire episode allowance.
+    return std::min<std::uint64_t>(60000,CursorAttackDuration(CursorAction::Paw,input)+
+        CursorAttackDuration(CursorAction::Punch,input)+CursorPounceTimeout(input)+3500);
+}
 
 struct CursorOutput {
     CursorAction action = CursorAction::None;
@@ -150,9 +156,9 @@ public:
             else if (!(((action_==CursorAction::Paw || action_==CursorAction::Punch) &&
                         input.nowMs-changedAt_<CursorAttackDuration(action_,input)) ||
                        (action_==CursorAction::Pounce && input.nowMs-changedAt_<CursorPounceTimeout(input))) &&
-                    input.nowMs - began_ >= std::max(episodeBudget_,
+                    input.nowMs - began_ >= std::max({episodeBudget_,CursorEpisodeMinimum(input),
                     (action_ == CursorAction::ApproachSit || action_ == CursorAction::Sit) ? std::uint64_t{9000} :
-                     excitement_ > .5 ? std::uint64_t{12000} : std::uint64_t{7000}))
+                     excitement_ > .5 ? std::uint64_t{12000} : std::uint64_t{7000}}))
                 Finish(input.nowMs);
         }
         if (!Active()) {

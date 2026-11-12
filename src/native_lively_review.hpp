@@ -110,10 +110,19 @@ int Run() {
         for(int i=0;i<12;++i)g.physics.Update(1./60);
         SetMotion(Motion::Idle,10000,host.now);host.Rebase();
         const auto saved=host.Saved();PlaceToy(ToyKind::FishingRod);host.Rebase();g.bubbleUntil=0;
-        unsigned sample=0;const unsigned times[]{0,650,1300,2000,3200};
-        for(unsigned i=0;i<1200&&sample<5;++i) {
+        const auto* source=LoadedCareSprite(cat::sprite_sequence::Clip::ToyPlay,character);
+        if(!source)return 851;
+        const auto duration=cat::sprite_sequence::ProgramDuration(source->layout->program);
+        unsigned sample=0;const ULONGLONG times[]{0,duration/4,duration/2,duration*3/4,duration-50};
+        std::vector<bool> visited(source->layout->frameCount,false);bool entered=false,finished=false;
+        for(unsigned i=0;i<1200;++i) {
             AdvanceToyObjects(.033);host.Frame(33);
             const auto physical=g.physics.RenderPose();const auto pose=PrimaryDisplayedPose(host.now,physical);
+            if(entered&&g.toySession.phase!=cat::toy::Phase::Interact){finished=true;break;}
+            if(pose.spriteClip==cat::sprite_sequence::Clip::ToyPlay) {
+                entered=true;visited[SpriteFrameFor(pose,*source->layout)]=true;
+            }
+            if(sample==5)continue;
             if(pose.spriteClip!=cat::sprite_sequence::Clip::ToyPlay||g.toySession.elapsedMs<times[sample])continue;
             const auto* sprite=CareSpriteFor(pose,character);
             if(!sprite||SpriteFrameFor(pose,*sprite->layout)>=sprite->layout->frameCount||!physical.grounded)return 851;
@@ -126,7 +135,7 @@ int Run() {
                 cat::appearance::VisualModifiers(g.nutrition,character),root,floor,110);
             ++sample;
         }
-        if(sample!=5||host.Saved()!=saved)return 852;
+        if(sample!=5||!finished||std::find(visited.begin(),visited.end(),false)!=visited.end()||host.Saved()!=saved)return 852;
         ++row;
     }
     return SaveNativeWalkingReview(*board.image,L"render-self-test/lively/toy-board.png")?0:853;

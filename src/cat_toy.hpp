@@ -131,18 +131,22 @@ struct Session {
     double elapsedMs = 0, activeMs = 0;
     double boxVisitMs = 0; // Optional authored visit; zero retains the legacy timing.
     double boxExitMs = 0; // Optional stationary authored outro before ordinary exit travel.
+    double authoredPhaseMs = 0; // Loaded source program owns its complete phase.
     unsigned rounds = 0, revision = 0;
     int entryDirection = 1;
 
     void Start(Kind selected, int direction = 1) {
         kind = selected; entryDirection = direction < 0 ? -1 : 1;
-        rounds = 0; elapsedMs = activeMs = boxVisitMs = boxExitMs = 0;
+        rounds = 0; elapsedMs = activeMs = boxVisitMs = boxExitMs = authoredPhaseMs = 0;
         phase = selected == Kind::None ? Phase::None : Phase::Discover;
         ++revision;
     }
     void Cancel() { Start(Kind::None); }
-    void Set(Phase next) { phase = next; elapsedMs = 0; ++revision; }
+    void Set(Phase next) { phase = next; elapsedMs = authoredPhaseMs = 0; ++revision; }
     double PhaseDuration() const {
+        if(std::isfinite(authoredPhaseMs)&&authoredPhaseMs>0)
+            return std::clamp(std::max(Duration(kind,phase),authoredPhaseMs),1.0,
+                static_cast<double>(cat::sprite_sequence::kMaxProgramMs));
         if (kind==Kind::Box && phase==Phase::BoxExit && std::isfinite(boxExitMs) && boxExitMs>0)
             return std::clamp(boxExitMs,1.0,static_cast<double>(cat::sprite_sequence::kMaxProgramMs));
         return kind==Kind::Box && phase==Phase::Interact && std::isfinite(boxVisitMs) && boxVisitMs>0 ?
