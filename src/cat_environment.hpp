@@ -361,9 +361,12 @@ private:
             const double speed=std::abs(input.catVelocityX);
             // Commit while still running, early enough to show the complete
             // source gather. The impulse itself keeps the actual motor speed.
-            const double intercept=speed*(input.pouncePreparationMs*.001+.32)+50*scale;
+            const double closing=speed-pointerVx_*(input.catVelocityX<0?-1:1);
+            const double apex=std::clamp(input.cursorHeight-55*scale,28*scale,180.);
+            const double catchTime=input.pouncePreparationMs*.001+std::sqrt(2*apex/900.);
+            const double catchGap=ahead-closing*catchTime;
             const bool runningCatch=input.canAttack&&elapsed>=300&&input.nowMs>=nextLeap_&&speed>42*scale&&
-                ahead>55*scale&&ahead<std::min(230*scale,intercept)&&
+                ahead>55*scale&&ahead<480*scale&&catchGap>=35*scale&&catchGap<=65*scale&&
                 input.cursorHeight>22*scale&&
                 (input.cursorHeight>75*scale||std::abs(pointerVx_)>80*scale);
             if(runningCatch) {
@@ -383,7 +386,17 @@ private:
             if(elapsed>=CursorAttackDuration(action_,input))PursuitRest(input);
             break;
         case CursorAction::Pounce:
-            if((launchAnswered_&&!launched_)||elapsed>=CursorPounceTimeout(input))PursuitRest(input);
+            if(!launchAnswered_&&input.canApproach&&(input.cursorX-input.catX)*direction_<-20*scale) {
+                contactAllowed_=false;nextLeap_=input.nowMs+350;
+                Change(CursorAction::Chase,input.nowMs);
+            } else if((launchAnswered_&&!launched_)||elapsed>=CursorPounceTimeout(input))PursuitRest(input);
+            else if(!launchAnswered_) {
+                // Aim up to the actual hind-paw push, then freeze the impulse.
+                // A moving pointer must not leave a625ms-old launch target.
+                pounceX_=input.canApproach&&distance>35*scale?std::clamp(input.cursorX+
+                    std::clamp(pointerVx_*.22,-65*scale,65*scale)-direction_*28*scale,input.minX+8,input.maxX-8):input.catX;
+                pounceHeight_=std::clamp(input.cursorHeight+pointerVy_*.12,25*scale,245*scale);
+            }
             break;
         case CursorAction::Rest:
             if(input.grounded&&elapsed>=nearbyRestMs_)PursuitAttempt(input);

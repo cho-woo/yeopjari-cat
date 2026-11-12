@@ -3737,7 +3737,7 @@ void UpdateCursorReactionSample(ULONGLONG ticks, ULONGLONG elapsedMs, POINT curs
             // absorbs momentum. A seated stop would hide the actual landing.
             g.waitingForStop=false;
         }
-        if(output.action==Action::Chase&&previousAction==Action::Rest)
+        if(output.action==Action::Chase&&(previousAction==Action::Rest||previousAction==Action::Pounce))
             g.groundArtBridge.ContinueLocomotion(ticks);
         interaction.session.AdoptMotion(g.motionStart, g.waitingForStop, g.motionSerial);
         interaction.contacts.Reset();
