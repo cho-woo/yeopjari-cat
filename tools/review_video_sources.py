@@ -103,7 +103,7 @@ def main():
             'comparison': f'{clip}-source-app.png', 'sources': [
                 {'coat': coat, 'path': registration[coat + '-' + clip]['source'],
                  'sha256': registration[coat + '-' + clip]['sha256']} for coat in ('cream', 'tuxedo')]})
-    (args.output / 'report.json').write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
+    (args.output / 'report.json').write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8', newline='\n')
 
 
 if __name__ == '__main__':
