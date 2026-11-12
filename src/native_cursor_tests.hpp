@@ -184,6 +184,68 @@ int MovingPursuit() {
     return 0;
 }
 
+int StationaryHover() {
+    Host host;std::ostringstream report;
+    report<<"{\"schema\":1,\"test\":\"stationary-pointer-over-body\",\"runs\":[";
+    bool comma=false;
+    for(const auto character:cat::kAvailableCharacters) {
+        host.Reset(character);if(!EnsureCareCoats(character))return 265;
+        const auto* reach=LoadedCareSprite(cat::sprite_sequence::Clip::Reach,character);
+        if(!reach)return 265;
+        const double x=g.physics.CurrentPose().x;
+        std::vector<bool> seen(reach->layout->frameCount,false);
+        unsigned attempts=0,rests=0;bool cadence=true,planted=true,complete=true;
+        ULONGLONG restAt=0;Action previous=Action::None;
+        for(unsigned i=0;i<1400;++i) {
+            host.Frame(x,65);
+            const auto action=cursorInteraction.session.Action();
+            const auto pose=PrimaryDisplayedPose(host.now,g.physics.RenderPose());
+            if(action==Action::Tiptoe||action==Action::Rest) {
+                cadence=cadence&&CursorNeedsFineCadence(host.now);
+                if(pose.spriteClip!=cat::sprite_sequence::Clip::Reach)return 266;
+            }
+            if(action==Action::Tiptoe)seen[SpriteFrameFor(pose,*reach->layout)]=true;
+            if(action!=previous) {
+                if(action==Action::Tiptoe) {
+                    ++attempts;
+                    if(restAt&&host.now-restAt<1800)complete=false;
+                }
+                if(action==Action::Rest) {
+                    ++rests;restAt=host.now;
+                    complete=complete&&std::all_of(seen.begin(),seen.end(),[](bool v){return v;});
+                }
+                previous=action;
+            }
+            if(action==Action::Rest) {
+                const auto frame=SpriteFrameFor(pose,*reach->layout);
+                const auto paws=cat::video_actions::ReachPaws(static_cast<unsigned>(character),frame);
+                // Annotations are opaque toe centres, several pixels above
+                // the painted sole; a raised foreleg is well outside this band.
+                planted=planted&&frame==reach->layout->frameCount-1&&paws[0].y<=8&&paws[1].y<=8;
+            }
+            if(host.launches||std::abs(g.physics.CurrentPose().x-x)>.05)return 267;
+        }
+        // After the source ends, moving away can resume pursuit without
+        // waiting for the remainder of the stationary-pointer quiet interval.
+        for(unsigned i=0;i<800&&cursorInteraction.session.Action()!=Action::Rest;++i)host.Frame(x,65);
+        const auto departure=host.now;bool resumed=false;
+        for(unsigned i=0;i<12;++i) {
+            host.Frame(x+200+(i+1)*8,65);
+            if(cursorInteraction.session.Action()==Action::Chase){resumed=true;break;}
+        }
+        if(comma)report<<',';comma=true;
+        report<<"{\"character\":"<<static_cast<unsigned>(character)<<",\"hover_attempts\":"<<attempts
+            <<",\"planted_rests\":"<<rests<<",\"all_source_frames\":"<<complete<<",\"fine_cadence\":"<<cadence
+            <<",\"toes_on_floor\":"<<planted<<",\"departure_resumed\":"<<resumed<<",\"departure_ms\":"<<host.now-departure<<'}';
+        if(attempts<3||rests<2||!complete||!cadence||!planted||!resumed) {
+            CreateDirectoryW(L"render-self-test",nullptr);
+            WriteBytes(L"render-self-test/pointer-hover-report.json",report.str()+"],\"passed\":false}\n");return 268;
+        }
+    }
+    CreateDirectoryW(L"render-self-test",nullptr);
+    WriteBytes(L"render-self-test/pointer-hover-report.json",report.str()+"],\"passed\":true}\n");return 0;
+}
+
 int Run() {
     Host host;
     // Acquiring a nearby pointer interrupts the old brain follow-up. Cursor
@@ -213,7 +275,7 @@ int Run() {
     const auto savedPet = cat::Serialize(g.pet);
     const auto savedMemory = cat::memory::Serialize(g.memory.state);
     const auto savedNutrition = cat::nutrition::Serialize(g.nutrition);
-    const double fixedX = host.PawX(), fixedHeight = 40;
+    const double fixedX = host.PawX(), fixedHeight = 12;
     Action previous = Action::None;
     unsigned attempts = 0, paws = 0, rests = 0;
     ULONGLONG restAt = 0;
@@ -338,7 +400,8 @@ int Run() {
         if (host.contacts != contacts || g.lifeInteractionUntil || !g.physics.CurrentPose().grounded ||
                 (reason == 4 && (g.motion != Motion::Eat || g.motionSerial != serial))) return 261;
     }
-    return MovingPursuit();
+    if(const int result=MovingPursuit())return result;
+    return StationaryHover();
 }
 } // namespace native_cursor_tests
 
