@@ -3618,6 +3618,7 @@ struct CursorInteraction {
     bool runningTakeoff=false;
     double takeoffVelocity=0;
     double launchVelocityY=0;
+    double airPawHeight=55;
     cat::environment::CursorAction lastAttack=cat::environment::CursorAction::None;
     ULONGLONG hopLandedAt=0,hopLaunchedAt=0;
     double hopSupportHeight=0;
@@ -3657,6 +3658,13 @@ void UpdateCursorReactionSample(ULONGLONG ticks, ULONGLONG elapsedMs, POINT curs
     input.sizeScale = cat::GrowthScale(g.pet.bornUtc, UtcNow());
     input.movementScale = cat::appearance::VisualModifiers(g.nutrition,g.preferences.character).speed *
         cat::species::ProfileFor(g.preferences.character).movementSpeedMultiplier;
+    if(const auto* air=LoadedCareSprite(cat::sprite_sequence::Clip::CursorPounce,g.preferences.character)) {
+        const auto frame=air->layout->program.loop.first+air->layout->program.loop.count/2;
+        const auto paw=cat::video_actions::CursorPouncePaws(static_cast<unsigned>(g.preferences.character),frame)[0];
+        const auto body=cat::appearance::VisualModifiers(g.nutrition,g.preferences.character);
+        input.airPawX=paw.x*body.bodyWidth;input.airPawHeight=paw.y*body.bodyHeight;
+    }
+    interaction.airPawHeight=input.airPawHeight;
     const auto pawGeometry = cat::cursor::Bounded(CursorAttackGeometry());
     input.pawStandOff = std::max(6.0,(pawGeometry.pawAnchorX-.5)*pawGeometry.width+3);
     input.pawDurationMs=cat::cursor::DurationMs(cat::cursor::AttackKind::Gentle);
@@ -3773,9 +3781,9 @@ bool TryCursorPounce(ULONGLONG ticks) {
         cat::species::ProfileFor(g.preferences.character).jumpHeightMultiplier;
     const double supportHeight=g.physics.CurrentPose().lift;
     const bool launched = interaction.runningTakeoff?
-        cat::cursor::LaunchRunningReachHop(g.physics,interaction.session.TargetHeight(),bounds.first,bounds.second,growth,jump):
+        cat::cursor::LaunchRunningReachHop(g.physics,interaction.session.TargetHeight(),bounds.first,bounds.second,growth,jump,interaction.airPawHeight):
         cat::cursor::LaunchReachHop(g.physics, interaction.session.TargetX(),interaction.session.TargetHeight(),
-            bounds.first, bounds.second, growth, jump,!g.pet.roamingPaused);
+            bounds.first, bounds.second, growth, jump,!g.pet.roamingPaused,interaction.airPawHeight);
     if(launched){interaction.hopFlightLaunched=true;interaction.hopLandedAt=0;interaction.hopLaunchedAt=ticks;interaction.hopSupportHeight=supportHeight;
         interaction.launchVelocityY=g.physics.CurrentPose().velocityY;}
     interaction.session.ConfirmLaunch(launched);
@@ -3943,7 +3951,8 @@ bool UpdateCursorContact(ULONGLONG ticks, const cat::physics::Pose& physical) {
     const double growth = cat::GrowthScale(g.pet.bornUtc, UtcNow());
     bool contact = false;
     cat::animation::Pose pose;
-    if (allowed && ApplyCursorAttackPose(pose,ticks,physical)) {
+    const auto displayed=g.physics.RenderPose();
+    if (allowed && ApplyCursorAttackPose(pose,ticks,displayed)) {
         const auto action=interaction.session.Action();
         const auto kind=action==cat::environment::CursorAction::Tiptoe?cat::cursor::AttackKind::Tiptoe:
             action==cat::environment::CursorAction::BothPaws?cat::cursor::AttackKind::BothPaws:
@@ -3962,8 +3971,8 @@ bool UpdateCursorContact(ULONGLONG ticks, const cat::physics::Pose& physical) {
         }
         const auto body=cat::appearance::VisualModifiers(g.nutrition,g.preferences.character);
         for(const auto& paw:cat::cursor::PawPositions(pose,CursorAttackGeometry()))
-            contact=interaction.contacts.Observe(contactIndex,true,physical.x+paw.x*growth*body.bodyWidth,paw.y*growth*body.bodyHeight,
-                interaction.cursorX,interaction.cursorWorldHeight-physical.lift,7*growth)||contact;
+            contact=interaction.contacts.Observe(contactIndex,true,displayed.x+paw.x*growth*body.bodyWidth,paw.y*growth*body.bodyHeight,
+                interaction.cursorX,interaction.cursorWorldHeight-displayed.lift,7*growth)||contact;
     }
     if (contact) {Remember(cat::memory::Event::Play);++interaction.awardedContacts;
         if(interaction.session.InFlight())interaction.landingContact=true;

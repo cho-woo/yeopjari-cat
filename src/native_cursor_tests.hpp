@@ -161,6 +161,24 @@ int MovingPursuit() {
             WriteBytes(L"render-self-test/pointer-pursuit-report.json",evidence.str()+"] ,\"passed\":false}\n");return 263;
         }
     }
+    // A predeclared straight pointer path, independent of the rendered toe,
+    // must be catchable by each coat and by an ordinary/heavier adult.
+    for(const auto character:cat::kAvailableCharacters)for(const double condition:{50.,80.}) {
+        host.Reset(character);if(!EnsureCareCoats(character))return 262;
+        g.nutrition.bodyCondition=condition;
+        unsigned airContacts=0;
+        for(ULONGLONG elapsed=0;elapsed<8000;elapsed+=16) {
+            const auto before=host.contacts;
+            host.Frame(560+72*elapsed*.001,120);
+            if(!g.physics.CurrentPose().grounded)airContacts+=host.contacts-before;
+        }
+        evidence<<",{\"character\":"<<static_cast<unsigned>(character)<<",\"condition\":"<<condition
+            <<",\"linear_pointer_speed\":72,\"linear_pointer_height\":120,\"air_contacts\":"<<airContacts<<'}';
+        if(!airContacts) {
+            CreateDirectoryW(L"render-self-test",nullptr);
+            WriteBytes(L"render-self-test/pointer-pursuit-report.json",evidence.str()+"],\"passed\":false}\n");return 264;
+        }
+    }
     CreateDirectoryW(L"render-self-test",nullptr);
     WriteBytes(L"render-self-test/pointer-pursuit-report.json",evidence.str()+"],\"passed\":true}\n");
     return 0;

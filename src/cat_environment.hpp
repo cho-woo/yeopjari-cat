@@ -30,6 +30,7 @@ struct CursorInput {
     bool pursuePointer=false;
     bool canAttack=true;
     double catVelocityX=0;
+    double airPawX=60,airPawHeight=55;
     std::uint64_t landingRecoveryMs=1240,tiptoeDurationMs=1400,bothPawsDurationMs=1550;
 };
 
@@ -315,7 +316,9 @@ private:
     CursorOutput StepPursuit(const CursorInput& input) {
         const auto before=action_;
         const double scale=std::clamp(input.sizeScale,.5,2.);
-        const bool valid=Valid(input)&&std::isfinite(input.catVelocityX)&&input.maxX-input.minX>16;
+        const bool valid=Valid(input)&&std::isfinite(input.catVelocityX)&&
+            std::isfinite(input.airPawX)&&input.airPawX>0&&input.airPawX<=150&&
+            std::isfinite(input.airPawHeight)&&input.airPawHeight>0&&input.airPawHeight<=150&&input.maxX-input.minX>16;
         const bool onSurface=valid&&input.cursorX>=input.minX-120*scale&&input.cursorX<=input.maxX+120*scale&&
             input.cursorHeight>=-20*scale;
         if(input.enabled&&!enabled_)nextStart_=input.nowMs;
@@ -362,11 +365,11 @@ private:
             // Commit while still running, early enough to show the complete
             // source gather. The impulse itself keeps the actual motor speed.
             const double closing=speed-pointerVx_*(input.catVelocityX<0?-1:1);
-            const double apex=std::clamp(input.cursorHeight-55*scale,28*scale,180.);
+            const double apex=std::clamp(input.cursorHeight-input.airPawHeight*scale,28*scale,180.);
             const double catchTime=input.pouncePreparationMs*.001+std::sqrt(2*apex/900.);
             const double catchGap=ahead-closing*catchTime;
             const bool runningCatch=input.canAttack&&elapsed>=300&&input.nowMs>=nextLeap_&&speed>42*scale&&
-                ahead>55*scale&&ahead<480*scale&&catchGap>=35*scale&&catchGap<=65*scale&&
+                ahead>55*scale&&ahead<480*scale&&catchGap>=(input.airPawX-15)*scale&&catchGap<=(input.airPawX+6)*scale&&
                 input.cursorHeight>22*scale&&
                 (input.cursorHeight>75*scale||std::abs(pointerVx_)>80*scale);
             if(runningCatch) {
