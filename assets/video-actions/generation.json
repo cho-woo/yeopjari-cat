@@ -2,7 +2,7 @@
   "schema": 1,
   "created_date": "2026-11-11",
   "provider": "Dropshot",
-  "total_credits": 9280,
+  "total_credits": 9840,
   "jobs": [
     {
       "character": "cream",
@@ -1112,7 +1112,8 @@
         "duration": 6,
         "resolution": "768p",
         "aspect_ratio": "1:1"
-      }
+      },
+      "superseded_by": "walk-v30"
     },
     {
       "character": "cream",
@@ -1194,7 +1195,8 @@
         "duration": 6,
         "resolution": "768p",
         "aspect_ratio": "1:1"
-      }
+      },
+      "superseded_by": "walk-v30"
     },
     {
       "character": "tuxedo",
@@ -1416,6 +1418,126 @@
         "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/b66ff030b6e843d19f9874278b076bc5/tuxedo-fish-front-v29.png",
         "generation_mode": "frame",
         "duration": 6,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      }
+    },
+    {
+      "character": "cream",
+      "action": "walk-cycle",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_05199b39f2f94c27b81bf03fefda5b71",
+      "credit_cost": 120,
+      "source_file": "sources/walk-v30/cream-cycle.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_05199b39f2f94c27b81bf03fefda5b71/output/output_0.mp4",
+      "accepted": true,
+      "identity_policy": "identity-v29.json",
+      "options": {
+        "prompt": "The EXACT cream cheese kitten in the supplied frames. Preserve the identical face, enormous round eyes, ear shape, fur markings, head/body proportions, short legs, chubby torso, materials, camera angle and pixel scale. Full body remains visible, locked camera. Flat pure #00FF00 green background and floor, no shadow, no prop, no text, no camera motion, no size change. Continuous calm natural CAT WALK IN PLACE facing RIGHT at exactly the supplied three-quarter side angle, from the first frame until the last. A slow relaxed four-beat feline walk, not a trot or gallop: right hind paw, right forepaw, left hind paw, left forepaw in sequence, each planted foot sweeps backward smoothly while supporting body weight, then lifts and swings forward. All four paws must visibly articulate. Three feet support the body in part of each stride. No hopping, no whole-body bobbing, no sliding, no frozen feet. Keep the head steady, spine moves gently, tail sways slightly. Perform five complete even gait cycles in six seconds, return to the exact supplied first-frame stride phase at the end. No sitting, standing up, turning, looking at camera, or stopping.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f5a17e175ec54a5a9cd9d6a1cd69979f/cream-side-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f5a17e175ec54a5a9cd9d6a1cd69979f/cream-side-identity-v29.png",
+        "generation_mode": "frame",
+        "duration": 6,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      }
+    },
+    {
+      "character": "cream",
+      "action": "walk-entry",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_68e6356c7dac4ddfbb624abf38b52837",
+      "credit_cost": 80,
+      "source_file": "sources/walk-v30/cream-entry.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_68e6356c7dac4ddfbb624abf38b52837/output/output_0.mp4",
+      "accepted": true,
+      "identity_policy": "identity-v29.json",
+      "options": {
+        "prompt": "The EXACT cream cheese kitten in the supplied frames. Preserve the identical face, enormous round eyes, ear shape, fur markings, head/body proportions, short legs, chubby torso, materials, camera angle and pixel scale. Full body remains visible, locked camera. Flat pure #00FF00 green background and floor, no shadow, no prop, no text, no camera motion, no size change. One continuous front-seated-to-side-walking-preparation transition. Begin in the exact front seated first image. Immediately lean weight onto front paws, raise the pelvis and stand onto four short legs, then smoothly turn the whole cat toward the RIGHT, ending in the exact supplied three-quarter-side last image, ready to take the first step. Complete the movement in the first 1.6 seconds, then gently hold the exact last pose for the remaining time. Feet plant and carry real weight throughout; no skate, hop, deformation or pop. No extra walk cycle, no second turn.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f91aa82183e14b82a31e69c0185697b5/cream-front-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f5a17e175ec54a5a9cd9d6a1cd69979f/cream-side-identity-v29.png",
+        "generation_mode": "frame",
+        "duration": 4,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      }
+    },
+    {
+      "character": "cream",
+      "action": "walk-exit",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_546c2e9409d74c118f1a65765f750a00",
+      "credit_cost": 80,
+      "source_file": "sources/walk-v30/cream-exit.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_546c2e9409d74c118f1a65765f750a00/output/output_0.mp4",
+      "accepted": true,
+      "identity_policy": "identity-v29.json",
+      "options": {
+        "prompt": "The EXACT cream cheese kitten in the supplied frames. Preserve the identical face, enormous round eyes, ear shape, fur markings, head/body proportions, short legs, chubby torso, materials, camera angle and pixel scale. Full body remains visible, locked camera. Flat pure #00FF00 green background and floor, no shadow, no prop, no text, no camera motion, no size change. One continuous side-to-front-seated stop transition. Begin in the exact right-facing three-quarter-side first image. Gently plant the raised front paw, settle weight, turn the whole cat toward the front, lower the pelvis and sit in the exact front seated last image. Complete the movement in the first 1.6 seconds, then gently hold the exact last pose for the remaining time. Feet plant and carry real weight throughout; no slide, hop, deformation or pop. No walking away or second turn.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f5a17e175ec54a5a9cd9d6a1cd69979f/cream-side-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f91aa82183e14b82a31e69c0185697b5/cream-front-identity-v29.png",
+        "generation_mode": "frame",
+        "duration": 4,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      }
+    },
+    {
+      "character": "tuxedo",
+      "action": "walk-cycle",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_4e169701b2084abb8159459a5b81c709",
+      "credit_cost": 120,
+      "source_file": "sources/walk-v30/tuxedo-cycle.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_4e169701b2084abb8159459a5b81c709/output/output_0.mp4",
+      "accepted": true,
+      "identity_policy": "identity-v29.json",
+      "options": {
+        "prompt": "The EXACT dark charcoal tuxedo kitten in the supplied frames. Preserve the identical face, enormous round eyes, ear shape, fur markings, head/body proportions, short legs, chubby torso, materials, camera angle and pixel scale. Full body remains visible, locked camera. Flat pure #00FF00 green background and floor, no shadow, no prop, no text, no camera motion, no size change. Continuous calm natural CAT WALK IN PLACE facing RIGHT at exactly the supplied three-quarter side angle, from the first frame until the last. A slow relaxed four-beat feline walk, not a trot or gallop: right hind paw, right forepaw, left hind paw, left forepaw in sequence, each planted foot sweeps backward smoothly while supporting body weight, then lifts and swings forward. All four paws must visibly articulate. Three feet support the body in part of each stride. No hopping, no whole-body bobbing, no sliding, no frozen feet. Keep the head steady, spine moves gently, tail sways slightly. Perform five complete even gait cycles in six seconds, return to the exact supplied first-frame stride phase at the end. No sitting, standing up, turning, looking at camera, or stopping.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/de550c28744345e49f7eaa5169c60231/tuxedo-side-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/de550c28744345e49f7eaa5169c60231/tuxedo-side-identity-v29.png",
+        "generation_mode": "frame",
+        "duration": 6,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      }
+    },
+    {
+      "character": "tuxedo",
+      "action": "walk-entry",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_40dcaf3a81ad46a0a423abb0fc71a72f",
+      "credit_cost": 80,
+      "source_file": "sources/walk-v30/tuxedo-entry.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_40dcaf3a81ad46a0a423abb0fc71a72f/output/output_0.mp4",
+      "accepted": true,
+      "identity_policy": "identity-v29.json",
+      "options": {
+        "prompt": "The EXACT dark charcoal tuxedo kitten in the supplied frames. Preserve the identical face, enormous round eyes, ear shape, fur markings, head/body proportions, short legs, chubby torso, materials, camera angle and pixel scale. Full body remains visible, locked camera. Flat pure #00FF00 green background and floor, no shadow, no prop, no text, no camera motion, no size change. One continuous front-seated-to-side-walking-preparation transition. Begin in the exact front seated first image. Immediately lean weight onto front paws, raise the pelvis and stand onto four short legs, then smoothly turn the whole cat toward the RIGHT, ending in the exact supplied three-quarter-side last image, ready to take the first step. Complete the movement in the first 1.6 seconds, then gently hold the exact last pose for the remaining time. Feet plant and carry real weight throughout; no skate, hop, deformation or pop. No extra walk cycle, no second turn.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/83c1feedbe4d49e7928fcd973495a776/tuxedo-front-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/de550c28744345e49f7eaa5169c60231/tuxedo-side-identity-v29.png",
+        "generation_mode": "frame",
+        "duration": 4,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      }
+    },
+    {
+      "character": "tuxedo",
+      "action": "walk-exit",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_e5191c4a3e604f1aa03ce2b982bd85ad",
+      "credit_cost": 80,
+      "source_file": "sources/walk-v30/tuxedo-exit.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_e5191c4a3e604f1aa03ce2b982bd85ad/output/output_0.mp4",
+      "accepted": true,
+      "identity_policy": "identity-v29.json",
+      "options": {
+        "prompt": "The EXACT dark charcoal tuxedo kitten in the supplied frames. Preserve the identical face, enormous round eyes, ear shape, fur markings, head/body proportions, short legs, chubby torso, materials, camera angle and pixel scale. Full body remains visible, locked camera. Flat pure #00FF00 green background and floor, no shadow, no prop, no text, no camera motion, no size change. One continuous side-to-front-seated stop transition. Begin in the exact right-facing three-quarter-side first image. Gently plant the raised front paw, settle weight, turn the whole cat toward the front, lower the pelvis and sit in the exact front seated last image. Complete the movement in the first 1.6 seconds, then gently hold the exact last pose for the remaining time. Feet plant and carry real weight throughout; no slide, hop, deformation or pop. No walking away or second turn.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/de550c28744345e49f7eaa5169c60231/tuxedo-side-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/83c1feedbe4d49e7928fcd973495a776/tuxedo-front-identity-v29.png",
+        "generation_mode": "frame",
+        "duration": 4,
         "resolution": "768p",
         "aspect_ratio": "1:1"
       }

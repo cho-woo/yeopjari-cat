@@ -5,13 +5,13 @@
 // no update worker/window is created, and no pose is interpolated by a movie
 // tool. This is an offscreen native capture, not a desktop recording.
 namespace native_video_walk_capture {
-constexpr unsigned Fps=60, Count=600;
+constexpr unsigned Fps=60, Count=1860;
 constexpr int Width=960, Height=500;
 using Clip=cat::sprite_sequence::Clip;
 // These are the actual source-video drawings packed in the registered atlas,
-// not generated in-betweens. Only the first twenty comprise the walk cycle.
+// not generated in-betweens. The registered loop retains the source movie.
 int SourceVideoFrame(unsigned source,unsigned registeredCount,unsigned character=0) {
-    return registeredCount==61&&source<61?static_cast<int>(cat::video_actions::WalkSourceFrame(character,source)):-1;
+    return source<registeredCount?static_cast<int>(cat::video_actions::WalkSourceFrame(character,source)):-1;
 }
 
 struct Frame {
@@ -42,9 +42,9 @@ int Simulate(Row& row,std::string& context) {
     row.body=cat::appearance::VisualModifiers(g.nutrition,g.preferences.character);
     row.frames.reserve(Count);
     const auto* walk=LoadedCareSprite(Clip::Walk,row.character);
-    if(!walk || walk->layout->program.loop.count!=20 || walk->layout->nominalFramesPerSecond!=24 ||
+    if(!walk || !walk->layout->program.loop.count || walk->layout->nominalFramesPerSecond!=24 ||
             std::string(walk->layout->sourcePath).find("assets/video-actions/")!=0) {
-        context="capture requires the actual twenty-frame source-video walk";return 542;
+        context="capture requires the registered source-video walk";return 542;
     }
     std::vector<bool> visited(walk->layout->program.loop.count,false);
     unsigned distinct=0, previous=0;
@@ -54,7 +54,10 @@ int Simulate(Row& row,std::string& context) {
             " frame="+std::to_string(index);
         const auto now=start+static_cast<ULONGLONG>(index)*1000/Fps;
         if(index)host.Frame(now-host.now);
-        if(index==30 || index==450)host.Command(kManualWalkCommand);
+        if(index==30 || index==1260) {
+            host.Command(kManualWalkCommand);
+            if(index==30)g.nextDecision=host.now+16000; // Cover the complete six-second source twice.
+        }
         const auto physical=g.physics.RenderPose();
         if(!physical.grounded || !std::isfinite(physical.x) || !std::isfinite(physical.velocityX))return 542;
         const auto displayed=cat::motion::DisplayedMotion(g.motion,g.walkingMotion,
@@ -74,14 +77,14 @@ int Simulate(Row& row,std::string& context) {
         }
         previousWalk=pose.spriteClip==Clip::Walk && source<visited.size();
         row.peakSpeed=std::max(row.peakSpeed,std::abs(velocity));
-        if(index>=390 && index<450 && std::abs(velocity)<.5)row.stopped=true;
-        if(index>470 && velocity<-5)row.reversed=true;
+        if(index>=1140 && index<1260 && std::abs(velocity)<.5)row.stopped=true;
+        if(index>1280 && velocity<-5)row.reversed=true;
         row.frames.push_back({pose,physical.x,velocity,g.gait.AuthoredPhase(),source,g.motion,displayed,g.waitingForStop});
     }
     if(host.Saved()!=saved){context="capture changed an owned in-memory save fixture";return 548;}
     const auto expectedSpeed=cat::sprite_assets::NominalLocomotionSpeed(*walk->layout);
     if(distinct!=visited.size() || expectedSpeed<=0 || row.peakSpeed<expectedSpeed*1.03 || row.peakSpeed>expectedSpeed*1.28 ||
-            !row.stopped || !row.reversed || row.sourceChanges<visited.size()*3) {
+            !row.stopped || !row.reversed || row.sourceChanges<visited.size()*2) {
         context="native walk coverage/speed/rest/reversal: visited="+std::to_string(distinct)+
             " peak="+std::to_string(row.peakSpeed)+" changes="+std::to_string(row.sourceChanges)+
             " stopped="+std::to_string(row.stopped)+" reversed="+std::to_string(row.reversed);return 545;
@@ -114,7 +117,7 @@ int Run(std::string& context) {
         graphics.DrawString(L"Source-video walk / actual Windows renderer",-1,&title,PointF(22,12),&ink);
         graphics.DrawString(L"60 FPS GDI+ + Box2D; 110 px characters. Offscreen native capture, not a desktop recording.",-1,
             &small,PointF(23,42),&ink);
-        const wchar_t* phase=index<30?L"Rest":index<330?L"Walk":index<450?L"Brake / rest":L"Turn / walk";
+        const wchar_t* phase=index<30?L"Rest":index<990?L"Walk":index<1260?L"Brake / rest":L"Turn / walk";
         graphics.DrawString(phase,-1,&small,PointF(800,18),&ink);
         if(index)trace<<',';
         trace<<"{\"frame\":"<<index<<",\"elapsed_ms\":"<<static_cast<unsigned long long>(index)*1000/Fps<<",\"characters\":[";
@@ -137,6 +140,8 @@ int Run(std::string& context) {
             const int videoFrame=frame.pose.spriteClip==Clip::Walk && walk?
                 SourceVideoFrame(frame.source,walk->layout->frameCount,static_cast<unsigned>(row.character)):-1;
             if(videoFrame>=0)trace<<videoFrame;else trace<<"null";
+            trace<<",\"input_video_file\":";
+            if(videoFrame>=0)trace<<'"'<<cat::video_actions::WalkSourceFile(static_cast<unsigned>(row.character),frame.source)<<'"';else trace<<"null";
             trace<<",\"facing\":"<<(frame.pose.flip?-1:1)
                 <<",\"waiting_for_stop\":"<<(frame.waiting?"true":"false")<<'}';
         }
@@ -150,13 +155,14 @@ int Run(std::string& context) {
     }
     trace<<"]}\n";
     std::ostringstream metadata;metadata.imbue(std::locale::classic());
-    metadata<<"{\"schema\":1,\"render_source\":\"Windows GDI+ / Box2D\",\"desktop_recording\":false,\"fps\":"<<Fps
-        <<",\"frame_count\":"<<Count<<",\"canvas\":["<<Width<<','<<Height
-        <<"],\"reference_height_px\":110,\"source_video_frames\":20,\"source_video_fps\":24,\"source_video_frame_indices\":[";
-    for(unsigned index=0;index<20;++index){if(index)metadata<<',';metadata<<cat::video_actions::WalkSourceFrame(0,index);}
     const auto* walk=LoadedCareSprite(Clip::Walk,cat::Character::Cream);
     if(!walk)return 542;
-    metadata<<"],\"cycle_frames\":20,\"registered_walk_frames\":"<<walk->layout->frameCount
+    const auto cycleFrames=walk->layout->program.loop.count;
+    metadata<<"{\"schema\":1,\"render_source\":\"Windows GDI+ / Box2D\",\"desktop_recording\":false,\"fps\":"<<Fps
+        <<",\"frame_count\":"<<Count<<",\"canvas\":["<<Width<<','<<Height
+        <<"],\"reference_height_px\":110,\"source_video_frames\":"<<cycleFrames<<",\"source_video_fps\":24,\"source_video_frame_indices\":[";
+    for(unsigned index=0;index<cycleFrames;++index){if(index)metadata<<',';metadata<<cat::video_actions::WalkSourceFrame(0,index);}
+    metadata<<"],\"cycle_frames\":"<<cycleFrames<<",\"registered_walk_frames\":"<<walk->layout->frameCount
         <<",\"registered_walk_source_indices\":[";
     for(unsigned index=0;index<walk->layout->frameCount;++index) {
         if(index)metadata<<',';
@@ -168,7 +174,7 @@ int Run(std::string& context) {
         if(index)metadata<<',';
         const auto& row=rows[index];
         metadata<<"{\"character\":"<<static_cast<unsigned>(row.character)<<",\"peak_walk_speed\":"<<row.peakSpeed
-            <<",\"source_frame_changes\":"<<row.sourceChanges<<",\"all_twenty_frames_used\":true,\"stopped\":true,\"reversed\":true}";
+            <<",\"source_frame_changes\":"<<row.sourceChanges<<",\"all_source_frames_used\":true,\"stopped\":true,\"reversed\":true}";
     }
     metadata<<"],\"trace\":\"trace.json\",\"scenario\":\"rest, manual walk, brake and rest, reversed manual walk\"}\n";
     if(!WriteBytes(L"render-self-test/walk-video/trace.json",trace.str()) ||

@@ -607,7 +607,8 @@ void AuthoredCompanionWalkRunUsesItsRealRegisteredTravel() {
     using Clip=cat::sprite_sequence::Clip;
     const auto* walk=cat::sprite_assets::Find(Clip::Walk,0,cat::sprite_assets::kCareSprites);
     const auto* run=cat::sprite_assets::Find(Clip::Run,0,cat::sprite_assets::kCareSprites);
-    CHECK(walk && run && walk->stridePixels>0 && run->stridePixels>walk->stridePixels);
+    CHECK(walk && run && walk->stridePixels>0 &&
+        cat::sprite_assets::NominalLocomotionSpeed(*run)>cat::sprite_assets::NominalLocomotionSpeed(*walk));
     const double videoPace=cat::sprite_assets::NominalLocomotionSpeed(*walk);
     const double normalPace=videoPace>0?videoPace:22;
     const double runningPace=std::max(150.0,normalPace*1.8);
@@ -816,7 +817,8 @@ void CompanionJumpReturnOwnsTheCompletedRecoveryBoundary() {
     const auto recovery=cat::sprite_sequence::Duration(jump->program,jump->program.outro);
     const bool canonical=std::string_view(walk->sourcePath).find("assets/video-actions/")==0;
     const auto turn=canonical?cat::sprite_sequence::Duration(walk->program,walk->program.outro):profile.entryMs;
-    const unsigned first=canonical?48:20,last=canonical?60:29;
+    const unsigned first=canonical?walk->program.steps[walk->program.outro.first].frame:20;
+    const unsigned last=canonical?walk->program.steps[walk->program.outro.first+walk->program.outro.count-1].frame:29;
     for(const auto character:{cat::Character::Cream,cat::Character::Tuxedo}) {
         State state=NewState(born);state.preferences.character=character;state.pet.position=.2;
         Model model;model.Bind(state);model.Reset(0,2400,700);

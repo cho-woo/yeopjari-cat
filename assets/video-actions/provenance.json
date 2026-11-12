@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "method": "dropshot_video_extraction",
-  "manifest_sha256": "c67682c779842b03a419e944c211cfe3a6c4ff0e2310055d3ccd68418a8be6c1",
+  "manifest_sha256": "77a2d76792b00ced3a76532049b9c9af3f7566be304ac75ea0d8cc9b946b8e8e",
   "precomputed_only": true,
   "files": [
     {
@@ -70,19 +70,27 @@
     },
     {
       "path": "cream-walk.png",
-      "sha256": "7084c0482a418448dc621d7c7ccaa3b68a1632576cbc9bee691e7d10b1c4afde"
+      "sha256": "820fa68b23a90a7a75d9a8bc7e408b15bb66d974384edd5bea66ebfcb51950ef"
     },
     {
       "path": "generation.json",
-      "sha256": "0141231115bfc136d42a1337700d792234b7ffa4c5269797403a6b5264d48506"
+      "sha256": "3515a1110046645d99a28f3985c27d730f52d4065e862316685d62fc2c72274c"
     },
     {
       "path": "history/v28/registration.json",
       "sha256": "3985e2052a3dd05f429ce8acb801f7ba713309f3b4418b228eb9bf1f1ec85043"
     },
     {
-      "path": "identity-v29.json",
+      "path": "history/v29/identity-v29.json",
       "sha256": "f434ffb3268ee3abdd29bd289312f39eaec6e82c7c49a7719b4e8a3dd6f73149"
+    },
+    {
+      "path": "history/v29/registration.json",
+      "sha256": "89253fa867324c9a6bc871dc01c5d825e4c45013d7bf472329565f795c0f10e0"
+    },
+    {
+      "path": "identity-v29.json",
+      "sha256": "cdea192f5fbf84589581a8fd3bae44efa7aca864e68798b5e5923085c78cd6fa"
     },
     {
       "path": "motion-timing.json",
@@ -170,7 +178,7 @@
     },
     {
       "path": "registration.json",
-      "sha256": "89253fa867324c9a6bc871dc01c5d825e4c45013d7bf472329565f795c0f10e0"
+      "sha256": "a8f831530f2dd21714de5f6c21ba20ee5416373ec78e9c73e96b8328d97ea200"
     },
     {
       "path": "sources/cream-ball.mp4",
@@ -477,6 +485,30 @@
       "sha256": "fd353f9df2093be784f5c7cc02df5e78c6d3c063ec6ac3e5fbe2d8bcfea2ae5f"
     },
     {
+      "path": "sources/walk-v30/cream-cycle.mp4",
+      "sha256": "9f52339a9a9ceefe5a6646c175e0c6eef1a313d35e39cc7dcbd8a61f51552bb7"
+    },
+    {
+      "path": "sources/walk-v30/cream-entry.mp4",
+      "sha256": "d0da8eca9a7a391e6c184543086be18e9985b68b219ac9d3fe39da207b420a41"
+    },
+    {
+      "path": "sources/walk-v30/cream-exit.mp4",
+      "sha256": "145d478427047f13ce3d848733758255b6bbe90002aa60e93eb893f8e66c9912"
+    },
+    {
+      "path": "sources/walk-v30/tuxedo-cycle.mp4",
+      "sha256": "d7de4daea248c33757ae6be593f240b823ee438324260a3541398882da132dac"
+    },
+    {
+      "path": "sources/walk-v30/tuxedo-entry.mp4",
+      "sha256": "d6d3251c4adcd464676b27e57108ce26d86234d924ec4332cdebd54c8433681c"
+    },
+    {
+      "path": "sources/walk-v30/tuxedo-exit.mp4",
+      "sha256": "da4829f1db033490ccc60f0a04fe569d776b78e652b1d2539453e15a763bc302"
+    },
+    {
       "path": "tuxedo-ball.png",
       "sha256": "1945d1cb7b0667408ed7c4402e3b2e5b3022c577d17845ab4fe53fc06a35019e"
     },
@@ -542,7 +574,7 @@
     },
     {
       "path": "tuxedo-walk.png",
-      "sha256": "f0ff0973cfe56005dfe24c303cc53466ad9bae84ef699e101fd470be636e4463"
+      "sha256": "0169540de66564ceef945ac16484a5c751058ec3b1e0844d222c5f5bdf901efe"
     }
   ]
 }
