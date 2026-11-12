@@ -31,6 +31,7 @@ struct CursorInput {
     bool canAttack=true;
     double catVelocityX=0;
     double airPawX=60,airPawHeight=55;
+    std::uint64_t settleDurationMs=0;
     std::uint64_t landingRecoveryMs=1240,tiptoeDurationMs=1400,bothPawsDurationMs=1550;
 };
 
@@ -283,16 +284,30 @@ private:
     std::uint64_t nearbyRestMs_=1000;
     double pointerVx_=0,pointerVy_=0;
     std::uint64_t nextLeap_=0;
+    std::uint64_t pursuitRecoveryMs_=0;
 
     void PursuitRest(const CursorInput& input,bool landed=false) {
+        if(action_==CursorAction::Rest)return;
+        const auto previous=action_;
         contactAllowed_=false;launchAnswered_=launched_=false;
-        nearbyRestMs_=landed?input.landingRecoveryMs+180:280;
+        pursuitRecoveryMs_=(landed?input.landingRecoveryMs:0)+
+            ((landed||previous==CursorAction::Paw||previous==CursorAction::Punch||previous==CursorAction::Pounce)?input.settleDurationMs:0);
+        const bool still=stillTracked_&&input.nowMs>=stillSince_&&input.nowMs-stillSince_>=450;
+        nearbyRestMs_=pursuitRecoveryMs_+(still?1800+(nearbyAttempt_%3)*320:280);
         Change(CursorAction::Rest,input.nowMs);
     }
     void PursuitAttempt(const CursorInput& input) {
         const double scale=std::clamp(input.sizeScale,.5,2.);
         const double distance=std::abs(input.cursorX-input.catX);
         const double height=input.cursorHeight/scale;
+        // A pointer resting on the body is an invitation to look/reach in
+        // place, not a reason to back away into another running jump.
+        const bool overBody=distance<=55*scale&&height>=30&&height<=145;
+        if(overBody&&std::hypot(pointerVx_,pointerVy_)<=18*scale) {
+            if(!stillTracked_||input.nowMs<stillSince_||input.nowMs-stillSince_<450||!input.canAttack)return;
+            ++nearbyAttempt_;contactAllowed_=true;launchAnswered_=launched_=false;
+            Change(CursorAction::Tiptoe,input.nowMs);return;
+        }
         const bool edge=(input.catX<=input.minX+1&&input.cursorX<input.catX)||
             (input.catX>=input.maxX-1&&input.cursorX>input.catX);
         const bool align=height<=75&&std::abs(distance-input.pawStandOff*scale)>9*scale;
@@ -301,6 +316,7 @@ private:
             contactAllowed_=false;Change(CursorAction::Chase,input.nowMs);return;
         }
         if(!input.canAttack)return;
+        if(height>75&&input.nowMs<nextLeap_) { PursuitRest(input);return; }
         ++nearbyAttempt_;contactAllowed_=true;launchAnswered_=launched_=false;
         if(height>75&&input.nowMs>=nextLeap_) {
             const double lead=std::clamp(pointerVx_*.22,-65*scale,65*scale);
@@ -309,8 +325,6 @@ private:
             pounceHeight_=std::clamp(input.cursorHeight+pointerVy_*.12,25*scale,245*scale);
             nextLeap_=input.nowMs+input.pouncePreparationMs+input.landingRecoveryMs+1600;
             Change(CursorAction::Pounce,input.nowMs);
-        } else if(height>75) {
-            PursuitRest(input);
         } else Change(nearbyAttempt_%2?CursorAction::Paw:CursorAction::Punch,input.nowMs);
     }
     CursorOutput StepPursuit(const CursorInput& input) {
@@ -331,6 +345,10 @@ private:
             pointerVy_+=(std::clamp((worldHeight-lastHeight_)*1000/dt,-1400.,1400.)-pointerVy_)*weight;
         } else pointerVx_=pointerVy_=0;
         sampled_=valid;lastSample_=input.nowMs;lastX_=input.cursorX;lastHeight_=worldHeight;
+        if(valid&&(!stillTracked_||std::hypot(input.cursorX-stillX_,worldHeight-stillHeight_)>4*scale||
+                std::hypot(pointerVx_,pointerVy_)>18*scale)) {
+            stillTracked_=true;stillSince_=input.nowMs;stillX_=input.cursorX;stillHeight_=worldHeight;
+        }
         if(InFlight()) {
             if(!onSurface||!input.enabled||!input.available||!input.canContinue||input.cursorHeight>310*scale||
                     std::abs(input.cursorX-input.catX)>360*scale)
@@ -388,6 +406,9 @@ private:
         case CursorAction::Paw:case CursorAction::Punch:
             if(elapsed>=CursorAttackDuration(action_,input))PursuitRest(input);
             break;
+        case CursorAction::Tiptoe:case CursorAction::BothPaws:
+            if(elapsed>=(action_==CursorAction::Tiptoe?input.tiptoeDurationMs:input.bothPawsDurationMs))PursuitRest(input);
+            break;
         case CursorAction::Pounce:
             if(!launchAnswered_&&input.canApproach&&(input.cursorX-input.catX)*direction_<-20*scale) {
                 contactAllowed_=false;nextLeap_=input.nowMs+350;
@@ -402,7 +423,8 @@ private:
             }
             break;
         case CursorAction::Rest:
-            if(input.grounded&&elapsed>=nearbyRestMs_)PursuitAttempt(input);
+            if(input.grounded&&(elapsed>=nearbyRestMs_||
+                    (elapsed>=pursuitRecoveryMs_&&std::hypot(pointerVx_,pointerVy_)>24*scale)))PursuitAttempt(input);
             break;
         default:PursuitRest(input);break;
         }
@@ -524,7 +546,8 @@ private:
         CursorOutput output;
         output.action = action_; output.changed = before != action_;
         if(input.pursuePointer) {
-            const bool attack=action_==CursorAction::Paw||action_==CursorAction::Punch||action_==CursorAction::Pounce||action_==CursorAction::Rest;
+            const bool attack=action_==CursorAction::Paw||action_==CursorAction::Punch||action_==CursorAction::Pounce||
+                action_==CursorAction::Tiptoe||action_==CursorAction::BothPaws||action_==CursorAction::Rest;
             if(!attack&&std::isfinite(input.cursorX)&&std::abs(input.cursorX-input.catX)>18*input.sizeScale)
                 direction_=input.cursorX<input.catX?-1:1;
             output.direction=direction_;output.targetX=pounceX_;

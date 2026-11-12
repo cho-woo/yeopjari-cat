@@ -21,7 +21,7 @@ const char* StageName(Stage stage) {
     case Stage::Hop:return "stationary high pointer / physical hop / roaming paused";
     case Stage::Far:return "pointer unavailable / near re-entry";
     case Stage::Care:return "care action owns the cat";
-    default:return "near pointer / resume";
+    default:return "stationary pointer over body / full paw lowering";
     }
 }
 const char* ActionName(Action action) {
@@ -140,8 +140,8 @@ int Simulate(Row& row,std::string& context) {
             std::to_string(index)+" stage="+StageName(stage);
         if(stage!=previousStage) {
             const auto root=g.physics.RenderPose();
-            pointerX=root.x+(stage==Stage::Low||stage==Stage::Resume?lowDx:stage==Stage::Far?360:32);
-            pointerHeight=stage==Stage::Tiptoe?90:stage==Stage::BothPaws?135:stage==Stage::Hop?190:lowHeight;
+            pointerX=root.x+(stage==Stage::Resume?0:stage==Stage::Low?lowDx:stage==Stage::Far?360:32);
+            pointerHeight=stage==Stage::Resume?65:stage==Stage::Tiptoe?90:stage==Stage::BothPaws?135:stage==Stage::Hop?190:lowHeight;
             g.pet.roamingPaused=stage==Stage::Hop;
             if(stage==Stage::Hop)row.pausedRootX=root.x;
             if(stage==Stage::Care) {
@@ -193,7 +193,7 @@ int Simulate(Row& row,std::string& context) {
         if(action!=previousAction) {
             const auto value=static_cast<unsigned>(action);if(value>=row.entries.size())return 682;
             ++row.entries[value];
-            if(stage==Stage::Resume&&action==Action::Paw)++row.resumePaws;
+            if(stage==Stage::Resume&&action==Action::Tiptoe)++row.resumePaws;
             previousAction=action;
         }
         if(previousGrounded&&!physical.grounded) {
@@ -263,7 +263,10 @@ int Simulate(Row& row,std::string& context) {
         " sourceImmutable="+std::to_string(row.sourceImmutable)+" profileUnchanged="+std::to_string(host.Saved()==saved);
     context+=" chaseFrames="+std::to_string(row.chaseFrames)+" movingLaunches="+std::to_string(row.movingLaunches)+
         " turnFrames="+std::to_string(row.turnFrames)+" pounceDrawings="+std::to_string(row.pounceDrawings);
-    if(entries(Action::Paw)<3||!entries(Action::Punch)||row.chaseFrames<120||!row.movingLaunches||!row.turnFrames||!row.pounceDrawings||
+    // The longer source recovery/quiet interval deliberately permits fewer
+    // low-pointer attempts; the separate host test verifies repeated strong
+    // swats. This capture must also show the new over-body source action.
+    if(!entries(Action::Paw)||!entries(Action::Tiptoe)||row.chaseFrames<120||!row.movingLaunches||!row.turnFrames||!row.pounceDrawings||
             !row.hops||row.hops!=row.landings||row.peakLift<20||!row.pausedHopFrames||row.pausedRootDelta>.05||
             !row.resumePaws||!row.awards||row.duplicateAwards||!row.menuFrames||!row.dragFrames||
             !row.menuHeld||!row.dragHeld||!row.careFrames||!row.careInterruptedActive||!row.careProtected||!row.farCancelled||
@@ -351,7 +354,7 @@ int Run(std::string& context) {
             frame.pose.spriteClip==Clip::RunningTurn&&frame.actionElapsed>=550,
             !frame.grounded&&frame.lift>=rows[0].peakLift*.85,
             frame.stage==Stage::Care&&frame.pose.spriteClip==Clip::Eat&&frame.actionElapsed>=1500,
-            frame.stage==Stage::Resume&&frame.action==Action::Paw&&frame.actionElapsed>=240,
+            frame.stage==Stage::Resume&&frame.action==Action::Tiptoe&&frame.actionElapsed>=1200,
             frame.menu,frame.drag}};
         for(unsigned review=0;review<reviewSaved.size();++review)if(!reviewSaved[review]&&representative[review]) {
             if(!SaveNativeWalkingReview(*canvas.image,(std::wstring(L"render-self-test/cursor-play/review-")+reviewNames[review]+L".png").c_str()))return 685;

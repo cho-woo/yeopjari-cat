@@ -203,18 +203,6 @@
       "skin_rgb_exact": true
     },
     {
-      "base_resource_id": 441,
-      "base_source": "assets/video-actions/cream-reach.png",
-      "source": "c10-r441.png",
-      "input_sha256": "9ee97484b54f05b5c38a25278976535dc92682fc3b0dc79948164c5a26fc9904",
-      "output_sha256": "ba454387da43af846e12ccb5ae4a12e5c8e2fc17d9b3e02f1ac04335ede8018a",
-      "source_alpha_sha256": "c285a92e6e15551aede5942a76b10b91f143b08b8917e4550ed08ae032aa094b",
-      "iris_mask": "odd-eye-masks/c10-r441.png",
-      "iris_mask_sha256": "1d48bc0049b7dec39f8df8811b692f314a3b2032dfec1699addc6b6f0c907e7f",
-      "alpha_exact": true,
-      "skin_rgb_exact": true
-    },
-    {
       "base_resource_id": 432,
       "base_source": "assets/video-actions/cream-brake.png",
       "source": "c10-r432.png",
@@ -357,9 +345,21 @@
       "iris_mask_sha256": "eab97c090773af2189f374b02ecb6708507ca4f712a2d1c8a55676b7bb521aff",
       "alpha_exact": true,
       "skin_rgb_exact": true
+    },
+    {
+      "base_resource_id": 441,
+      "base_source": "assets/video-actions/cream-reach.png",
+      "source": "c10-r441.png",
+      "input_sha256": "947b8f7fcc5affe87840c3f28b4d93e7ff3864e27285a0b65df7c34be50e6e10",
+      "output_sha256": "446ceddb9bd1e1d4a1c96ed745e88570ec5af29e2cdd1a0e7409b1ae809c45e9",
+      "source_alpha_sha256": "58d6b70151b1861bf4ee8dd4e6db7529066e43e0538d48b0290652d90bd725a2",
+      "iris_mask": "odd-eye-masks/c10-r441.png",
+      "iris_mask_sha256": "b293b881d838f5f98982c28ed3a334bf0dc336ee7d7591c04917e56a90e574ae",
+      "alpha_exact": true,
+      "skin_rgb_exact": true
     }
   ],
   "tool_sha256": "38aff80a6a8fe818168305d47c6f697ab0d9af7892119f3e5ab903e5c41c86c4",
   "additional_authoring_tool": "tools/pack_video_actions.py",
-  "additional_authoring_tool_sha256": "0463f8b50eedb11a271d1d68c2cf03c7346d29e40b4161df9cad46add0091071"
+  "additional_authoring_tool_sha256": "0dc3052dfb107dcf83ab42bdfba6a4ffdc95dd4c9978a4f80d9a353dffb13812"
 }

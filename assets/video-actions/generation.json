@@ -2,7 +2,7 @@
   "schema": 1,
   "created_date": "2026-11-11",
   "provider": "Dropshot",
-  "total_credits": 10640,
+  "total_credits": 11280,
   "jobs": [
     {
       "character": "cream",
@@ -1645,6 +1645,140 @@
       "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/de550c28744345e49f7eaa5169c60231/tuxedo-side-identity-v29.png",
       "status": "succeeded",
       "identity": "identity-v29367px; canonical same-facing first and last frame"
+    },
+    {
+      "character": "cream",
+      "action": "hover-recovery",
+      "model": "minimax/h3",
+      "job_id": "mcp_3e13e8711ec441b0a802dd7200e6bf9c",
+      "credit_cost": 160,
+      "status": "succeeded",
+      "prompt": "The EXACT cream desktop kitten in BOTH supplied first and last reference frames. Preserve identical head, face, eyes, ears, coat patterns, short fluffy body, paw size and tail, same 3D illustration style and reference pixel scale. Fixed camera, facing RIGHT, in place. Smooth natural stationary play with an invisible mouse cursor held just above and in front of its head. First 0.3 seconds: all four paws planted as the exact reference. From 0.3 to 1.8 seconds: attentive eyes and ears look slightly upward, gently shift weight to the hindquarters and supporting forepaw, raise the NEAR forepaw, make two small fluid upward hunting taps, with clear connected shoulder/elbow/wrist motion. From 1.8 to 2.5 seconds: FULLY retract the raised foreleg, lower its paw all the way to the floor, transfer weight onto it and return to the EXACT supplied four-paw standing reference. From 2.5 seconds to the end: ALL FOUR PAWS MUST REMAIN PLANTED ON THE FLOOR, exactly like the LAST reference image, with only tiny natural breathing. No raised paw held at the end. No frozen attack mid-stroke, no jumping, no walking, no sitting, no standing upright, no spin, no disconnected limbs, no morphing face. Full kitten visible with generous headroom. Absolutely uniform pure #00FF00 chroma green background and floor, no shadow, no props, no visible pointer, no text. One continuous performance, no cuts, no zoom.",
+      "options": {
+        "prompt": "The EXACT cream desktop kitten in BOTH supplied first and last reference frames. Preserve identical head, face, eyes, ears, coat patterns, short fluffy body, paw size and tail, same 3D illustration style and reference pixel scale. Fixed camera, facing RIGHT, in place. Smooth natural stationary play with an invisible mouse cursor held just above and in front of its head. First 0.3 seconds: all four paws planted as the exact reference. From 0.3 to 1.8 seconds: attentive eyes and ears look slightly upward, gently shift weight to the hindquarters and supporting forepaw, raise the NEAR forepaw, make two small fluid upward hunting taps, with clear connected shoulder/elbow/wrist motion. From 1.8 to 2.5 seconds: FULLY retract the raised foreleg, lower its paw all the way to the floor, transfer weight onto it and return to the EXACT supplied four-paw standing reference. From 2.5 seconds to the end: ALL FOUR PAWS MUST REMAIN PLANTED ON THE FLOOR, exactly like the LAST reference image, with only tiny natural breathing. No raised paw held at the end. No frozen attack mid-stroke, no jumping, no walking, no sitting, no standing upright, no spin, no disconnected limbs, no morphing face. Full kitten visible with generous headroom. Absolutely uniform pure #00FF00 chroma green background and floor, no shadow, no props, no visible pointer, no text. One continuous performance, no cuts, no zoom.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f5a17e175ec54a5a9cd9d6a1cd69979f/cream-side-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f5a17e175ec54a5a9cd9d6a1cd69979f/cream-side-identity-v29.png",
+        "generation_mode": "frame",
+        "duration": 4,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      },
+      "identity": "367px canonical scale; immutable master face/coat; exact same-facing first and last image",
+      "selection": "rejected_lifted_forepaw_at_endpoint; retained frame48 as planted reference",
+      "source_file": "sources/hover-v33/cream-hover-return.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_3e13e8711ec441b0a802dd7200e6bf9c/output/output_0.mp4",
+      "source_sha256": "7b7d0333308da5cc7aefcd805c8b8eb76d702d453a1b36590668a68e295c20f6"
+    },
+    {
+      "character": "tuxedo",
+      "action": "hover-recovery",
+      "model": "minimax/h3",
+      "job_id": "mcp_33708823fd0e4e3fb8595047782bb7a2",
+      "credit_cost": 160,
+      "status": "succeeded",
+      "prompt": "The EXACT tuxedo desktop kitten in BOTH supplied first and last reference frames. Preserve identical head, face, eyes, ears, coat patterns, short fluffy body, paw size and tail, same 3D illustration style and reference pixel scale. Fixed camera, facing RIGHT, in place. Smooth natural stationary play with an invisible mouse cursor held just above and in front of its head. First 0.3 seconds: all four paws planted as the exact reference. From 0.3 to 1.8 seconds: attentive eyes and ears look slightly upward, gently shift weight to the hindquarters and supporting forepaw, raise the NEAR forepaw, make two small fluid upward hunting taps, with clear connected shoulder/elbow/wrist motion. From 1.8 to 2.5 seconds: FULLY retract the raised foreleg, lower its paw all the way to the floor, transfer weight onto it and return to the EXACT supplied four-paw standing reference. From 2.5 seconds to the end: ALL FOUR PAWS MUST REMAIN PLANTED ON THE FLOOR, exactly like the LAST reference image, with only tiny natural breathing. No raised paw held at the end. No frozen attack mid-stroke, no jumping, no walking, no sitting, no standing upright, no spin, no disconnected limbs, no morphing face. Full kitten visible with generous headroom. Absolutely uniform pure #00FF00 chroma green background and floor, no shadow, no props, no visible pointer, no text. One continuous performance, no cuts, no zoom.",
+      "options": {
+        "prompt": "The EXACT tuxedo desktop kitten in BOTH supplied first and last reference frames. Preserve identical head, face, eyes, ears, coat patterns, short fluffy body, paw size and tail, same 3D illustration style and reference pixel scale. Fixed camera, facing RIGHT, in place. Smooth natural stationary play with an invisible mouse cursor held just above and in front of its head. First 0.3 seconds: all four paws planted as the exact reference. From 0.3 to 1.8 seconds: attentive eyes and ears look slightly upward, gently shift weight to the hindquarters and supporting forepaw, raise the NEAR forepaw, make two small fluid upward hunting taps, with clear connected shoulder/elbow/wrist motion. From 1.8 to 2.5 seconds: FULLY retract the raised foreleg, lower its paw all the way to the floor, transfer weight onto it and return to the EXACT supplied four-paw standing reference. From 2.5 seconds to the end: ALL FOUR PAWS MUST REMAIN PLANTED ON THE FLOOR, exactly like the LAST reference image, with only tiny natural breathing. No raised paw held at the end. No frozen attack mid-stroke, no jumping, no walking, no sitting, no standing upright, no spin, no disconnected limbs, no morphing face. Full kitten visible with generous headroom. Absolutely uniform pure #00FF00 chroma green background and floor, no shadow, no props, no visible pointer, no text. One continuous performance, no cuts, no zoom.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/de550c28744345e49f7eaa5169c60231/tuxedo-side-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/de550c28744345e49f7eaa5169c60231/tuxedo-side-identity-v29.png",
+        "generation_mode": "frame",
+        "duration": 4,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      },
+      "identity": "367px canonical scale; immutable master face/coat; exact same-facing first and last image",
+      "selection": "rejected_lifted_forepaw_at_endpoint; retained frame48 as planted reference",
+      "source_file": "sources/hover-v33/tuxedo-hover-return.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_33708823fd0e4e3fb8595047782bb7a2/output/output_0.mp4",
+      "source_sha256": "68ce072156d783bc5c80e961a714d8cca9d7a278fb86a8be2e33c481b2d74c31"
+    },
+    {
+      "character": "cream",
+      "action": "hover-recovery",
+      "model": "minimax/h3",
+      "job_id": "mcp_65e53917620d4f8ea97ac72a11d96e54",
+      "credit_cost": 0,
+      "status": "failed",
+      "prompt": "The EXACT cream desktop kitten in BOTH supplied first and last reference frames. Preserve identical head, face, eyes, ears, coat patterns, short fluffy body, paw size and tail, same 3D illustration style and reference pixel scale. Fixed camera, facing RIGHT, in place. Smooth natural stationary play with an invisible mouse cursor held just above and in front of its head. First 0.3 seconds: all four paws planted as the exact reference. From 0.3 to 1.8 seconds: attentive eyes and ears look slightly upward, gently shift weight to the hindquarters and supporting forepaw, raise the NEAR forepaw, make two small fluid upward hunting taps, with clear connected shoulder/elbow/wrist motion. From 1.8 to 2.5 seconds: FULLY retract the raised foreleg, lower its paw all the way to the floor, transfer weight onto it and return to the EXACT supplied four-paw PLANTED standing reference. From 2.5 seconds to the end: ALL FOUR PAWS MUST REMAIN PLANTED ON THE FLOOR, exactly like the LAST reference image, with only tiny natural breathing. No raised paw held at the end. No frozen attack mid-stroke, no jumping, no walking, no sitting, no standing upright, no spin, no disconnected limbs, no morphing face. Full kitten visible with generous headroom. Absolutely uniform pure #00FF00 chroma green background and floor, no shadow, no props, no visible pointer, no text. One continuous performance, no cuts, no zoom. IMPORTANT: the supplied reference has both front toes touching the ground. Return to that exact planted pose, mouth and face unchanged. No extra paw raise during the final recovery. End with every toe grounded.",
+      "options": {
+        "prompt": "The EXACT cream desktop kitten in BOTH supplied first and last reference frames. Preserve identical head, face, eyes, ears, coat patterns, short fluffy body, paw size and tail, same 3D illustration style and reference pixel scale. Fixed camera, facing RIGHT, in place. Smooth natural stationary play with an invisible mouse cursor held just above and in front of its head. First 0.3 seconds: all four paws planted as the exact reference. From 0.3 to 1.8 seconds: attentive eyes and ears look slightly upward, gently shift weight to the hindquarters and supporting forepaw, raise the NEAR forepaw, make two small fluid upward hunting taps, with clear connected shoulder/elbow/wrist motion. From 1.8 to 2.5 seconds: FULLY retract the raised foreleg, lower its paw all the way to the floor, transfer weight onto it and return to the EXACT supplied four-paw PLANTED standing reference. From 2.5 seconds to the end: ALL FOUR PAWS MUST REMAIN PLANTED ON THE FLOOR, exactly like the LAST reference image, with only tiny natural breathing. No raised paw held at the end. No frozen attack mid-stroke, no jumping, no walking, no sitting, no standing upright, no spin, no disconnected limbs, no morphing face. Full kitten visible with generous headroom. Absolutely uniform pure #00FF00 chroma green background and floor, no shadow, no props, no visible pointer, no text. One continuous performance, no cuts, no zoom. IMPORTANT: the supplied reference has both front toes touching the ground. Return to that exact planted pose, mouth and face unchanged. No extra paw raise during the final recovery. End with every toe grounded.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/d6bc64b489ca4b0e86c99865080a474b/cream-settled-side-v33.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/d6bc64b489ca4b0e86c99865080a474b/cream-settled-side-v33.png",
+        "generation_mode": "frame",
+        "duration": 4,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      },
+      "identity": "367px canonical scale; immutable master face/coat; exact same-facing first and last image",
+      "selection": "failed_before_reference_upload_completed",
+      "refunded_credit_cost": 160
+    },
+    {
+      "character": "tuxedo",
+      "action": "hover-recovery",
+      "model": "minimax/h3",
+      "job_id": "mcp_9f161c5c315d4f028d66dbf85bbcc3e6",
+      "credit_cost": 0,
+      "status": "failed",
+      "prompt": "The EXACT tuxedo desktop kitten in BOTH supplied first and last reference frames. Preserve identical head, face, eyes, ears, coat patterns, short fluffy body, paw size and tail, same 3D illustration style and reference pixel scale. Fixed camera, facing RIGHT, in place. Smooth natural stationary play with an invisible mouse cursor held just above and in front of its head. First 0.3 seconds: all four paws planted as the exact reference. From 0.3 to 1.8 seconds: attentive eyes and ears look slightly upward, gently shift weight to the hindquarters and supporting forepaw, raise the NEAR forepaw, make two small fluid upward hunting taps, with clear connected shoulder/elbow/wrist motion. From 1.8 to 2.5 seconds: FULLY retract the raised foreleg, lower its paw all the way to the floor, transfer weight onto it and return to the EXACT supplied four-paw PLANTED standing reference. From 2.5 seconds to the end: ALL FOUR PAWS MUST REMAIN PLANTED ON THE FLOOR, exactly like the LAST reference image, with only tiny natural breathing. No raised paw held at the end. No frozen attack mid-stroke, no jumping, no walking, no sitting, no standing upright, no spin, no disconnected limbs, no morphing face. Full kitten visible with generous headroom. Absolutely uniform pure #00FF00 chroma green background and floor, no shadow, no props, no visible pointer, no text. One continuous performance, no cuts, no zoom. IMPORTANT: the supplied reference has both front toes touching the ground. Return to that exact planted pose, mouth and face unchanged. No extra paw raise during the final recovery. End with every toe grounded.",
+      "options": {
+        "prompt": "The EXACT tuxedo desktop kitten in BOTH supplied first and last reference frames. Preserve identical head, face, eyes, ears, coat patterns, short fluffy body, paw size and tail, same 3D illustration style and reference pixel scale. Fixed camera, facing RIGHT, in place. Smooth natural stationary play with an invisible mouse cursor held just above and in front of its head. First 0.3 seconds: all four paws planted as the exact reference. From 0.3 to 1.8 seconds: attentive eyes and ears look slightly upward, gently shift weight to the hindquarters and supporting forepaw, raise the NEAR forepaw, make two small fluid upward hunting taps, with clear connected shoulder/elbow/wrist motion. From 1.8 to 2.5 seconds: FULLY retract the raised foreleg, lower its paw all the way to the floor, transfer weight onto it and return to the EXACT supplied four-paw PLANTED standing reference. From 2.5 seconds to the end: ALL FOUR PAWS MUST REMAIN PLANTED ON THE FLOOR, exactly like the LAST reference image, with only tiny natural breathing. No raised paw held at the end. No frozen attack mid-stroke, no jumping, no walking, no sitting, no standing upright, no spin, no disconnected limbs, no morphing face. Full kitten visible with generous headroom. Absolutely uniform pure #00FF00 chroma green background and floor, no shadow, no props, no visible pointer, no text. One continuous performance, no cuts, no zoom. IMPORTANT: the supplied reference has both front toes touching the ground. Return to that exact planted pose, mouth and face unchanged. No extra paw raise during the final recovery. End with every toe grounded.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/d0a4c614cb264862816c1a2f567187b1/tuxedo-settled-side-v33.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/d0a4c614cb264862816c1a2f567187b1/tuxedo-settled-side-v33.png",
+        "generation_mode": "frame",
+        "duration": 4,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      },
+      "identity": "367px canonical scale; immutable master face/coat; exact same-facing first and last image",
+      "selection": "failed_before_reference_upload_completed",
+      "refunded_credit_cost": 160
+    },
+    {
+      "character": "cream",
+      "action": "hover-recovery",
+      "model": "minimax/h3",
+      "job_id": "mcp_4076561e3019469b88ea8d6f41e96247",
+      "credit_cost": 160,
+      "status": "succeeded",
+      "prompt": "The EXACT cream desktop kitten in BOTH supplied first and last reference frames. Preserve identical head, face, eyes, ears, coat patterns, short fluffy body, paw size and tail, same 3D illustration style and reference pixel scale. Fixed camera, facing RIGHT, in place. Smooth natural stationary play with an invisible mouse cursor held just above and in front of its head. First 0.3 seconds: all four paws planted as the exact reference. From 0.3 to 1.8 seconds: attentive eyes and ears look slightly upward, gently shift weight to the hindquarters and supporting forepaw, raise the NEAR forepaw, make two small fluid upward hunting taps, with clear connected shoulder/elbow/wrist motion. From 1.8 to 2.5 seconds: FULLY retract the raised foreleg, lower its paw all the way to the floor, transfer weight onto it and return to the EXACT supplied four-paw PLANTED standing reference. From 2.5 seconds to the end: ALL FOUR PAWS MUST REMAIN PLANTED ON THE FLOOR, exactly like the LAST reference image, with only tiny natural breathing. No raised paw held at the end. No frozen attack mid-stroke, no jumping, no walking, no sitting, no standing upright, no spin, no disconnected limbs, no morphing face. Full kitten visible with generous headroom. Absolutely uniform pure #00FF00 chroma green background and floor, no shadow, no props, no visible pointer, no text. One continuous performance, no cuts, no zoom. IMPORTANT: the supplied reference has both front toes touching the ground. Return to that exact planted pose, mouth and face unchanged. No extra paw raise during the final recovery. End with every toe grounded.",
+      "options": {
+        "prompt": "The EXACT cream desktop kitten in BOTH supplied first and last reference frames. Preserve identical head, face, eyes, ears, coat patterns, short fluffy body, paw size and tail, same 3D illustration style and reference pixel scale. Fixed camera, facing RIGHT, in place. Smooth natural stationary play with an invisible mouse cursor held just above and in front of its head. First 0.3 seconds: all four paws planted as the exact reference. From 0.3 to 1.8 seconds: attentive eyes and ears look slightly upward, gently shift weight to the hindquarters and supporting forepaw, raise the NEAR forepaw, make two small fluid upward hunting taps, with clear connected shoulder/elbow/wrist motion. From 1.8 to 2.5 seconds: FULLY retract the raised foreleg, lower its paw all the way to the floor, transfer weight onto it and return to the EXACT supplied four-paw PLANTED standing reference. From 2.5 seconds to the end: ALL FOUR PAWS MUST REMAIN PLANTED ON THE FLOOR, exactly like the LAST reference image, with only tiny natural breathing. No raised paw held at the end. No frozen attack mid-stroke, no jumping, no walking, no sitting, no standing upright, no spin, no disconnected limbs, no morphing face. Full kitten visible with generous headroom. Absolutely uniform pure #00FF00 chroma green background and floor, no shadow, no props, no visible pointer, no text. One continuous performance, no cuts, no zoom. IMPORTANT: the supplied reference has both front toes touching the ground. Return to that exact planted pose, mouth and face unchanged. No extra paw raise during the final recovery. End with every toe grounded.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/d6bc64b489ca4b0e86c99865080a474b/cream-settled-side-v33.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/d6bc64b489ca4b0e86c99865080a474b/cream-settled-side-v33.png",
+        "generation_mode": "frame",
+        "duration": 4,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      },
+      "identity": "367px canonical scale; immutable master face/coat; exact same-facing first and last image",
+      "selection": "selected",
+      "source_file": "sources/hover-v33/cream-planted-hover.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_4076561e3019469b88ea8d6f41e96247/output/output_0.mp4",
+      "source_sha256": "fcf68a59b5fa70a03389b2681abfe8307be3f6c0cede707e8932b25d87835453"
+    },
+    {
+      "character": "tuxedo",
+      "action": "hover-recovery",
+      "model": "minimax/h3",
+      "job_id": "mcp_02e1eadc0740433f83680ed436d3eed6",
+      "credit_cost": 160,
+      "status": "succeeded",
+      "prompt": "The EXACT tuxedo desktop kitten in BOTH supplied first and last reference frames. Preserve identical head, face, eyes, ears, coat patterns, short fluffy body, paw size and tail, same 3D illustration style and reference pixel scale. Fixed camera, facing RIGHT, in place. Smooth natural stationary play with an invisible mouse cursor held just above and in front of its head. First 0.3 seconds: all four paws planted as the exact reference. From 0.3 to 1.8 seconds: attentive eyes and ears look slightly upward, gently shift weight to the hindquarters and supporting forepaw, raise the NEAR forepaw, make two small fluid upward hunting taps, with clear connected shoulder/elbow/wrist motion. From 1.8 to 2.5 seconds: FULLY retract the raised foreleg, lower its paw all the way to the floor, transfer weight onto it and return to the EXACT supplied four-paw PLANTED standing reference. From 2.5 seconds to the end: ALL FOUR PAWS MUST REMAIN PLANTED ON THE FLOOR, exactly like the LAST reference image, with only tiny natural breathing. No raised paw held at the end. No frozen attack mid-stroke, no jumping, no walking, no sitting, no standing upright, no spin, no disconnected limbs, no morphing face. Full kitten visible with generous headroom. Absolutely uniform pure #00FF00 chroma green background and floor, no shadow, no props, no visible pointer, no text. One continuous performance, no cuts, no zoom. IMPORTANT: the supplied reference has both front toes touching the ground. Return to that exact planted pose, mouth and face unchanged. No extra paw raise during the final recovery. End with every toe grounded.",
+      "options": {
+        "prompt": "The EXACT tuxedo desktop kitten in BOTH supplied first and last reference frames. Preserve identical head, face, eyes, ears, coat patterns, short fluffy body, paw size and tail, same 3D illustration style and reference pixel scale. Fixed camera, facing RIGHT, in place. Smooth natural stationary play with an invisible mouse cursor held just above and in front of its head. First 0.3 seconds: all four paws planted as the exact reference. From 0.3 to 1.8 seconds: attentive eyes and ears look slightly upward, gently shift weight to the hindquarters and supporting forepaw, raise the NEAR forepaw, make two small fluid upward hunting taps, with clear connected shoulder/elbow/wrist motion. From 1.8 to 2.5 seconds: FULLY retract the raised foreleg, lower its paw all the way to the floor, transfer weight onto it and return to the EXACT supplied four-paw PLANTED standing reference. From 2.5 seconds to the end: ALL FOUR PAWS MUST REMAIN PLANTED ON THE FLOOR, exactly like the LAST reference image, with only tiny natural breathing. No raised paw held at the end. No frozen attack mid-stroke, no jumping, no walking, no sitting, no standing upright, no spin, no disconnected limbs, no morphing face. Full kitten visible with generous headroom. Absolutely uniform pure #00FF00 chroma green background and floor, no shadow, no props, no visible pointer, no text. One continuous performance, no cuts, no zoom. IMPORTANT: the supplied reference has both front toes touching the ground. Return to that exact planted pose, mouth and face unchanged. No extra paw raise during the final recovery. End with every toe grounded.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/d0a4c614cb264862816c1a2f567187b1/tuxedo-settled-side-v33.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/d0a4c614cb264862816c1a2f567187b1/tuxedo-settled-side-v33.png",
+        "generation_mode": "frame",
+        "duration": 4,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      },
+      "identity": "367px canonical scale; immutable master face/coat; exact same-facing first and last image",
+      "selection": "selected",
+      "source_file": "sources/hover-v33/tuxedo-planted-hover.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_02e1eadc0740433f83680ed436d3eed6/output/output_0.mp4",
+      "source_sha256": "17e250599759c8594940094650ef54c1e35cc4ded964cfcf386ec4baca8ae8a9"
     }
   ]
 }

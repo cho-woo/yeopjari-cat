@@ -356,7 +356,7 @@ def bake(clip, character, indices):
         x, y = ordinal % columns * CELL, ordinal // columns * CELL
         atlas.paste(cell, (x, y))
         records.append({'rect': [x, y, CELL, CELL], 'anchor': list(ROOT_POINT)})
-        if clip == 'reach' and clip in IDENTITY['clips']:
+        if clip == 'reach' and clip in IDENTITY['clips'] and not settings.get('paw_keys'):
             rgba=np.asarray(image);red,green,blue,alpha=rgba.transpose(2,0,1).astype(float)
             yy,xx=np.mgrid[:image.height,:image.width]
             # The recorded pink paw pads, excluding ears and the central nose.
@@ -371,7 +371,7 @@ def bake(clip, character, indices):
                 points.append([(point[0]+shift[0]-ROOT_POINT[0])*110/REFERENCE_HEIGHT,
                     (ROOT_POINT[1]-point[1]-shift[1])*110/REFERENCE_HEIGHT])
             paws.append(points)
-        elif clip in ('punch','cursor-pounce') and settings.get('paw_keys'):
+        elif clip in ('reach','punch','cursor-pounce') and settings.get('paw_keys'):
             keys=np.asarray(settings['paw_keys'][character])
             coordinates=[np.interp(source_index,keys[:,0],keys[:,i]) for i in range(1,5)]
             alpha=np.asarray(cell.getchannel('A'));yy,xx=np.where(alpha>180)
@@ -576,8 +576,20 @@ def main(only=None,materials_only=False):
         header.extend([f'inline Paws {symbol}Paws(unsigned character,unsigned frame) {{',
             f'    const auto& points=character==8?kTuxedo{symbol}:kCream{symbol};',
             '    return points[std::min<unsigned>(frame,points.size()-1)];', '}'])
-    header.append('}')
-    header.pop()
+    reach=IDENTITY['clips']['reach']
+    starts={c:sum(reach['exposures_ms'][:reach['settle_start_frame'][c]]) for c in ('cream','tuxedo')}
+    header.extend(['inline unsigned ReachSettleStart(unsigned character) {',
+        f'    return character==8?{starts["tuxedo"]}:{starts["cream"]};','}',
+        'inline unsigned ReachSettleDuration(unsigned character) {',
+        f'    return {sum(reach["exposures_ms"])}-ReachSettleStart(character);','}',
+        'inline unsigned ReachContact(unsigned character,unsigned frame) {'])
+    for c,n in (('tuxedo',8),('cream',0)):
+        prefix='if(character==8)' if n else 'else'
+        header.append(f'    {prefix} {{')
+        for index,(first,last) in enumerate(reach['contact_windows'][c],1):
+            header.append(f'        if(frame>={first}&&frame<={last})return {index};')
+        header.append('    }')
+    header.extend(['    return 0;','}'])
     for action in ('walk','run','eat','turn'):
         for character in ('cream','tuxedo'):
             indices=evidence[character+'-'+action]['selected_frame_indices']

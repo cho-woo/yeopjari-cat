@@ -454,6 +454,7 @@ void StopKeyboardPlay(bool announce=false,bool settle=true);
 bool ApplyCursorAttackPose(cat::animation::Pose& pose, ULONGLONG ticks, const cat::physics::Pose& physical);
 bool CursorTravellingPounce();
 bool CursorChasing();
+bool CursorNeedsFineCadence(ULONGLONG ticks);
 ULONGLONG CursorTakeoffMs();
 bool ApplyBallToyPose(cat::animation::Pose& pose,ULONGLONG ticks,const cat::physics::Pose& physical);
 bool ToyInteractionAvailable();
@@ -1862,7 +1863,7 @@ void RefreshAnimationTimer() {
     const bool idleActing=(g.motion==Motion::Idle||g.motion==Motion::Watch) && !g.waitingForStop && !g.jumpPending &&
         g.groundArtBridge.Neutral() && ticks>=g.motionStart &&
         cat::idle_gestures::NeedsFineCadence(ticks-g.motionStart);
-    const UINT interval = g.hidden ? 250 : (g.menuOpen || g.dragging || (resting&&!idleActing) ? 40 : 16);
+    const UINT interval = g.hidden ? 250 : (g.menuOpen || g.dragging || (resting&&!idleActing&&!CursorNeedsFineCadence(ticks)) ? 40 : 16);
     const bool precise = interval == 16;
     if (precise && !g.preciseTimer) g.preciseTimer = timeBeginPeriod(1) == TIMERR_NOERROR;
     else if (!precise && g.preciseTimer) { timeEndPeriod(1); g.preciseTimer = false; }
@@ -3627,6 +3628,16 @@ struct CursorInteraction {
 bool EnvironmentBusy() { return cursorInteraction.session.Active(); }
 double CursorReactionVelocity() { return cursorInteraction.session.Velocity(); }
 bool CursorChasing() { return cursorInteraction.session.Action()==cat::environment::CursorAction::Chase; }
+bool CursorNeedsFineCadence(ULONGLONG ticks) {
+    const auto& cursor=cursorInteraction;
+    if(!cursor.session.OwnsSerial(g.motionSerial)||g.motion!=cursor.motion)return false;
+    if(cursor.session.Active())return true;
+    if(cursor.hopFlightLaunched&&cursor.hopLandedAt&&ticks>=cursor.hopLandedAt) {
+        if(const auto* art=LoadedCareSprite(cat::sprite_sequence::Clip::CursorPounce,g.preferences.character))
+            return ticks-cursor.hopLandedAt<cat::sprite_sequence::Duration(art->layout->program,art->layout->program.outro);
+    }
+    return false;
+}
 bool CursorTravellingPounce() {
     return cursorInteraction.runningTakeoff&&cursorInteraction.session.Action()==cat::environment::CursorAction::Pounce&&
         !cursorInteraction.hopLandedAt&&cursorInteraction.session.OwnsSerial(g.motionSerial);
@@ -3675,6 +3686,7 @@ void UpdateCursorReactionSample(ULONGLONG ticks, ULONGLONG elapsedMs, POINT curs
     input.bothPawsDurationMs=cat::cursor::DurationMs(cat::cursor::AttackKind::BothPaws);
     if(const auto* reach=LoadedCareSprite(cat::sprite_sequence::Clip::Reach,g.preferences.character)) {
         input.tiptoeDurationMs=input.bothPawsDurationMs=cat::sprite_sequence::ProgramDuration(reach->layout->program);
+        input.settleDurationMs=cat::video_actions::ReachSettleDuration(static_cast<unsigned>(g.preferences.character));
     }
     if(const auto* jump=LoadedCareSprite(cat::sprite_sequence::Clip::CursorPounce,g.preferences.character))
         input.landingRecoveryMs=cat::sprite_sequence::Duration(jump->layout->program,jump->layout->program.outro);
@@ -3738,7 +3750,7 @@ void UpdateCursorReactionSample(ULONGLONG ticks, ULONGLONG elapsedMs, POINT curs
             g.waitingForStop=false;
             g.groundArtBridge.ContinueLocomotion(ticks);
         }
-        if(output.action==Action::Paw||output.action==Action::Punch||output.action==Action::Pounce)
+        if(output.action==Action::Paw||output.action==Action::Punch||output.action==Action::Pounce||output.action==Action::Tiptoe||output.action==Action::BothPaws)
             interaction.lastAttack=output.action;
         if(output.action==Action::Rest&&(previousAction==Action::Pounce||previousAction==Action::Paw||previousAction==Action::Punch)) {
             // Land/retract in the source four-paw stance while the motor
@@ -3805,7 +3817,7 @@ bool ApplyCursorAttackPose(cat::animation::Pose& pose, ULONGLONG ticks, const ca
     const auto* jump=LoadedCareSprite(cat::sprite_sequence::Clip::CursorPounce,g.preferences.character);
     const auto recovery=jump?cat::sprite_sequence::Duration(jump->layout->program,jump->layout->program.outro):1240;
     const bool recoveringHop=interaction.hopFlightLaunched&&interaction.hopLandedAt&&ticks>=interaction.hopLandedAt&&
-        (ticks-interaction.hopLandedAt<recovery||action==cat::environment::CursorAction::Rest)&&
+        ticks-interaction.hopLandedAt<recovery&&
         interaction.lastAttack==cat::environment::CursorAction::Pounce&&physical.grounded&&!KeyboardPlayActive();
     const bool hopVisual=interaction.session.InFlight()||recoveringHop;
     const bool prelaunchHop=action==cat::environment::CursorAction::Pounce&&g.jumpPending;
@@ -3837,12 +3849,21 @@ bool ApplyCursorAttackPose(cat::animation::Pose& pose, ULONGLONG ticks, const ca
         return true;
     }
     if(action==cat::environment::CursorAction::Rest&&
-            (interaction.lastAttack==cat::environment::CursorAction::Paw||interaction.lastAttack==cat::environment::CursorAction::Punch)&&
             interaction.session.OwnsSerial(g.motionSerial)&&g.motion==interaction.motion&&physical.grounded&&
             CursorPlaybackAllowed()&&!g.waitingForStop) {
-        if(const auto* swat=LoadedCareSprite(cat::sprite_sequence::Clip::Punch,g.preferences.character)) {
+        if(const auto* reach=LoadedCareSprite(cat::sprite_sequence::Clip::Reach,g.preferences.character)) {
             pose={};pose.flip=g.direction<0;
-            cat::animation::AttachSprite(pose,cat::sprite_sequence::Clip::Punch,cat::sprite_sequence::ProgramDuration(swat->layout->program));
+            const auto elapsed=ticks>=g.motionStart?ticks-g.motionStart:0;
+            const auto coat=static_cast<unsigned>(g.preferences.character);
+            const bool alreadySettled=interaction.lastAttack==cat::environment::CursorAction::Tiptoe||
+                interaction.lastAttack==cat::environment::CursorAction::BothPaws;
+            const auto start=cat::video_actions::ReachSettleStart(coat);
+            const auto settleElapsed=interaction.lastAttack==cat::environment::CursorAction::Pounce&&
+                interaction.hopFlightLaunched&&interaction.hopLandedAt?
+                (ticks-interaction.hopLandedAt>recovery?ticks-interaction.hopLandedAt-recovery:0):elapsed;
+            cat::animation::AttachSprite(pose,cat::sprite_sequence::Clip::Reach,
+                alreadySettled?cat::sprite_sequence::ProgramDuration(reach->layout->program):start+settleElapsed);
+            pose.spritePaws=cat::video_actions::ReachPaws(coat,SpriteFrameFor(pose,*reach->layout));pose.spritePawsValid=true;
             return true;
         }
     }
@@ -3962,6 +3983,10 @@ bool UpdateCursorContact(ULONGLONG ticks, const cat::physics::Pose& physical) {
         if(pose.spriteClip==cat::sprite_sequence::Clip::Punch) {
             const auto* swat=LoadedCareSprite(pose.spriteClip,g.preferences.character);
             contactIndex=swat?cat::cursor::SourceSwatContact(static_cast<unsigned>(g.preferences.character),SpriteFrameFor(pose,*swat->layout)):0;
+        }
+        if(pose.spriteClip==cat::sprite_sequence::Clip::Reach) {
+            const auto* reach=LoadedCareSprite(pose.spriteClip,g.preferences.character);
+            contactIndex=reach?cat::video_actions::ReachContact(static_cast<unsigned>(g.preferences.character),SpriteFrameFor(pose,*reach->layout)):0;
         }
         if(pose.spriteClip==cat::sprite_sequence::Clip::CursorPounce&&interaction.session.InFlight()) {
             const auto* catchArt=LoadedCareSprite(pose.spriteClip,g.preferences.character);
