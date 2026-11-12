@@ -429,7 +429,7 @@ int NativeActualCareSpriteRenderTest(std::string& context) {
         for(int facing:{-1,1})for(REAL desiredHeight:{80.0f,165.0f}) {
             auto body=normal;body.bodyWidth=dimensions.first;body.bodyHeight=dimensions.second;
             cat::animation::Pose pose;pose.spriteTimed=false;pose.spriteClip=layout.clip;pose.spriteFrame=frame;
-            pose.flip=facing<0;pose.groundContact=layout.clip!=Clip::Jump;
+            pose.flip=facing<0;pose.groundContact=layout.clip!=Clip::Jump&&layout.clip!=Clip::CursorPounce;
             context="actual care shape clip="+std::to_string(static_cast<unsigned>(layout.clip))+
                 " facing="+std::to_string(facing)+" width="+std::to_string(dimensions.first)+
                 " height="+std::to_string(desiredHeight);
@@ -456,7 +456,7 @@ int NativeActualCareSpriteRenderTest(std::string& context) {
             }
             if(pose.groundContact&&actual[3]>bottom+cat::render::SpriteBottomSafetyInset(layout,desiredHeight,body.bodyHeight)+2)return 304;
         }
-        if(layout.clip!=Clip::Jump&&layout.clip!=Clip::Climb) {
+        if(layout.clip!=Clip::Jump&&layout.clip!=Clip::CursorPounce&&layout.clip!=Clip::Climb) {
             cat::animation::Pose airborne;airborne.spriteClip=layout.clip;airborne.groundContact=false;
             if(CareSpriteFor(airborne,character))return 306;
         }

@@ -10,18 +10,18 @@ namespace cat::sprite_sequence {
 
 // The first eight ordinals are stable asset identifiers. None is not a sheet.
 enum class Clip { Groom, Sleep, Box, Fish, Punch, Eat, Jump, Treat, None, Walk, Run, Knead, Reach,
-    BallPlay, ToyPlay, Brake, Slide, Stumble, Climb, FlyHunt, RunningTurn };
+    BallPlay, ToyPlay, Brake, Slide, Stumble, Climb, FlyHunt, RunningTurn, CursorPounce };
 constexpr std::array<Clip,8> kClips{{Clip::Groom,Clip::Sleep,Clip::Box,Clip::Fish,
                                    Clip::Punch,Clip::Eat,Clip::Jump,Clip::Treat}};
-constexpr std::array<Clip,20> kAuthoredClips{{Clip::Groom,Clip::Sleep,Clip::Box,Clip::Fish,
+constexpr std::array<Clip,21> kAuthoredClips{{Clip::Groom,Clip::Sleep,Clip::Box,Clip::Fish,
     Clip::Punch,Clip::Eat,Clip::Jump,Clip::Treat,Clip::Walk,Clip::Run,Clip::Knead,Clip::Reach,
-    Clip::BallPlay,Clip::ToyPlay,Clip::Brake,Clip::Slide,Clip::Stumble,Clip::Climb,Clip::FlyHunt,Clip::RunningTurn}};
+    Clip::BallPlay,Clip::ToyPlay,Clip::Brake,Clip::Slide,Clip::Stumble,Clip::Climb,Clip::FlyHunt,Clip::RunningTurn,Clip::CursorPounce}};
 constexpr unsigned kMaxAuthoredFrames=256,kMaxProgramSteps=512,kMaxProgramCues=64;
 constexpr std::uint32_t kMaxStepMs=60000,kMaxProgramMs=86400000;
 constexpr bool KnownClip(Clip clip) {
     return static_cast<unsigned>(clip)<8 || clip==Clip::Walk || clip==Clip::Run ||
         clip==Clip::Knead || clip==Clip::Reach ||
-        (clip>=Clip::BallPlay&&clip<=Clip::RunningTurn);
+        (clip>=Clip::BallPlay&&clip<=Clip::CursorPounce);
 }
 struct Grid { unsigned columns=0,rows=0,count=0; };
 constexpr Grid GridFor(Clip clip,unsigned sheetFrames=0) {
@@ -36,7 +36,7 @@ constexpr Grid GridFor(Clip clip,unsigned sheetFrames=0) {
     case Clip::Jump:grid={4,4,16};break;
     case Clip::Treat:grid={6,4,24};break;
     case Clip::Walk:case Clip::Run:case Clip::Knead:case Clip::Reach:grid={8,1,8};break;
-    case Clip::BallPlay:case Clip::ToyPlay:case Clip::Brake:case Clip::Slide:case Clip::Stumble:case Clip::Climb:case Clip::FlyHunt:case Clip::RunningTurn:
+    case Clip::BallPlay:case Clip::ToyPlay:case Clip::Brake:case Clip::Slide:case Clip::Stumble:case Clip::Climb:case Clip::FlyHunt:case Clip::RunningTurn:case Clip::CursorPounce:
         grid={8,1,8};break;
     case Clip::None:break;
     }
@@ -64,6 +64,9 @@ struct Options {
     // This module supplies no root translation, scale, angle or jump height.
     bool grounded=true;
     double velocityY=0;
+    // Optional normalized real takeoff-to-landing phase for momentum catches.
+    // Other jump programs retain their established velocity clock.
+    double flightProgress=-1;
     std::uint64_t contactElapsedMs=0;
     // Zero selects the clip's default duration. Groom stays within4–8s;
     // meals accept3.5–12s without shortening their entrance or exit.
@@ -168,7 +171,8 @@ inline double UnitPhase(double phase) {
 inline std::uint64_t FlightClock(const Program& program,const Options& options) {
     const auto duration=Duration(program,program.loop);
     const double speed=std::isfinite(options.velocityY)?options.velocityY:0;
-    const double progress=std::clamp((200.0-speed)/400.0,0.0,1.0);
+    const double progress=std::isfinite(options.flightProgress)&&options.flightProgress>=0?
+        std::clamp(options.flightProgress,0.,1.):std::clamp((200.0-speed)/400.0,0.0,1.0);
     return duration?std::min(duration-1,static_cast<std::uint64_t>(progress*static_cast<double>(duration))):0;
 }
 inline Frame SampleProgram(Clip clip,const Program& program,std::uint64_t elapsed,
@@ -183,7 +187,7 @@ inline Frame SampleProgram(Clip clip,const Program& program,std::uint64_t elapse
         const auto duration=Duration(program,range);
         return SampleRange(program,range,static_cast<std::uint64_t>(UnitPhase(options.cyclePhase)*duration),true);
     }
-    if(clip==Clip::Jump) {
+    if(clip==Clip::Jump || clip==Clip::CursorPounce) {
         if(!options.grounded) {
             auto pose=SampleRange(program,program.loop,FlightClock(program,options),false);
             pose.finished=false;pose.groundContact=false;return pose;
@@ -288,7 +292,7 @@ private:
         const bool inIntro=In(program.intro,cue.step),inLoop=In(program.loop,cue.step);
         const Range range=inIntro?program.intro:inLoop?program.loop:program.outro;
         const auto offset=Offset(program,range,cue);
-        if(clip==Clip::Jump) {
+        if(clip==Clip::Jump || clip==Clip::CursorPounce) {
             if(!options.grounded)return inLoop && FlightClock(program,options)>=offset;
             if(options.jump==JumpPhase::Crouch)return inIntro && elapsed>=offset;
             return !inIntro && !inLoop && options.contactElapsedMs>=offset;
@@ -557,7 +561,7 @@ inline Frame Sample(Clip clip,std::uint64_t elapsed,const Options& options={}) {
         return {std::min(7u,static_cast<unsigned>(phase*8)),0,0,true,true,false,true};
     }
     case Clip::None:case Clip::Knead:case Clip::Reach:case Clip::BallPlay:case Clip::ToyPlay:
-    case Clip::Brake:case Clip::Slide:case Clip::Stumble:case Clip::Climb:case Clip::FlyHunt:case Clip::RunningTurn:break;
+    case Clip::Brake:case Clip::Slide:case Clip::Stumble:case Clip::Climb:case Clip::FlyHunt:case Clip::RunningTurn:case Clip::CursorPounce:break;
     }
     return {0,0,0,false,true,true,true};
 }

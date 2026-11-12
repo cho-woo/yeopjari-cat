@@ -291,6 +291,56 @@ void OutsideHeightOrBoundsNeverStartsAReach() {
         CHECK(std::none_of(host.changes.begin(), host.changes.end(), [](const Change& c) { return Reach(c.action); }));
     }
 }
+
+void ActivePursuitKeepsTheWholeMonitorAndWaitsForPlantedTurns() {
+    cat::environment::CursorReaction planner;
+    cat::environment::CursorInput input;
+    input.enabled=input.available=input.canStart=input.canContinue=input.pursuePointer=true;
+    input.minX=60;input.maxX=1220;input.catX=200;input.cursorX=1100;input.cursorHeight=110;
+    cat::environment::CursorOutput output;
+    for(input.nowMs=1000;input.nowMs<2500;input.nowMs+=16)output=planner.Step(input);
+    CHECK(output.action==Action::Chase&&output.velocity>100);
+    CHECK(planner.Active()); // A900px gap no longer cancels explicit play.
+    input.catX=900;input.cursorX=1035;input.catVelocityX=140;input.canAttack=false;
+    for(unsigned frame=0;frame<100;++frame){input.nowMs+=16;output=planner.Step(input);}
+    CHECK(output.action==Action::Chase); // Finish the source pivot before an attack.
+    input.canAttack=true;input.nowMs+=16;output=planner.Step(input);
+    CHECK(output.action==Action::Pounce);
+    const auto target=planner.TargetX();
+    planner.ConfirmLaunch(true);input.grounded=false;input.cursorX=100;input.nowMs+=16;
+    output=planner.Step(input);
+    CHECK(planner.InFlight()&&planner.TargetX()==target&&output.velocity==0);
+    CHECK(!planner.ContactAllowed()); // No fictitious catch after a large escape.
+    input.enabled=false;input.nowMs+=16;planner.Step(input);
+    CHECK(planner.InFlight()); // An OFF toggle cannot undo a Box2D impulse.
+    input.grounded=true;input.nowMs+=16;planner.Step(input);
+    CHECK(!planner.Active());
+}
+
+void RunningCatchUsesRelativeMotionAndCanReaimBeforeTakeoff() {
+    for(const bool approaching:{false,true}) {
+        cat::environment::CursorReaction planner;
+        cat::environment::CursorInput input;
+        input.enabled=input.available=input.canStart=input.canContinue=input.pursuePointer=true;
+        input.minX=60;input.maxX=1220;input.catX=200;input.cursorX=1100;input.cursorHeight=110;
+        input.pouncePreparationMs=625;
+        for(input.nowMs=1000;input.nowMs<2000;input.nowMs+=16)planner.Step(input);
+        CHECK(planner.Action()==Action::Chase);
+        input.canAttack=false;input.catVelocityX=140;
+        for(unsigned frame=0;frame<80;++frame) {
+            input.nowMs+=16;input.cursorX+=(approaching?-140:140)*.016;
+            input.catX=input.cursorX-(approaching?310:150);planner.Step(input);
+        }
+        input.canAttack=true;input.nowMs+=16;planner.Step(input);
+        CHECK(planner.Action()==(approaching?Action::Pounce:Action::Chase));
+        if(approaching) {
+            input.cursorHeight=180;input.nowMs+=16;planner.Step(input);
+            CHECK(planner.TargetHeight()>170);
+            input.cursorX=input.catX-40;input.nowMs+=16;planner.Step(input);
+            CHECK(planner.Action()==Action::Chase&&!planner.ContactAllowed());
+        }
+    }
+}
 } // namespace
 
 int main() {
@@ -302,6 +352,8 @@ int main() {
         DepartingPointerCancelsGroundPlayAndCannotRetargetAnExistingHop();
         PauseAndNewActionKeepTheirOwnClocksAndContactOwnership();
         OutsideHeightOrBoundsNeverStartsAReach();
+        ActivePursuitKeepsTheWholeMonitorAndWaitsForPlantedTurns();
+        RunningCatchUsesRelativeMotionAndCanReaimBeforeTakeoff();
         std::cout << "cat_cursor_nearby_test: " << checks << " checks passed\n";
         return 0;
     } catch (const std::exception& failure) {

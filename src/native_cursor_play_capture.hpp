@@ -6,20 +6,20 @@
 namespace native_cursor_play_capture {
 using Action=cat::environment::CursorAction;
 using Clip=cat::sprite_sequence::Clip;
-constexpr unsigned Fps=60,Count=6000;
-constexpr int Width=800,Height=720,ActorWidth=360,ActorHeight=420,ActorFloor=390;
+constexpr unsigned Fps=60,Count=3600;
+constexpr int Width=1440,Height=1060,ActorWidth=360,ActorHeight=420,ActorFloor=390;
 enum class Stage { Low,Tiptoe,BothPaws,Hop,Far,Care,Resume };
 Stage StageAt(ULONGLONG elapsed) {
-    return elapsed<20000?Stage::Low:elapsed<34000?Stage::Tiptoe:elapsed<58000?Stage::BothPaws:
-        elapsed<78000?Stage::Hop:elapsed<80000?Stage::Far:elapsed<85000?Stage::Care:Stage::Resume;
+    return elapsed<8000?Stage::Low:elapsed<20000?Stage::Tiptoe:elapsed<38000?Stage::BothPaws:
+        elapsed<48000?Stage::Hop:elapsed<50000?Stage::Far:elapsed<55000?Stage::Care:Stage::Resume;
 }
 const char* StageName(Stage stage) {
     switch(stage) {
     case Stage::Low:return "stationary low pointer / repeated paw";
-    case Stage::Tiptoe:return "stationary middle pointer / tiptoe";
-    case Stage::BothPaws:return "stationary chest-high pointer / both paws";
+    case Stage::Tiptoe:return "escaping pointer / running catch";
+    case Stage::BothPaws:return "pointer reversal / planted turn / reacquire";
     case Stage::Hop:return "stationary high pointer / physical hop / roaming paused";
-    case Stage::Far:return "far cancellation / near re-entry";
+    case Stage::Far:return "pointer unavailable / near re-entry";
     case Stage::Care:return "care action owns the cat";
     default:return "near pointer / resume";
     }
@@ -54,6 +54,7 @@ struct Row {
     double startX=0,peakLift=0,pausedRootX=0,pausedRootDelta=0,maxFrameRootDelta=0;
     unsigned hops=0,landings=0,awards=0,duplicateAwards=0,menuFrames=0,dragFrames=0,careFrames=0;
     unsigned pausedGroundReaches=0,pausedHopFrames=0,resumePaws=0;
+    unsigned chaseFrames=0,movingLaunches=0,turnFrames=0,pounceDrawings=0;
     bool menuHeld=true,dragHeld=true,farCancelled=false,careInterruptedActive=false,careProtected=true,sourceImmutable=false;
     std::uint64_t sourceHash=0;
 };
@@ -75,6 +76,45 @@ bool DrawActor(Surface& actor,Row& row,const Frame& frame,ULONGLONG elapsed) {
     return graphics.GetLastStatus()==Ok&&native_coat_tests::ValidPixels(
         reinterpret_cast<const std::uint32_t*>(actor.pixels),ActorWidth,ActorHeight,true);
 }
+std::wstring ActorCachePath(cat::Character character,unsigned index) {
+    return L"render-self-test/cursor-actors/c"+std::to_wstring(static_cast<unsigned>(character))+L"-"+std::to_wstring(index)+L".rgba";
+}
+bool CacheActor(const Surface& actor,cat::Character character,unsigned index) {
+    const auto* pixels=reinterpret_cast<const std::uint32_t*>(actor.pixels);
+    unsigned left=ActorWidth,top=ActorHeight,right=0,bottom=0;
+    for(unsigned y=0;y<ActorHeight;++y)for(unsigned x=0;x<ActorWidth;++x)if(pixels[y*ActorWidth+x]>>24) {
+        left=std::min(left,x);right=std::max(right,x+1);top=std::min(top,y);bottom=std::max(bottom,y+1);
+    }
+    if(left>=right||top>=bottom)return false;
+    const std::array<unsigned,4> rect{{left,top,right-left,bottom-top}};
+    std::string bytes(reinterpret_cast<const char*>(rect.data()),sizeof(rect));
+    for(unsigned y=top;y<bottom;++y)bytes.append(reinterpret_cast<const char*>(pixels+y*ActorWidth+left),(right-left)*4);
+    const auto path=ActorCachePath(character,index);
+    HANDLE file=CreateFileW(path.c_str(),GENERIC_WRITE,0,nullptr,CREATE_ALWAYS,FILE_ATTRIBUTE_TEMPORARY,nullptr);
+    if(file==INVALID_HANDLE_VALUE)return false;
+    DWORD written=0;const bool ok=WriteFile(file,bytes.data(),static_cast<DWORD>(bytes.size()),&written,nullptr)&&written==bytes.size();
+    return CloseHandle(file)&&ok;
+}
+bool RestoreActor(Surface& actor,cat::Character character,unsigned index) {
+    // Store the already rendered premultiplied crop verbatim. This preserves
+    // the normal two-material resident budget while comparing all three coats.
+    const auto path=ActorCachePath(character,index);
+    HANDLE file=CreateFileW(path.c_str(),GENERIC_READ,FILE_SHARE_READ,nullptr,OPEN_EXISTING,FILE_ATTRIBUTE_TEMPORARY,nullptr);
+    if(file==INVALID_HANDLE_VALUE)return false;
+    const DWORD size=GetFileSize(file,nullptr);
+    if(size<16||size>ActorWidth*ActorHeight*4+16){CloseHandle(file);return false;}
+    std::string bytes(size,'\0');DWORD read=0;
+    const bool ok=ReadFile(file,bytes.data(),size,&read,nullptr)&&read==size;CloseHandle(file);
+    if(!ok)return false;
+    std::array<unsigned,4> rect;std::memcpy(rect.data(),bytes.data(),16);
+    const auto [x,y,width,height]=rect;
+    if(x+width>ActorWidth||y+height>ActorHeight||bytes.size()!=16+width*height*4)return false;
+    std::memset(actor.pixels,0,ActorWidth*ActorHeight*4);
+    auto* pixels=reinterpret_cast<std::uint32_t*>(actor.pixels);
+    for(unsigned row=0;row<height;++row)
+        std::memcpy(pixels+(y+row)*ActorWidth+x,bytes.data()+16+row*width*4,width*4);
+    DeleteFileW(ActorCachePath(character,index).c_str());return true;
+}
 int Simulate(Row& row,std::string& context) {
     native_manual_motion_tests::Host host;host.Reset(row.character,false);
     g.cursorPlay=true;g.workInterference=false;g.random.seed(74021);g.randomZoomiesRandom.seed(1936);
@@ -83,8 +123,9 @@ int Simulate(Row& row,std::string& context) {
     row.startX=g.physics.RenderPose().x;row.body=cat::appearance::VisualModifiers(g.nutrition,row.character);
     row.sourceHash=BaseSourceHash(row.character);row.frames.reserve(Count);
     const auto geometry=cat::cursor::Bounded(CursorAttackGeometry());
-    const double lowDx=(geometry.pawAnchorX-.5)*geometry.width;
-    double pointerX=row.startX+lowDx,pointerHeight=12,previousX=row.startX;
+    const auto lowPaw=cat::video_actions::PunchPaws(static_cast<unsigned>(row.character),row.character==cat::Character::Tuxedo?18:14)[0];
+    const double lowDx=lowPaw.x*row.body.bodyWidth,lowHeight=lowPaw.y*row.body.bodyHeight;
+    double pointerX=row.startX+lowDx,pointerHeight=lowHeight,previousX=row.startX;
     Stage previousStage=Stage::Low;
     Action previousAction=Action::None;
     bool previousGrounded=true,nearBeforeCare=false;
@@ -100,7 +141,7 @@ int Simulate(Row& row,std::string& context) {
         if(stage!=previousStage) {
             const auto root=g.physics.RenderPose();
             pointerX=root.x+(stage==Stage::Low||stage==Stage::Resume?lowDx:stage==Stage::Far?360:32);
-            pointerHeight=stage==Stage::Tiptoe?90:stage==Stage::BothPaws?135:stage==Stage::Hop?190:12;
+            pointerHeight=stage==Stage::Tiptoe?90:stage==Stage::BothPaws?135:stage==Stage::Hop?190:lowHeight;
             g.pet.roamingPaused=stage==Stage::Hop;
             if(stage==Stage::Hop)row.pausedRootX=root.x;
             if(stage==Stage::Care) {
@@ -110,8 +151,20 @@ int Simulate(Row& row,std::string& context) {
             if(stage==Stage::Resume)SetMotion(Motion::Idle,10000,now);
             previousStage=stage;
         }
-        if(stage==Stage::Far&&elapsed>=79000&&!nearBeforeCare) {
-            pointerX=g.physics.RenderPose().x+lowDx;pointerHeight=12;nearBeforeCare=true;
+        if(stage==Stage::Tiptoe) {
+            const double seconds=(elapsed-8000)*.001;
+            pointerX=800+300*std::sin(seconds*.55);
+            pointerHeight=110+35*std::sin(seconds*.9);
+        }
+        if(stage==Stage::BothPaws) {
+            const double seconds=(elapsed-20000)*.001;
+            pointerX=static_cast<unsigned>(seconds/5.5)%2?100:1100;
+            pointerHeight=8;
+        }
+        const bool available=!(stage==Stage::BothPaws&&elapsed>=35000)&&
+            !(stage==Stage::Far&&elapsed<49000);
+        if(stage==Stage::Far&&elapsed>=49000&&!nearBeforeCare) {
+            pointerX=g.physics.RenderPose().x+lowDx;pointerHeight=lowHeight;nearBeforeCare=true;
         }
         const bool menu=elapsed>=900&&elapsed<1300;
         const bool drag=elapsed>=3200&&elapsed<3600;
@@ -125,7 +178,7 @@ int Simulate(Row& row,std::string& context) {
                     static_cast<LONG>(std::lround(g.work.bottom-pointerHeight*g.dpiScale))};
                 // Same active portion of Tick, with only GetCursorPos replaced
                 // by this explicit in-memory sample. SetMotion uses this clock.
-                UpdateCursorReactionSample(now,step,pointer,true);
+                UpdateCursorReactionSample(now,step,pointer,available);
                 FinishManualMotion(now);AdvanceRandomZoomies(now,step/1000.);
                 DispatchAutonomousMotion(now);AdvancePrimaryMotion(now,step/1000.);
             }
@@ -143,10 +196,15 @@ int Simulate(Row& row,std::string& context) {
             if(stage==Stage::Resume&&action==Action::Paw)++row.resumePaws;
             previousAction=action;
         }
-        if(previousGrounded&&!physical.grounded)++row.hops;
+        if(previousGrounded&&!physical.grounded) {
+            ++row.hops;if(std::abs(physical.velocityX)>20)++row.movingLaunches;
+        }
         if(!previousGrounded&&physical.grounded)++row.landings;
         previousGrounded=physical.grounded;
         row.peakLift=std::max(row.peakLift,physical.lift);
+        if(action==Action::Chase)++row.chaseFrames;
+        if(pose.spriteClip==Clip::RunningTurn)++row.turnFrames;
+        if(pose.spriteClip==Clip::CursorPounce)++row.pounceDrawings;
         row.maxFrameRootDelta=std::max(row.maxFrameRootDelta,std::abs(rendered.x-previousX));previousX=rendered.x;
         if(stage==Stage::Hop) {
             row.pausedRootDelta=std::max(row.pausedRootDelta,std::abs(rendered.x-row.pausedRootX));
@@ -156,7 +214,7 @@ int Simulate(Row& row,std::string& context) {
         // An already launched ballistic hop finishes safely. Moving the
         // pointer away must cancel its contact immediately, not teleport the
         // body to the floor merely to make the session inactive.
-        if(stage==Stage::Far&&elapsed>=78700&&elapsed<79000&&
+        if(stage==Stage::Far&&elapsed>=48700&&elapsed<49000&&
                 (!cursorInteraction.session.Active()||
                     (cursorInteraction.session.InFlight()&&!cursorInteraction.session.ContactAllowed())))row.farCancelled=true;
         if(stage==Stage::Care) {
@@ -183,6 +241,7 @@ int Simulate(Row& row,std::string& context) {
         frame.contactAllowed=cursorInteraction.session.ContactAllowed();
         if(!DrawActor(actor,row,frame,elapsed))return 683;
         frame.actorHash=cat::Checksum(std::string(reinterpret_cast<const char*>(actor.pixels),ActorWidth*ActorHeight*4));
+        if(!CacheActor(actor,row.character,index))return 683;
         if(paused) {
             if(!wasPaused)pauseHash=previousHash;
             if(menu){++row.menuFrames;row.menuHeld=row.menuHeld&&frame.actorHash==pauseHash;}
@@ -202,7 +261,9 @@ int Simulate(Row& row,std::string& context) {
         " careProtected="+std::to_string(row.careProtected)+" careInterruptedActive="+std::to_string(row.careInterruptedActive)+
         " farCancelled="+std::to_string(row.farCancelled)+
         " sourceImmutable="+std::to_string(row.sourceImmutable)+" profileUnchanged="+std::to_string(host.Saved()==saved);
-    if(entries(Action::Paw)<3||!entries(Action::Tiptoe)||!entries(Action::BothPaws)||
+    context+=" chaseFrames="+std::to_string(row.chaseFrames)+" movingLaunches="+std::to_string(row.movingLaunches)+
+        " turnFrames="+std::to_string(row.turnFrames)+" pounceDrawings="+std::to_string(row.pounceDrawings);
+    if(entries(Action::Paw)<3||!entries(Action::Punch)||row.chaseFrames<120||!row.movingLaunches||!row.turnFrames||!row.pounceDrawings||
             !row.hops||row.hops!=row.landings||row.peakLift<20||!row.pausedHopFrames||row.pausedRootDelta>.05||
             !row.resumePaws||!row.awards||row.duplicateAwards||!row.menuFrames||!row.dragFrames||
             !row.menuHeld||!row.dragHeld||!row.careFrames||!row.careInterruptedActive||!row.careProtected||!row.farCancelled||
@@ -211,12 +272,12 @@ int Simulate(Row& row,std::string& context) {
 }
 int Run(std::string& context) {
     if(!LoadAtlas())return 680;
-    for(const auto path:{L"render-self-test",L"render-self-test/cursor-play"})
+    for(const auto path:{L"render-self-test",L"render-self-test/cursor-play",L"render-self-test/cursor-actors"})
         if(!CreateDirectoryW(path,nullptr)&&GetLastError()!=ERROR_ALREADY_EXISTS)return 681;
-    std::array<Row,2> rows{};rows[1].character=cat::Character::Tuxedo;
+    std::array<Row,3> rows{};rows[1].character=cat::Character::Tuxedo;rows[2].character=cat::Character::OddEye;
     for(auto& row:rows)if(const int result=Simulate(row,context))return result;
     Surface canvas,actor;if(!canvas.Create(Width,Height)||!actor.Create(ActorWidth,ActorHeight))return 681;
-    const std::array<const wchar_t*,8> reviewNames{{L"paw",L"tiptoe",L"both-paws",L"hop",L"care",L"resume",L"menu",L"drag"}};
+    const std::array<const wchar_t*,8> reviewNames{{L"paw",L"chase",L"turn",L"hop",L"care",L"resume",L"menu",L"drag"}};
     std::array<bool,8> reviewSaved{};
     std::ostringstream trace;trace.imbue(std::locale::classic());trace<<"{\"schema\":1,\"fps\":60,\"frames\":[";
     for(unsigned index=0;index<Count;++index) {
@@ -230,29 +291,29 @@ int Run(std::string& context) {
             graphics.SetPixelOffsetMode(PixelOffsetModeHighQuality);graphics.SetTextRenderingHint(TextRenderingHintAntiAliasGridFit);
             Font title(L"Segoe UI",18,FontStyleRegular,UnitPixel),small(L"Segoe UI",12,FontStyleRegular,UnitPixel);
             SolidBrush ink(Color(255,41,53,60)),pointerBrush(Color(255,217,100,102));
-            graphics.DrawString(L"Nearby pointer play / actual Windows renderer",-1,&title,PointF(20,10),&ink);
+            graphics.DrawString(L"Pointer pursuit / actual Windows renderer",-1,&title,PointF(20,10),&ink);
             graphics.DrawString(L"60 FPS GDI+ + Box2D, 110 px cats; memory-only pointer samples. Not a desktop recording.",-1,
                 &small,PointF(20,37),&ink);
             if(index)trace<<',';trace<<"{\"frame\":"<<index<<",\"elapsed_ms\":"<<elapsed<<",\"characters\":[";
             for(unsigned r=0;r<rows.size();++r) {
                 auto& row=rows[r];const auto& frame=row.frames[index];
-                if(!DrawActor(actor,row,frame,elapsed))return 683;
+                if(!RestoreActor(actor,row.character,index))return 683;
                 const auto hash=cat::Checksum(std::string(reinterpret_cast<const char*>(actor.pixels),ActorWidth*ActorHeight*4));
                 if(hash!=frame.actorHash)return 685;
-                const REAL floor=r?675.0f:335.0f;
-                const double worldCenter=320+frame.x-row.startX;
-                const double camera=std::clamp(worldCenter,180.,Width-180.)-worldCenter;
+                const REAL floor=335.0f+r*340.0f;
+                const double worldCenter=80+frame.x;
+                const double camera=0; // Entire1280px logical monitor plus80px margins.
                 const REAL center=static_cast<REAL>(worldCenter+camera);
                 graphics.DrawImage(actor.image.get(),center-ActorWidth*.5f,floor-ActorFloor,
                     static_cast<REAL>(ActorWidth),static_cast<REAL>(ActorHeight));
                 Pen ground(Color(255,185,196,197),1);graphics.DrawLine(&ground,20.0f,floor+1,Width-20.0f,floor+1);
                 for(int mark=-400;mark<1600;mark+=40) {
-                    const REAL x=static_cast<REAL>(320+mark-row.startX+camera);
+                    const REAL x=static_cast<REAL>(80+mark+camera);
                     if(x>=20&&x<=Width-20)graphics.DrawLine(&ground,x,floor+1,x,floor+5);
                 }
-                const REAL pointerX=static_cast<REAL>(320+frame.pointerX-row.startX+camera),pointerY=static_cast<REAL>(floor-frame.pointerHeight);
+                const REAL pointerX=static_cast<REAL>(80+frame.pointerX+camera),pointerY=static_cast<REAL>(floor-frame.pointerHeight);
                 graphics.FillEllipse(&pointerBrush,pointerX-4,pointerY-4,8.0f,8.0f);
-                graphics.DrawString(r?L"Tuxedo":L"Cream",-1,&small,PointF(22,floor-255),&ink);
+                graphics.DrawString(r==2?L"Snowdrop":r?L"Tuxedo":L"Cream",-1,&small,PointF(22,floor-255),&ink);
                 std::string label=StageName(frame.stage);label+=" / ";label+=ActionName(frame.action);
                 if(frame.menu)label+=" / menu pause";if(frame.drag)label+=" / drag pause";
                 const std::wstring wide(label.begin(),label.end());
@@ -286,8 +347,8 @@ int Run(std::string& context) {
         const auto& frame=rows[0].frames[index];
         const std::array<bool,8> representative{{
             frame.stage==Stage::Low&&frame.action==Action::Paw&&frame.actionElapsed>=240&&frame.actionElapsed<=340,
-            frame.action==Action::Tiptoe&&frame.actionElapsed>=650&&frame.actionElapsed<=850,
-            frame.action==Action::BothPaws&&frame.actionElapsed>=550&&frame.actionElapsed<=740,
+            frame.action==Action::Chase&&std::abs(frame.velocityX)>100,
+            frame.pose.spriteClip==Clip::RunningTurn&&frame.actionElapsed>=550,
             !frame.grounded&&frame.lift>=rows[0].peakLift*.85,
             frame.stage==Stage::Care&&frame.pose.spriteClip==Clip::Eat&&frame.actionElapsed>=1500,
             frame.stage==Stage::Resume&&frame.action==Action::Paw&&frame.actionElapsed>=240,
@@ -304,8 +365,8 @@ int Run(std::string& context) {
         "\",\"render_source\":\"Windows GDI+ / Box2D\",\"desktop_recording\":false,\"os_input_injected\":false"
         ",\"app_active_timer_ms\":16,\"capture_clock\":\"deterministic 16/17 ms production updates at 60 Hz\""
         ",\"fps\":60,\"frame_count\":"<<Count<<",\"canvas\":["<<Width<<','<<Height<<"],\"reference_height_px\":110"
-        ",\"duration_seconds\":100,\"profile\":\"no profile loaded or saved\",\"trace\":\"trace.json\""
-        ",\"scenario\":\"stationary low pointer repeated paw; menu and drag freeze/resume; tiptoe; both paws; roaming-paused physical reach hop; far cancellation; real care action interruption; near-pointer resume\""
+        ",\"duration_seconds\":60,\"profile\":\"no profile loaded or saved\",\"trace\":\"trace.json\""
+        ",\"scenario\":\"source-video double swat; full-monitor escaping pointer; moving pounce; planted running reversal; reacquire after landing; roaming-paused physical hop; menu/drag freeze; missing-pointer cancellation; care ownership; resume\""
         ",\"guard_evidence\":\"menu and drag are in-memory Tick flags with FreezePrimaryMotion, not OS interactions; care uses actual SetMotion(Eat), not a feeding command\""
         ",\"far_cancel_policy\":\"cancel contact immediately; an already launched ballistic hop finishes safely\""
         ",\"characters\":[";
@@ -315,6 +376,8 @@ int Run(std::string& context) {
             <<",\"peak_lift\":"<<row.peakLift<<",\"awarded_contacts\":"<<row.awards<<",\"duplicate_contact_awards\":"<<row.duplicateAwards
             <<",\"roaming_paused_root_delta\":"<<row.pausedRootDelta<<",\"roaming_paused_airborne_frames\":"<<row.pausedHopFrames
             <<",\"max_frame_root_delta\":"<<row.maxFrameRootDelta<<",\"menu_pause_frames\":"<<row.menuFrames
+            <<",\"chase_frames\":"<<row.chaseFrames<<",\"moving_launches\":"<<row.movingLaunches
+            <<",\"turn_frames\":"<<row.turnFrames<<",\"pounce_drawings\":"<<row.pounceDrawings
             <<",\"drag_pause_frames\":"<<row.dragFrames<<",\"menu_pixels_held\":true,\"drag_pixels_held\":true"
             <<",\"care_protected_frames\":"<<row.careFrames<<",\"care_interrupted_active_cursor\":true,\"care_ownership_preserved\":true,\"far_cancelled\":true"
             <<",\"resume_paw_attempts\":"<<row.resumePaws<<",\"source_base4_hash\":\""<<row.sourceHash
@@ -324,10 +387,10 @@ int Run(std::string& context) {
         }
         report<<"}}";
     }
-    report<<"],\"review_images\":[\"review-paw.png\",\"review-tiptoe.png\",\"review-both-paws.png\",\"review-hop.png\",\"review-care.png\",\"review-resume.png\",\"review-menu.png\",\"review-drag.png\"]}\n";
+    report<<"],\"review_images\":[\"review-paw.png\",\"review-chase.png\",\"review-turn.png\",\"review-hop.png\",\"review-care.png\",\"review-resume.png\",\"review-menu.png\",\"review-drag.png\"]}\n";
     if(!WriteBytes(L"render-self-test/cursor-play/trace.json",trace.str())||
             !WriteBytes(L"render-self-test/cursor-play/capture.json",report.str()))return 686;
-    context="both coats: actual nearby repeated reaches, physical hop, once-only credit, menu/drag/care guards and resume; 6000 frames at 60 FPS";
+    context="three coats: source swats, full-monitor pursuit, moving pounce, planted turns, paused hop, once-only credit, menu/drag/care guards; 3600 frames at 60 FPS";
     return 0;
 }
 } // namespace native_cursor_play_capture

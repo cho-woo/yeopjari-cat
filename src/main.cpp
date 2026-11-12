@@ -452,6 +452,9 @@ bool EnvironmentBusy();
 bool KeyboardPlayActive();
 void StopKeyboardPlay(bool announce=false,bool settle=true);
 bool ApplyCursorAttackPose(cat::animation::Pose& pose, ULONGLONG ticks, const cat::physics::Pose& physical);
+bool CursorTravellingPounce();
+bool CursorChasing();
+ULONGLONG CursorTakeoffMs();
 bool ApplyBallToyPose(cat::animation::Pose& pose,ULONGLONG ticks,const cat::physics::Pose& physical);
 bool ToyInteractionAvailable();
 void ObserveLife(ULONGLONG ticks);
@@ -1781,13 +1784,13 @@ bool PrimaryVideoSideMeal() {
         std::string_view(eat->layout->sourcePath).find("assets/video-actions/")!=0;
 }
 void UpdatePrimaryGroundArt(ULONGLONG ticks) {
-    if(g.runningJump.active)return;
+    if(g.runningJump.active||CursorTravellingPounce())return;
     const auto* walk=PrimaryVideoGroundArt();
     const bool meal=PrimaryVideoSideMeal();
     const auto jumpTurn=walk?cat::video_ground_bridge::JumpTurns(*walk):cat::video_ground_bridge::JumpTurnProfile{};
     const bool jumpPreparation=jumpTurn.valid && g.jumpPending && (g.motion==Motion::Jump || g.motion==Motion::Pounce);
     const bool walking=cat::animation::Walking(g.motion);
-    if(!walk || EnvironmentBusy() || g.perch.transitioning || g.physics.Hanging()) {
+    if(!walk || (EnvironmentBusy()&&!CursorChasing()) || g.perch.transitioning || g.physics.Hanging()) {
         g.groundArtBridge.Reset(ticks);return;
     }
     g.groundArtBridge.Configure(cat::sprite_sequence::Duration(walk->program,walk->program.intro),
@@ -1813,7 +1816,7 @@ void UpdatePrimaryGroundArt(ULONGLONG ticks) {
     }
     const bool reversing=travel && g.direction!=g.facing;
     g.groundArtBridge.Update(ticks,travel && !reversing,
-        physical.grounded,WalkingVelocity(physical),!EnvironmentBusy(),meal||jumpPreparation,jumpPreparation);
+        physical.grounded,WalkingVelocity(physical),!EnvironmentBusy()||CursorChasing(),meal||jumpPreparation,jumpPreparation);
     if(!travel && (g.groundArtBridge.Stopping() || g.groundArtBridge.StartingForSideAction()))g.waitingForStop=true;
 }
 void ConfigurePrimaryAuthoredStride() {
@@ -2745,7 +2748,7 @@ unsigned SpriteFrameFor(const cat::animation::Pose& pose,const cat::sprite_asset
 const CareSpriteAtlas* CareSpriteFor(const cat::animation::Pose& pose,cat::Character character) {
     using Clip=cat::sprite_sequence::Clip;
     const auto clip=pose.fishMeal?Clip::Fish:pose.spriteClip;
-    if(clip==Clip::None || (clip!=Clip::Jump && clip!=Clip::Climb && !pose.groundContact))return nullptr;
+    if(clip==Clip::None || (clip!=Clip::Jump && clip!=Clip::CursorPounce && clip!=Clip::Climb && !pose.groundContact))return nullptr;
     if(const auto* sprite=LoadedCareSprite(clip,character)) {
         const auto index=SpriteFrameFor(pose,*sprite->layout);
         if(index<sprite->layout->frameCount && (sprite->frames[index] || sprite->image))return sprite;
@@ -3307,6 +3310,7 @@ void Render() {
     int bottomInset=0;
     if(authored && (authored->layout->clip==cat::sprite_sequence::Clip::Fish ||
             authored->layout->clip==cat::sprite_sequence::Clip::Jump ||
+            authored->layout->clip==cat::sprite_sequence::Clip::CursorPounce ||
             authored->layout->clip==cat::sprite_sequence::Clip::Eat)) {
         bottomInset=cat::render::SpriteBottomSafetyInset(*authored->layout,110*bodyScale,
             cat::appearance::VisualModifiers(g.nutrition,g.preferences.character).bodyHeight);
@@ -3611,12 +3615,27 @@ struct CursorInteraction {
     bool available = false, landingContact = false;
     unsigned awardedContacts=0;
     bool hopFlightLaunched=false;
+    bool runningTakeoff=false;
+    double takeoffVelocity=0;
+    double launchVelocityY=0;
+    double airPawHeight=55;
+    cat::environment::CursorAction lastAttack=cat::environment::CursorAction::None;
     ULONGLONG hopLandedAt=0,hopLaunchedAt=0;
     double hopSupportHeight=0;
 } cursorInteraction;
 
 bool EnvironmentBusy() { return cursorInteraction.session.Active(); }
 double CursorReactionVelocity() { return cursorInteraction.session.Velocity(); }
+bool CursorChasing() { return cursorInteraction.session.Action()==cat::environment::CursorAction::Chase; }
+bool CursorTravellingPounce() {
+    return cursorInteraction.runningTakeoff&&cursorInteraction.session.Action()==cat::environment::CursorAction::Pounce&&
+        !cursorInteraction.hopLandedAt&&cursorInteraction.session.OwnsSerial(g.motionSerial);
+}
+ULONGLONG CursorTakeoffMs() {
+    if(const auto* asset=LoadedCareSprite(cat::sprite_sequence::Clip::CursorPounce,g.preferences.character))
+        return cat::sprite_sequence::Duration(asset->layout->program,asset->layout->program.intro);
+    return PrimaryTakeoffMs(true);
+}
 
 void PauseCursorReaction(ULONGLONG elapsedMs) {
     cursorInteraction.session.Pause(elapsedMs,
@@ -3627,25 +3646,37 @@ void UpdateCursorReactionSample(ULONGLONG ticks, ULONGLONG elapsedMs, POINT curs
     auto& interaction = cursorInteraction;
     cat::environment::CursorInput input;
     input.nowMs = ticks;
-    input.pouncePreparationMs=PrimaryTakeoffMs(true);
+    input.pouncePreparationMs=CursorTakeoffMs();
     input.enabled = g.cursorPlay;
     input.repeatNearby=true;
+    input.pursuePointer=true;
+    input.canAttack=!g.runningTurn.Active();
     input.canApproach=!g.pet.roamingPaused;
     const auto physical = g.physics.CurrentPose();
     input.grounded = physical.grounded;
+    input.catVelocityX=WalkingVelocity(physical);
     input.sizeScale = cat::GrowthScale(g.pet.bornUtc, UtcNow());
     input.movementScale = cat::appearance::VisualModifiers(g.nutrition,g.preferences.character).speed *
         cat::species::ProfileFor(g.preferences.character).movementSpeedMultiplier;
+    if(const auto* air=LoadedCareSprite(cat::sprite_sequence::Clip::CursorPounce,g.preferences.character)) {
+        const auto frame=air->layout->program.loop.first+air->layout->program.loop.count/2;
+        const auto paw=cat::video_actions::CursorPouncePaws(static_cast<unsigned>(g.preferences.character),frame)[0];
+        const auto body=cat::appearance::VisualModifiers(g.nutrition,g.preferences.character);
+        input.airPawX=paw.x*body.bodyWidth;input.airPawHeight=paw.y*body.bodyHeight;
+    }
+    interaction.airPawHeight=input.airPawHeight;
     const auto pawGeometry = cat::cursor::Bounded(CursorAttackGeometry());
     input.pawStandOff = std::max(6.0,(pawGeometry.pawAnchorX-.5)*pawGeometry.width+3);
     input.pawDurationMs=cat::cursor::DurationMs(cat::cursor::AttackKind::Gentle);
     input.punchDurationMs=cat::cursor::DurationMs(cat::cursor::AttackKind::Strong);
+    if(const auto* swat=LoadedCareSprite(cat::sprite_sequence::Clip::Punch,g.preferences.character))
+        input.pawDurationMs=input.punchDurationMs=cat::sprite_sequence::ProgramDuration(swat->layout->program);
     input.tiptoeDurationMs=cat::cursor::DurationMs(cat::cursor::AttackKind::Tiptoe);
     input.bothPawsDurationMs=cat::cursor::DurationMs(cat::cursor::AttackKind::BothPaws);
     if(const auto* reach=LoadedCareSprite(cat::sprite_sequence::Clip::Reach,g.preferences.character)) {
         input.tiptoeDurationMs=input.bothPawsDurationMs=cat::sprite_sequence::ProgramDuration(reach->layout->program);
     }
-    if(const auto* jump=LoadedCareSprite(cat::sprite_sequence::Clip::Jump,g.preferences.character))
+    if(const auto* jump=LoadedCareSprite(cat::sprite_sequence::Clip::CursorPounce,g.preferences.character))
         input.landingRecoveryMs=cat::sprite_sequence::Duration(jump->layout->program,jump->layout->program.outro);
     const bool protectedCare=g.motion==Motion::Eat||g.motion==Motion::Treat||g.motion==Motion::Groom||g.motion==Motion::Sleep||
         (g.motion==Motion::Stretch&&g.wakingFromSleep)||PrimaryAuthoredCareHolding(ticks);
@@ -3661,6 +3692,17 @@ void UpdateCursorReactionSample(ULONGLONG ticks, ULONGLONG elapsedMs, POINT curs
     input.cursorX = (cursor.x - g.work.left) / g.dpiScale;
     interaction.cursorWorldHeight = (g.work.bottom-cursor.y)/g.dpiScale;
     input.cursorHeight = interaction.cursorWorldHeight-physical.lift;
+    if(const auto* swat=LoadedCareSprite(cat::sprite_sequence::Clip::Punch,g.preferences.character)) {
+        const auto body=cat::appearance::VisualModifiers(g.nutrition,g.preferences.character);
+        double best=1e9;
+        for(unsigned frame=0;frame<swat->layout->frameCount;++frame) {
+            if(!cat::cursor::SourceSwatContact(static_cast<unsigned>(g.preferences.character),frame))continue;
+            const auto paw=cat::video_actions::PunchPaws(static_cast<unsigned>(g.preferences.character),frame)[0];
+            if(paw.x<16)continue;
+            const double error=std::abs(paw.y*body.bodyHeight-input.cursorHeight/input.sizeScale);
+            if(error<best){best=error;input.pawStandOff=std::clamp(paw.x*body.bodyWidth,12.,80.);}
+        }
+    }
     input.supportHeight = physical.lift;
     input.catX = physical.x;
     interaction.cursorX = input.cursorX; interaction.cursorHeight = input.cursorHeight;
@@ -3671,6 +3713,7 @@ void UpdateCursorReactionSample(ULONGLONG ticks, ULONGLONG elapsedMs, POINT curs
         cat::species::ProfileFor(g.preferences.character).cursorInterest;
     input.roll = interaction.session.Active()?.5:Random(0,1);
     const bool wasActive=interaction.session.Active();
+    const auto previousAction=interaction.session.Action();
     const auto output = interaction.session.Step(input, elapsedMs,
         {g.motion == interaction.motion, g.waitingForStop, g.motionStart, g.motionSerial});
     if (output.changed) {
@@ -3686,7 +3729,24 @@ void UpdateCursorReactionSample(ULONGLONG ticks, ULONGLONG elapsedMs, POINT curs
         case Action::Abandon: interaction.motion = Motion::EarFlick; break;
         default: interaction.motion = Motion::Watch; break;
         }
+        interaction.runningTakeoff=output.action==Action::Pounce&&previousAction==Action::Chase&&
+            !g.pet.roamingPaused&&physical.grounded&&!physical.onPlatform&&
+            std::abs(WalkingVelocity(physical))>12&&WalkingVelocity(physical)*output.direction>0;
+        interaction.takeoffVelocity=interaction.runningTakeoff?WalkingVelocity(physical):0;
         SetMotion(interaction.motion, output.action == Action::None ? 1800 : 8000,ticks);
+        if(interaction.runningTakeoff) {
+            g.waitingForStop=false;
+            g.groundArtBridge.ContinueLocomotion(ticks);
+        }
+        if(output.action==Action::Paw||output.action==Action::Punch||output.action==Action::Pounce)
+            interaction.lastAttack=output.action;
+        if(output.action==Action::Rest&&(previousAction==Action::Pounce||previousAction==Action::Paw||previousAction==Action::Punch)) {
+            // Land/retract in the source four-paw stance while the motor
+            // absorbs momentum. A seated stop would hide the actual landing.
+            g.waitingForStop=false;
+        }
+        if(output.action==Action::Chase&&(previousAction==Action::Rest||previousAction==Action::Pounce))
+            g.groundArtBridge.ContinueLocomotion(ticks);
         interaction.session.AdoptMotion(g.motionStart, g.waitingForStop, g.motionSerial);
         interaction.contacts.Reset();
         interaction.landingContact = false;
@@ -3713,16 +3773,19 @@ bool TryCursorPounce(ULONGLONG ticks) {
     if (interaction.session.Action() != cat::environment::CursorAction::Pounce ||
             interaction.session.InFlight() || !CursorPlaybackAllowed() || !interaction.available ||
             !interaction.session.OwnsSerial(g.motionSerial) || g.motion != Motion::Pounce ||
-            g.waitingForStop || ticks < g.motionStart+PrimaryTakeoffMs(true))
+            g.waitingForStop || ticks < g.motionStart+CursorTakeoffMs())
         return false;
     const auto bounds = MovementBoundsLogical();
     const double growth = cat::GrowthScale(g.pet.bornUtc, UtcNow());
     const double jump = cat::appearance::VisualModifiers(g.nutrition,g.preferences.character).jump *
         cat::species::ProfileFor(g.preferences.character).jumpHeightMultiplier;
     const double supportHeight=g.physics.CurrentPose().lift;
-    const bool launched = cat::cursor::LaunchReachHop(g.physics, interaction.session.TargetX(),interaction.session.TargetHeight(),
-        bounds.first, bounds.second, growth, jump,!g.pet.roamingPaused);
-    if(launched){interaction.hopFlightLaunched=true;interaction.hopLandedAt=0;interaction.hopLaunchedAt=ticks;interaction.hopSupportHeight=supportHeight;}
+    const bool launched = interaction.runningTakeoff?
+        cat::cursor::LaunchRunningReachHop(g.physics,interaction.session.TargetHeight(),bounds.first,bounds.second,growth,jump,interaction.airPawHeight):
+        cat::cursor::LaunchReachHop(g.physics, interaction.session.TargetX(),interaction.session.TargetHeight(),
+            bounds.first, bounds.second, growth, jump,!g.pet.roamingPaused,interaction.airPawHeight);
+    if(launched){interaction.hopFlightLaunched=true;interaction.hopLandedAt=0;interaction.hopLaunchedAt=ticks;interaction.hopSupportHeight=supportHeight;
+        interaction.launchVelocityY=g.physics.CurrentPose().velocityY;}
     interaction.session.ConfirmLaunch(launched);
     return launched;
 }
@@ -3739,17 +3802,18 @@ cat::cursor::Geometry CursorAttackGeometry(cat::Character character) {
 bool ApplyCursorAttackPose(cat::animation::Pose& pose, ULONGLONG ticks, const cat::physics::Pose& physical) {
     const auto& interaction = cursorInteraction;
     const auto action = interaction.session.Action();
-    const auto* jump=LoadedCareSprite(cat::sprite_sequence::Clip::Jump,g.preferences.character);
+    const auto* jump=LoadedCareSprite(cat::sprite_sequence::Clip::CursorPounce,g.preferences.character);
     const auto recovery=jump?cat::sprite_sequence::Duration(jump->layout->program,jump->layout->program.outro):1240;
     const bool recoveringHop=interaction.hopFlightLaunched&&interaction.hopLandedAt&&ticks>=interaction.hopLandedAt&&
-        ticks-interaction.hopLandedAt<recovery&&physical.grounded&&!KeyboardPlayActive()&&std::abs(WalkingVelocity(physical))<=2;
+        (ticks-interaction.hopLandedAt<recovery||action==cat::environment::CursorAction::Rest)&&
+        interaction.lastAttack==cat::environment::CursorAction::Pounce&&physical.grounded&&!KeyboardPlayActive();
     const bool hopVisual=interaction.session.InFlight()||recoveringHop;
     const bool prelaunchHop=action==cat::environment::CursorAction::Pounce&&g.jumpPending;
     if((hopVisual||prelaunchHop)&&g.motion==interaction.motion&&interaction.session.OwnsSerial(g.motionSerial)&&!g.waitingForStop&&
             (hopVisual||(interaction.available&&CursorPlaybackAllowed()&&interaction.session.ContactAllowed()))) {
         const auto elapsed=ticks>=g.motionStart?ticks-g.motionStart:0;
         const auto visualElapsed=interaction.hopFlightLaunched&&ticks>=interaction.hopLaunchedAt?
-            280+ticks-interaction.hopLaunchedAt:std::min<ULONGLONG>(280,elapsed*280/std::max<ULONGLONG>(1,PrimaryTakeoffMs(true)));
+            280+ticks-interaction.hopLaunchedAt:std::min<ULONGLONG>(280,elapsed*280/std::max<ULONGLONG>(1,CursorTakeoffMs()));
         const double growth=cat::GrowthScale(g.pet.bornUtc,UtcNow());
         const double targetX=interaction.hopFlightLaunched?interaction.session.TargetX():interaction.cursorX;
         const double targetHeight=interaction.hopFlightLaunched?
@@ -3760,13 +3824,27 @@ bool ApplyCursorAttackPose(cat::animation::Pose& pose, ULONGLONG ticks, const ca
         if(jump&&std::string_view(jump->layout->sourcePath).find("assets/video-actions/")==0) {
             cat::sprite_sequence::Options options;
             options.grounded=physical.grounded;options.velocityY=physical.velocityY;
+            if(interaction.hopFlightLaunched&&interaction.launchVelocityY>0)
+                options.flightProgress=std::clamp((interaction.launchVelocityY-physical.velocityY)/(2*interaction.launchVelocityY),0.,1.);
             options.jump=interaction.hopFlightLaunched?cat::sprite_sequence::JumpPhase::Landing:
                 cat::sprite_sequence::JumpPhase::Crouch;
             options.contactElapsedMs=interaction.hopLandedAt&&ticks>=interaction.hopLandedAt?ticks-interaction.hopLandedAt:0;
-            cat::animation::AttachSprite(pose,cat::sprite_sequence::Clip::Jump,
-                std::min<ULONGLONG>(visualElapsed,cat::sprite_sequence::Duration(jump->layout->program,jump->layout->program.intro)),options);
+            cat::animation::AttachSprite(pose,cat::sprite_sequence::Clip::CursorPounce,elapsed,options);
+            pose.spritePaws=cat::video_actions::CursorPouncePaws(static_cast<unsigned>(g.preferences.character),
+                SpriteFrameFor(pose,*jump->layout));
+            pose.spritePawsValid=true;
         }
         return true;
+    }
+    if(action==cat::environment::CursorAction::Rest&&
+            (interaction.lastAttack==cat::environment::CursorAction::Paw||interaction.lastAttack==cat::environment::CursorAction::Punch)&&
+            interaction.session.OwnsSerial(g.motionSerial)&&g.motion==interaction.motion&&physical.grounded&&
+            CursorPlaybackAllowed()&&!g.waitingForStop) {
+        if(const auto* swat=LoadedCareSprite(cat::sprite_sequence::Clip::Punch,g.preferences.character)) {
+            pose={};pose.flip=g.direction<0;
+            cat::animation::AttachSprite(pose,cat::sprite_sequence::Clip::Punch,cat::sprite_sequence::ProgramDuration(swat->layout->program));
+            return true;
+        }
     }
     if (!interaction.session.Active() || !interaction.session.ContactAllowed() || !CursorPlaybackAllowed() ||
             (action != cat::environment::CursorAction::Paw && action != cat::environment::CursorAction::Punch &&
@@ -3780,6 +3858,13 @@ bool ApplyCursorAttackPose(cat::animation::Pose& pose, ULONGLONG ticks, const ca
     const double growth = cat::GrowthScale(g.pet.bornUtc, UtcNow());
     pose = cat::cursor::AttackPose(kind, ticks >= g.motionStart ? ticks-g.motionStart : 0, g.direction,
         (interaction.cursorX-physical.x)/growth, (interaction.cursorWorldHeight-physical.lift)/growth, CursorAttackGeometry());
+    if(kind==cat::cursor::AttackKind::Gentle||kind==cat::cursor::AttackKind::Strong) {
+        if(const auto* swat=LoadedCareSprite(cat::sprite_sequence::Clip::Punch,g.preferences.character)) {
+            cat::animation::AttachSprite(pose,cat::sprite_sequence::Clip::Punch,ticks>=g.motionStart?ticks-g.motionStart:0);
+            pose.spritePaws=cat::video_actions::PunchPaws(static_cast<unsigned>(g.preferences.character),SpriteFrameFor(pose,*swat->layout));
+            pose.spritePawsValid=true;
+        }
+    }
     if(kind==cat::cursor::AttackKind::Tiptoe||kind==cat::cursor::AttackKind::BothPaws) {
         if(const auto* reach=LoadedCareSprite(cat::sprite_sequence::Clip::Reach,g.preferences.character)) {
             const auto elapsed=ticks>=g.motionStart?ticks-g.motionStart:0;
@@ -3866,16 +3951,28 @@ bool UpdateCursorContact(ULONGLONG ticks, const cat::physics::Pose& physical) {
     const double growth = cat::GrowthScale(g.pet.bornUtc, UtcNow());
     bool contact = false;
     cat::animation::Pose pose;
-    if (allowed && ApplyCursorAttackPose(pose,ticks,physical)) {
+    const auto displayed=g.physics.RenderPose();
+    if (allowed && ApplyCursorAttackPose(pose,ticks,displayed)) {
         const auto action=interaction.session.Action();
         const auto kind=action==cat::environment::CursorAction::Tiptoe?cat::cursor::AttackKind::Tiptoe:
             action==cat::environment::CursorAction::BothPaws?cat::cursor::AttackKind::BothPaws:
             action==cat::environment::CursorAction::Punch?cat::cursor::AttackKind::Strong:cat::cursor::AttackKind::Gentle;
-        const auto contactIndex=interaction.session.InFlight()?1:
+        unsigned contactIndex=interaction.session.InFlight()?1:
             action==cat::environment::CursorAction::Pounce?0:cat::cursor::ContactIndex(kind,ticks>=g.motionStart?ticks-g.motionStart:0);
+        if(pose.spriteClip==cat::sprite_sequence::Clip::Punch) {
+            const auto* swat=LoadedCareSprite(pose.spriteClip,g.preferences.character);
+            contactIndex=swat?cat::cursor::SourceSwatContact(static_cast<unsigned>(g.preferences.character),SpriteFrameFor(pose,*swat->layout)):0;
+        }
+        if(pose.spriteClip==cat::sprite_sequence::Clip::CursorPounce&&interaction.session.InFlight()) {
+            const auto* catchArt=LoadedCareSprite(pose.spriteClip,g.preferences.character);
+            const auto frame=catchArt?SpriteFrameFor(pose,*catchArt->layout):0;
+            const bool extending=g.preferences.character==cat::Character::Tuxedo?frame>=19&&frame<=31:frame>=18&&frame<=34;
+            if(!extending)contactIndex=0;
+        }
+        const auto body=cat::appearance::VisualModifiers(g.nutrition,g.preferences.character);
         for(const auto& paw:cat::cursor::PawPositions(pose,CursorAttackGeometry()))
-            contact=interaction.contacts.Observe(contactIndex,true,physical.x+paw.x*growth,paw.y*growth,
-                interaction.cursorX,interaction.cursorWorldHeight-physical.lift,7*growth)||contact;
+            contact=interaction.contacts.Observe(contactIndex,true,displayed.x+paw.x*growth*body.bodyWidth,paw.y*growth*body.bodyHeight,
+                interaction.cursorX,interaction.cursorWorldHeight-displayed.lift,7*growth)||contact;
     }
     if (contact) {Remember(cat::memory::Event::Play);++interaction.awardedContacts;
         if(interaction.session.InFlight())interaction.landingContact=true;
@@ -4944,6 +5041,7 @@ void AdvancePrimaryMotion(ULONGLONG ticks, double elapsed) {
     }
     targetSpeed *= cat::species::ProfileFor(g.preferences.character).movementSpeedMultiplier;
     if(g.runningJump.active)targetSpeed=g.runningJump.velocityX;
+    if(CursorTravellingPounce())targetSpeed=cursorInteraction.takeoffVelocity;
     if (!g.runningJump.active && g.physics.CurrentPose().grounded && targetSpeed != 0) {
         const auto support = g.physics.CurrentPose();
         const auto [low, high] = MovementBoundsLogical();
@@ -4968,8 +5066,8 @@ void AdvancePrimaryMotion(ULONGLONG ticks, double elapsed) {
         }
     }
     if (g.waitingForStop) targetSpeed = 0;
-    if(!g.runningJump.active && g.groundArtBridge.HoldMotor())targetSpeed=0;
-    else if(!g.runningJump.active && g.groundArtBridge.Starting())
+    if(!g.runningJump.active && !CursorTravellingPounce() && g.groundArtBridge.HoldMotor())targetSpeed=0;
+    else if(!g.runningJump.active && !CursorTravellingPounce() && g.groundArtBridge.Starting())
         targetSpeed=std::clamp(targetSpeed,-RegisteredWalkSpeed()*body.speed,
             RegisteredWalkSpeed()*body.speed);
     const auto motorPose=g.physics.CurrentPose();
@@ -4979,7 +5077,8 @@ void AdvancePrimaryMotion(ULONGLONG ticks, double elapsed) {
     if(motorPose.grounded)g.facing=g.groundDrive.Facing();
     g.physics.SetTargetVelocity(targetSpeed);
     if (!g.waitingForStop && g.jumpPending) {
-        const ULONGLONG takeoff = g.runningJump.active?cat::running_jump::Plan::PreparationMs:PrimaryTakeoffMs(g.motion==Motion::Pounce);
+        const ULONGLONG takeoff = g.runningJump.active?cat::running_jump::Plan::PreparationMs:
+            cursorInteraction.session.Action()==cat::environment::CursorAction::Pounce?CursorTakeoffMs():PrimaryTakeoffMs(g.motion==Motion::Pounce);
         if (actionElapsed >= takeoff) {
             g.jumpPending = false;
             const double speciesJump = cat::species::ProfileFor(g.preferences.character).jumpHeightMultiplier;

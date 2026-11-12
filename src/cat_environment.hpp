@@ -27,6 +27,10 @@ struct CursorInput {
     std::uint64_t pawDurationMs = 850, punchDurationMs = 650;
     std::uint64_t pouncePreparationMs = 240;
     bool repeatNearby=false,canApproach=true;
+    bool pursuePointer=false;
+    bool canAttack=true;
+    double catVelocityX=0;
+    double airPawX=60,airPawHeight=55;
     std::uint64_t landingRecoveryMs=1240,tiptoeDurationMs=1400,bothPawsDurationMs=1550;
 };
 
@@ -88,6 +92,7 @@ public:
     }
 
     CursorOutput Step(const CursorInput& input) {
+        if(input.pursuePointer)return StepPursuit(input);
         if(input.repeatNearby)return StepNearby(input);
         const auto before = action_;
         const double sampledHeight = input.cursorHeight + input.supportHeight;
@@ -276,6 +281,133 @@ private:
     int direction_ = 1;
     unsigned nearbyAttempt_=0;
     std::uint64_t nearbyRestMs_=1000;
+    double pointerVx_=0,pointerVy_=0;
+    std::uint64_t nextLeap_=0;
+
+    void PursuitRest(const CursorInput& input,bool landed=false) {
+        contactAllowed_=false;launchAnswered_=launched_=false;
+        nearbyRestMs_=landed?input.landingRecoveryMs+180:280;
+        Change(CursorAction::Rest,input.nowMs);
+    }
+    void PursuitAttempt(const CursorInput& input) {
+        const double scale=std::clamp(input.sizeScale,.5,2.);
+        const double distance=std::abs(input.cursorX-input.catX);
+        const double height=input.cursorHeight/scale;
+        const bool edge=(input.catX<=input.minX+1&&input.cursorX<input.catX)||
+            (input.catX>=input.maxX-1&&input.cursorX>input.catX);
+        const bool align=height<=75&&std::abs(distance-input.pawStandOff*scale)>9*scale;
+        if(input.canApproach&&!edge&&(distance>62*scale||align||
+                (distance>18*scale&&(input.cursorX-input.catX)*direction_<0))) {
+            contactAllowed_=false;Change(CursorAction::Chase,input.nowMs);return;
+        }
+        if(!input.canAttack)return;
+        ++nearbyAttempt_;contactAllowed_=true;launchAnswered_=launched_=false;
+        if(height>75&&input.nowMs>=nextLeap_) {
+            const double lead=std::clamp(pointerVx_*.22,-65*scale,65*scale);
+            pounceX_=input.canApproach&&distance>35*scale?std::clamp(input.cursorX+lead-direction_*28*scale,
+                input.minX+8,input.maxX-8):input.catX;
+            pounceHeight_=std::clamp(input.cursorHeight+pointerVy_*.12,25*scale,245*scale);
+            nextLeap_=input.nowMs+input.pouncePreparationMs+input.landingRecoveryMs+1600;
+            Change(CursorAction::Pounce,input.nowMs);
+        } else if(height>75) {
+            PursuitRest(input);
+        } else Change(nearbyAttempt_%2?CursorAction::Paw:CursorAction::Punch,input.nowMs);
+    }
+    CursorOutput StepPursuit(const CursorInput& input) {
+        const auto before=action_;
+        const double scale=std::clamp(input.sizeScale,.5,2.);
+        const bool valid=Valid(input)&&std::isfinite(input.catVelocityX)&&
+            std::isfinite(input.airPawX)&&input.airPawX>0&&input.airPawX<=150&&
+            std::isfinite(input.airPawHeight)&&input.airPawHeight>0&&input.airPawHeight<=150&&input.maxX-input.minX>16;
+        const bool onSurface=valid&&input.cursorX>=input.minX-120*scale&&input.cursorX<=input.maxX+120*scale&&
+            input.cursorHeight>=-20*scale;
+        if(input.enabled&&!enabled_)nextStart_=input.nowMs;
+        enabled_=input.enabled;
+        const double worldHeight=input.cursorHeight+input.supportHeight;
+        if(valid&&sampled_&&input.nowMs>lastSample_&&input.nowMs-lastSample_<=250) {
+            const double dt=double(input.nowMs-lastSample_);
+            const double weight=1-std::exp(-dt/75.);
+            pointerVx_+=(std::clamp((input.cursorX-lastX_)*1000/dt,-1400.,1400.)-pointerVx_)*weight;
+            pointerVy_+=(std::clamp((worldHeight-lastHeight_)*1000/dt,-1400.,1400.)-pointerVy_)*weight;
+        } else pointerVx_=pointerVy_=0;
+        sampled_=valid;lastSample_=input.nowMs;lastX_=input.cursorX;lastHeight_=worldHeight;
+        if(InFlight()) {
+            if(!onSurface||!input.enabled||!input.available||!input.canContinue||input.cursorHeight>310*scale||
+                    std::abs(input.cursorX-input.catX)>360*scale)
+                contactAllowed_=false;
+            if(input.grounded) {
+                if(onSurface&&input.enabled&&input.available&&input.canContinue)PursuitRest(input,true);
+                else Cancel(input.nowMs,300);
+            }
+            return Result(input,before);
+        }
+        if(!onSurface||!input.enabled||!input.available||!input.canContinue) {
+            if(Active())Cancel(input.nowMs,300);
+            sampled_=false;return Result(input,before);
+        }
+        if(!Active()) {
+            if(input.canStart&&input.grounded&&input.nowMs>=nextStart_) {
+                began_=input.nowMs;episodeInterest_=std::clamp(input.interest,0.,1.);
+                contactAllowed_=false;Change(CursorAction::Watch,input.nowMs);
+            }
+            return Result(input,before);
+        }
+        const auto elapsed=input.nowMs-changedAt_;
+        const double distance=std::abs(input.cursorX-input.catX);
+        switch(action_) {
+        case CursorAction::Watch:
+            if(elapsed>=static_cast<std::uint64_t>(180+140*(1-episodeInterest_)))PursuitAttempt(input);
+            break;
+        case CursorAction::Chase: {
+            if(!input.canApproach){PursuitRest(input);break;}
+            const double ahead=(input.cursorX-input.catX)*(input.catVelocityX<0?-1:1);
+            const double speed=std::abs(input.catVelocityX);
+            // Commit while still running, early enough to show the complete
+            // source gather. The impulse itself keeps the actual motor speed.
+            const double closing=speed-pointerVx_*(input.catVelocityX<0?-1:1);
+            const double apex=std::clamp(input.cursorHeight-input.airPawHeight*scale,28*scale,180.);
+            const double catchTime=input.pouncePreparationMs*.001+std::sqrt(2*apex/900.);
+            const double catchGap=ahead-closing*catchTime;
+            const bool runningCatch=input.canAttack&&elapsed>=300&&input.nowMs>=nextLeap_&&speed>42*scale&&
+                ahead>55*scale&&ahead<480*scale&&catchGap>=(input.airPawX-15)*scale&&catchGap<=(input.airPawX+6)*scale&&
+                input.cursorHeight>22*scale&&
+                (input.cursorHeight>75*scale||std::abs(pointerVx_)>80*scale);
+            if(runningCatch) {
+                ++nearbyAttempt_;contactAllowed_=true;launchAnswered_=launched_=false;
+                direction_=input.catVelocityX<0?-1:1;
+                pounceX_=std::clamp(input.cursorX+std::clamp(pointerVx_*.25,-70*scale,70*scale)-direction_*28*scale,
+                    input.minX+8,input.maxX-8);
+                pounceHeight_=std::clamp(input.cursorHeight+pointerVy_*.12,35*scale,245*scale);
+                nextLeap_=input.nowMs+input.pouncePreparationMs+input.landingRecoveryMs+1600;
+                Change(CursorAction::Pounce,input.nowMs);
+            } else if((distance<=62*scale||input.catX<=input.minX+1||input.catX>=input.maxX-1)&&
+                    std::abs(pointerVx_)<100*scale&&speed<35*scale)
+                PursuitAttempt(input);
+            break;
+        }
+        case CursorAction::Paw:case CursorAction::Punch:
+            if(elapsed>=CursorAttackDuration(action_,input))PursuitRest(input);
+            break;
+        case CursorAction::Pounce:
+            if(!launchAnswered_&&input.canApproach&&(input.cursorX-input.catX)*direction_<-20*scale) {
+                contactAllowed_=false;nextLeap_=input.nowMs+350;
+                Change(CursorAction::Chase,input.nowMs);
+            } else if((launchAnswered_&&!launched_)||elapsed>=CursorPounceTimeout(input))PursuitRest(input);
+            else if(!launchAnswered_) {
+                // Aim up to the actual hind-paw push, then freeze the impulse.
+                // A moving pointer must not leave a625ms-old launch target.
+                pounceX_=input.canApproach&&distance>35*scale?std::clamp(input.cursorX+
+                    std::clamp(pointerVx_*.22,-65*scale,65*scale)-direction_*28*scale,input.minX+8,input.maxX-8):input.catX;
+                pounceHeight_=std::clamp(input.cursorHeight+pointerVy_*.12,25*scale,245*scale);
+            }
+            break;
+        case CursorAction::Rest:
+            if(input.grounded&&elapsed>=nearbyRestMs_)PursuitAttempt(input);
+            break;
+        default:PursuitRest(input);break;
+        }
+        return Result(input,before);
+    }
 
     void CancelNearby(std::uint64_t now) {
         Cancel(now);nextStart_=now+400;
@@ -391,6 +523,18 @@ private:
     CursorOutput Result(const CursorInput& input, CursorAction before) {
         CursorOutput output;
         output.action = action_; output.changed = before != action_;
+        if(input.pursuePointer) {
+            const bool attack=action_==CursorAction::Paw||action_==CursorAction::Punch||action_==CursorAction::Pounce||action_==CursorAction::Rest;
+            if(!attack&&std::isfinite(input.cursorX)&&std::abs(input.cursorX-input.catX)>18*input.sizeScale)
+                direction_=input.cursorX<input.catX?-1:1;
+            output.direction=direction_;output.targetX=pounceX_;
+            if(action_==CursorAction::Chase&&input.canApproach) {
+                const double lead=std::clamp(pointerVx_*.16,-85*input.sizeScale,85*input.sizeScale);
+                const double target=std::clamp(input.cursorX+lead-direction_*input.pawStandOff*input.sizeScale,input.minX,input.maxX);
+                output.velocity=std::clamp((target-input.catX)*3.4,-170.,170.);
+            }
+            return output;
+        }
         if (std::isfinite(input.cursorX) && std::isfinite(input.catX) &&
                 std::abs(input.cursorX - input.catX) > 2 &&
                 (before != action_ || (action_ != CursorAction::Paw && action_ != CursorAction::Punch && action_ != CursorAction::Pounce &&
