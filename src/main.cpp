@@ -6077,20 +6077,26 @@ int SelfTest(HINSTANCE instance) {
     // Retired sound resources must never reappear in a silent release.
     for (int id = 301; id <= 314; ++id)
         if (FindResourceW(instance, MAKEINTRESOURCEW(id), RT_RCDATA)) return id;
-    const int perchResult = NativePerchTransitionTest(instance);
+    const auto record=[](const char* stage,int result) {
+        CreateDirectoryW(L"render-self-test",nullptr);
+        WriteBytes(L"render-self-test/self-test-stage.txt",std::string(stage)+" exit="+std::to_string(result)+"\n");
+        return result;
+    };
+    const int perchResult = record("perch",NativePerchTransitionTest(instance));
     if (perchResult) return perchResult;
-    const int lifeResult = NativeLifeHostTest();
+    const int lifeResult = record("life",NativeLifeHostTest());
     if (lifeResult) return lifeResult;
-    const int toyResult = NativeToyHostTest();
+    const int toyResult = record("toy",NativeToyHostTest());
     if (toyResult) return toyResult;
-    const int menuResult = NativeMenuContractTest();
+    const int menuResult = record("menu",NativeMenuContractTest());
     if (menuResult) return menuResult;
-    const int cursorResult = NativeCursorHostTest(instance);
+    const int cursorResult = record("cursor",NativeCursorHostTest(instance));
     if (cursorResult) return cursorResult;
-    return NativeManualMotionTest(instance);
+    return record("manual-motion",NativeManualMotionTest(instance));
 }
 
 int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
+    if(commandLine && wcsstr(commandLine,L"--cursor-host-self-test"))return NativeCursorHostTest(instance);
     if(commandLine && wcsstr(commandLine,L"--render-identity-turn-review"))return NativeIdentityTurnReview(instance);
     if(commandLine && wcsstr(commandLine,L"--render-fly-review"))return NativeFlyReview(instance);
     if(commandLine && wcsstr(commandLine,L"--render-fish-review"))return NativeFishReview(instance);
