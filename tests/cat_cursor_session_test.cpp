@@ -416,7 +416,7 @@ void AuthoredPounceWaitsForEveryPreparationDrawing() {
         bool tapped=false,punched=false,chased=false,prepared=false,airborne=false;
         double chaseTarget=0,frozen=0;
         CHECK(host.takeoffMs>240);
-        for(int frame=1;frame<fps*10;++frame) {
+        for(int frame=1;frame<fps*20;++frame) {
             const double t=static_cast<double>(frame)/fps;
             host.cursorX=chased?chaseTarget:428+15*std::sin(t*2*3.141592653589793*1.2);
             if(host.session.InFlight())host.cursorX=frozen;

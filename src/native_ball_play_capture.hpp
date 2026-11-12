@@ -140,7 +140,10 @@ int Simulate(Row& row,std::string& context) {
         " elapsed="+std::to_string(g.toySession.elapsedMs)+" ball="+std::to_string(g.toyBall.x)+
         " root="+std::to_string(g.physics.CurrentPose().x)+" standoff="+std::to_string(BallPawStandOff())+
         " motion="+std::to_string(static_cast<unsigned>(g.motion))+" wait="+std::to_string(g.waitingForStop);
-    if(row.contacts<3||row.pawEntries<3||row.walkFrames<60||row.ballTravel<80||row.catTravel<40||
+    // Require two complete ball diameters of real rolling. The old 80 px
+    // cutoff belonged to the larger, independently scaled character artwork.
+    const double minimumBallTravel=4*cat::toy::PhysicsBall::Radius;
+    if(row.contacts<3||row.pawEntries<3||row.walkFrames<60||row.ballTravel<minimumBallTravel||row.catTravel<40||
             !row.turns||!row.ballBounces||!row.brakingFrames||!row.profileUnchanged||!row.sourceImmutable||
             !row.duplicateContactRejected||row.contacts>row.pawEntries||row.maxFrameRootDelta>4)return 793;
     return 0;
