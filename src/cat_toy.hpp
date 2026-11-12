@@ -101,7 +101,7 @@ inline double Duration(Kind kind, Phase phase) {
     case Phase::Inspect: return kind == Kind::Ball ? 150 : kind == Kind::FishingRod ? 350 : 700;
     case Phase::Interact:
         switch (kind) {
-        case Kind::Ball: return 1050;
+        case Kind::Ball: return 1650;
         case Kind::FishingRod: return 3300;
         case Kind::Box: return 1700;
         case Kind::PaperBag: return 2800;

@@ -47,8 +47,8 @@ int Simulate(Row& row,const Schedule& schedule,std::string& context) {
     const auto* run=LoadedCareSprite(Clip::Run,row.character);
     if(!eat||!run||!eat->layout->program.stepCount||!run->layout->program.loop.count||
             eat->layout->nominalFramesPerSecond!=24||run->layout->nominalFramesPerSecond!=24||
-            std::string(eat->layout->sourcePath).find("assets/natural-gait/")!=0||
-            std::string(run->layout->sourcePath).find("assets/natural-gait/")!=0) {
+            std::string(eat->layout->sourcePath).find("assets/video-actions/")!=0||
+            std::string(run->layout->sourcePath).find("assets/video-actions/")!=0) {
         context="capture requires actual 24 FPS source-video Eat and Run registrations";return 562;
     }
     std::vector<bool> seenEat(eat->layout->frameCount,false),seenRun(run->layout->frameCount,false);

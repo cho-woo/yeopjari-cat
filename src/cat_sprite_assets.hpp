@@ -50,7 +50,7 @@ constexpr int ResourceId(cat::sprite_sequence::Clip clip,unsigned character) {
     if(clip==cat::sprite_sequence::Clip::Run)return 401+static_cast<int>(character*2);
     if(clip==cat::sprite_sequence::Clip::Knead)return 440+static_cast<int>(character*2);
     if(clip==cat::sprite_sequence::Clip::Reach)return 441+static_cast<int>(character*2);
-    if(clip>=cat::sprite_sequence::Clip::BallPlay&&clip<=cat::sprite_sequence::Clip::FlyHunt)
+    if(clip>=cat::sprite_sequence::Clip::BallPlay&&clip<=cat::sprite_sequence::Clip::RunningTurn)
         return 430+static_cast<int>(character*32+static_cast<unsigned>(clip)-static_cast<unsigned>(cat::sprite_sequence::Clip::BallPlay));
     return 0;
 }

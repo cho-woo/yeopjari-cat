@@ -15,9 +15,9 @@ struct Event {
 // opportunity; hidden/menu/drag/paused time never accumulates a catch-up burst.
 class Scheduler {
 public:
-    static constexpr std::uint64_t MinWaitMs=60000,MaxWaitMs=300000;
+    static constexpr std::uint64_t MinWaitMs=120000,MaxWaitMs=420000;
     static constexpr std::uint64_t MinRunMs=5000,MaxRunMs=15000;
-    static constexpr std::uint64_t MinLegMs=1500,MaxLegMs=3000;
+    static constexpr std::uint64_t MinLegMs=4500,MaxLegMs=12000;
     static constexpr std::uint64_t MaxNoProgressMs=8000;
     void Reset() {*this=Scheduler{};}
     bool Active() const {return active_;}
@@ -46,7 +46,10 @@ public:
             if(!runMs_||noProgressMs_>=MaxNoProgressMs) {
                 event.finished=true;event.runDurationMs=durationMs_;Schedule(draw);
             } else if(!legMs_) {
-                event.turn=true;legMs_=draw(MinLegMs,MaxLegMs);
+                // Do not start a full pivot just to sit immediately after it.
+                // Long, independently drawn legs also allow single-direction
+                // bursts instead of a compulsory left/right metronome.
+                event.turn=runMs_>2300;legMs_=draw(MinLegMs,MaxLegMs);
             }
         } else {
             waitMs_=Subtract(waitMs_,elapsedMs);

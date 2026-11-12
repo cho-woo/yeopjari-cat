@@ -2,7 +2,7 @@
   "schema": 1,
   "created_date": "2026-11-11",
   "provider": "Dropshot",
-  "total_credits": 4480,
+  "total_credits": 9280,
   "jobs": [
     {
       "character": "cream",
@@ -10,13 +10,14 @@
       "model": "minimax/h3-lite",
       "job_id": "mcp_67a8aac9ceef485a97510a651deaf976",
       "credit_cost": 120,
-      "source_file": "sources/cream-jump.mp4",
+      "source_file": "sources/superseded-v28/cream-jump.mp4",
       "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_67a8aac9ceef485a97510a651deaf976/output/output_0.mp4",
       "prompt": "Use the attached images as the exact same established desktop kitten character, preserving its face, eye colors, fur color and markings, rounded paws, proportions, soft detailed 3D illustration style, and small body. First image is the front identity and second image the side identity. A single fixed-camera full-body animation, no camera movement, no zoom, no cuts, no text, no props, no shadows. Completely uniform saturated chroma green (#00FF00) background, no gradient or floor texture. Character is centered and occupies 55 percent of canvas height in the neutral pose with empty space on every side. Smooth continuous anatomically correct motion at normal speed. Side profile facing RIGHT. A cute physically natural cat jump cycle in place: stand on four paws for 0.7s, deeply load the hind legs and lower the haunches, push off with hind paws, extend front legs forward, draw all four paws up beneath the belly at the apex, reach front paws down, land front paws then hind paws, absorb weight with bent legs, and settle back into the identical four-paw side standing pose for the last second. The body follows one smooth small parabolic hop. Keep the tail continuous, head proportions fixed and four anatomical legs throughout. No rotating into a front view. Full cat stays on screen with generous headroom.",
       "reference_images": [
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/a949da2973c84558bbbd2d1c06bdd2ac/creamFront.png",
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ec78cb7704784b8ca677bfec8a7c25d1/creamSide.png"
-      ]
+      ],
+      "superseded_by": "identity-v29"
     },
     {
       "character": "cream",
@@ -24,13 +25,14 @@
       "model": "minimax/h3-lite",
       "job_id": "mcp_d3fccefb74664d93923830be731e53ba",
       "credit_cost": 120,
-      "source_file": "sources/cream-wipe.mp4",
+      "source_file": "sources/superseded-v28/cream-wipe.mp4",
       "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_d3fccefb74664d93923830be731e53ba/output/output_0.mp4",
       "prompt": "Use the attached images as the exact same established desktop kitten character, preserving its face, eye colors, fur color and markings, rounded paws, proportions, soft detailed 3D illustration style, and small body. First image is the front identity and second image the side identity. A single fixed-camera full-body animation, no camera movement, no zoom, no cuts, no text, no props, no shadows. Completely uniform saturated chroma green (#00FF00) background, no gradient or floor texture. Character is centered and occupies 55 percent of canvas height in the neutral pose with empty space on every side. Smooth continuous anatomically correct motion at normal speed. Front three-quarter seated kitten. Start calmly seated for 0.6s. Raise one forepaw, give the paw a quick lick, then gently wipe the mouth and cheek with that same paw twice, close the eyes happily, lower the paw and end sitting exactly like the reference for the last second. The supporting paw and hindquarters stay planted. Clear soft paw-to-mouth contact, connected shoulder and wrist motion. Tiny tongue visible only during the lick. Tail gently follows.",
       "reference_images": [
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/a949da2973c84558bbbd2d1c06bdd2ac/creamFront.png",
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ec78cb7704784b8ca677bfec8a7c25d1/creamSide.png"
-      ]
+      ],
+      "superseded_by": "identity-v29"
     },
     {
       "character": "cream",
@@ -38,13 +40,14 @@
       "model": "minimax/h3-lite",
       "job_id": "mcp_3febeaf7bd6646a09d937b4600cd805c",
       "credit_cost": 120,
-      "source_file": "sources/cream-reach.mp4",
+      "source_file": "sources/superseded-v28/cream-reach.mp4",
       "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_3febeaf7bd6646a09d937b4600cd805c/output/output_0.mp4",
       "prompt": "Use the attached images as the exact same established desktop kitten character, preserving its face, eye colors, fur color and markings, rounded paws, proportions, soft detailed 3D illustration style, and small body. First image is the front identity and second image the side identity. A single fixed-camera full-body animation, no camera movement, no zoom, no cuts, no text, no props, no shadows. Completely uniform saturated chroma green (#00FF00) background, no gradient or floor texture. Character is centered and occupies 55 percent of canvas height in the neutral pose with empty space on every side. Smooth continuous anatomically correct motion at normal speed. Front three-quarter kitten. Start seated for 0.6s, look up toward a tiny imaginary mouse pointer, straighten onto the toes of both hind paws, lift both forepaws together, cup both paws toward the imaginary target above its face, make two cute gentle grasping attempts, then lower its paws and sit exactly like the reference for the last second. Full body including toes stays in frame. Maintain two forepaws, two hind paws, correct joints, same face and coat.",
       "reference_images": [
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/a949da2973c84558bbbd2d1c06bdd2ac/creamFront.png",
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ec78cb7704784b8ca677bfec8a7c25d1/creamSide.png"
-      ]
+      ],
+      "superseded_by": "identity-v29"
     },
     {
       "character": "cream",
@@ -52,13 +55,14 @@
       "model": "minimax/h3-lite",
       "job_id": "mcp_b986891f5f2c47669b640f1cbcdbc49e",
       "credit_cost": 120,
-      "source_file": "sources/cream-knead.mp4",
+      "source_file": "sources/superseded-v28/cream-knead.mp4",
       "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_b986891f5f2c47669b640f1cbcdbc49e/output/output_0.mp4",
       "prompt": "Use the attached images as the exact same established desktop kitten character, preserving its face, eye colors, fur color and markings, rounded paws, proportions, soft detailed 3D illustration style, and small body. First image is the front identity and second image the side identity. A single fixed-camera full-body animation, no camera movement, no zoom, no cuts, no text, no props, no shadows. Completely uniform saturated chroma green (#00FF00) background, no gradient or floor texture. Character is centered and occupies 55 percent of canvas height in the neutral pose with empty space on every side. Smooth continuous anatomically correct motion at normal speed. Front three-quarter seated kitten. Start sitting for 0.6s, lower its chest slightly and perform four slow alternating front-paw kneading presses on the floor: left press while right lifts, right press while left lifts, repeat. Toes splay softly on contact, shoulder weight transfers gently, eyes half closed, tail curls gently. Hindquarters stay planted and the body stays in place. End returning to the exact reference seated pose for the last second. Each paw remains connected with natural fur and joints.",
       "reference_images": [
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/a949da2973c84558bbbd2d1c06bdd2ac/creamFront.png",
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ec78cb7704784b8ca677bfec8a7c25d1/creamSide.png"
-      ]
+      ],
+      "superseded_by": "identity-v29"
     },
     {
       "character": "cream",
@@ -66,13 +70,14 @@
       "model": "minimax/h3-lite",
       "job_id": "mcp_e2d227856f694d848286b56fd86eeeaf",
       "credit_cost": 120,
-      "source_file": "sources/cream-punch.mp4",
+      "source_file": "sources/superseded-v28/cream-punch.mp4",
       "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_e2d227856f694d848286b56fd86eeeaf/output/output_0.mp4",
       "prompt": "Use the attached images as the exact same established desktop kitten character, preserving its face, eye colors, fur color and markings, rounded paws, proportions, soft detailed 3D illustration style, and small body. First image is the front identity and second image the side identity. A single fixed-camera full-body animation, no camera movement, no zoom, no cuts, no text, no props, no shadows. Completely uniform saturated chroma green (#00FF00) background, no gradient or floor texture. Character is centered and occupies 55 percent of canvas height in the neutral pose with empty space on every side. Smooth continuous anatomically correct motion at normal speed. Front three-quarter seated kitten. Start sitting for 0.6s, playfully wind up the near forepaw, make a quick gentle forward paw tap toward an imaginary screen in front of it, retract, then make a second tap with the opposite paw and retract. Cute springy cat swats with anticipation, fast contact and slower recovery, never human fists. Keep the seated hindquarters planted and face proportions constant. End seated in the exact reference pose for the last second.",
       "reference_images": [
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/a949da2973c84558bbbd2d1c06bdd2ac/creamFront.png",
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ec78cb7704784b8ca677bfec8a7c25d1/creamSide.png"
-      ]
+      ],
+      "superseded_by": "identity-v29"
     },
     {
       "character": "tuxedo",
@@ -80,13 +85,14 @@
       "model": "minimax/h3-lite",
       "job_id": "mcp_3a7d757e08ec4e49a8f3695c940170c3",
       "credit_cost": 120,
-      "source_file": "sources/tuxedo-jump.mp4",
+      "source_file": "sources/superseded-v28/tuxedo-jump.mp4",
       "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_3a7d757e08ec4e49a8f3695c940170c3/output/output_0.mp4",
       "prompt": "Use the attached images as the exact same established desktop kitten character, preserving its face, eye colors, fur color and markings, rounded paws, proportions, soft detailed 3D illustration style, and small body. First image is the front identity and second image the side identity. A single fixed-camera full-body animation, no camera movement, no zoom, no cuts, no text, no props, no shadows. Completely uniform saturated chroma green (#00FF00) background, no gradient or floor texture. Character is centered and occupies 55 percent of canvas height in the neutral pose with empty space on every side. Smooth continuous anatomically correct motion at normal speed. Side profile facing RIGHT. A cute physically natural cat jump cycle in place: stand on four paws for 0.7s, deeply load the hind legs and lower the haunches, push off with hind paws, extend front legs forward, draw all four paws up beneath the belly at the apex, reach front paws down, land front paws then hind paws, absorb weight with bent legs, and settle back into the identical four-paw side standing pose for the last second. The body follows one smooth small parabolic hop. Keep the tail continuous, head proportions fixed and four anatomical legs throughout. No rotating into a front view. Full cat stays on screen with generous headroom.",
       "reference_images": [
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ee195d86567e452590783e41901176f9/tuxedoFront.png",
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/4e193126060c48b5836d74e8654446dc/tuxedoSide.png"
-      ]
+      ],
+      "superseded_by": "identity-v29"
     },
     {
       "character": "tuxedo",
@@ -94,13 +100,14 @@
       "model": "minimax/h3-lite",
       "job_id": "mcp_c51ba85489e14df5bbcf827c4d9005fb",
       "credit_cost": 120,
-      "source_file": "sources/tuxedo-wipe.mp4",
+      "source_file": "sources/superseded-v28/tuxedo-wipe.mp4",
       "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_c51ba85489e14df5bbcf827c4d9005fb/output/output_0.mp4",
       "prompt": "Use the attached images as the exact same established desktop kitten character, preserving its face, eye colors, fur color and markings, rounded paws, proportions, soft detailed 3D illustration style, and small body. First image is the front identity and second image the side identity. A single fixed-camera full-body animation, no camera movement, no zoom, no cuts, no text, no props, no shadows. Completely uniform saturated chroma green (#00FF00) background, no gradient or floor texture. Character is centered and occupies 55 percent of canvas height in the neutral pose with empty space on every side. Smooth continuous anatomically correct motion at normal speed. Front three-quarter seated kitten. Start calmly seated for 0.6s. Raise one forepaw, give the paw a quick lick, then gently wipe the mouth and cheek with that same paw twice, close the eyes happily, lower the paw and end sitting exactly like the reference for the last second. The supporting paw and hindquarters stay planted. Clear soft paw-to-mouth contact, connected shoulder and wrist motion. Tiny tongue visible only during the lick. Tail gently follows.",
       "reference_images": [
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ee195d86567e452590783e41901176f9/tuxedoFront.png",
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/4e193126060c48b5836d74e8654446dc/tuxedoSide.png"
-      ]
+      ],
+      "superseded_by": "identity-v29"
     },
     {
       "character": "tuxedo",
@@ -108,13 +115,14 @@
       "model": "minimax/h3-lite",
       "job_id": "mcp_74f755d319944a50834f488d94f23d45",
       "credit_cost": 120,
-      "source_file": "sources/tuxedo-reach.mp4",
+      "source_file": "sources/superseded-v28/tuxedo-reach.mp4",
       "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_74f755d319944a50834f488d94f23d45/output/output_0.mp4",
       "prompt": "Use the attached images as the exact same established desktop kitten character, preserving its face, eye colors, fur color and markings, rounded paws, proportions, soft detailed 3D illustration style, and small body. First image is the front identity and second image the side identity. A single fixed-camera full-body animation, no camera movement, no zoom, no cuts, no text, no props, no shadows. Completely uniform saturated chroma green (#00FF00) background, no gradient or floor texture. Character is centered and occupies 55 percent of canvas height in the neutral pose with empty space on every side. Smooth continuous anatomically correct motion at normal speed. Front three-quarter kitten. Start seated for 0.6s, look up toward a tiny imaginary mouse pointer, straighten onto the toes of both hind paws, lift both forepaws together, cup both paws toward the imaginary target above its face, make two cute gentle grasping attempts, then lower its paws and sit exactly like the reference for the last second. Full body including toes stays in frame. Maintain two forepaws, two hind paws, correct joints, same face and coat.",
       "reference_images": [
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ee195d86567e452590783e41901176f9/tuxedoFront.png",
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/4e193126060c48b5836d74e8654446dc/tuxedoSide.png"
-      ]
+      ],
+      "superseded_by": "identity-v29"
     },
     {
       "character": "tuxedo",
@@ -122,13 +130,14 @@
       "model": "minimax/h3-lite",
       "job_id": "mcp_eaac6f68b7e94336a818a73501f16ad0",
       "credit_cost": 120,
-      "source_file": "sources/tuxedo-knead.mp4",
+      "source_file": "sources/superseded-v28/tuxedo-knead.mp4",
       "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_eaac6f68b7e94336a818a73501f16ad0/output/output_0.mp4",
       "prompt": "Use the attached images as the exact same established desktop kitten character, preserving its face, eye colors, fur color and markings, rounded paws, proportions, soft detailed 3D illustration style, and small body. First image is the front identity and second image the side identity. A single fixed-camera full-body animation, no camera movement, no zoom, no cuts, no text, no props, no shadows. Completely uniform saturated chroma green (#00FF00) background, no gradient or floor texture. Character is centered and occupies 55 percent of canvas height in the neutral pose with empty space on every side. Smooth continuous anatomically correct motion at normal speed. Front three-quarter seated kitten. Start sitting for 0.6s, lower its chest slightly and perform four slow alternating front-paw kneading presses on the floor: left press while right lifts, right press while left lifts, repeat. Toes splay softly on contact, shoulder weight transfers gently, eyes half closed, tail curls gently. Hindquarters stay planted and the body stays in place. End returning to the exact reference seated pose for the last second. Each paw remains connected with natural fur and joints.",
       "reference_images": [
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ee195d86567e452590783e41901176f9/tuxedoFront.png",
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/4e193126060c48b5836d74e8654446dc/tuxedoSide.png"
-      ]
+      ],
+      "superseded_by": "identity-v29"
     },
     {
       "character": "tuxedo",
@@ -136,13 +145,14 @@
       "model": "minimax/h3-lite",
       "job_id": "mcp_fd8e17af93cb41109ffc3eac7df397ef",
       "credit_cost": 120,
-      "source_file": "sources/tuxedo-punch.mp4",
+      "source_file": "sources/superseded-v28/tuxedo-punch.mp4",
       "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_fd8e17af93cb41109ffc3eac7df397ef/output/output_0.mp4",
       "prompt": "Use the attached images as the exact same established desktop kitten character, preserving its face, eye colors, fur color and markings, rounded paws, proportions, soft detailed 3D illustration style, and small body. First image is the front identity and second image the side identity. A single fixed-camera full-body animation, no camera movement, no zoom, no cuts, no text, no props, no shadows. Completely uniform saturated chroma green (#00FF00) background, no gradient or floor texture. Character is centered and occupies 55 percent of canvas height in the neutral pose with empty space on every side. Smooth continuous anatomically correct motion at normal speed. Front three-quarter seated kitten. Start sitting for 0.6s, playfully wind up the near forepaw, make a quick gentle forward paw tap toward an imaginary screen in front of it, retract, then make a second tap with the opposite paw and retract. Cute springy cat swats with anticipation, fast contact and slower recovery, never human fists. Keep the seated hindquarters planted and face proportions constant. End seated in the exact reference pose for the last second.",
       "reference_images": [
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ee195d86567e452590783e41901176f9/tuxedoFront.png",
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/4e193126060c48b5836d74e8654446dc/tuxedoSide.png"
-      ]
+      ],
+      "superseded_by": "identity-v29"
     },
     {
       "character": "cream",
@@ -150,14 +160,15 @@
       "model": "minimax/h3-lite",
       "job_id": "mcp_cea9ddd7c8844b79adb6948c35a250e0",
       "credit_cost": 120,
-      "source_file": "sources/cream-ball.mp4",
+      "source_file": "sources/superseded-v28/cream-ball.mp4",
       "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_cea9ddd7c8844b79adb6948c35a250e0/output/output_0.mp4",
       "prompt": "Animate the exact established desktop kitten in the two reference images. Preserve its face, proportions, eye color, coat pattern and soft detailed 3D illustration style. One fixed-camera full-body 6-second animation, no zoom, no cuts, no captions. Uniform bright green chroma-key background #00FF00 and generous empty space around the cat. Natural continuous movement and expressive small reactions. A physically convincing playful kitten interacting with a small red rubber ball. Crouch low, visually follow the ball, shift weight onto the hindquarters, reach one connected forepaw and visibly touch the ball, give it a light tap that makes it roll away, take three quick pursuit steps, slow down, then tap it again with the opposite forepaw. Each ball motion starts after visible paw contact, ball rolls naturally and decelerates from friction. The cat's limbs stay anatomically correct. Finish in a calm seated pose. Ball stays separated from the cat body and does not overlap its torso.",
       "reference_images": [
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/a949da2973c84558bbbd2d1c06bdd2ac/creamFront.png",
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ec78cb7704784b8ca677bfec8a7c25d1/creamSide.png"
       ],
-      "used": true
+      "used": true,
+      "superseded_by": "identity-v29"
     },
     {
       "character": "cream",
@@ -165,14 +176,15 @@
       "model": "minimax/h3-lite",
       "job_id": "mcp_04c0d7c42d8d479fa101e7bd07406ada",
       "credit_cost": 120,
-      "source_file": "sources/cream-toy.mp4",
+      "source_file": "sources/superseded-v28/cream-toy.mp4",
       "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_04c0d7c42d8d479fa101e7bd07406ada/output/output_0.mp4",
       "prompt": "Animate the exact established desktop kitten in the two reference images. Preserve its face, proportions, eye color, coat pattern and soft detailed 3D illustration style. One fixed-camera full-body 6-second animation, no zoom, no cuts, no captions. Uniform bright green chroma-key background #00FF00 and generous empty space around the cat. Natural continuous movement and expressive small reactions. A physically convincing kitten playing with a feather lure just above the floor. Lower the chest and wiggle the haunches before a short pounce, land on bent forelegs, pin the feather with both forepaws, release it, follow its tiny movement with the head and eyes, then make one quick soft paw swipe. Real feline anticipation, weight transfer, contact, recoil and recovery. Keep all four limbs attached with consistent anatomy. End seated. The lure stays outside the cat silhouette except at the paw tips.",
       "reference_images": [
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/a949da2973c84558bbbd2d1c06bdd2ac/creamFront.png",
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ec78cb7704784b8ca677bfec8a7c25d1/creamSide.png"
       ],
-      "used": true
+      "used": true,
+      "superseded_by": "identity-v29"
     },
     {
       "character": "cream",
@@ -180,14 +192,15 @@
       "model": "minimax/h3-lite",
       "job_id": "mcp_4fa2b22264d440df90bdc67dadd74438",
       "credit_cost": 120,
-      "source_file": "sources/cream-walk.mp4",
+      "source_file": "sources/superseded-v28/cream-walk.mp4",
       "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_4fa2b22264d440df90bdc67dadd74438/output/output_0.mp4",
       "prompt": "Animate the exact established desktop kitten in the two reference images. Preserve its face, proportions, eye color, coat pattern and soft detailed 3D illustration style. One fixed-camera full-body 6-second animation, no zoom, no cuts, no captions. Uniform bright green chroma-key background #00FF00 and generous empty space around the cat. Natural continuous movement and expressive small reactions. Strict right-facing side view. Start standing, sniff briefly, start with two short tentative steps, walk forward with a natural four-beat feline gait, vary speed gently with two quicker steps then two relaxed steps, shift body weight softly over planted paws, and slow to a relaxed stop. No foot sliding during ground contact. Smooth shoulders, hips, head and tail follow-through. Preserve the exact reference character and four anatomical legs. Full body stays in frame.",
       "reference_images": [
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/a949da2973c84558bbbd2d1c06bdd2ac/creamFront.png",
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ec78cb7704784b8ca677bfec8a7c25d1/creamSide.png"
       ],
-      "used": true
+      "used": true,
+      "superseded_by": "identity-v29"
     },
     {
       "character": "cream",
@@ -195,14 +208,15 @@
       "model": "minimax/h3-lite",
       "job_id": "mcp_ce9144adfce84d95ab2e03997fa9cfbe",
       "credit_cost": 120,
-      "source_file": "sources/cream-run.mp4",
+      "source_file": "sources/superseded-v28/cream-run.mp4",
       "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_ce9144adfce84d95ab2e03997fa9cfbe/output/output_0.mp4",
       "prompt": "Animate the exact established desktop kitten in the two reference images. Preserve its face, proportions, eye color, coat pattern and soft detailed 3D illustration style. One fixed-camera full-body 6-second animation, no zoom, no cuts, no captions. Uniform bright green chroma-key background #00FF00 and generous empty space around the cat. Natural continuous movement and expressive small reactions. Strict right-facing side view. Start standing, lower the body and accelerate into a cute realistic feline gallop with linked foreleg/hindleg pairs, a brief gathered suspension, then extended flight. Show a short enthusiastic speed burst, a small relaxation, then another two gallop strides and a natural deceleration. Clear contact timing and supple back, ears and tail follow-through. All four legs stay anatomically attached. Full body stays in frame.",
       "reference_images": [
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/a949da2973c84558bbbd2d1c06bdd2ac/creamFront.png",
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ec78cb7704784b8ca677bfec8a7c25d1/creamSide.png"
       ],
-      "used": true
+      "used": true,
+      "superseded_by": "identity-v29"
     },
     {
       "character": "cream",
@@ -210,14 +224,15 @@
       "model": "minimax/h3-lite",
       "job_id": "mcp_51f9f90722c5448986077c07f7365f90",
       "credit_cost": 120,
-      "source_file": "sources/cream-brake.mp4",
+      "source_file": "sources/superseded-v28/cream-brake.mp4",
       "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_51f9f90722c5448986077c07f7365f90/output/output_0.mp4",
       "prompt": "Animate the exact established desktop kitten in the two reference images. Preserve its face, proportions, eye color, coat pattern and soft detailed 3D illustration style. One fixed-camera full-body 6-second animation, no zoom, no cuts, no captions. Uniform bright green chroma-key background #00FF00 and generous empty space around the cat. Natural continuous movement and expressive small reactions. Strict right-facing side view. The kitten trots right for two steps, then applies a cute forceful natural brake: reaches and plants both forepaws forward, lowers the chest, shifts its weight back onto bent hind legs, leans the torso backward slightly as momentum dissipates, tail swings forward then settles, and rises to a relaxed four-paw stand. A short believable front-paw push and recovery. Preserve anatomy, face and fur. Full body stays in frame.",
       "reference_images": [
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/a949da2973c84558bbbd2d1c06bdd2ac/creamFront.png",
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ec78cb7704784b8ca677bfec8a7c25d1/creamSide.png"
       ],
-      "used": true
+      "used": true,
+      "superseded_by": "identity-v29"
     },
     {
       "character": "cream",
@@ -225,14 +240,15 @@
       "model": "minimax/h3-lite",
       "job_id": "mcp_b11b0fe9b40743959ea1d1a04b02d0db",
       "credit_cost": 120,
-      "source_file": "sources/cream-slide.mp4",
+      "source_file": "sources/superseded-v28/cream-slide.mp4",
       "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_b11b0fe9b40743959ea1d1a04b02d0db/output/output_0.mp4",
       "prompt": "Animate the exact established desktop kitten in the two reference images. Preserve its face, proportions, eye color, coat pattern and soft detailed 3D illustration style. One fixed-camera full-body 6-second animation, no zoom, no cuts, no captions. Uniform bright green chroma-key background #00FF00 and generous empty space around the cat. Natural continuous movement and expressive small reactions. Strict right-facing side view. The kitten runs right for one stride, tries to stop, then playfully slides a short distance with its forepaws stretched forward and hind paws gathered beneath the body, toes spread, surprised eyes, haunches low and tail balancing. Friction gradually slows the slide to a complete stop. The cat steadies itself and stands normally. Soft comic timing grounded in real weight and inertia, no body distortion and no human posture. Full body stays in frame.",
       "reference_images": [
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/a949da2973c84558bbbd2d1c06bdd2ac/creamFront.png",
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ec78cb7704784b8ca677bfec8a7c25d1/creamSide.png"
       ],
-      "used": true
+      "used": true,
+      "superseded_by": "identity-v29"
     },
     {
       "character": "cream",
@@ -255,14 +271,15 @@
       "model": "minimax/h3-lite",
       "job_id": "mcp_8d0fdba567344404bbeceb1ae07c1a10",
       "credit_cost": 120,
-      "source_file": "sources/cream-climb.mp4",
+      "source_file": "sources/superseded-v28/cream-climb.mp4",
       "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_8d0fdba567344404bbeceb1ae07c1a10/output/output_0.mp4",
       "prompt": "Animate the exact established desktop kitten in the two reference images. Preserve its face, proportions, eye color, coat pattern and soft detailed 3D illustration style. One fixed-camera full-body 6-second animation, no zoom, no cuts, no captions. Uniform bright green chroma-key background #00FF00 and generous empty space around the cat. Natural continuous movement and expressive small reactions. Strict side view of the reference kitten at the right vertical edge of a monitor, paws facing RIGHT. A thin neutral-gray vertical wall line is at the far right, clearly separated from the body. The kitten reaches both forepaws up to the edge, grips it, pushes upward with the hind paws and climbs vertically with two alternating forepaw/hindpaw steps, pauses while clinging, then releases and makes a gentle controlled hop back down onto all four paws. Keep the whole cat visible. Real cat climbing coordination and weight shifts. No clipping through the wall, no transformation.",
       "reference_images": [
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/a949da2973c84558bbbd2d1c06bdd2ac/creamFront.png",
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ec78cb7704784b8ca677bfec8a7c25d1/creamSide.png"
       ],
-      "used": true
+      "used": true,
+      "superseded_by": "identity-v29"
     },
     {
       "character": "tuxedo",
@@ -270,14 +287,15 @@
       "model": "minimax/h3-lite",
       "job_id": "mcp_61f951f7957442ccbba92530b1e94083",
       "credit_cost": 120,
-      "source_file": "sources/tuxedo-ball.mp4",
+      "source_file": "sources/superseded-v28/tuxedo-ball.mp4",
       "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_61f951f7957442ccbba92530b1e94083/output/output_0.mp4",
       "prompt": "Animate the exact established desktop kitten in the two reference images. Preserve its face, proportions, eye color, coat pattern and soft detailed 3D illustration style. One fixed-camera full-body 6-second animation, no zoom, no cuts, no captions. Uniform bright green chroma-key background #00FF00 and generous empty space around the cat. Natural continuous movement and expressive small reactions. A physically convincing playful kitten interacting with a small red rubber ball. Crouch low, visually follow the ball, shift weight onto the hindquarters, reach one connected forepaw and visibly touch the ball, give it a light tap that makes it roll away, take three quick pursuit steps, slow down, then tap it again with the opposite forepaw. Each ball motion starts after visible paw contact, ball rolls naturally and decelerates from friction. The cat's limbs stay anatomically correct. Finish in a calm seated pose. Ball stays separated from the cat body and does not overlap its torso.",
       "reference_images": [
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ee195d86567e452590783e41901176f9/tuxedoFront.png",
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/4e193126060c48b5836d74e8654446dc/tuxedoSide.png"
       ],
-      "used": true
+      "used": true,
+      "superseded_by": "identity-v29"
     },
     {
       "character": "tuxedo",
@@ -285,14 +303,15 @@
       "model": "minimax/h3-lite",
       "job_id": "mcp_406e618b3b4b4725be12c94d8a5ad29a",
       "credit_cost": 120,
-      "source_file": "sources/tuxedo-toy.mp4",
+      "source_file": "sources/superseded-v28/tuxedo-toy.mp4",
       "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_406e618b3b4b4725be12c94d8a5ad29a/output/output_0.mp4",
       "prompt": "Animate the exact established desktop kitten in the two reference images. Preserve its face, proportions, eye color, coat pattern and soft detailed 3D illustration style. One fixed-camera full-body 6-second animation, no zoom, no cuts, no captions. Uniform bright green chroma-key background #00FF00 and generous empty space around the cat. Natural continuous movement and expressive small reactions. A physically convincing kitten playing with a feather lure just above the floor. Lower the chest and wiggle the haunches before a short pounce, land on bent forelegs, pin the feather with both forepaws, release it, follow its tiny movement with the head and eyes, then make one quick soft paw swipe. Real feline anticipation, weight transfer, contact, recoil and recovery. Keep all four limbs attached with consistent anatomy. End seated. The lure stays outside the cat silhouette except at the paw tips.",
       "reference_images": [
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ee195d86567e452590783e41901176f9/tuxedoFront.png",
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/4e193126060c48b5836d74e8654446dc/tuxedoSide.png"
       ],
-      "used": true
+      "used": true,
+      "superseded_by": "identity-v29"
     },
     {
       "character": "tuxedo",
@@ -300,14 +319,15 @@
       "model": "minimax/h3-lite",
       "job_id": "mcp_88569faeeedd47af949f4829a243d6e6",
       "credit_cost": 120,
-      "source_file": "sources/tuxedo-walk.mp4",
+      "source_file": "sources/superseded-v28/tuxedo-walk.mp4",
       "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_88569faeeedd47af949f4829a243d6e6/output/output_0.mp4",
       "prompt": "Animate the exact established desktop kitten in the two reference images. Preserve its face, proportions, eye color, coat pattern and soft detailed 3D illustration style. One fixed-camera full-body 6-second animation, no zoom, no cuts, no captions. Uniform bright green chroma-key background #00FF00 and generous empty space around the cat. Natural continuous movement and expressive small reactions. Strict right-facing side view. Start standing, sniff briefly, start with two short tentative steps, walk forward with a natural four-beat feline gait, vary speed gently with two quicker steps then two relaxed steps, shift body weight softly over planted paws, and slow to a relaxed stop. No foot sliding during ground contact. Smooth shoulders, hips, head and tail follow-through. Preserve the exact reference character and four anatomical legs. Full body stays in frame.",
       "reference_images": [
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ee195d86567e452590783e41901176f9/tuxedoFront.png",
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/4e193126060c48b5836d74e8654446dc/tuxedoSide.png"
       ],
-      "used": true
+      "used": true,
+      "superseded_by": "identity-v29"
     },
     {
       "character": "tuxedo",
@@ -315,14 +335,15 @@
       "model": "minimax/h3-lite",
       "job_id": "mcp_7925246e37a64bb6a4fc51bd99dda1e7",
       "credit_cost": 120,
-      "source_file": "sources/tuxedo-run.mp4",
+      "source_file": "sources/superseded-v28/tuxedo-run.mp4",
       "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_7925246e37a64bb6a4fc51bd99dda1e7/output/output_0.mp4",
       "prompt": "Animate the exact established desktop kitten in the two reference images. Preserve its face, proportions, eye color, coat pattern and soft detailed 3D illustration style. One fixed-camera full-body 6-second animation, no zoom, no cuts, no captions. Uniform bright green chroma-key background #00FF00 and generous empty space around the cat. Natural continuous movement and expressive small reactions. Strict right-facing side view. Start standing, lower the body and accelerate into a cute realistic feline gallop with linked foreleg/hindleg pairs, a brief gathered suspension, then extended flight. Show a short enthusiastic speed burst, a small relaxation, then another two gallop strides and a natural deceleration. Clear contact timing and supple back, ears and tail follow-through. All four legs stay anatomically attached. Full body stays in frame.",
       "reference_images": [
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ee195d86567e452590783e41901176f9/tuxedoFront.png",
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/4e193126060c48b5836d74e8654446dc/tuxedoSide.png"
       ],
-      "used": true
+      "used": true,
+      "superseded_by": "identity-v29"
     },
     {
       "character": "tuxedo",
@@ -330,14 +351,15 @@
       "model": "minimax/h3-lite",
       "job_id": "mcp_8975de3e8a8141f9b23967b73541d068",
       "credit_cost": 120,
-      "source_file": "sources/tuxedo-brake.mp4",
+      "source_file": "sources/superseded-v28/tuxedo-brake.mp4",
       "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_8975de3e8a8141f9b23967b73541d068/output/output_0.mp4",
       "prompt": "Animate the exact established desktop kitten in the two reference images. Preserve its face, proportions, eye color, coat pattern and soft detailed 3D illustration style. One fixed-camera full-body 6-second animation, no zoom, no cuts, no captions. Uniform bright green chroma-key background #00FF00 and generous empty space around the cat. Natural continuous movement and expressive small reactions. Strict right-facing side view. The kitten trots right for two steps, then applies a cute forceful natural brake: reaches and plants both forepaws forward, lowers the chest, shifts its weight back onto bent hind legs, leans the torso backward slightly as momentum dissipates, tail swings forward then settles, and rises to a relaxed four-paw stand. A short believable front-paw push and recovery. Preserve anatomy, face and fur. Full body stays in frame.",
       "reference_images": [
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ee195d86567e452590783e41901176f9/tuxedoFront.png",
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/4e193126060c48b5836d74e8654446dc/tuxedoSide.png"
       ],
-      "used": true
+      "used": true,
+      "superseded_by": "identity-v29"
     },
     {
       "character": "tuxedo",
@@ -345,14 +367,15 @@
       "model": "minimax/h3-lite",
       "job_id": "mcp_dd87c3883a264ab4a0c44740cdb21e82",
       "credit_cost": 120,
-      "source_file": "sources/tuxedo-slide.mp4",
+      "source_file": "sources/superseded-v28/tuxedo-slide.mp4",
       "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_dd87c3883a264ab4a0c44740cdb21e82/output/output_0.mp4",
       "prompt": "Animate the exact established desktop kitten in the two reference images. Preserve its face, proportions, eye color, coat pattern and soft detailed 3D illustration style. One fixed-camera full-body 6-second animation, no zoom, no cuts, no captions. Uniform bright green chroma-key background #00FF00 and generous empty space around the cat. Natural continuous movement and expressive small reactions. Strict right-facing side view. The kitten runs right for one stride, tries to stop, then playfully slides a short distance with its forepaws stretched forward and hind paws gathered beneath the body, toes spread, surprised eyes, haunches low and tail balancing. Friction gradually slows the slide to a complete stop. The cat steadies itself and stands normally. Soft comic timing grounded in real weight and inertia, no body distortion and no human posture. Full body stays in frame.",
       "reference_images": [
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ee195d86567e452590783e41901176f9/tuxedoFront.png",
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/4e193126060c48b5836d74e8654446dc/tuxedoSide.png"
       ],
-      "used": true
+      "used": true,
+      "superseded_by": "identity-v29"
     },
     {
       "character": "tuxedo",
@@ -375,14 +398,15 @@
       "model": "minimax/h3-lite",
       "job_id": "mcp_f72786741b8a4a57a4e77ca668cccfab",
       "credit_cost": 120,
-      "source_file": "sources/tuxedo-climb.mp4",
+      "source_file": "sources/superseded-v28/tuxedo-climb.mp4",
       "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_f72786741b8a4a57a4e77ca668cccfab/output/output_0.mp4",
       "prompt": "Animate the exact established desktop kitten in the two reference images. Preserve its face, proportions, eye color, coat pattern and soft detailed 3D illustration style. One fixed-camera full-body 6-second animation, no zoom, no cuts, no captions. Uniform bright green chroma-key background #00FF00 and generous empty space around the cat. Natural continuous movement and expressive small reactions. Strict side view of the reference kitten at the right vertical edge of a monitor, paws facing RIGHT. A thin neutral-gray vertical wall line is at the far right, clearly separated from the body. The kitten reaches both forepaws up to the edge, grips it, pushes upward with the hind paws and climbs vertically with two alternating forepaw/hindpaw steps, pauses while clinging, then releases and makes a gentle controlled hop back down onto all four paws. Keep the whole cat visible. Real cat climbing coordination and weight shifts. No clipping through the wall, no transformation.",
       "reference_images": [
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ee195d86567e452590783e41901176f9/tuxedoFront.png",
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/4e193126060c48b5836d74e8654446dc/tuxedoSide.png"
       ],
-      "used": true
+      "used": true,
+      "superseded_by": "identity-v29"
     },
     {
       "character": "cream",
@@ -390,13 +414,14 @@
       "model": "minimax/h3-lite",
       "job_id": "mcp_704083dea13746d98c4e7b15925ec13f",
       "credit_cost": 120,
-      "source_file": "sources/cream-stumble.mp4",
+      "source_file": "sources/superseded-v28/cream-stumble.mp4",
       "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_704083dea13746d98c4e7b15925ec13f/output/output_0.mp4",
       "prompt": "ISOLATED CHROMA GREEN ANIMATION. Solid uniform vivid neon green #00FF00 background, green floor, absolutely NO black, pastel, pink, blue or white scenery. Whole cat stays in center occupying only 45% image width, with wide empty green margin all around including tail and toes in every frame. Use ONLY the kitten identity of reference, ignore its background. Static camera. The exact orange cream kitten trots slowly two steps toward the right, brakes too fast, gently tips sideways onto its haunches, rolls onto its side once showing belly and all four paws, immediately rights itself and stands calmly. Natural weight, momentum, soft body compression and clear recovery, anatomically connected legs. Full-body shot, no camera motion, no cuts, no text. Neon GREEN background and floor for the entire 6 seconds.",
       "reference_images": [
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/ec78cb7704784b8ca677bfec8a7c25d1/creamSide.png"
       ],
-      "used": true
+      "used": true,
+      "superseded_by": "identity-v29"
     },
     {
       "character": "tuxedo",
@@ -404,13 +429,14 @@
       "model": "minimax/h3-lite",
       "job_id": "mcp_868188d420e548b08bad4ae7feb92b58",
       "credit_cost": 120,
-      "source_file": "sources/tuxedo-stumble.mp4",
+      "source_file": "sources/superseded-v28/tuxedo-stumble.mp4",
       "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_868188d420e548b08bad4ae7feb92b58/output/output_0.mp4",
       "prompt": "ISOLATED CHROMA GREEN ANIMATION. Solid uniform vivid neon green #00FF00 background, green floor, absolutely NO black, pastel, pink, blue or white scenery. Whole cat stays in center occupying only 45% image width, with wide empty green margin all around including tail and toes in every frame. Use ONLY the kitten identity of reference, ignore its background. Static camera. The exact black-and-white tuxedo kitten trots slowly two steps toward the right, brakes too fast, gently tips sideways onto its haunches, rolls onto its side once showing belly and all four paws, immediately rights itself and stands calmly. Natural weight, momentum, soft body compression and clear recovery, anatomically connected legs. Full-body shot, no camera motion, no cuts, no text. Neon GREEN background and floor for the entire 6 seconds.",
       "reference_images": [
         "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/4e193126060c48b5836d74e8654446dc/tuxedoSide.png"
       ],
-      "used": true
+      "used": true,
+      "superseded_by": "identity-v29"
     },
     {
       "character": "cream",
@@ -466,7 +492,7 @@
       "model": "minimax/h3-lite",
       "job_id": "mcp_bae9cedaec3d4901ae520cef93d629c8",
       "credit_cost": 120,
-      "source_file": "sources/cream-fish.mp4",
+      "source_file": "sources/superseded-v28/cream-fish.mp4",
       "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_bae9cedaec3d4901ae520cef93d629c8/output/output_0.mp4",
       "prompt": "Keep the EXACT starting-frame composition, fixed orthographic camera and WIDE framing. Do NOT crop, enlarge, move or zoom the camera. The whole small kitten and the entire fish and plate stay within the central60percent of the frame with the same wide empty GREEN margins throughout. Animate the reference kitten naturally eating the fish: put the raised paw down, shift weight forward with paws planted, gently lower head and flexible neck until muzzle contacts the fish, take four or five tiny irregular bites with smooth subtle jaw chewing and tongue licks, pause to swallow and look at the fish, then smoothly lift the head and lick the lips, settling into the original side posture. Continuous fluid realistic feline motion and weight, tiny ear reactions and breathing, no mechanical repeated nodding, no jerky still poses. Fish and plate stay in their exact floor position throughout, neither jumps or disappears. Preserve coat, eye colors, face and proportions. Uniform solid NEON GREEN background and floor, no new scenery, text, cuts, props or shadows. End gently matching the ending reference frame.",
       "reference_images": [
@@ -481,7 +507,8 @@
         "aspect_ratio": "1:1",
         "generation_mode": "frame"
       },
-      "used": true
+      "used": true,
+      "superseded_by": "identity-v29"
     },
     {
       "character": "tuxedo",
@@ -489,7 +516,7 @@
       "model": "minimax/h3-lite",
       "job_id": "mcp_bee278a1f5f546aa989e905efc7850ca",
       "credit_cost": 120,
-      "source_file": "sources/tuxedo-fish.mp4",
+      "source_file": "sources/superseded-v28/tuxedo-fish.mp4",
       "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_bee278a1f5f546aa989e905efc7850ca/output/output_0.mp4",
       "prompt": "Keep the EXACT starting-frame composition, fixed orthographic camera and WIDE framing. Do NOT crop, enlarge, move or zoom the camera. The whole small kitten and the entire fish and plate stay within the central60percent of the frame with the same wide empty GREEN margins throughout. Animate the reference kitten naturally eating the fish: put the raised paw down, shift weight forward with paws planted, gently lower head and flexible neck until muzzle contacts the fish, take four or five tiny irregular bites with smooth subtle jaw chewing and tongue licks, pause to swallow and look at the fish, then smoothly lift the head and lick the lips, settling into the original side posture. Continuous fluid realistic feline motion and weight, tiny ear reactions and breathing, no mechanical repeated nodding, no jerky still poses. Fish and plate stay in their exact floor position throughout, neither jumps or disappears. Preserve coat, eye colors, face and proportions. Uniform solid NEON GREEN background and floor, no new scenery, text, cuts, props or shadows. End gently matching the ending reference frame.",
       "reference_images": [
@@ -504,7 +531,8 @@
         "aspect_ratio": "1:1",
         "generation_mode": "frame"
       },
-      "used": true
+      "used": true,
+      "superseded_by": "identity-v29"
     },
     {
       "character": "cream",
@@ -583,6 +611,814 @@
       "duration": 8,
       "accepted": true,
       "edit": "Retain first four swats; omit extra generated swats144..169; attack frames96..143 use30ms/exposure. Full original retained."
+    },
+    {
+      "character": "cream",
+      "action": "groom",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_4ccf761803794c3e9839ffc1ea54f21d",
+      "credit_cost": 120,
+      "source_file": "sources/cream-wipe.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_4ccf761803794c3e9839ffc1ea54f21d/output/output_0.mp4",
+      "accepted": true,
+      "identity_policy": "identity-v29.json",
+      "options": {
+        "prompt": "The exact established cream kitten from the supplied image performs one continuous action. STRICT IDENTITY LOCK: copy the same face, eyes, ear shape, muzzle, fur markings, color palette, tail, short legs, round paw shape, head/body proportions and soft detailed3D rendering style throughout. No redesign, no black/drawn outlines, no longer adult body, no shrinking head. The first and final pose must be pixel-faithful to the supplied frames. Camera is locked, no cut, no zoom, constant scale. Entire kitten including ears/tail/all paws inside the wide canvas with green margin. Pure uniform chroma GREEN #00FF00 floor/background, no cast shadow, no text, no watermark. Smooth natural feline shoulder, elbow, wrist, hip and hock movement with weight and soft overlapping fur motion. 0-.7s stay seated; .7-1.5s slowly raise one forepaw and lick it;1.5-3.7s use that same paw to wipe mouth and cheek twice with soft paw-to-fur contact;3.7-5s lower paw and settle;5-6s original seated pose. Supporting paw and hindquarters stay planted. No ink outlines.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f91aa82183e14b82a31e69c0185697b5/cream-front-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f91aa82183e14b82a31e69c0185697b5/cream-front-identity-v29.png",
+        "generation_mode": "frame",
+        "duration": 6,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      }
+    },
+    {
+      "character": "cream",
+      "action": "punch",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_92123a08b3534205a27421d0bc4294cc",
+      "credit_cost": 120,
+      "source_file": "sources/cream-punch.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_92123a08b3534205a27421d0bc4294cc/output/output_0.mp4",
+      "accepted": true,
+      "identity_policy": "identity-v29.json",
+      "options": {
+        "prompt": "The exact established cream kitten from the supplied image performs one continuous action. STRICT IDENTITY LOCK: copy the same face, eyes, ear shape, muzzle, fur markings, color palette, tail, short legs, round paw shape, head/body proportions and soft detailed3D rendering style throughout. No redesign, no black/drawn outlines, no longer adult body, no shrinking head. The first and final pose must be pixel-faithful to the supplied frames. Camera is locked, no cut, no zoom, constant scale. Entire kitten including ears/tail/all paws inside the wide canvas with green margin. Pure uniform chroma GREEN #00FF00 floor/background, no cast shadow, no text, no watermark. Smooth natural feline shoulder, elbow, wrist, hip and hock movement with weight and soft overlapping fur motion. 0-1s seated alert,1-1.8s slowly wind up one forepaw beside cheek,1.8-2.5s one fast forward playful paw tap and recoil,2.5-3.3s wind up opposite forepaw,3.3-4s second tap and recoil,4-6s smoothly lower paws and return original seated pose. Cat swats, never human fists. Supporting paws stay planted.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f91aa82183e14b82a31e69c0185697b5/cream-front-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f91aa82183e14b82a31e69c0185697b5/cream-front-identity-v29.png",
+        "generation_mode": "frame",
+        "duration": 6,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      }
+    },
+    {
+      "character": "cream",
+      "action": "knead",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_590b930c9a914432a5885899d5c8e713",
+      "credit_cost": 120,
+      "source_file": "sources/cream-knead.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_590b930c9a914432a5885899d5c8e713/output/output_0.mp4",
+      "accepted": true,
+      "identity_policy": "identity-v29.json",
+      "options": {
+        "prompt": "The exact established cream kitten from the supplied image performs one continuous action. STRICT IDENTITY LOCK: copy the same face, eyes, ear shape, muzzle, fur markings, color palette, tail, short legs, round paw shape, head/body proportions and soft detailed3D rendering style throughout. No redesign, no black/drawn outlines, no longer adult body, no shrinking head. The first and final pose must be pixel-faithful to the supplied frames. Camera is locked, no cut, no zoom, constant scale. Entire kitten including ears/tail/all paws inside the wide canvas with green margin. Pure uniform chroma GREEN #00FF00 floor/background, no cast shadow, no text, no watermark. Smooth natural feline shoulder, elbow, wrist, hip and hock movement with weight and soft overlapping fur motion. 0-.7s stay seated, .7-1.4s lean the chest forward without changing proportions,1.4-4.8s perform four alternating slow front-paw kneading presses on the floor, toes softly spread, left then right then left then right, weight transfers between shoulders, hindquarters stay planted.4.8-6s smoothly return original seated pose.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f91aa82183e14b82a31e69c0185697b5/cream-front-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f91aa82183e14b82a31e69c0185697b5/cream-front-identity-v29.png",
+        "generation_mode": "frame",
+        "duration": 6,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      }
+    },
+    {
+      "character": "cream",
+      "action": "reach",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_62479c7189134138af58fe7549a40159",
+      "credit_cost": 120,
+      "source_file": "sources/cream-reach.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_62479c7189134138af58fe7549a40159/output/output_0.mp4",
+      "accepted": true,
+      "identity_policy": "identity-v29.json",
+      "options": {
+        "prompt": "The exact established cream kitten from the supplied image performs one continuous action. STRICT IDENTITY LOCK: copy the same face, eyes, ear shape, muzzle, fur markings, color palette, tail, short legs, round paw shape, head/body proportions and soft detailed3D rendering style throughout. No redesign, no black/drawn outlines, no longer adult body, no shrinking head. The first and final pose must be pixel-faithful to the supplied frames. Camera is locked, no cut, no zoom, constant scale. Entire kitten including ears/tail/all paws inside the wide canvas with green margin. Pure uniform chroma GREEN #00FF00 floor/background, no cast shadow, no text, no watermark. Smooth natural feline shoulder, elbow, wrist, hip and hock movement with weight and soft overlapping fur motion. 0-.8s seated gaze up, .8-2.2s gradually straighten onto both hind paws and lift both connected forepaws,2.2-4.2s make two gentle cupped-paw grasping attempts toward an imaginary pointer above the face,4.2-6s lower forepaws and settle into original seated pose. The long reaching body is still the same short chubby kitten, no adult torso.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f91aa82183e14b82a31e69c0185697b5/cream-front-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f91aa82183e14b82a31e69c0185697b5/cream-front-identity-v29.png",
+        "generation_mode": "frame",
+        "duration": 6,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      }
+    },
+    {
+      "character": "cream",
+      "action": "jump",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_8c1347523c834b4d804bb42526a21c44",
+      "credit_cost": 120,
+      "source_file": "sources/cream-jump.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_8c1347523c834b4d804bb42526a21c44/output/output_0.mp4",
+      "accepted": true,
+      "identity_policy": "identity-v29.json",
+      "options": {
+        "prompt": "The exact established cream kitten from the supplied image performs one continuous action. STRICT IDENTITY LOCK: copy the same face, eyes, ear shape, muzzle, fur markings, color palette, tail, short legs, round paw shape, head/body proportions and soft detailed3D rendering style throughout. No redesign, no black/drawn outlines, no longer adult body, no shrinking head. The first and final pose must be pixel-faithful to the supplied frames. Camera is locked, no cut, no zoom, constant scale. Entire kitten including ears/tail/all paws inside the wide canvas with green margin. Pure uniform chroma GREEN #00FF00 floor/background, no cast shadow, no text, no watermark. Smooth natural feline shoulder, elbow, wrist, hip and hock movement with weight and soft overlapping fur motion. 0-1s four-paw standing facing RIGHT,1-1.8s load hind legs and crouch deeply,1.8-3s one low natural forward-upward hop, hind paws push off, front paws reach, tuck under body at apex, reach down before landing,3-4.8s front paws then hind paws land, flex to absorb weight,4.8-6s settle to the original four-leg pose. Entire character remains same size, no head morph or camera movement.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f5a17e175ec54a5a9cd9d6a1cd69979f/cream-side-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f5a17e175ec54a5a9cd9d6a1cd69979f/cream-side-identity-v29.png",
+        "generation_mode": "frame",
+        "duration": 6,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      }
+    },
+    {
+      "character": "cream",
+      "action": "ball",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_2a15e7e5e4074d40ab099494fa5703b4",
+      "credit_cost": 120,
+      "source_file": "sources/cream-ball.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_2a15e7e5e4074d40ab099494fa5703b4/output/output_0.mp4",
+      "accepted": true,
+      "identity_policy": "identity-v29.json",
+      "options": {
+        "prompt": "The exact established cream kitten from the supplied image performs one continuous action. STRICT IDENTITY LOCK: copy the same face, eyes, ear shape, muzzle, fur markings, color palette, tail, short legs, round paw shape, head/body proportions and soft detailed3D rendering style throughout. No redesign, no black/drawn outlines, no longer adult body, no shrinking head. The first and final pose must be pixel-faithful to the supplied frames. Camera is locked, no cut, no zoom, constant scale. Entire kitten including ears/tail/all paws inside the wide canvas with green margin. Pure uniform chroma GREEN #00FF00 floor/background, no cast shadow, no text, no watermark. Smooth natural feline shoulder, elbow, wrist, hip and hock movement with weight and soft overlapping fur motion. 0-1s alert standing facing RIGHT and look down; tiny solid RED #E02020 ball rolls slowly toward the near front paw at ground level,1-1.8s crouch and prepare near forepaw,1.8-2.8s extend the near forepaw down and forward to bat the red ball, allow it to roll right along floor,2.8-4.5s follow its movement with eyes, reload and make one softer paw tap,4.5-6s return original four-paw pose. Only one red ball, no red cloth, no extra props, kitten never changes coat or face.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f5a17e175ec54a5a9cd9d6a1cd69979f/cream-side-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f5a17e175ec54a5a9cd9d6a1cd69979f/cream-side-identity-v29.png",
+        "generation_mode": "frame",
+        "duration": 6,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      }
+    },
+    {
+      "character": "cream",
+      "action": "toy",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_a14203d1757a4a8fbd795a251abe2084",
+      "credit_cost": 120,
+      "source_file": "sources/cream-toy.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_a14203d1757a4a8fbd795a251abe2084/output/output_0.mp4",
+      "accepted": true,
+      "identity_policy": "identity-v29.json",
+      "options": {
+        "prompt": "The exact established cream kitten from the supplied image performs one continuous action. STRICT IDENTITY LOCK: copy the same face, eyes, ear shape, muzzle, fur markings, color palette, tail, short legs, round paw shape, head/body proportions and soft detailed3D rendering style throughout. No redesign, no black/drawn outlines, no longer adult body, no shrinking head. The first and final pose must be pixel-faithful to the supplied frames. Camera is locked, no cut, no zoom, constant scale. Entire kitten including ears/tail/all paws inside the wide canvas with green margin. Pure uniform chroma GREEN #00FF00 floor/background, no cast shadow, no text, no watermark. Smooth natural feline shoulder, elbow, wrist, hip and hock movement with weight and soft overlapping fur motion. 0-.8s gaze down at one small brown feather toy on floor near front paws,.8-2s lower shoulders and wiggle haunches subtly,2-3.2s a tiny grounded pounce forward to catch feather with BOTH front paws,3.2-4.5s pin feather, give it one playful paw rake with connected limbs,4.5-6s release toy and return original seated pose. Feather stays small low and brown, no red ball, no leaping out of frame.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f91aa82183e14b82a31e69c0185697b5/cream-front-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f91aa82183e14b82a31e69c0185697b5/cream-front-identity-v29.png",
+        "generation_mode": "frame",
+        "duration": 6,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      }
+    },
+    {
+      "character": "cream",
+      "action": "brake",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_04a7e458b6384b7398a75ae4991cd6c7",
+      "credit_cost": 120,
+      "source_file": "sources/cream-brake.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_04a7e458b6384b7398a75ae4991cd6c7/output/output_0.mp4",
+      "accepted": true,
+      "identity_policy": "identity-v29.json",
+      "options": {
+        "prompt": "The exact established cream kitten from the supplied image performs one continuous action. STRICT IDENTITY LOCK: copy the same face, eyes, ear shape, muzzle, fur markings, color palette, tail, short legs, round paw shape, head/body proportions and soft detailed3D rendering style throughout. No redesign, no black/drawn outlines, no longer adult body, no shrinking head. The first and final pose must be pixel-faithful to the supplied frames. Camera is locked, no cut, no zoom, constant scale. Entire kitten including ears/tail/all paws inside the wide canvas with green margin. Pure uniform chroma GREEN #00FF00 floor/background, no cast shadow, no text, no watermark. Smooth natural feline shoulder, elbow, wrist, hip and hock movement with weight and soft overlapping fur motion. 0-.8s take two short running strides toward RIGHT in place,.8-2s lean weight back, lower haunches and extend front paws forward to brake,2-3.8s hind paws step under body, chest lowers with clear bent front elbows, slow to a planted crouch,3.8-6s recover smoothly to original four-paw pose WITHOUT SITTING. Keep the same short torso and head proportions.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f5a17e175ec54a5a9cd9d6a1cd69979f/cream-side-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f5a17e175ec54a5a9cd9d6a1cd69979f/cream-side-identity-v29.png",
+        "generation_mode": "frame",
+        "duration": 6,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      }
+    },
+    {
+      "character": "cream",
+      "action": "slide",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_2da415f413d54a2983e67de1a4e8dea3",
+      "credit_cost": 120,
+      "source_file": "sources/cream-slide.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_2da415f413d54a2983e67de1a4e8dea3/output/output_0.mp4",
+      "accepted": true,
+      "identity_policy": "identity-v29.json",
+      "options": {
+        "prompt": "The exact established cream kitten from the supplied image performs one continuous action. STRICT IDENTITY LOCK: copy the same face, eyes, ear shape, muzzle, fur markings, color palette, tail, short legs, round paw shape, head/body proportions and soft detailed3D rendering style throughout. No redesign, no black/drawn outlines, no longer adult body, no shrinking head. The first and final pose must be pixel-faithful to the supplied frames. Camera is locked, no cut, no zoom, constant scale. Entire kitten including ears/tail/all paws inside the wide canvas with green margin. Pure uniform chroma GREEN #00FF00 floor/background, no cast shadow, no text, no watermark. Smooth natural feline shoulder, elbow, wrist, hip and hock movement with weight and soft overlapping fur motion. 0-.8s run RIGHT in place,.8-2s lean backward, extend both front paws ahead to grip,2-3.8s perform a long braking skid with bent hind limbs, paws visibly sliding while tail counterbalances,3.8-6s regain traction and return to original four-paw pose WITHOUT SITTING. Minimal root movement, same character proportions.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f5a17e175ec54a5a9cd9d6a1cd69979f/cream-side-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f5a17e175ec54a5a9cd9d6a1cd69979f/cream-side-identity-v29.png",
+        "generation_mode": "frame",
+        "duration": 6,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      }
+    },
+    {
+      "character": "cream",
+      "action": "stumble",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_e240029d0d05493c8596d89ab2429898",
+      "credit_cost": 120,
+      "source_file": "sources/cream-stumble.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_e240029d0d05493c8596d89ab2429898/output/output_0.mp4",
+      "accepted": true,
+      "identity_policy": "identity-v29.json",
+      "options": {
+        "prompt": "The exact established cream kitten from the supplied image performs one continuous action. STRICT IDENTITY LOCK: copy the same face, eyes, ear shape, muzzle, fur markings, color palette, tail, short legs, round paw shape, head/body proportions and soft detailed3D rendering style throughout. No redesign, no black/drawn outlines, no longer adult body, no shrinking head. The first and final pose must be pixel-faithful to the supplied frames. Camera is locked, no cut, no zoom, constant scale. Entire kitten including ears/tail/all paws inside the wide canvas with green margin. Pure uniform chroma GREEN #00FF00 floor/background, no cast shadow, no text, no watermark. Smooth natural feline shoulder, elbow, wrist, hip and hock movement with weight and soft overlapping fur motion. 0-.8s run RIGHT,.8-1.7s trip softly while braking,1.7-3.2s tuck forepaws and roll gently once over near shoulder to side,3.2-5s push up with paws and regain four-paw stance,5-6s original reference pose. A harmless cute kitten tumble, no distress, no rigid spinning, no detached limbs. Same exact character face, no adult body.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f5a17e175ec54a5a9cd9d6a1cd69979f/cream-side-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f5a17e175ec54a5a9cd9d6a1cd69979f/cream-side-identity-v29.png",
+        "generation_mode": "frame",
+        "duration": 6,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      }
+    },
+    {
+      "character": "cream",
+      "action": "climb",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_80f4141f89994e1383e30f77ef543d47",
+      "credit_cost": 120,
+      "source_file": "sources/cream-climb.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_80f4141f89994e1383e30f77ef543d47/output/output_0.mp4",
+      "accepted": true,
+      "identity_policy": "identity-v29.json",
+      "options": {
+        "prompt": "The exact established cream kitten from the supplied image performs one continuous action. STRICT IDENTITY LOCK: copy the same face, eyes, ear shape, muzzle, fur markings, color palette, tail, short legs, round paw shape, head/body proportions and soft detailed3D rendering style throughout. No redesign, no black/drawn outlines, no longer adult body, no shrinking head. The first and final pose must be pixel-faithful to the supplied frames. Camera is locked, no cut, no zoom, constant scale. Entire kitten including ears/tail/all paws inside the wide canvas with green margin. Pure uniform chroma GREEN #00FF00 floor/background, no cast shadow, no text, no watermark. Smooth natural feline shoulder, elbow, wrist, hip and hock movement with weight and soft overlapping fur motion. 0-.8s stand facing RIGHT,.8-1.6s place both front paws on an invisible vertical monitor edge just ahead,1.6-3.8s climb the edge with two alternating front-paw pulls and little hind-paw steps, body rises modestly upright with natural bent limbs and same short kitten torso,3.8-4.4s briefly hold,4.4-5.3s release and make a low soft landing,5.3-6s original four-leg reference pose. No visible wall, no scenery or lines, green background only. Full character and tail stay visible.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f5a17e175ec54a5a9cd9d6a1cd69979f/cream-side-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f5a17e175ec54a5a9cd9d6a1cd69979f/cream-side-identity-v29.png",
+        "generation_mode": "frame",
+        "duration": 6,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      }
+    },
+    {
+      "character": "tuxedo",
+      "action": "groom",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_0e29e5d35ac24558b991fc6bf3ef0276",
+      "credit_cost": 120,
+      "source_file": "sources/tuxedo-wipe.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_0e29e5d35ac24558b991fc6bf3ef0276/output/output_0.mp4",
+      "accepted": true,
+      "identity_policy": "identity-v29.json",
+      "options": {
+        "prompt": "The exact established tuxedo kitten from the supplied image performs one continuous action. STRICT IDENTITY LOCK: copy the same face, eyes, ear shape, muzzle, fur markings, color palette, tail, short legs, round paw shape, head/body proportions and soft detailed3D rendering style throughout. No redesign, no black/drawn outlines, no longer adult body, no shrinking head. The first and final pose must be pixel-faithful to the supplied frames. Camera is locked, no cut, no zoom, constant scale. Entire kitten including ears/tail/all paws inside the wide canvas with green margin. Pure uniform chroma GREEN #00FF00 floor/background, no cast shadow, no text, no watermark. Smooth natural feline shoulder, elbow, wrist, hip and hock movement with weight and soft overlapping fur motion. 0-.7s stay seated; .7-1.5s slowly raise one forepaw and lick it;1.5-3.7s use that same paw to wipe mouth and cheek twice with soft paw-to-fur contact;3.7-5s lower paw and settle;5-6s original seated pose. Supporting paw and hindquarters stay planted. No ink outlines.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/83c1feedbe4d49e7928fcd973495a776/tuxedo-front-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/83c1feedbe4d49e7928fcd973495a776/tuxedo-front-identity-v29.png",
+        "generation_mode": "frame",
+        "duration": 6,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      }
+    },
+    {
+      "character": "tuxedo",
+      "action": "punch",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_79c386247b464e9fbfca3d2b1ecd86f0",
+      "credit_cost": 120,
+      "source_file": "sources/tuxedo-punch.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_79c386247b464e9fbfca3d2b1ecd86f0/output/output_0.mp4",
+      "accepted": true,
+      "identity_policy": "identity-v29.json",
+      "options": {
+        "prompt": "The exact established tuxedo kitten from the supplied image performs one continuous action. STRICT IDENTITY LOCK: copy the same face, eyes, ear shape, muzzle, fur markings, color palette, tail, short legs, round paw shape, head/body proportions and soft detailed3D rendering style throughout. No redesign, no black/drawn outlines, no longer adult body, no shrinking head. The first and final pose must be pixel-faithful to the supplied frames. Camera is locked, no cut, no zoom, constant scale. Entire kitten including ears/tail/all paws inside the wide canvas with green margin. Pure uniform chroma GREEN #00FF00 floor/background, no cast shadow, no text, no watermark. Smooth natural feline shoulder, elbow, wrist, hip and hock movement with weight and soft overlapping fur motion. 0-1s seated alert,1-1.8s slowly wind up one forepaw beside cheek,1.8-2.5s one fast forward playful paw tap and recoil,2.5-3.3s wind up opposite forepaw,3.3-4s second tap and recoil,4-6s smoothly lower paws and return original seated pose. Cat swats, never human fists. Supporting paws stay planted.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/83c1feedbe4d49e7928fcd973495a776/tuxedo-front-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/83c1feedbe4d49e7928fcd973495a776/tuxedo-front-identity-v29.png",
+        "generation_mode": "frame",
+        "duration": 6,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      }
+    },
+    {
+      "character": "tuxedo",
+      "action": "knead",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_22bf6909a66342479fb7d827f050268a",
+      "credit_cost": 120,
+      "source_file": "sources/tuxedo-knead.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_22bf6909a66342479fb7d827f050268a/output/output_0.mp4",
+      "accepted": true,
+      "identity_policy": "identity-v29.json",
+      "options": {
+        "prompt": "The exact established tuxedo kitten from the supplied image performs one continuous action. STRICT IDENTITY LOCK: copy the same face, eyes, ear shape, muzzle, fur markings, color palette, tail, short legs, round paw shape, head/body proportions and soft detailed3D rendering style throughout. No redesign, no black/drawn outlines, no longer adult body, no shrinking head. The first and final pose must be pixel-faithful to the supplied frames. Camera is locked, no cut, no zoom, constant scale. Entire kitten including ears/tail/all paws inside the wide canvas with green margin. Pure uniform chroma GREEN #00FF00 floor/background, no cast shadow, no text, no watermark. Smooth natural feline shoulder, elbow, wrist, hip and hock movement with weight and soft overlapping fur motion. 0-.7s stay seated, .7-1.4s lean the chest forward without changing proportions,1.4-4.8s perform four alternating slow front-paw kneading presses on the floor, toes softly spread, left then right then left then right, weight transfers between shoulders, hindquarters stay planted.4.8-6s smoothly return original seated pose.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/83c1feedbe4d49e7928fcd973495a776/tuxedo-front-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/83c1feedbe4d49e7928fcd973495a776/tuxedo-front-identity-v29.png",
+        "generation_mode": "frame",
+        "duration": 6,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      }
+    },
+    {
+      "character": "tuxedo",
+      "action": "reach",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_7e7298209f7f47c4b1acad9e1c742b61",
+      "credit_cost": 120,
+      "source_file": "sources/tuxedo-reach.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_7e7298209f7f47c4b1acad9e1c742b61/output/output_0.mp4",
+      "accepted": true,
+      "identity_policy": "identity-v29.json",
+      "options": {
+        "prompt": "The exact established tuxedo kitten from the supplied image performs one continuous action. STRICT IDENTITY LOCK: copy the same face, eyes, ear shape, muzzle, fur markings, color palette, tail, short legs, round paw shape, head/body proportions and soft detailed3D rendering style throughout. No redesign, no black/drawn outlines, no longer adult body, no shrinking head. The first and final pose must be pixel-faithful to the supplied frames. Camera is locked, no cut, no zoom, constant scale. Entire kitten including ears/tail/all paws inside the wide canvas with green margin. Pure uniform chroma GREEN #00FF00 floor/background, no cast shadow, no text, no watermark. Smooth natural feline shoulder, elbow, wrist, hip and hock movement with weight and soft overlapping fur motion. 0-.8s seated gaze up, .8-2.2s gradually straighten onto both hind paws and lift both connected forepaws,2.2-4.2s make two gentle cupped-paw grasping attempts toward an imaginary pointer above the face,4.2-6s lower forepaws and settle into original seated pose. The long reaching body is still the same short chubby kitten, no adult torso.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/83c1feedbe4d49e7928fcd973495a776/tuxedo-front-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/83c1feedbe4d49e7928fcd973495a776/tuxedo-front-identity-v29.png",
+        "generation_mode": "frame",
+        "duration": 6,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      }
+    },
+    {
+      "character": "tuxedo",
+      "action": "jump",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_d5a14d4a9c854e90b6573f7d2ea731a7",
+      "credit_cost": 120,
+      "source_file": "sources/tuxedo-jump.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_d5a14d4a9c854e90b6573f7d2ea731a7/output/output_0.mp4",
+      "accepted": true,
+      "identity_policy": "identity-v29.json",
+      "options": {
+        "prompt": "The exact established tuxedo kitten from the supplied image performs one continuous action. STRICT IDENTITY LOCK: copy the same face, eyes, ear shape, muzzle, fur markings, color palette, tail, short legs, round paw shape, head/body proportions and soft detailed3D rendering style throughout. No redesign, no black/drawn outlines, no longer adult body, no shrinking head. The first and final pose must be pixel-faithful to the supplied frames. Camera is locked, no cut, no zoom, constant scale. Entire kitten including ears/tail/all paws inside the wide canvas with green margin. Pure uniform chroma GREEN #00FF00 floor/background, no cast shadow, no text, no watermark. Smooth natural feline shoulder, elbow, wrist, hip and hock movement with weight and soft overlapping fur motion. 0-1s four-paw standing facing RIGHT,1-1.8s load hind legs and crouch deeply,1.8-3s one low natural forward-upward hop, hind paws push off, front paws reach, tuck under body at apex, reach down before landing,3-4.8s front paws then hind paws land, flex to absorb weight,4.8-6s settle to the original four-leg pose. Entire character remains same size, no head morph or camera movement.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/de550c28744345e49f7eaa5169c60231/tuxedo-side-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/de550c28744345e49f7eaa5169c60231/tuxedo-side-identity-v29.png",
+        "generation_mode": "frame",
+        "duration": 6,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      }
+    },
+    {
+      "character": "tuxedo",
+      "action": "ball",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_501957ab15114b93a4f2e38944eccad1",
+      "credit_cost": 120,
+      "source_file": "sources/tuxedo-ball.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_501957ab15114b93a4f2e38944eccad1/output/output_0.mp4",
+      "accepted": true,
+      "identity_policy": "identity-v29.json",
+      "options": {
+        "prompt": "The exact established tuxedo kitten from the supplied image performs one continuous action. STRICT IDENTITY LOCK: copy the same face, eyes, ear shape, muzzle, fur markings, color palette, tail, short legs, round paw shape, head/body proportions and soft detailed3D rendering style throughout. No redesign, no black/drawn outlines, no longer adult body, no shrinking head. The first and final pose must be pixel-faithful to the supplied frames. Camera is locked, no cut, no zoom, constant scale. Entire kitten including ears/tail/all paws inside the wide canvas with green margin. Pure uniform chroma GREEN #00FF00 floor/background, no cast shadow, no text, no watermark. Smooth natural feline shoulder, elbow, wrist, hip and hock movement with weight and soft overlapping fur motion. 0-1s alert standing facing RIGHT and look down; tiny solid RED #E02020 ball rolls slowly toward the near front paw at ground level,1-1.8s crouch and prepare near forepaw,1.8-2.8s extend the near forepaw down and forward to bat the red ball, allow it to roll right along floor,2.8-4.5s follow its movement with eyes, reload and make one softer paw tap,4.5-6s return original four-paw pose. Only one red ball, no red cloth, no extra props, kitten never changes coat or face.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/de550c28744345e49f7eaa5169c60231/tuxedo-side-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/de550c28744345e49f7eaa5169c60231/tuxedo-side-identity-v29.png",
+        "generation_mode": "frame",
+        "duration": 6,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      }
+    },
+    {
+      "character": "tuxedo",
+      "action": "toy",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_5691b380c9504750add2f70a0c9e7734",
+      "credit_cost": 120,
+      "source_file": "sources/tuxedo-toy.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_5691b380c9504750add2f70a0c9e7734/output/output_0.mp4",
+      "accepted": true,
+      "identity_policy": "identity-v29.json",
+      "options": {
+        "prompt": "The exact established tuxedo kitten from the supplied image performs one continuous action. STRICT IDENTITY LOCK: copy the same face, eyes, ear shape, muzzle, fur markings, color palette, tail, short legs, round paw shape, head/body proportions and soft detailed3D rendering style throughout. No redesign, no black/drawn outlines, no longer adult body, no shrinking head. The first and final pose must be pixel-faithful to the supplied frames. Camera is locked, no cut, no zoom, constant scale. Entire kitten including ears/tail/all paws inside the wide canvas with green margin. Pure uniform chroma GREEN #00FF00 floor/background, no cast shadow, no text, no watermark. Smooth natural feline shoulder, elbow, wrist, hip and hock movement with weight and soft overlapping fur motion. 0-.8s gaze down at one small brown feather toy on floor near front paws,.8-2s lower shoulders and wiggle haunches subtly,2-3.2s a tiny grounded pounce forward to catch feather with BOTH front paws,3.2-4.5s pin feather, give it one playful paw rake with connected limbs,4.5-6s release toy and return original seated pose. Feather stays small low and brown, no red ball, no leaping out of frame.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/83c1feedbe4d49e7928fcd973495a776/tuxedo-front-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/83c1feedbe4d49e7928fcd973495a776/tuxedo-front-identity-v29.png",
+        "generation_mode": "frame",
+        "duration": 6,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      }
+    },
+    {
+      "character": "tuxedo",
+      "action": "brake",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_0b49f8f4129d46b89ebfff33334358db",
+      "credit_cost": 120,
+      "source_file": "sources/tuxedo-brake.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_0b49f8f4129d46b89ebfff33334358db/output/output_0.mp4",
+      "accepted": true,
+      "identity_policy": "identity-v29.json",
+      "options": {
+        "prompt": "The exact established tuxedo kitten from the supplied image performs one continuous action. STRICT IDENTITY LOCK: copy the same face, eyes, ear shape, muzzle, fur markings, color palette, tail, short legs, round paw shape, head/body proportions and soft detailed3D rendering style throughout. No redesign, no black/drawn outlines, no longer adult body, no shrinking head. The first and final pose must be pixel-faithful to the supplied frames. Camera is locked, no cut, no zoom, constant scale. Entire kitten including ears/tail/all paws inside the wide canvas with green margin. Pure uniform chroma GREEN #00FF00 floor/background, no cast shadow, no text, no watermark. Smooth natural feline shoulder, elbow, wrist, hip and hock movement with weight and soft overlapping fur motion. 0-.8s take two short running strides toward RIGHT in place,.8-2s lean weight back, lower haunches and extend front paws forward to brake,2-3.8s hind paws step under body, chest lowers with clear bent front elbows, slow to a planted crouch,3.8-6s recover smoothly to original four-paw pose WITHOUT SITTING. Keep the same short torso and head proportions.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/de550c28744345e49f7eaa5169c60231/tuxedo-side-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/de550c28744345e49f7eaa5169c60231/tuxedo-side-identity-v29.png",
+        "generation_mode": "frame",
+        "duration": 6,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      }
+    },
+    {
+      "character": "tuxedo",
+      "action": "slide",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_0757692a12bd406692c4b0faaa08859c",
+      "credit_cost": 120,
+      "source_file": "sources/tuxedo-slide.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_0757692a12bd406692c4b0faaa08859c/output/output_0.mp4",
+      "accepted": true,
+      "identity_policy": "identity-v29.json",
+      "options": {
+        "prompt": "The exact established tuxedo kitten from the supplied image performs one continuous action. STRICT IDENTITY LOCK: copy the same face, eyes, ear shape, muzzle, fur markings, color palette, tail, short legs, round paw shape, head/body proportions and soft detailed3D rendering style throughout. No redesign, no black/drawn outlines, no longer adult body, no shrinking head. The first and final pose must be pixel-faithful to the supplied frames. Camera is locked, no cut, no zoom, constant scale. Entire kitten including ears/tail/all paws inside the wide canvas with green margin. Pure uniform chroma GREEN #00FF00 floor/background, no cast shadow, no text, no watermark. Smooth natural feline shoulder, elbow, wrist, hip and hock movement with weight and soft overlapping fur motion. 0-.8s run RIGHT in place,.8-2s lean backward, extend both front paws ahead to grip,2-3.8s perform a long braking skid with bent hind limbs, paws visibly sliding while tail counterbalances,3.8-6s regain traction and return to original four-paw pose WITHOUT SITTING. Minimal root movement, same character proportions.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/de550c28744345e49f7eaa5169c60231/tuxedo-side-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/de550c28744345e49f7eaa5169c60231/tuxedo-side-identity-v29.png",
+        "generation_mode": "frame",
+        "duration": 6,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      }
+    },
+    {
+      "character": "tuxedo",
+      "action": "stumble",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_5ab59e9c2f08485bb9df30d609149e68",
+      "credit_cost": 120,
+      "source_file": "sources/tuxedo-stumble.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_5ab59e9c2f08485bb9df30d609149e68/output/output_0.mp4",
+      "accepted": true,
+      "identity_policy": "identity-v29.json",
+      "options": {
+        "prompt": "The exact established tuxedo kitten from the supplied image performs one continuous action. STRICT IDENTITY LOCK: copy the same face, eyes, ear shape, muzzle, fur markings, color palette, tail, short legs, round paw shape, head/body proportions and soft detailed3D rendering style throughout. No redesign, no black/drawn outlines, no longer adult body, no shrinking head. The first and final pose must be pixel-faithful to the supplied frames. Camera is locked, no cut, no zoom, constant scale. Entire kitten including ears/tail/all paws inside the wide canvas with green margin. Pure uniform chroma GREEN #00FF00 floor/background, no cast shadow, no text, no watermark. Smooth natural feline shoulder, elbow, wrist, hip and hock movement with weight and soft overlapping fur motion. 0-.8s run RIGHT,.8-1.7s trip softly while braking,1.7-3.2s tuck forepaws and roll gently once over near shoulder to side,3.2-5s push up with paws and regain four-paw stance,5-6s original reference pose. A harmless cute kitten tumble, no distress, no rigid spinning, no detached limbs. Same exact character face, no adult body.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/de550c28744345e49f7eaa5169c60231/tuxedo-side-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/de550c28744345e49f7eaa5169c60231/tuxedo-side-identity-v29.png",
+        "generation_mode": "frame",
+        "duration": 6,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      }
+    },
+    {
+      "character": "tuxedo",
+      "action": "climb",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_e8bde58113024770b4007f31398f365c",
+      "credit_cost": 120,
+      "source_file": "sources/tuxedo-climb.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_e8bde58113024770b4007f31398f365c/output/output_0.mp4",
+      "accepted": true,
+      "identity_policy": "identity-v29.json",
+      "options": {
+        "prompt": "The exact established tuxedo kitten from the supplied image performs one continuous action. STRICT IDENTITY LOCK: copy the same face, eyes, ear shape, muzzle, fur markings, color palette, tail, short legs, round paw shape, head/body proportions and soft detailed3D rendering style throughout. No redesign, no black/drawn outlines, no longer adult body, no shrinking head. The first and final pose must be pixel-faithful to the supplied frames. Camera is locked, no cut, no zoom, constant scale. Entire kitten including ears/tail/all paws inside the wide canvas with green margin. Pure uniform chroma GREEN #00FF00 floor/background, no cast shadow, no text, no watermark. Smooth natural feline shoulder, elbow, wrist, hip and hock movement with weight and soft overlapping fur motion. 0-.8s stand facing RIGHT,.8-1.6s place both front paws on an invisible vertical monitor edge just ahead,1.6-3.8s climb the edge with two alternating front-paw pulls and little hind-paw steps, body rises modestly upright with natural bent limbs and same short kitten torso,3.8-4.4s briefly hold,4.4-5.3s release and make a low soft landing,5.3-6s original four-leg reference pose. No visible wall, no scenery or lines, green background only. Full character and tail stay visible.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/de550c28744345e49f7eaa5169c60231/tuxedo-side-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/de550c28744345e49f7eaa5169c60231/tuxedo-side-identity-v29.png",
+        "generation_mode": "frame",
+        "duration": 6,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      }
+    },
+    {
+      "character": "cream",
+      "action": "turn",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_ebaa01d5ac30474783d79afbf7c97e58",
+      "credit_cost": 120,
+      "source_file": "sources/prototypes-v29/cream-old-gait-turn.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_ebaa01d5ac30474783d79afbf7c97e58/output/output_0.mp4",
+      "accepted": false,
+      "identity_policy": "identity-v29.json",
+      "options": {
+        "prompt": "Animate ONLY the exact established cream kitten pixels/identity in the supplied first and last frames. Same face, eye shape/color, muzzle, ears, fur texture, coat markings, head-to-body proportions and baby-cat body throughout. NO redesign, no black outlines, no growing taller or longer. Locked orthographic-style camera, fixed size, pure flat #00FF00 chroma green with no shadows, no text. Whole body, ears and tail always inside frame. This is a physically credible RUNNING U-TURN, never sitting: 0-1s gallop facing RIGHT; 1-2s lower chest and head, shift weight rearward, front paws reach ahead to absorb momentum, shorten strides to brake; 2-3s plant one outside forepaw, flex hocks, lean into a tight arcing turn, swing the hindquarters through, head and eyes turn first, then shoulders and pelvis follow through a clear FRONT three-quarter view; 3-4s complete180degree turn facing LEFT, rear legs load and push off while forepaws reach left; 4-6s gallop left and end in supplied left-facing pose. Four natural feline legs, paws remain connected. Grounded pivot with bent limbs, torso stays low and athletic, no seated pause, no instant mirror, no spinning rigid body, no backflips. Keep the character centered with minimal translation so the entire change of facing can be observed. Preserve the reference rendering style exactly.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/45bcbf75273b4983ac2bbe473a1de90f/cream-turn-right-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/956db5937a374a56857200f7d3f7eb79/cream-turn-left-identity-v29.png",
+        "generation_mode": "frame",
+        "duration": 6,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      },
+      "rejection_reason": "Motion study used previous gait design; replaced by canonical identity"
+    },
+    {
+      "character": "tuxedo",
+      "action": "turn",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_8ddffe0d37194d20ad98922aae5c7cb7",
+      "credit_cost": 120,
+      "source_file": "sources/prototypes-v29/tuxedo-old-gait-turn.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_8ddffe0d37194d20ad98922aae5c7cb7/output/output_0.mp4",
+      "accepted": false,
+      "identity_policy": "identity-v29.json",
+      "options": {
+        "prompt": "Animate ONLY the exact established tuxedo kitten pixels/identity in the supplied first and last frames. Same face, eye shape/color, muzzle, ears, fur texture, coat markings, head-to-body proportions and baby-cat body throughout. NO redesign, no black outlines, no growing taller or longer. Locked orthographic-style camera, fixed size, pure flat #00FF00 chroma green with no shadows, no text. Whole body, ears and tail always inside frame. This is a physically credible RUNNING U-TURN, never sitting: 0-1s gallop facing RIGHT; 1-2s lower chest and head, shift weight rearward, front paws reach ahead to absorb momentum, shorten strides to brake; 2-3s plant one outside forepaw, flex hocks, lean into a tight arcing turn, swing the hindquarters through, head and eyes turn first, then shoulders and pelvis follow through a clear FRONT three-quarter view; 3-4s complete180degree turn facing LEFT, rear legs load and push off while forepaws reach left; 4-6s gallop left and end in supplied left-facing pose. Four natural feline legs, paws remain connected. Grounded pivot with bent limbs, torso stays low and athletic, no seated pause, no instant mirror, no spinning rigid body, no backflips. Keep the character centered with minimal translation so the entire change of facing can be observed. Preserve the reference rendering style exactly.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/41f76f2ddb004f0ca7201c6a530ebc9b/tuxedo-turn-right-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/2f5e201418ea4929a83fe904353ea7e5/tuxedo-turn-left-identity-v29.png",
+        "generation_mode": "frame",
+        "duration": 6,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      },
+      "rejection_reason": "Motion study used previous gait design; replaced by canonical identity"
+    },
+    {
+      "character": "cream",
+      "action": "walk",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_0d73b1b32eb14d9a8f90bc16d20a4ae3",
+      "credit_cost": 120,
+      "source_file": "sources/cream-walk.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_0d73b1b32eb14d9a8f90bc16d20a4ae3/output/output_0.mp4",
+      "accepted": true,
+      "identity_policy": "identity-v29.json",
+      "options": {
+        "prompt": "Keep the EXACT cream kitten identity of the supplied reference frames throughout: same huge round eyes, small muzzle, same ears and fur markings, short chubby body, short legs and soft detailed3D style. Strictly no redesign, no ink outline, no adult body and no head shrink. Locked camera, constant size, whole body/ears/tail inside wide frame, no zoom or cut. Uniform flat #00FF00 green background and floor, no shadow or scenery. 0-.6s original seated front pose, .6-1.8s stand onto four paws and smoothly turn to the RIGHT three-quarter side view;1.8-4.6s walk calmly in place toward RIGHT for three complete four-legged walking cycles with correct alternating footfalls, head remains steady, no translation or sliding;4.6-6s decelerate, turn smoothly back to front and sit in original seated pose. Same chubby kitten proportions at every orientation.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f91aa82183e14b82a31e69c0185697b5/cream-front-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f91aa82183e14b82a31e69c0185697b5/cream-front-identity-v29.png",
+        "generation_mode": "frame",
+        "duration": 6,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      }
+    },
+    {
+      "character": "cream",
+      "action": "run",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_d00677ee40164519a0721352d77d866d",
+      "credit_cost": 120,
+      "source_file": "sources/cream-run.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_d00677ee40164519a0721352d77d866d/output/output_0.mp4",
+      "accepted": true,
+      "identity_policy": "identity-v29.json",
+      "options": {
+        "prompt": "Keep the EXACT cream kitten identity of the supplied reference frames throughout: same huge round eyes, small muzzle, same ears and fur markings, short chubby body, short legs and soft detailed3D style. Strictly no redesign, no ink outline, no adult body and no head shrink. Locked camera, constant size, whole body/ears/tail inside wide frame, no zoom or cut. Uniform flat #00FF00 green background and floor, no shadow or scenery. 0-.4s supplied right-facing four-leg pose,.4-5.6s gallop continuously toward RIGHT in place, natural feline gathered and extended phases, hind paws push first, front legs reach, back flexes softly, constant image scale and head proportions,5.6-6s return to supplied pose. No turn, no sitting, no background movement.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f5a17e175ec54a5a9cd9d6a1cd69979f/cream-side-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f5a17e175ec54a5a9cd9d6a1cd69979f/cream-side-identity-v29.png",
+        "generation_mode": "frame",
+        "duration": 6,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      }
+    },
+    {
+      "character": "cream",
+      "action": "eat",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_9a1956ec9e594271a9623db2d163bdb5",
+      "credit_cost": 120,
+      "source_file": "sources/prototypes-v29/cream-side-eat.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_9a1956ec9e594271a9623db2d163bdb5/output/output_0.mp4",
+      "accepted": false,
+      "identity_policy": "identity-v29.json",
+      "options": {
+        "prompt": "Keep the EXACT cream kitten identity of the supplied reference frames throughout: same huge round eyes, small muzzle, same ears and fur markings, short chubby body, short legs and soft detailed3D style. Strictly no redesign, no ink outline, no adult body and no head shrink. Locked camera, constant size, whole body/ears/tail inside wide frame, no zoom or cut. Uniform flat #00FF00 green background and floor, no shadow or scenery. 0-.5s supplied four-leg right-facing pose, .5-1s look down at a small shallow gray food bowl immediately under the forepaws,1-4.7s lower head and eat slowly with little connected jaw movements and occasional tongue lick,4.7-6s lift head and lick lips, bowl disappears as kitten returns to exact supplied pose. Bowl is small and gray, no fish, no redesign.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f5a17e175ec54a5a9cd9d6a1cd69979f/cream-side-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f5a17e175ec54a5a9cd9d6a1cd69979f/cream-side-identity-v29.png",
+        "generation_mode": "frame",
+        "duration": 6,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      },
+      "rejection_reason": "Superseded by a complete front-to-feed-to-front scene to preserve neutral continuity without changing food API timing"
+    },
+    {
+      "character": "cream",
+      "action": "turn",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_fbdf0650ac204bb4a72f6611542ab932",
+      "credit_cost": 120,
+      "source_file": "sources/prototypes-v29/cream-closed-turn.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_fbdf0650ac204bb4a72f6611542ab932/output/output_0.mp4",
+      "accepted": false,
+      "identity_policy": "identity-v29.json",
+      "options": {
+        "prompt": "Keep the EXACT cream kitten identity of the supplied reference frames throughout: same huge round eyes, small muzzle, same ears and fur markings, short chubby body, short legs and soft detailed3D style. Strictly no redesign, no ink outline, no adult body and no head shrink. Locked camera, constant size, whole body/ears/tail inside wide frame, no zoom or cut. Uniform flat #00FF00 green background and floor, no shadow or scenery. 0-.8s take a few galloping strides facing RIGHT in place,.8-1.7s lower chest and haunches, plant the outside forepaw ahead to absorb momentum and brake with bent limbs,1.7-3.5s do a grounded athletic180-degree U-turn: head turns first, outside forepaw stays planted as rear paws step around and hindquarters swing through a clear FRONT or BACK three-quarter view, weight stays low, shoulders and hips follow sequentially.3.5-4.5s rear paws push off toward LEFT,4.5-6s gallop left and end exactly in supplied left-facing pose. NO SITTING, no seated transition, no rigid spin, no instant mirroring, no jumping into the turn.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f5a17e175ec54a5a9cd9d6a1cd69979f/cream-side-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f5a17e175ec54a5a9cd9d6a1cd69979f/cream-side-identity-v29.png",
+        "generation_mode": "frame",
+        "duration": 6,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      },
+      "rejection_reason": "Same-facing end reference caused a second turn; replaced by opposite-facing end frame"
+    },
+    {
+      "character": "tuxedo",
+      "action": "walk",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_69ec525cd92a47ffa667b1e953bc4c9b",
+      "credit_cost": 120,
+      "source_file": "sources/tuxedo-walk.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_69ec525cd92a47ffa667b1e953bc4c9b/output/output_0.mp4",
+      "accepted": true,
+      "identity_policy": "identity-v29.json",
+      "options": {
+        "prompt": "Keep the EXACT tuxedo kitten identity of the supplied reference frames throughout: same huge round eyes, small muzzle, same ears and fur markings, short chubby body, short legs and soft detailed3D style. Strictly no redesign, no ink outline, no adult body and no head shrink. Locked camera, constant size, whole body/ears/tail inside wide frame, no zoom or cut. Uniform flat #00FF00 green background and floor, no shadow or scenery. 0-.6s original seated front pose, .6-1.8s stand onto four paws and smoothly turn to the RIGHT three-quarter side view;1.8-4.6s walk calmly in place toward RIGHT for three complete four-legged walking cycles with correct alternating footfalls, head remains steady, no translation or sliding;4.6-6s decelerate, turn smoothly back to front and sit in original seated pose. Same chubby kitten proportions at every orientation.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/83c1feedbe4d49e7928fcd973495a776/tuxedo-front-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/83c1feedbe4d49e7928fcd973495a776/tuxedo-front-identity-v29.png",
+        "generation_mode": "frame",
+        "duration": 6,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      }
+    },
+    {
+      "character": "tuxedo",
+      "action": "run",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_1e1a1999beeb4d12a1c1846c96d5e0f9",
+      "credit_cost": 120,
+      "source_file": "sources/tuxedo-run.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_1e1a1999beeb4d12a1c1846c96d5e0f9/output/output_0.mp4",
+      "accepted": true,
+      "identity_policy": "identity-v29.json",
+      "options": {
+        "prompt": "Keep the EXACT tuxedo kitten identity of the supplied reference frames throughout: same huge round eyes, small muzzle, same ears and fur markings, short chubby body, short legs and soft detailed3D style. Strictly no redesign, no ink outline, no adult body and no head shrink. Locked camera, constant size, whole body/ears/tail inside wide frame, no zoom or cut. Uniform flat #00FF00 green background and floor, no shadow or scenery. 0-.4s supplied right-facing four-leg pose,.4-5.6s gallop continuously toward RIGHT in place, natural feline gathered and extended phases, hind paws push first, front legs reach, back flexes softly, constant image scale and head proportions,5.6-6s return to supplied pose. No turn, no sitting, no background movement.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/de550c28744345e49f7eaa5169c60231/tuxedo-side-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/de550c28744345e49f7eaa5169c60231/tuxedo-side-identity-v29.png",
+        "generation_mode": "frame",
+        "duration": 6,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      }
+    },
+    {
+      "character": "tuxedo",
+      "action": "eat",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_0410b2f37e8b42f0907d0dfbb8ba5af5",
+      "credit_cost": 120,
+      "source_file": "sources/prototypes-v29/tuxedo-side-eat.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_0410b2f37e8b42f0907d0dfbb8ba5af5/output/output_0.mp4",
+      "accepted": false,
+      "identity_policy": "identity-v29.json",
+      "options": {
+        "prompt": "Keep the EXACT tuxedo kitten identity of the supplied reference frames throughout: same huge round eyes, small muzzle, same ears and fur markings, short chubby body, short legs and soft detailed3D style. Strictly no redesign, no ink outline, no adult body and no head shrink. Locked camera, constant size, whole body/ears/tail inside wide frame, no zoom or cut. Uniform flat #00FF00 green background and floor, no shadow or scenery. 0-.5s supplied four-leg right-facing pose, .5-1s look down at a small shallow gray food bowl immediately under the forepaws,1-4.7s lower head and eat slowly with little connected jaw movements and occasional tongue lick,4.7-6s lift head and lick lips, bowl disappears as kitten returns to exact supplied pose. Bowl is small and gray, no fish, no redesign.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/de550c28744345e49f7eaa5169c60231/tuxedo-side-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/de550c28744345e49f7eaa5169c60231/tuxedo-side-identity-v29.png",
+        "generation_mode": "frame",
+        "duration": 6,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      },
+      "rejection_reason": "Superseded by a complete front-to-feed-to-front scene to preserve neutral continuity without changing food API timing"
+    },
+    {
+      "character": "tuxedo",
+      "action": "turn",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_88636ed10ca643ac9919a73e7b9c77b4",
+      "credit_cost": 120,
+      "source_file": "sources/prototypes-v29/tuxedo-closed-turn.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_88636ed10ca643ac9919a73e7b9c77b4/output/output_0.mp4",
+      "accepted": false,
+      "identity_policy": "identity-v29.json",
+      "options": {
+        "prompt": "Keep the EXACT tuxedo kitten identity of the supplied reference frames throughout: same huge round eyes, small muzzle, same ears and fur markings, short chubby body, short legs and soft detailed3D style. Strictly no redesign, no ink outline, no adult body and no head shrink. Locked camera, constant size, whole body/ears/tail inside wide frame, no zoom or cut. Uniform flat #00FF00 green background and floor, no shadow or scenery. 0-.8s take a few galloping strides facing RIGHT in place,.8-1.7s lower chest and haunches, plant the outside forepaw ahead to absorb momentum and brake with bent limbs,1.7-3.5s do a grounded athletic180-degree U-turn: head turns first, outside forepaw stays planted as rear paws step around and hindquarters swing through a clear FRONT or BACK three-quarter view, weight stays low, shoulders and hips follow sequentially.3.5-4.5s rear paws push off toward LEFT,4.5-6s gallop left and end exactly in supplied left-facing pose. NO SITTING, no seated transition, no rigid spin, no instant mirroring, no jumping into the turn.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/de550c28744345e49f7eaa5169c60231/tuxedo-side-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/de550c28744345e49f7eaa5169c60231/tuxedo-side-identity-v29.png",
+        "generation_mode": "frame",
+        "duration": 6,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      },
+      "rejection_reason": "Same-facing end reference caused a second turn; replaced by opposite-facing end frame"
+    },
+    {
+      "character": "cream",
+      "action": "turn",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_c605c242c44043b382edc307c7159deb",
+      "credit_cost": 120,
+      "source_file": "sources/cream-turn.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_c605c242c44043b382edc307c7159deb/output/output_0.mp4",
+      "accepted": true,
+      "identity_policy": "identity-v29.json",
+      "options": {
+        "prompt": "The EXACT cream kitten from the supplied first and last frames performs ONE180degree running U-turn from RIGHT to LEFT. Preserve the same face, large round eyes, small muzzle, ears, short chubby torso, short paws, fur pattern and soft3D rendering. No redesign or adult proportions. Locked camera, no camera movement or zoom, whole cat and tail in frame, solid flat pure #00FF00 green background, no scenery, no shadow. 0-.8s run in place facing RIGHT; .8-1.7s lower chest and haunches, reach outside forepaw forward to BRAKE with a loaded wrist and elbow;1.7-3.5s keep that outside forepaw planted while the hind paws step around and hips swing through a clear rear three-quarter view, turn the head first then shoulders then hips, smoothly complete180degrees to LEFT.3.5-4.4s load hind legs and push off to LEFT,4.4-6s gallop LEFT and finish exactly in the supplied left-facing final frame. Stay low and athletic, NO SITTING, no seated pause, no extra second turn, no360turn, no rigid spin and no instant mirror. This is a natural cat planting and pivoting, with real shoulder and hock flexion.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f5a17e175ec54a5a9cd9d6a1cd69979f/cream-side-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/87a3eca3d3784e78919b8e3933736902/cream-canonical-left-v29.png",
+        "generation_mode": "frame",
+        "duration": 6,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      }
+    },
+    {
+      "character": "tuxedo",
+      "action": "turn",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_12f6b009396f461aa55ed412f93b6625",
+      "credit_cost": 120,
+      "source_file": "sources/tuxedo-turn.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_12f6b009396f461aa55ed412f93b6625/output/output_0.mp4",
+      "accepted": true,
+      "identity_policy": "identity-v29.json",
+      "options": {
+        "prompt": "The EXACT tuxedo kitten from the supplied first and last frames performs ONE180degree running U-turn from RIGHT to LEFT. Preserve the same face, large round eyes, small muzzle, ears, short chubby torso, short paws, fur pattern and soft3D rendering. No redesign or adult proportions. Locked camera, no camera movement or zoom, whole cat and tail in frame, solid flat pure #00FF00 green background, no scenery, no shadow. 0-.8s run in place facing RIGHT; .8-1.7s lower chest and haunches, reach outside forepaw forward to BRAKE with a loaded wrist and elbow;1.7-3.5s keep that outside forepaw planted while the hind paws step around and hips swing through a clear rear three-quarter view, turn the head first then shoulders then hips, smoothly complete180degrees to LEFT.3.5-4.4s load hind legs and push off to LEFT,4.4-6s gallop LEFT and finish exactly in the supplied left-facing final frame. Stay low and athletic, NO SITTING, no seated pause, no extra second turn, no360turn, no rigid spin and no instant mirror. This is a natural cat planting and pivoting, with real shoulder and hock flexion.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/de550c28744345e49f7eaa5169c60231/tuxedo-side-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/5db399db5370489c9e7e99f3236e5b7e/tuxedo-canonical-left-v29.png",
+        "generation_mode": "frame",
+        "duration": 6,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      }
+    },
+    {
+      "character": "cream",
+      "action": "fish",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_0c409656229a4350824837da145718c6",
+      "credit_cost": 120,
+      "source_file": "sources/prototypes-v29/cream-side-fish.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_0c409656229a4350824837da145718c6/output/output_0.mp4",
+      "accepted": false,
+      "identity_policy": "identity-v29.json",
+      "options": {
+        "prompt": "Animate the EXACT cream kitten and fish plate from the supplied first and last frames. Preserve the same face, big round eyes, short chubby body and legs, tiny muzzle, soft3D fur, ear shape and coat markings. No redesign, no changing head/body proportions or camera scale. Static camera, whole cat and tail/plate inside frame, solid flat pure #00FF00 green background, no shadow or text. 0-.7s kitten notices the fish, .7-1.6s gradually lowers head toward the small fish on the plate,1.6-4.8s eats naturally with small connected jaw movements, gentle repeated bites, tongue and whisker motions and occasional blink; supporting paws stay planted.4.8-6s lift head, lick lips and settle back into the EXACT original pose. The fish and plate remain on the floor and visible. Smooth continuous feline eating, no snapping or jump cuts.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f76ab7c3cf1d47649fc29d147f95e6ef/cream-canonical-fish-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f76ab7c3cf1d47649fc29d147f95e6ef/cream-canonical-fish-v29.png",
+        "generation_mode": "frame",
+        "duration": 6,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      },
+      "rejection_reason": "Superseded by a complete front-to-feed-to-front scene to preserve neutral continuity without changing food API timing"
+    },
+    {
+      "character": "tuxedo",
+      "action": "fish",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_872a8a2690ce45a69fbcbdc5b44dee91",
+      "credit_cost": 120,
+      "source_file": "sources/prototypes-v29/tuxedo-side-fish.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_872a8a2690ce45a69fbcbdc5b44dee91/output/output_0.mp4",
+      "accepted": false,
+      "identity_policy": "identity-v29.json",
+      "options": {
+        "prompt": "Animate the EXACT tuxedo kitten and fish plate from the supplied first and last frames. Preserve the same face, big round eyes, short chubby body and legs, tiny muzzle, soft3D fur, ear shape and coat markings. No redesign, no changing head/body proportions or camera scale. Static camera, whole cat and tail/plate inside frame, solid flat pure #00FF00 green background, no shadow or text. 0-.7s kitten notices the fish, .7-1.6s gradually lowers head toward the small fish on the plate,1.6-4.8s eats naturally with small connected jaw movements, gentle repeated bites, tongue and whisker motions and occasional blink; supporting paws stay planted.4.8-6s lift head, lick lips and settle back into the EXACT original pose. The fish and plate remain on the floor and visible. Smooth continuous feline eating, no snapping or jump cuts.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/da6b953e85c74760b2e02b97ec247c04/tuxedo-canonical-fish-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/da6b953e85c74760b2e02b97ec247c04/tuxedo-canonical-fish-v29.png",
+        "generation_mode": "frame",
+        "duration": 6,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      },
+      "rejection_reason": "Superseded by a complete front-to-feed-to-front scene to preserve neutral continuity without changing food API timing"
+    },
+    {
+      "character": "cream",
+      "action": "eat",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_dc3f146805554dce96173f13c358b9ec",
+      "credit_cost": 120,
+      "source_file": "sources/cream-eat.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_dc3f146805554dce96173f13c358b9ec/output/output_0.mp4",
+      "accepted": true,
+      "identity_policy": "identity-v29.json",
+      "options": {
+        "prompt": "Animate the EXACT cream kitten in the supplied first and last image. Strict identity lock: the same round eyes, little muzzle, ears, coat markings, short chubby body/legs and soft3D style, same size throughout, no adult body or redesign. Fixed camera, full body/tail in view, solid flat #00FF00 green background with no shadow or text. One complete self-contained meal:0-.6s original front seated pose; .6-1.5s smoothly lean forward and shift weight onto the forepaws, turn head and shoulders slightly toward the small shallow gray food bowl appearing just in front of the forepaws without moving away;1.5-4.8s naturally lower muzzle and eat with small jaw/whisker/tongue motions and gentle blinks, supporting paws planted;4.8-6s lift head, lick lips and smoothly return to the EXACT FRONT SEATED pose of the supplied end image. Include all standing/crouching and return-to-sit transitions INSIDE the video, no jump from front to side stance, no cuts. Bowl stays small and gray, no extra toys.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f91aa82183e14b82a31e69c0185697b5/cream-front-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f91aa82183e14b82a31e69c0185697b5/cream-front-identity-v29.png",
+        "generation_mode": "frame",
+        "duration": 6,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      }
+    },
+    {
+      "character": "cream",
+      "action": "fish",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_35a7ef59a6ab4713891b9c3a394665da",
+      "credit_cost": 120,
+      "source_file": "sources/cream-fish.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_35a7ef59a6ab4713891b9c3a394665da/output/output_0.mp4",
+      "accepted": true,
+      "identity_policy": "identity-v29.json",
+      "options": {
+        "prompt": "Animate the EXACT cream kitten in the supplied first and last image. Strict identity lock: the same round eyes, little muzzle, ears, coat markings, short chubby body/legs and soft3D style, same size throughout, no adult body or redesign. Fixed camera, full body/tail in view, solid flat #00FF00 green background with no shadow or text. One complete self-contained meal:0-.6s original front seated pose; .6-1.5s smoothly lean forward and shift weight onto the forepaws, turn head and shoulders slightly toward the fish on the small plate just to the right without moving away;1.5-4.8s naturally lower muzzle and eat with small jaw/whisker/tongue motions and gentle blinks, supporting paws planted;4.8-6s lift head, lick lips and smoothly return to the EXACT FRONT SEATED pose of the supplied end image. Include all standing/crouching and return-to-sit transitions INSIDE the video, no jump from front to side stance, no cuts. Fish and plate remain on floor, small bites, no plate floating.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/7fa89f0f948d4bf6bf6cc712cdd7c345/cream-fish-front-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/7fa89f0f948d4bf6bf6cc712cdd7c345/cream-fish-front-v29.png",
+        "generation_mode": "frame",
+        "duration": 6,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      }
+    },
+    {
+      "character": "tuxedo",
+      "action": "eat",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_ebe72e861be9418695b9f553588e245c",
+      "credit_cost": 120,
+      "source_file": "sources/tuxedo-eat.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_ebe72e861be9418695b9f553588e245c/output/output_0.mp4",
+      "accepted": true,
+      "identity_policy": "identity-v29.json",
+      "options": {
+        "prompt": "Animate the EXACT tuxedo kitten in the supplied first and last image. Strict identity lock: the same round eyes, little muzzle, ears, coat markings, short chubby body/legs and soft3D style, same size throughout, no adult body or redesign. Fixed camera, full body/tail in view, solid flat #00FF00 green background with no shadow or text. One complete self-contained meal:0-.6s original front seated pose; .6-1.5s smoothly lean forward and shift weight onto the forepaws, turn head and shoulders slightly toward the small shallow gray food bowl appearing just in front of the forepaws without moving away;1.5-4.8s naturally lower muzzle and eat with small jaw/whisker/tongue motions and gentle blinks, supporting paws planted;4.8-6s lift head, lick lips and smoothly return to the EXACT FRONT SEATED pose of the supplied end image. Include all standing/crouching and return-to-sit transitions INSIDE the video, no jump from front to side stance, no cuts. Bowl stays small and gray, no extra toys.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/83c1feedbe4d49e7928fcd973495a776/tuxedo-front-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/83c1feedbe4d49e7928fcd973495a776/tuxedo-front-identity-v29.png",
+        "generation_mode": "frame",
+        "duration": 6,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      }
+    },
+    {
+      "character": "tuxedo",
+      "action": "fish",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_25b7d78569dd40b6be6a0b1187ff7efc",
+      "credit_cost": 120,
+      "source_file": "sources/tuxedo-fish.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_25b7d78569dd40b6be6a0b1187ff7efc/output/output_0.mp4",
+      "accepted": true,
+      "identity_policy": "identity-v29.json",
+      "options": {
+        "prompt": "Animate the EXACT tuxedo kitten in the supplied first and last image. Strict identity lock: the same round eyes, little muzzle, ears, coat markings, short chubby body/legs and soft3D style, same size throughout, no adult body or redesign. Fixed camera, full body/tail in view, solid flat #00FF00 green background with no shadow or text. One complete self-contained meal:0-.6s original front seated pose; .6-1.5s smoothly lean forward and shift weight onto the forepaws, turn head and shoulders slightly toward the fish on the small plate just to the right without moving away;1.5-4.8s naturally lower muzzle and eat with small jaw/whisker/tongue motions and gentle blinks, supporting paws planted;4.8-6s lift head, lick lips and smoothly return to the EXACT FRONT SEATED pose of the supplied end image. Include all standing/crouching and return-to-sit transitions INSIDE the video, no jump from front to side stance, no cuts. Fish and plate remain on floor, small bites, no plate floating.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/b66ff030b6e843d19f9874278b076bc5/tuxedo-fish-front-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/b66ff030b6e843d19f9874278b076bc5/tuxedo-fish-front-v29.png",
+        "generation_mode": "frame",
+        "duration": 6,
+        "resolution": "768p",
+        "aspect_ratio": "1:1"
+      }
     }
   ]
 }

@@ -12,8 +12,8 @@ const auto minimum=[](std::uint64_t low,std::uint64_t){return low;};
 void QuietGapAndOneDeferredOpportunity() {
     Scheduler s;unsigned draws=0;
     const auto draw=[&](std::uint64_t low,std::uint64_t){++draws;return low;};
-    CHECK(!s.Update(0,true,false,false,false,draw).started&&s.WaitMs()==60000&&draws==1);
-    for(unsigned i=0;i<2400;++i)CHECK(!s.Update(25,true,false,false,false,draw).started);
+    CHECK(!s.Update(0,true,false,false,false,draw).started&&s.WaitMs()==120000&&draws==1);
+    for(unsigned i=0;i<4800;++i)CHECK(!s.Update(25,true,false,false,false,draw).started);
     CHECK(s.Due()&&draws==1);
     for(unsigned i=0;i<10000;++i)CHECK(!s.Update(25,true,false,false,false,draw).started);
     CHECK(s.Due()&&draws==1); // Hours of busy time cannot queue multiple runs.
@@ -23,7 +23,7 @@ void QuietGapAndOneDeferredOpportunity() {
 }
 void RunningBudgetExcludesSafeTransitions() {
     Scheduler s;s.Update(0,true,false,false,false,minimum);
-    for(unsigned i=0;i<240;++i)s.Update(250,true,true,false,false,minimum);
+    for(unsigned i=0;i<480;++i)s.Update(250,true,true,false,false,minimum);
     CHECK(s.Active()&&s.RemainingRunMs()==5000);
     for(unsigned i=0;i<40;++i)CHECK(!s.Update(25,true,false,false,true,minimum).finished);
     CHECK(s.RemainingRunMs()==5000); // The real turn/crouch holds do not spend running time.
@@ -33,21 +33,21 @@ void RunningBudgetExcludesSafeTransitions() {
         turns+=event.turn;ended=ended||event.finished;
         if(i<199)CHECK(!event.finished);
     }
-    CHECK(ended&&!s.Active()&&turns==3&&s.WaitMs()==60000);
+    CHECK(ended&&!s.Active()&&turns==0&&s.WaitMs()==120000);
 }
 void PauseResumeInterruptionAndStalls() {
     Scheduler s;s.Update(0,true,false,false,false,minimum);
     const auto wait=s.WaitMs();
     for(unsigned i=0;i<1000;++i)s.Update(250,false,true,true,false,minimum);
     CHECK(s.WaitMs()==wait&&!s.Active());
-    s.Update(3600000,true,true,true,false,minimum); // Safety cap, no hour of catch-up.
+    s.Update(31200000,true,true,true,false,minimum); // Safety cap, no hour of catch-up.
     CHECK(s.WaitMs()==wait-250&&!s.Active());
     while(!s.Active())s.Update(250,true,true,false,false,minimum);
     const auto remaining=s.RemainingRunMs();
     for(unsigned i=0;i<1000;++i)s.Update(250,false,false,true,true,minimum);
     CHECK(s.RemainingRunMs()==remaining&&s.Active());
     CHECK(!s.Update(25,true,true,true,false,minimum).finished);
-    CHECK(!s.Active()&&s.WaitMs()==60000); // New command owns motion; scheduler must not stop it.
+    CHECK(!s.Active()&&s.WaitMs()==120000); // New command owns motion; scheduler must not stop it.
     s.Reset();CHECK(!s.Active()&&!s.Due());
 }
 void RandomBoundsAndNoFrameRateDependentLottery() {
@@ -57,7 +57,7 @@ void RandomBoundsAndNoFrameRateDependentLottery() {
     };
     for(unsigned repetition=0;repetition<100;++repetition) {
         Scheduler s;s.Update(0,true,false,false,false,draw);
-        CHECK(s.WaitMs()>=60000&&s.WaitMs()<=300000);
+        CHECK(s.WaitMs()>=120000&&s.WaitMs()<=420000);
         const auto initialChoices=choices;
         while(s.WaitMs())s.Update(250,true,false,false,false,draw);
         CHECK(choices==initialChoices);
@@ -70,7 +70,7 @@ void RandomBoundsAndNoFrameRateDependentLottery() {
             const auto frame=s.Update(step,true,false,true,true,draw);consumed+=step;
             if(frame.finished)CHECK(consumed==event.runDurationMs);
         }
-        CHECK(s.WaitMs()>=60000&&s.WaitMs()<=300000);
+        CHECK(s.WaitMs()>=120000&&s.WaitMs()<=420000);
     }
 }
 void ManySafeTurnsDoNotSpendTheRunningBudget() {
@@ -90,7 +90,7 @@ void ManySafeTurnsDoNotSpendTheRunningBudget() {
             }
         }
     }
-    CHECK(moving==15000&&turns==9&&wall>35000);
+    CHECK(moving==15000&&turns==2&&wall>19000);
     // A body with no usable movement still gives up after a bounded interval.
     s.Reset();s.Update(0,true,false,false,false,longest);
     while(!s.Active())s.Update(250,true,true,false,false,longest);

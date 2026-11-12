@@ -50,6 +50,7 @@
 #include "cat_motion_gate.hpp"
 #include "cat_physics.hpp"
 #include "cat_running_jump.hpp"
+#include "cat_running_turn.hpp"
 #include "cat_lively_motion.hpp"
 #include "cat_environment.hpp"
 #include "cat_cursor_attack.hpp"
@@ -400,6 +401,7 @@ struct App {
     int flyFacing=1;
     ULONGLONG nextFlyHunt=0;
     cat::random_zoomies::Scheduler randomZoomies;
+    cat::running_turn::Turn runningTurn;
     std::uint64_t randomZoomiesSerial=0;
     std::mt19937 randomZoomiesRandom{std::random_device{}()};
     double randomZoomiesMsRemainder=0;
@@ -1738,6 +1740,7 @@ void ResetMovement() {
     ResetPrimaryCarePresentation();
     g.jumpPending = g.jumpLaunched = false;
     g.manualMotionActive = false;
+    g.runningTurn.Reset();
     g.flyActive=false;g.nextFlyHunt=MotionClock()+90000;
     g.waitingForStop = false;
     g.landedAt = 0;
@@ -1772,8 +1775,10 @@ const cat::sprite_assets::Descriptor* PrimaryVideoGroundArt() {
         walk->layout->program.outro.count ? walk->layout : nullptr;
 }
 bool PrimaryVideoSideMeal() {
-    const auto* eat=LoadedCareSprite(cat::sprite_sequence::Clip::Eat,g.preferences.character);
-    return g.motion==Motion::Eat && !g.fishMeal && eat && eat->layout->nominalFramesPerSecond>0;
+    const auto* eat=LoadedCareSprite(g.fishMeal?cat::sprite_sequence::Clip::Fish:cat::sprite_sequence::Clip::Eat,g.preferences.character);
+    // Canonical meal footage includes its own front/feed/front transitions.
+    return g.motion==Motion::Eat && !g.fishMeal && eat && eat->layout->nominalFramesPerSecond>0 &&
+        std::string_view(eat->layout->sourcePath).find("assets/video-actions/")!=0;
 }
 void UpdatePrimaryGroundArt(ULONGLONG ticks) {
     if(g.runningJump.active)return;
@@ -1790,6 +1795,17 @@ void UpdatePrimaryGroundArt(ULONGLONG ticks) {
         jumpPreparation?jumpTurn.entryMs:walk->movementDelayMs,jumpTurn.sideEntryMs);
     const auto physical=g.physics.RenderPose();
     const bool travel=walking && (!g.pet.roamingPaused || g.manualMotionActive);
+    if(g.stopClip!=cat::sprite_sequence::Clip::None&&ticks<g.stopUntil) {
+        g.groundArtBridge.ContinueLocomotion(ticks);g.waitingForStop=true;return;
+    }
+    if(g.motion!=Motion::Zoomies)g.runningTurn.Reset();
+    if(g.motion==Motion::Zoomies&&physical.grounded&&LoadedCareSprite(cat::sprite_sequence::Clip::RunningTurn,g.preferences.character)) {
+        if(travel&&g.direction!=g.facing&&(g.groundArtBridge.Side()||std::abs(WalkingVelocity(physical))>2))
+            g.runningTurn.Begin(g.facing,g.direction);
+        if(g.runningTurn.Active()) {
+            g.groundArtBridge.ContinueLocomotion(ticks);g.waitingForStop=false;return;
+        }
+    }
     // Finish the real side-to-front stop before mirroring. The shared front
     // drawing is the safe point at which the next turn can face the other way.
     if(travel && g.groundArtBridge.Neutral() && std::abs(WalkingVelocity(physical))<=.5 && g.direction!=g.facing) {
@@ -1798,7 +1814,7 @@ void UpdatePrimaryGroundArt(ULONGLONG ticks) {
     const bool reversing=travel && g.direction!=g.facing;
     g.groundArtBridge.Update(ticks,travel && !reversing,
         physical.grounded,WalkingVelocity(physical),!EnvironmentBusy(),meal||jumpPreparation,jumpPreparation);
-    if(g.groundArtBridge.Stopping() || g.groundArtBridge.StartingForSideAction())g.waitingForStop=true;
+    if(!travel && (g.groundArtBridge.Stopping() || g.groundArtBridge.StartingForSideAction()))g.waitingForStop=true;
 }
 void ConfigurePrimaryAuthoredStride() {
     using Clip=cat::sprite_sequence::Clip;
@@ -1883,6 +1899,7 @@ void KeepOnWorkArea(bool reposition = false) {
 }
 double Random(double low, double high) { return std::uniform_real_distribution<double>(low, high)(g.random); }
 void SetMotion(Motion motion, ULONGLONG duration,ULONGLONG actionTicks=0,bool continueManualMotion=false) {
+    g.runningTurn.Reset();
     g.flyActive=false;
     if(motion==Motion::BoxSit)motion=Motion::Idle; // Retired box/bag events cannot re-enter through legacy queues.
     const auto ticks=actionTicks?actionTicks:g.autonomousDispatching?g.autonomousTick:GetTickCount64();
@@ -3245,6 +3262,10 @@ cat::animation::Pose PrimaryDisplayedPose(ULONGLONG ticks,const cat::physics::Po
         cat::animation::AttachSprite(pose,ActionClip::FlyHunt,actionElapsed);
         pose.flip=g.flyFacing<0;
     }
+    if(g.runningTurn.Active()&&physical.grounded) {
+        cat::animation::AttachSprite(pose,ActionClip::RunningTurn,g.runningTurn.SpriteMs());
+        pose.flip=g.runningTurn.From()<0;
+    }
     const auto* authored=CareSpriteFor(pose,g.preferences.character);
     g.authoredBoxVisible=authored && authored->layout->clip==cat::sprite_sequence::Clip::Box;
     if(authored)cat::animation::UseAuthoredSprite(pose);
@@ -3620,6 +3641,9 @@ void UpdateCursorReactionSample(ULONGLONG ticks, ULONGLONG elapsedMs, POINT curs
     input.punchDurationMs=cat::cursor::DurationMs(cat::cursor::AttackKind::Strong);
     input.tiptoeDurationMs=cat::cursor::DurationMs(cat::cursor::AttackKind::Tiptoe);
     input.bothPawsDurationMs=cat::cursor::DurationMs(cat::cursor::AttackKind::BothPaws);
+    if(const auto* reach=LoadedCareSprite(cat::sprite_sequence::Clip::Reach,g.preferences.character)) {
+        input.tiptoeDurationMs=input.bothPawsDurationMs=cat::sprite_sequence::ProgramDuration(reach->layout->program);
+    }
     if(const auto* jump=LoadedCareSprite(cat::sprite_sequence::Clip::Jump,g.preferences.character))
         input.landingRecoveryMs=cat::sprite_sequence::Duration(jump->layout->program,jump->layout->program.outro);
     const bool protectedCare=g.motion==Motion::Eat||g.motion==Motion::Treat||g.motion==Motion::Groom||g.motion==Motion::Sleep||
@@ -3759,7 +3783,7 @@ bool ApplyCursorAttackPose(cat::animation::Pose& pose, ULONGLONG ticks, const ca
         if(const auto* reach=LoadedCareSprite(cat::sprite_sequence::Clip::Reach,g.preferences.character)) {
             const auto elapsed=ticks>=g.motionStart?ticks-g.motionStart:0;
             cat::animation::AttachSprite(pose,cat::sprite_sequence::Clip::Reach,
-                elapsed*1550/cat::cursor::DurationMs(kind));
+                elapsed);
             pose.spritePaws=cat::video_actions::ReachPaws(static_cast<unsigned>(g.preferences.character),
                 SpriteFrameFor(pose,*reach->layout));
             pose.spritePawsValid=true;
@@ -4145,7 +4169,7 @@ void StartFlyHunt(ULONGLONG actionTicks=0) {
 }
 
 void FinishManualMotion(ULONGLONG ticks) {
-    if (g.wallPhase==App::WallPhase::None && !KeyboardPlayActive() && g.manualMotionActive && ticks >= g.nextDecision && !g.waitingForStop &&
+    if (g.wallPhase==App::WallPhase::None && !g.runningTurn.Active() && !KeyboardPlayActive() && g.manualMotionActive && ticks >= g.nextDecision && !g.waitingForStop &&
             g.physics.CurrentPose().grounded && !g.jumpPending)
         BeginAutonomousRest(ticks);
 }
@@ -4515,7 +4539,7 @@ bool MaybeMemoryRoutine(ULONGLONG ticks) {
     auto decision = cat::routine::Peek(g.memory.state, context, Random(0, 1));
     using Decision = cat::routine::Decision;
     // Keep the dawn memory opportunity readable, without a second independent
-    // run clock bypassing the requested 1–5 minute gap.
+    // run clock bypassing the requested 2–7 minute gap.
     if(decision==Decision::DawnZoomies)return false;
     if (decision == Decision::None) return false;
     // Persist the accepted schedule before showing it: restart cannot replay a
@@ -4730,7 +4754,7 @@ void UpdateLifeEvent(ULONGLONG ticks, double elapsed) {
 }
 
 void DispatchAutonomousMotion(ULONGLONG ticks) {
-    if(g.randomZoomies.Active() || g.manualMotionActive || EnvironmentBusy() || g.lifeCrossing.Active() || g.waitingForStop || g.approachingToy ||
+    if(g.runningTurn.Active() || g.randomZoomies.Active() || g.manualMotionActive || EnvironmentBusy() || g.lifeCrossing.Active() || g.waitingForStop || g.approachingToy ||
             g.approachingUser || g.toyEngaged || g.pendingCare>=0 || g.perch.transitioning ||
             g.physics.Hanging() || ticks<g.nextDecision || !g.physics.CurrentPose().grounded ||
             g.autonomousClaimedAt==ticks || (g.companionReaction && g.companionModel.Busy()) ||
@@ -4820,6 +4844,14 @@ void AdvancePrimaryMotion(ULONGLONG ticks, double elapsed) {
     }
     UpdatePrimaryGroundArt(ticks);
     if(AdvanceWallMotion(ticks,elapsed))return;
+    const auto turnBody=g.physics.CurrentPose(),turnDisplay=g.physics.RenderPose();
+    const bool wasTurning=g.runningTurn.Active();
+    if(g.runningTurn.Advance(elapsed,turnBody.grounded,WalkingVelocity(turnBody),WalkingVelocity(turnDisplay))) {
+        g.direction=g.facing=g.runningTurn.To();g.groundDrive.Reset(g.facing);
+    }
+    if(wasTurning&&!g.runningTurn.Active()) {
+        g.groundArtBridge.ContinueLocomotion(ticks);g.gait.SetAuthoredPhase(0);
+    }
     if(g.wallBounds&&g.physics.CurrentPose().grounded) {
         const auto bounds=MovementBoundsLogical();
         if(g.physics.CurrentPose().x<=bounds.second) {
@@ -4827,7 +4859,7 @@ void AdvancePrimaryMotion(ULONGLONG ticks, double elapsed) {
         }
     }
     cat::motion::AdvanceGroundStop(g.waitingForStop,g.physics.CurrentPose().grounded &&
-        !g.groundArtBridge.Stopping() && !g.groundArtBridge.StartingForSideAction(),
+        g.stopClip==cat::sprite_sequence::Clip::None && !g.groundArtBridge.Stopping() && !g.groundArtBridge.StartingForSideAction(),
         WalkingVelocity(g.physics.CurrentPose()),g.groundDrive,ticks,g.motionStart,g.nextDecision);
     const auto actionElapsed = ticks >= g.motionStart ? ticks - g.motionStart : 0;
     const auto body = cat::appearance::VisualModifiers(g.nutrition,g.preferences.character);
@@ -4905,13 +4937,17 @@ void AdvancePrimaryMotion(ULONGLONG ticks, double elapsed) {
         const auto [low, high] = MovementBoundsLogical();
         if (cat::motion::BrakeBeforeEdge(support.x, WalkingVelocity(support), targetSpeed, low, high)) {
             if(!KeyboardPlayActive()&&!g.toyEngaged)g.direction = targetSpeed < 0 ? 1 : -1;
+            if(g.motion==Motion::Zoomies&&!KeyboardPlayActive()&&!g.runningTurn.Active()&&
+                    LoadedCareSprite(cat::sprite_sequence::Clip::RunningTurn,g.preferences.character)) {
+                g.runningTurn.Begin(g.facing,g.direction);g.groundArtBridge.ContinueLocomotion(ticks);g.waitingForStop=false;
+            }
             targetSpeed = 0;
             const bool scheduledRun=g.randomZoomies.Active() && g.motion==Motion::Zoomies &&
                 g.motionSerial==g.randomZoomiesSerial;
             // A scheduled run owns its entire moving-time budget. Reverse its
             // ordinary target, then let the common drive plant and turn;
             // switching to Watch here would silently cancel it at the edge.
-            if (g.motion != Motion::Pounce && !scheduledRun && !KeyboardPlayActive()&&!g.toyEngaged&&!g.approachingUser) {
+            if (g.motion != Motion::Pounce && g.motion!=Motion::Zoomies && !scheduledRun && !KeyboardPlayActive()&&!g.toyEngaged&&!g.approachingUser) {
                 if(targetSpeed>=0&&g.direction<0&&!g.pet.roamingPaused&&g.random()%5==0) {
                     StartWallClimb(ticks);if(g.wallPhase!=App::WallPhase::None)return;
                 }
@@ -4925,6 +4961,7 @@ void AdvancePrimaryMotion(ULONGLONG ticks, double elapsed) {
         targetSpeed=std::clamp(targetSpeed,-RegisteredWalkSpeed()*body.speed,
             RegisteredWalkSpeed()*body.speed);
     const auto motorPose=g.physics.CurrentPose();
+    targetSpeed=g.runningTurn.Motor(targetSpeed);
     targetSpeed=g.groundDrive.Update(targetSpeed,WalkingVelocity(motorPose),
         WalkingVelocity(g.physics.RenderPose()),motorPose.grounded,elapsed);
     if(motorPose.grounded)g.facing=g.groundDrive.Facing();
@@ -5054,7 +5091,7 @@ void AdvanceRandomZoomies(ULONGLONG ticks,double elapsed) {
         !g.manualMotionActive && !g.pet.roamingPaused && !EnvironmentBusy();
     const bool mayStart=clockAllowed && CanStartAutonomousStory(ticks) && !g.perch.active &&
         !physical.onPlatform && !g.physics.Hanging() && !g.companionModel.Busy();
-    const bool moving=owned && physical.grounded && !g.waitingForStop &&
+    const bool moving=owned && !g.runningTurn.Active() && physical.grounded && !g.waitingForStop &&
         !g.groundArtBridge.Starting() && !g.groundArtBridge.Stopping() &&
         std::abs(WalkingVelocity(physical))>10;
     const auto draw=[](std::uint64_t low,std::uint64_t high) {
@@ -5775,7 +5812,7 @@ int NativeToyHostTest() {
             g.motionStart=finished>=6000?finished-6000:0;g.nextDecision=finished;
             DispatchAutonomousMotion(finished);
             if(g.motion!=Motion::Idle || !g.autonomousResting ||
-                    g.nextDecision-g.motionStart<18000 || g.nextDecision-g.motionStart>45000)return 218;
+                    g.nextDecision-g.motionStart<cat::behavior::Brain::NeutralRestMinMs || g.nextDecision-g.motionStart>cat::behavior::Brain::NeutralRestMaxMs)return 218;
             const auto restSerial=g.motionSerial,restDeadline=g.nextDecision;
             DispatchAutonomousMotion(finished);DispatchAutonomousMotion(finished+1);
             if(g.motionSerial!=restSerial || g.nextDecision!=restDeadline)return 219;
@@ -6018,6 +6055,7 @@ int NativeMenuContractTest() {
 #include "native_ball_play_capture.hpp"
 #include "native_fish_review.hpp"
 #include "native_fly_review.hpp"
+#include "native_identity_turn_review.hpp"
 #include "native_lively_review.hpp"
 #include "native_menu_visibility_tests.hpp"
 
@@ -6053,6 +6091,7 @@ int SelfTest(HINSTANCE instance) {
 }
 
 int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
+    if(commandLine && wcsstr(commandLine,L"--render-identity-turn-review"))return NativeIdentityTurnReview(instance);
     if(commandLine && wcsstr(commandLine,L"--render-fly-review"))return NativeFlyReview(instance);
     if(commandLine && wcsstr(commandLine,L"--render-fish-review"))return NativeFishReview(instance);
     if(commandLine && wcsstr(commandLine,L"--manual-motion-self-test"))return NativeManualMotionTest(instance);
@@ -6075,7 +6114,9 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
         const int lively=NativeLivelyReview(instance);
         if(lively)return lively;
         const int fish=NativeFishReview(instance);
-        return fish?fish:NativeFlyReview(instance);
+        if(fish)return fish;
+        const int fly=NativeFlyReview(instance);
+        return fly?fly:NativeIdentityTurnReview(instance);
     }
     if (const auto helperResult = cat::update::HandleUpdateHelperCommandLine()) return *helperResult;
     if (commandLine && wcsstr(commandLine, L"--self-test")) return SelfTest(instance);
