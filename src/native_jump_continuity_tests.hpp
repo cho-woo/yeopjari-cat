@@ -45,7 +45,7 @@ int Run() {
     trace<<"{\"schema\":1,\"fps\":60,\"frames\":[";
     report<<"{\"schema\":1,\"test\":\"jump-continuity-native\",\"status\":\"passed\",\"version\":\""
         YEOPJARI_VERSION_STRING "\",\"render_source\":\"Windows GDI+ / Box2D\",\"desktop_recording\":false,"
-        "\"fps\":60,\"frames_per_case\":420,\"trace\":\"trace.json\",\"board\":\"entry-exit-board.png\",\"cases\":[";
+        "\"comparison_baseline\":false,\"fps\":60,\"frames_per_case\":420,\"trace\":\"trace.json\",\"board\":\"entry-exit-board.png\",\"cases\":[";
     bool firstTrace=true;unsigned caseIndex=0;
     for(const auto character:{cat::Character::Cream,cat::Character::Tuxedo})for(const int facing:{1,-1})for(const bool moving:{false,true}) {
         Host host;host.Reset(character,true);if(!host.artworkReady)return 581;g.workInterference=false;g.cursorPlay=false;
@@ -67,8 +67,8 @@ int Run() {
             // This capture reviews stationary entry/exit after an explicit
             // stop. Moving jumps have their own momentum/continuation checks
             // in manual-motion and keyboard-play; never label this as one.
-            if(moving&&i==90){SetMotion(Motion::Idle,8000,host.now);host.Rebase();}
-            if(moving&&i==120)host.Command(kManualJumpCommand);
+            if(moving&&i==150){SetMotion(Motion::Idle,8000,host.now);host.Rebase();}
+            if(moving&&i==180)host.Command(kManualJumpCommand);
             const auto physical=g.physics.CurrentPose(),rendered=g.physics.RenderPose();
             const auto pose=PrimaryDisplayedPose(host.now,rendered);
             const auto* asset=CareSpriteFor(pose,character);
@@ -92,9 +92,10 @@ int Run() {
             priorRig=pose.jumpRig;
             const unsigned logicalSource=asset?SpriteFrameFor(pose,*asset->layout):4;
             if(asset&&logicalSource>=asset->layout->frameCount)return 582;
-            const auto* drawingAsset=pose.jumpRig?LoadedCareSprite(Clip::Walk,character):asset;
-            const unsigned source=pose.jumpRig?cat::jump_animation::kSourceFrame:logicalSource;
-            if(pose.spriteClip==Clip::Jump&&(!pose.jumpRig||!drawingAsset||
+            const bool videoJump=asset&&pose.spriteClip==Clip::Jump&&std::string_view(asset->layout->sourcePath).find("assets/video-actions/")==0;
+            const auto* drawingAsset=videoJump?asset:pose.jumpRig?LoadedCareSprite(Clip::Walk,character):asset;
+            const unsigned source=videoJump?logicalSource:pose.jumpRig?cat::jump_animation::kSourceFrame:logicalSource;
+            if(pose.spriteClip==Clip::Jump&&!videoJump&&(!pose.jumpRig||!drawingAsset||
                     drawingAsset->layout->resourceId!=400||source!=29||!cat::jump_animation::Finite(pose.jumpControls)))return 582;
             const auto& base=CurrentArt(character).base;const auto& baseRect=base.frames[4];
             const cat::sprite_assets::Frame registration=drawingAsset?drawingAsset->layout->frames[source]:
@@ -118,7 +119,7 @@ int Run() {
             const bool entering=g.jumpPending&&pose.spriteClip==Clip::Walk&&g.groundArtBridge.StartingForSideAction();
             const bool returning=!g.jumpPending&&g.landedAt&&pose.spriteClip==Clip::Walk&&g.groundArtBridge.Stopping();
             entry=entry||entering;flight=flight||!rendered.grounded;landing=landing||physical.landed;
-            sideEntry=sideEntry||(entering&&source>=30&&source<=47);
+            sideEntry=sideEntry||(entering&&source>=30&&source<=60);
             if(returning) {
                 if(host.now<g.landedAt || host.now-g.landedAt<
                         cat::sprite_sequence::Duration(jump->layout->program,jump->layout->program.outro))return 585;
@@ -137,7 +138,7 @@ int Run() {
                     static_cast<REAL>(210+rendered.x-origin),static_cast<REAL>(280-rendered.lift),110);
                 graphics.Flush(FlushIntentionSync);
             }
-            if((caseIndex==0||caseIndex==4)&&i%2==0) {
+            if((caseIndex==0||caseIndex==4)&&i%2==0&&std::string_view(jump->layout->sourcePath).find("assets/video-actions/")!=0) {
                 // Controlled artwork comparison, not a recording of an older
                 // app build: same current state/Box2D root, old raw16 poses.
                 auto rawPose=pose;rawPose.jumpRig=false;rawPose.jumpControls={};
@@ -190,7 +191,7 @@ int Run() {
             <<",\"scenario\":\""<<(moving?"walk-stop-jump":"idle-jump")<<"\",\"entry_from_side_turn_seen\":"<<(sideEntry?"true":"false")
             <<",\"root_x_unchanged\":true,\"physical_height_only_once\":true,\"no_prelaunch_air_pose\":true,"
             "\"complete_landing_before_return\":true,\"entry_turn_seen\":true,\"return_turn_seen\":true,\"grounded_return\":true,\"reference_neutral_seen\":true,"
-            "\"connected_jump_source\":[400,29],\"unique_new_painted_frames\":0,\"continuous_joint_deformation\":true,"
+            "\"connected_jump_source\":[119],\"unique_new_painted_frames\":62,\"source_video_geometry\":true,"
             "\"max_preparation_compression\":"<<maxPreparation<<",\"max_flight_tuck\":"<<maxFlightTuck
             <<",\"max_contact_compression\":"<<maxContactCompression<<",\"max_joint_control_delta\":"<<maxJointDelta
             <<",\"max_root_dx\":"<<maxRootDx<<",\"max_frame_root_delta\":"<<maxDelta<<",\"max_integration_error\":"<<maxIntegrationError

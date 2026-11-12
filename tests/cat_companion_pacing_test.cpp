@@ -27,9 +27,11 @@ std::uint64_t FinishMealEntrance(Model& model,Context& c) {
     using Clip=cat::sprite_sequence::Clip;
     const auto* walk=cat::sprite_assets::Find(Clip::Walk,0,cat::sprite_assets::kCareSprites);
     CHECK(walk && walk->nominalFramesPerSecond>0 && walk->program.intro.count);
-    const std::uint64_t delay=walk->movementDelayMs,offeredAt=c.ticks;
-    // An accepted meal starts its real front-to-side entrance immediately.
-    // The stationary food clock begins only after that registered turn.
+    const auto* meal=cat::sprite_assets::Find(Clip::Eat,0,cat::sprite_assets::kCareSprites);
+    const bool embedded=meal&&std::string_view(meal->sourcePath).find("assets/video-actions/")==0;
+    const std::uint64_t delay=embedded?0:walk->movementDelayMs,offeredAt=c.ticks;
+    // Current meal movies own their entrance. Legacy side-only footage waits
+    // for the separately registered front-to-side turn before its food clock.
     while(model.View(c.ticks).motion!=M::Eat && c.ticks-offeredAt<delay+34) {
         const auto view=model.View(c.ticks);
         CHECK(cat::animation::Walking(view.motion));
@@ -45,7 +47,9 @@ void FinishGroundExit(Model& model,Context& c,M next) {
     using Clip=cat::sprite_sequence::Clip;
     const auto* walk=cat::sprite_assets::Find(Clip::Walk,0,cat::sprite_assets::kCareSprites);
     CHECK(walk && walk->program.outro.count);
-    const auto duration=cat::sprite_sequence::Duration(walk->program,walk->program.outro);
+    const auto* meal=cat::sprite_assets::Find(Clip::Eat,0,cat::sprite_assets::kCareSprites);
+    const bool embedded=meal&&std::string_view(meal->sourcePath).find("assets/video-actions/")==0;
+    const auto duration=embedded?0:cat::sprite_sequence::Duration(walk->program,walk->program.outro);
     const auto exitAt=c.ticks;
     while(model.View(c.ticks).motion!=next && c.ticks-exitAt<duration+34) {
         const auto view=model.View(c.ticks);
@@ -77,7 +81,7 @@ void CompletedSocialActionCannotImmediatelyStartAnother() {
     while(c.ticks<12100)Step(model,c);
     CHECK(model.View(c.ticks).interaction==Interaction::None);
     const auto finishedAt=c.ticks;
-    while(c.ticks-finishedAt<17900) {
+    while(c.ticks-finishedAt<cat::behavior::Brain::NeutralRestMinMs-100) {
         Step(model,c);const auto view=model.View(c.ticks);
         CHECK(view.motion==M::Idle&&view.interaction==Interaction::None);
     }
@@ -88,7 +92,7 @@ void ExplicitFoodCanInviteARaceAfterTheMinimumRest() {
     Model model;model.Bind(state);model.Reset(0,1600,700);
     auto c=Frame(100,model.Physical().x+60);c.primaryMotion=M::Eat;c.primaryBusy=true;
     model.Tick(c);
-    while(c.ticks<18100) {
+    while(c.ticks<cat::behavior::Brain::NeutralRestMinMs+100) {
         CHECK(!model.FoodOffered(c));Step(model,c);
     }
     const auto meals=state.pet.feedCount,treats=state.pet.snackCount;
@@ -129,7 +133,7 @@ void AcceptedMealKeepsItsCompleteGroomFollowUp() {
     CHECK(c.ticks-groomAt>=groomDuration&&c.ticks-groomAt<=groomDuration+17);
     CHECK(model.View(c.ticks).motion==M::Idle);
     const auto restedAt=c.ticks;
-    while(c.ticks-restedAt<17900) {Step(model,c);CHECK(model.View(c.ticks).motion==M::Idle);}
+    while(c.ticks-restedAt<cat::behavior::Brain::NeutralRestMinMs-100) {Step(model,c);CHECK(model.View(c.ticks).motion==M::Idle);}
     CHECK(state.pet.feedCount==1&&state.memory.meals==1);
 }
 void HeldCareSurvivesAutomaticExpiryButExplicitFoodStillWins() {
@@ -242,7 +246,7 @@ void AutonomousPairRunningRemainsReachableAfterQuietRest() {
         auto c=Frame(100,model.Physical().x+60);c.nowUtc=birthday;c.primaryMotion=M::Zoomies;
         c.primary.velocityX=70;c.primaryBusy=false;
         bool paired=false;
-        while(c.ticks<60000) {
+        while(c.ticks<120000) {
             c.primary.x=model.Physical().x+60;
             c.nowUtc=birthday+static_cast<std::int64_t>(c.ticks/1000);
             model.Tick(c);
@@ -250,7 +254,7 @@ void AutonomousPairRunningRemainsReachableAfterQuietRest() {
             c.ticks+=17;
         }
         if(!paired)continue;
-        CHECK(c.ticks>=18000);++joined;
+        CHECK(c.ticks>=cat::behavior::Brain::NeutralRestMinMs);++joined;
         const auto* walk=cat::sprite_assets::Find(cat::sprite_sequence::Clip::Walk,0,
             cat::sprite_assets::kCareSprites);
         CHECK(walk && walk->program.intro.count);

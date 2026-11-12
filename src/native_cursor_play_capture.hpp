@@ -6,12 +6,12 @@
 namespace native_cursor_play_capture {
 using Action=cat::environment::CursorAction;
 using Clip=cat::sprite_sequence::Clip;
-constexpr unsigned Fps=60,Count=1800;
+constexpr unsigned Fps=60,Count=6000;
 constexpr int Width=800,Height=720,ActorWidth=360,ActorHeight=420,ActorFloor=390;
 enum class Stage { Low,Tiptoe,BothPaws,Hop,Far,Care,Resume };
 Stage StageAt(ULONGLONG elapsed) {
-    return elapsed<6500?Stage::Low:elapsed<10500?Stage::Tiptoe:elapsed<14500?Stage::BothPaws:
-        elapsed<20500?Stage::Hop:elapsed<21300?Stage::Far:elapsed<26300?Stage::Care:Stage::Resume;
+    return elapsed<20000?Stage::Low:elapsed<34000?Stage::Tiptoe:elapsed<58000?Stage::BothPaws:
+        elapsed<78000?Stage::Hop:elapsed<80000?Stage::Far:elapsed<85000?Stage::Care:Stage::Resume;
 }
 const char* StageName(Stage stage) {
     switch(stage) {
@@ -78,7 +78,7 @@ bool DrawActor(Surface& actor,Row& row,const Frame& frame,ULONGLONG elapsed) {
 int Simulate(Row& row,std::string& context) {
     native_manual_motion_tests::Host host;host.Reset(row.character,false);
     g.cursorPlay=true;g.workInterference=false;g.random.seed(74021);g.randomZoomiesRandom.seed(1936);
-    g.direction=g.facing=1;g.nextDecision=host.now+60000;
+    g.direction=g.facing=1;g.nextDecision=host.now+120000;
     const auto saved=host.Saved();const auto start=host.now;
     row.startX=g.physics.RenderPose().x;row.body=cat::appearance::VisualModifiers(g.nutrition,row.character);
     row.sourceHash=BaseSourceHash(row.character);row.frames.reserve(Count);
@@ -110,7 +110,7 @@ int Simulate(Row& row,std::string& context) {
             if(stage==Stage::Resume)SetMotion(Motion::Idle,10000,now);
             previousStage=stage;
         }
-        if(stage==Stage::Far&&elapsed>=20900&&!nearBeforeCare) {
+        if(stage==Stage::Far&&elapsed>=79000&&!nearBeforeCare) {
             pointerX=g.physics.RenderPose().x+lowDx;pointerHeight=12;nearBeforeCare=true;
         }
         const bool menu=elapsed>=900&&elapsed<1300;
@@ -156,7 +156,7 @@ int Simulate(Row& row,std::string& context) {
         // An already launched ballistic hop finishes safely. Moving the
         // pointer away must cancel its contact immediately, not teleport the
         // body to the floor merely to make the session inactive.
-        if(stage==Stage::Far&&elapsed>=20700&&elapsed<20900&&
+        if(stage==Stage::Far&&elapsed>=78700&&elapsed<79000&&
                 (!cursorInteraction.session.Active()||
                     (cursorInteraction.session.InFlight()&&!cursorInteraction.session.ContactAllowed())))row.farCancelled=true;
         if(stage==Stage::Care) {
@@ -304,7 +304,7 @@ int Run(std::string& context) {
         "\",\"render_source\":\"Windows GDI+ / Box2D\",\"desktop_recording\":false,\"os_input_injected\":false"
         ",\"app_active_timer_ms\":16,\"capture_clock\":\"deterministic 16/17 ms production updates at 60 Hz\""
         ",\"fps\":60,\"frame_count\":"<<Count<<",\"canvas\":["<<Width<<','<<Height<<"],\"reference_height_px\":110"
-        ",\"duration_seconds\":30,\"profile\":\"no profile loaded or saved\",\"trace\":\"trace.json\""
+        ",\"duration_seconds\":100,\"profile\":\"no profile loaded or saved\",\"trace\":\"trace.json\""
         ",\"scenario\":\"stationary low pointer repeated paw; menu and drag freeze/resume; tiptoe; both paws; roaming-paused physical reach hop; far cancellation; real care action interruption; near-pointer resume\""
         ",\"guard_evidence\":\"menu and drag are in-memory Tick flags with FreezePrimaryMotion, not OS interactions; care uses actual SetMotion(Eat), not a feeding command\""
         ",\"far_cancel_policy\":\"cancel contact immediately; an already launched ballistic hop finishes safely\""
@@ -327,7 +327,7 @@ int Run(std::string& context) {
     report<<"],\"review_images\":[\"review-paw.png\",\"review-tiptoe.png\",\"review-both-paws.png\",\"review-hop.png\",\"review-care.png\",\"review-resume.png\",\"review-menu.png\",\"review-drag.png\"]}\n";
     if(!WriteBytes(L"render-self-test/cursor-play/trace.json",trace.str())||
             !WriteBytes(L"render-self-test/cursor-play/capture.json",report.str()))return 686;
-    context="both coats: actual nearby repeated reaches, physical hop, once-only credit, menu/drag/care guards and resume; 1800 frames at 60 FPS";
+    context="both coats: actual nearby repeated reaches, physical hop, once-only credit, menu/drag/care guards and resume; 6000 frames at 60 FPS";
     return 0;
 }
 } // namespace native_cursor_play_capture

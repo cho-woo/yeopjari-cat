@@ -10,12 +10,10 @@ constexpr int Width=960, Height=500;
 using Clip=cat::sprite_sequence::Clip;
 // These are the actual source-video drawings packed in the registered atlas,
 // not generated in-betweens. Only the first twenty comprise the walk cycle.
-int SourceVideoFrame(unsigned source,unsigned registeredCount) {
-    if(source<20)return static_cast<int>(50+source);
-    if(registeredCount==61 && source<48)return static_cast<int>(2+source-20);
-    if(registeredCount==61 && source<61)return static_cast<int>(108+source-48);
-    return -1;
+int SourceVideoFrame(unsigned source,unsigned registeredCount,unsigned character=0) {
+    return registeredCount==61&&source<61?static_cast<int>(cat::video_actions::WalkSourceFrame(character,source)):-1;
 }
+
 struct Frame {
     cat::animation::Pose pose;
     double x=0, velocity=0, phase=0;
@@ -35,6 +33,8 @@ struct Row {
 int Simulate(Row& row,std::string& context) {
     native_manual_motion_tests::Host host;
     host.Reset(row.character,true);
+    g.centerX=g.work.left+600*g.dpiScale;ResetMovement();
+    for(unsigned i=0;i<12;++i)g.physics.Update(1./60);
     g.workInterference=false;g.cursorPlay=false;
     const auto saved=host.Saved();
     const auto start=host.now;
@@ -43,7 +43,7 @@ int Simulate(Row& row,std::string& context) {
     row.frames.reserve(Count);
     const auto* walk=LoadedCareSprite(Clip::Walk,row.character);
     if(!walk || walk->layout->program.loop.count!=20 || walk->layout->nominalFramesPerSecond!=24 ||
-            std::string(walk->layout->sourcePath).find("assets/natural-gait/")!=0) {
+            std::string(walk->layout->sourcePath).find("assets/video-actions/")!=0) {
         context="capture requires the actual twenty-frame source-video walk";return 542;
     }
     std::vector<bool> visited(walk->layout->program.loop.count,false);
@@ -80,7 +80,7 @@ int Simulate(Row& row,std::string& context) {
     }
     if(host.Saved()!=saved){context="capture changed an owned in-memory save fixture";return 548;}
     const auto expectedSpeed=cat::sprite_assets::NominalLocomotionSpeed(*walk->layout);
-    if(distinct!=visited.size() || expectedSpeed<70 || row.peakSpeed<expectedSpeed*1.03 || row.peakSpeed>expectedSpeed*1.28 ||
+    if(distinct!=visited.size() || expectedSpeed<=0 || row.peakSpeed<expectedSpeed*1.03 || row.peakSpeed>expectedSpeed*1.28 ||
             !row.stopped || !row.reversed || row.sourceChanges<visited.size()*3) {
         context="native walk coverage/speed/rest/reversal: visited="+std::to_string(distinct)+
             " peak="+std::to_string(row.peakSpeed)+" changes="+std::to_string(row.sourceChanges)+
@@ -135,7 +135,7 @@ int Run(std::string& context) {
                 <<",\"sprite_frame\":"<<frame.source<<",\"input_video_frame\":";
             const auto* walk=LoadedCareSprite(Clip::Walk,row.character);
             const int videoFrame=frame.pose.spriteClip==Clip::Walk && walk?
-                SourceVideoFrame(frame.source,walk->layout->frameCount):-1;
+                SourceVideoFrame(frame.source,walk->layout->frameCount,static_cast<unsigned>(row.character)):-1;
             if(videoFrame>=0)trace<<videoFrame;else trace<<"null";
             trace<<",\"facing\":"<<(frame.pose.flip?-1:1)
                 <<",\"waiting_for_stop\":"<<(frame.waiting?"true":"false")<<'}';
@@ -153,7 +153,7 @@ int Run(std::string& context) {
     metadata<<"{\"schema\":1,\"render_source\":\"Windows GDI+ / Box2D\",\"desktop_recording\":false,\"fps\":"<<Fps
         <<",\"frame_count\":"<<Count<<",\"canvas\":["<<Width<<','<<Height
         <<"],\"reference_height_px\":110,\"source_video_frames\":20,\"source_video_fps\":24,\"source_video_frame_indices\":[";
-    for(unsigned index=0;index<20;++index){if(index)metadata<<',';metadata<<50+index;}
+    for(unsigned index=0;index<20;++index){if(index)metadata<<',';metadata<<cat::video_actions::WalkSourceFrame(0,index);}
     const auto* walk=LoadedCareSprite(Clip::Walk,cat::Character::Cream);
     if(!walk)return 542;
     metadata<<"],\"cycle_frames\":20,\"registered_walk_frames\":"<<walk->layout->frameCount

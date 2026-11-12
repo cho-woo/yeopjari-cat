@@ -67,8 +67,8 @@ public:
     static constexpr std::uint64_t SurpriseMinGapMs = 4 * 60 * 1000;
     static constexpr std::uint64_t StalkMinGapMs = 90 * 1000;
     static constexpr std::uint64_t GestureMinGapMs = 15 * 1000;
-    static constexpr std::uint64_t NeutralRestMinMs = 18000;
-    static constexpr std::uint64_t NeutralRestMaxMs = 45000;
+    static constexpr std::uint64_t NeutralRestMinMs = 45000;
+    static constexpr std::uint64_t NeutralRestMaxMs = 100000;
     static constexpr double MaximumExperienceShift = .15;
     static constexpr double ArchetypeChangeMargin = .04;
 

@@ -20,20 +20,20 @@ void Step(Model& model,Context& c) {
 }
 void StartDeferred(Model& model,Context& c) {
     model.Tick(c);
-    CHECK(model.RandomZoomiesWaitMs()>=60000&&model.RandomZoomiesWaitMs()<=300000);
-    while(c.ticks<310100) {
+    CHECK(model.RandomZoomiesWaitMs()>=120000&&model.RandomZoomiesWaitMs()<=420000);
+    while(c.ticks<430100) {
         Step(model,c);
         CHECK(!model.RandomZoomiesActive());
         CHECK(model.View(c.ticks).interaction==Interaction::None);
     }
     CHECK(model.RandomZoomiesWaitMs()==0); // One pending event waits for a safe boundary.
-    c.primaryVisible=true;
-    while(!model.RandomZoomiesActive()&&c.ticks<650000)Step(model,c);
+    c.primaryVisible=true;c.primary.x=3000; // Keep unrelated social invitations outside reach.
+    while(!model.RandomZoomiesActive()&&c.ticks<900000)Step(model,c);
     CHECK(model.RandomZoomiesActive());
     CHECK(model.RandomZoomiesRemainingRunMs()>=5000&&model.RandomZoomiesRemainingRunMs()<=15000);
 }
 void CompleteRealRunAndTurns() {
-    auto state=NewState(Born);Model model;model.Bind(state);model.Reset(0,1600,700);auto c=Frame();
+    auto state=NewState(Born);Model model;model.Bind(state);model.Reset(0,600,700);auto c=Frame();
     StartDeferred(model,c);
     const auto duration=model.RandomZoomiesRemainingRunMs(),started=c.ticks;
     double distance=0;unsigned turns=0;int priorDirection=0;
@@ -53,7 +53,7 @@ void CompleteRealRunAndTurns() {
     CHECK(!model.RandomZoomiesActive());
     CHECK(turns>=1&&distance>300);
     CHECK(c.ticks-started>=duration); // Start/plant/turn overhead does not spend the chosen running budget.
-    CHECK(model.RandomZoomiesWaitMs()>=60000&&model.RandomZoomiesWaitMs()<=300000);
+    CHECK(model.RandomZoomiesWaitMs()>=120000&&model.RandomZoomiesWaitMs()<=420000);
     CHECK(model.View(c.ticks).interaction==Interaction::None);
     const auto wait=model.RandomZoomiesWaitMs();c.paused=true;c.ticks+=300000;c.elapsedSeconds=0;model.Tick(c);
     CHECK(model.RandomZoomiesWaitMs()==wait&&!model.RandomZoomiesActive());
@@ -65,7 +65,7 @@ void ExplicitCareWinsAndPauseCancels() {
     CHECK(model.Feed(c.nowUtc,c.ticks,false)==cat::nutrition::FeedResult::Accepted);
     Step(model,c);
     CHECK(!model.RandomZoomiesActive());
-    CHECK(model.RandomZoomiesWaitMs()>=60000&&model.RandomZoomiesWaitMs()<=300000);
+    CHECK(model.RandomZoomiesWaitMs()>=120000&&model.RandomZoomiesWaitMs()<=420000);
     CHECK(state.pet.feedCount==1);
     // A fresh model runs the identical pending opportunity; the saved pause
     // preference cancels it and keeps the cat still without changing that save.

@@ -69,8 +69,8 @@ int ContactGuards(std::string& context) {
     g.toy=ToyKind::None;g.toyEngaged=false;g.toySession.Cancel();
     return 0;
 }
-int Simulate(Row& row,std::string& context) {
-    native_manual_motion_tests::Host host;Configure(host,row.character);
+int Simulate(Row& row,std::string& context,bool edgeCase=true) {
+    native_manual_motion_tests::Host host;Configure(host,row.character,edgeCase?1180:1000);
     const auto saved=host.Saved();row.body=cat::appearance::VisualModifiers(g.nutrition,row.character);
     row.contactThreshold=cat::toy::PhysicsBall::Radius+4*cat::GrowthScale(g.pet.bornUtc,UtcNow());
     const auto& source=CurrentArt(row.character).base.skins[4].source;
@@ -140,8 +140,13 @@ int Simulate(Row& row,std::string& context) {
         " elapsed="+std::to_string(g.toySession.elapsedMs)+" ball="+std::to_string(g.toyBall.x)+
         " root="+std::to_string(g.physics.CurrentPose().x)+" standoff="+std::to_string(BallPawStandOff())+
         " motion="+std::to_string(static_cast<unsigned>(g.motion))+" wait="+std::to_string(g.waitingForStop);
-    if(row.contacts<3||row.pawEntries<3||row.walkFrames<60||row.ballTravel<80||row.catTravel<40||
-            !row.turns||!row.ballBounces||!row.brakingFrames||!row.profileUnchanged||!row.sourceImmutable||
+    // An interior placement must cover the full pursuit. At the constrained
+    // edge require a real make-room step and two ball diameters of rolling;
+    // that small scene deliberately exercises reversal rather than distance.
+    const double minimumBallTravel=edgeCase?4*cat::toy::PhysicsBall::Radius:80;
+    const double minimumCatTravel=edgeCase?cat::toy::PhysicsBall::Radius:40;
+    if(row.contacts<3||row.pawEntries<3||row.walkFrames<(edgeCase?30U:60U)||row.ballTravel<minimumBallTravel||row.catTravel<minimumCatTravel||
+            (edgeCase&&!row.turns)||!row.ballBounces||!row.brakingFrames||!row.profileUnchanged||!row.sourceImmutable||
             !row.duplicateContactRejected||row.contacts>row.pawEntries||row.maxFrameRootDelta>4)return 793;
     return 0;
 }
@@ -151,7 +156,11 @@ int Run(std::string& context) {
         if(!CreateDirectoryW(path,nullptr)&&GetLastError()!=ERROR_ALREADY_EXISTS)return 791;
     if(const int guard=ContactGuards(context))return guard;
     std::array<Row,2> rows{};rows[1].character=cat::Character::Tuxedo;
-    for(auto& row:rows)if(const int result=Simulate(row,context))return result;
+    for(auto& row:rows) {
+        Row interior;interior.character=row.character;
+        if(const int result=Simulate(interior,context,false))return result;
+        if(const int result=Simulate(row,context))return result;
+    }
     if(!EnsureCareCoats(cat::Character::Cream,cat::Character::Tuxedo))return 790;
     Surface canvas;if(!canvas.Create(Width,Height))return 791;
     std::ostringstream trace;trace.imbue(std::locale::classic());trace<<"{\"schema\":1,\"fps\":60,\"frames\":[";

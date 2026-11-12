@@ -25,10 +25,16 @@ RESOURCE = {'groom': 113, 'punch': 117, 'jump': 119, 'knead': 440, 'reach': 441}
 RESOURCE.update({'ball':430,'toy':431,'brake':432,'slide':433,'stumble':434,'climb':435})
 RESOURCE['fish']=116
 RESOURCE['fly']=436
+RESOURCE['turn']=437
+RESOURCE.update({'walk':400,'run':401,'eat':118})
 SOURCE_ACTION = {'groom': 'wipe', 'punch': 'punch', 'jump': 'jump', 'knead': 'knead', 'reach': 'reach'}
 SOURCE_ACTION.update({name:name for name in ('ball','toy','brake','slide','stumble','climb')})
 SOURCE_ACTION['fish']='fish'
 SOURCE_ACTION['fly']='fly'
+SOURCE_ACTION['turn']='turn'
+SOURCE_ACTION.update({'walk':'walk','run':'run','eat':'eat'})
+IDENTITY_PATH=DIRECTORY/'identity-v29.json'
+IDENTITY=json.loads(IDENTITY_PATH.read_text(encoding='utf-8')) if IDENTITY_PATH.exists() else {'clips':{}}
 REACH_KEYS = {
     'cream': [(18, 300, 651, 369, 651), (36, 300, 651, 369, 651),
         (54, 243, 360, 378, 360), (72, 282, 228, 396, 306),
@@ -101,7 +107,7 @@ def foreground(rgb, palette=None, remove_ball=False, remove_wall=False, keep_fea
                     left-70<x+w and x<left+width+70 and top+height-90<y<top+height+40:
                 mask[labels==component]=1
     if remove_ball:
-        red_ball=(red>130)&(red>green*1.8)&(red>blue*1.8)
+        red_ball=(red>180)&(green<90)&(blue<95)&(red>green*2)
         count,labels,stats,_=cv2.connectedComponentsWithStats(red_ball.astype(np.uint8),8)
         for component in range(1,count):
             if stats[component,cv2.CC_STAT_AREA]>350:
@@ -114,7 +120,7 @@ def foreground(rgb, palette=None, remove_ball=False, remove_wall=False, keep_fea
     # The lifted hunting paw can enclose a real chroma-green gap. Retain
     # enclosed dark facial features, but never turn that green gap into fur.
     enclosed=exterior==1
-    if keep_fly:enclosed &= ~(green>np.maximum(red,blue)*1.22+12)
+    enclosed &= ~(green>np.maximum(red,blue)*1.22+12)
     mask[enclosed] = 1
     alpha = cv2.GaussianBlur(mask.astype(np.float32), (0, 0), .36)
     alpha[cv2.distanceTransform(mask, cv2.DIST_L2, 5) > 1.2] = 1
@@ -197,6 +203,7 @@ def snow_material(source, eyes):
 
 
 def selection(clip):
+    if clip in IDENTITY['clips']:return list(range(IDENTITY['clips'][clip]['frame_count']))
     if clip=='fly':return list(range(144))+list(range(170,192))
     extra={'ball':range(24,84,2),'toy':range(6,146,2),'brake':range(42,142,3),
         'slide':range(42,144,2),'stumble':range(45,150,2),'climb':range(0,158),'fish':range(0,158)}
@@ -213,6 +220,11 @@ def selection(clip):
 
 
 def durations(clip, indices):
+    if clip in IDENTITY['clips']:
+        config=IDENTITY['clips'][clip]
+        if 'exposures_ms' in config:return config['exposures_ms']
+        clock=np.linspace(0,config['duration_ms'],len(indices)+1)
+        return [int(round(clock[i+1])-round(clock[i])) for i in range(len(indices))]
     if clip=='fly':
         return [30 if 96<=index<144 else round((ordinal+1)*1000/24)-round(ordinal*1000/24)
             for ordinal,index in enumerate(indices)]
@@ -229,7 +241,8 @@ def durations(clip, indices):
 
 
 def bake(clip, character, indices):
-    if clip=='ball' and character=='tuxedo':indices=[i+18 for i in indices]
+    if clip in IDENTITY['clips']:indices=IDENTITY['clips'][clip]['source_indices'][character]
+    elif clip=='ball' and character=='tuxedo':indices=[i+18 for i in indices]
     path = DIRECTORY / 'sources' / f'{character}-{SOURCE_ACTION[clip]}.mp4'
     video = cv2.VideoCapture(str(path))
     if not video.isOpened():
@@ -245,9 +258,13 @@ def bake(clip, character, indices):
     if max(indices) >= len(frames) or abs(fps - 24) > .01:
         raise ValueError('Unexpected original video cadence or duration')
     palette=None if clip=='climb' else background_palette(frames[0])
-    neutral = foreground(frames[0],palette,clip=='ball',clip=='climb',clip in ('toy','fish'))
+    neutral = foreground(frames[0],palette,clip=='ball',clip=='climb',clip in ('toy','fish','eat'))
     center, top, bottom = head_root(neutral)
     factor = REFERENCE_HEIGHT / (bottom - top)
+    if IDENTITY.get('canonical_reference_height') and clip in IDENTITY['clips']:
+        # All templates retain the original pixel scale. A four-legged pose
+        # must not be enlarged just because it is shorter than a seated pose.
+        factor=REFERENCE_HEIGHT/(IDENTITY['canonical_reference_height']*frames[0].shape[0]/1024)
     columns = 8
     rows = (len(indices) + columns - 1) // columns
     atlas = Image.new('RGBA', (columns * CELL, rows * CELL))
@@ -256,10 +273,15 @@ def bake(clip, character, indices):
     props=[];prop_visible=[]
     for ordinal, source_index in enumerate(indices):
         local_palette=background_palette(frames[source_index]) if clip=='stumble' and character=='cream' else palette
-        image = foreground(frames[source_index],local_palette,clip=='ball',clip=='climb',clip in ('toy','fish'),clip=='fly')
+        image = foreground(frames[source_index],local_palette,clip=='ball',clip=='climb',clip in ('toy','fish','eat'),clip=='fly')
         anchor_x, anchor_y = center, float(image.getbbox()[3])
         if clip in ('ball','brake','slide','stumble','climb'):
             anchor_x,_,_=head_root(image)
+        if clip in ('walk','run'):
+            alpha=np.asarray(image.getchannel('A'));x0,y0,x1,y1=image.getbbox()
+            yy,xx=np.where((alpha>180)&(np.indices(alpha.shape)[0]>y0+(y1-y0)*.60)&
+                (np.indices(alpha.shape)[0]<y0+(y1-y0)*.84))
+            if len(xx):anchor_x=float(np.median(xx))
         if clip=='climb':
             anchor_x=image.getbbox()[2]-48*REFERENCE_HEIGHT/110/factor
         if clip=='toy':
@@ -273,11 +295,11 @@ def bake(clip, character, indices):
             else:px,py=anchor_x,anchor_y-8
             props.append([(px-anchor_x)*factor*110/REFERENCE_HEIGHT,(anchor_y-py)*factor*110/REFERENCE_HEIGHT])
             prop_visible.append(bool(candidates))
-        if clip == 'jump' and 60 <= source_index <= 80:
+        if clip == 'jump' and (18<=ordinal<39 if clip in IDENTITY['clips'] else 60<=source_index<=80):
             moving_x, _, _ = head_root(image)
             anchor_x += moving_x - center
         image = image.resize((round(image.width * factor), round(image.height * factor)), Image.Resampling.LANCZOS)
-        if clip=='fly':
+        if image.mode=='RGBA':
             rgba=np.array(image)
             # Downsampling can mix yellow fur with cyan antialias pixels.
             # Despill that low-alpha fringe after the final sampling pass.
@@ -294,12 +316,39 @@ def bake(clip, character, indices):
         x, y = ordinal % columns * CELL, ordinal // columns * CELL
         atlas.paste(cell, (x, y))
         records.append({'rect': [x, y, CELL, CELL], 'anchor': list(ROOT_POINT)})
-        if clip == 'reach':
+        if clip == 'reach' and clip in IDENTITY['clips']:
+            rgba=np.asarray(image);red,green,blue,alpha=rgba.transpose(2,0,1).astype(float)
+            yy,xx=np.mgrid[:image.height,:image.width]
+            # The recorded pink paw pads, excluding ears and the central nose.
+            px=(ROOT_POINT[0]-shift[0]);py=(ROOT_POINT[1]-shift[1])
+            pink=(alpha>180)&(red>110)&(red>green+22)&(blue>green*.9)&(yy>py-90)&(yy<py-5)
+            points=[]
+            for sign in (-1,1):
+                region=pink&((xx-px)*sign>8)&((xx-px)*sign<45)
+                count,labels,stats,centers=cv2.connectedComponentsWithStats(region.astype(np.uint8),8)
+                found=[i for i in range(1,count) if stats[i,cv2.CC_STAT_AREA]>=3]
+                point=centers[max(found,key=lambda i:stats[i,cv2.CC_STAT_AREA])] if found else (px+sign*24*factor,py-8*factor)
+                points.append([(point[0]+shift[0]-ROOT_POINT[0])*110/REFERENCE_HEIGHT,
+                    (ROOT_POINT[1]-point[1]-shift[1])*110/REFERENCE_HEIGHT])
+            paws.append(points)
+        elif clip == 'reach':
             keys = np.asarray(REACH_KEYS[character])
             coordinates = [np.interp(source_index, keys[:, 0], keys[:, component]) for component in range(1, 5)]
             paws.append([[(coordinates[i] - anchor_x) * factor * 110 / REFERENCE_HEIGHT,
                 (anchor_y - coordinates[i + 1]) * factor * 110 / REFERENCE_HEIGHT] for i in (0, 2)])
-        if clip=='ball':
+        if clip=='ball' and clip in IDENTITY['clips']:
+            # Nearest opaque toe to the video's red ball, restricted to the
+            # planted forepaw band so a low nose cannot become a paw contact.
+            raw=frames[source_index];r,g,b=raw.transpose(2,0,1).astype(float)
+            red_ball=(r>180)&(g<90)&(b<95)
+            yy,xx=np.where(red_ball)
+            bx=float(np.median(xx)) if len(xx) else anchor_x+100
+            by=float(np.median(yy)) if len(yy) else anchor_y-15
+            actor=np.asarray(foreground(raw,local_palette,True));yy,xx=np.where((actor[:,:,3]>180)&(np.indices(raw.shape[:2])[0]>anchor_y-32))
+            best=np.argmin((xx-bx)**2+(yy-by)**2);px,py=float(xx[best]),float(yy[best])
+            point=[(px-anchor_x)*factor*110/REFERENCE_HEIGHT,(anchor_y-py)*factor*110/REFERENCE_HEIGHT]
+            paws.append([point,point])
+        elif clip=='ball':
             keys=np.asarray(BALL_KEYS[character]);px,py=[np.interp(source_index,keys[:,0],keys[:,i]) for i in (1,2)]
             point=[(px-anchor_x)*factor*110/REFERENCE_HEIGHT,(anchor_y-py)*factor*110/REFERENCE_HEIGHT]
             paws.append([point,point])
@@ -318,6 +367,10 @@ def bake(clip, character, indices):
 
 
 def main(only=None,materials_only=False):
+    for reference in IDENTITY.get('master_sources',[]):
+        if sha(ROOT/reference['path'])!=reference['sha256']:raise ValueError('Master character design changed')
+    for reference in IDENTITY.get('references',[]):
+        if sha(DIRECTORY/reference['path'])!=reference['sha256']:raise ValueError('Canonical identity reference changed')
     selected={clip:resource for clip,resource in RESOURCE.items() if not only or clip in only}
     old_entries={entry['clip']:entry for entry in json.loads((DIRECTORY/'manifest.json').read_text(encoding='utf-8'))['clips']}
     entries = [entry for entry in json.loads((DIRECTORY/'manifest.json').read_text(encoding='utf-8'))['clips']
@@ -338,14 +391,20 @@ def main(only=None,materials_only=False):
         exposure = durations(clip, indices)
         steps = [{'frame': index, 'ms': milliseconds} for index, milliseconds in enumerate(exposure)]
         events = []
-        if clip == 'jump':
-            intro = indices.index(60)
-            landing = indices.index(81)
+        if clip == 'walk' and clip in IDENTITY['clips']:
+            sequence={'intro':steps[20:48],'loop':steps[:20],'outro':steps[48:],
+                'finish':'hold','duration_ms':0,'events':[]}
+        elif clip == 'run' and clip in IDENTITY['clips']:
+            sequence={'intro':[],'loop':steps,'outro':[],'finish':'hold','duration_ms':0,'events':[]}
+        elif clip == 'jump':
+            intro = 18 if clip in IDENTITY['clips'] else indices.index(60)
+            landing = 39 if clip in IDENTITY['clips'] else indices.index(81)
             sequence = {'intro': steps[:intro], 'loop': steps[intro:landing], 'outro': steps[landing:],
                 'finish': 'complete', 'duration_ms': 0, 'events': []}
         else:
             if clip == 'punch':
-                events = [{'step': indices.index(index), 'offset_ms': 0, 'type': 'contact'} for index in (40, 102)]
+                contacts=IDENTITY['clips'][clip]['contact_steps'] if clip in IDENTITY['clips'] else [indices.index(index) for index in (40,102)]
+                events = [{'step':index,'offset_ms':0,'type':'contact'} for index in contacts]
             if clip == 'fly':
                 events = [{'step':indices.index(index),'offset_ms':0,'type':'contact'} for index in (96,112,124,136)]
             sequence = {'intro': steps, 'loop': [], 'outro': [], 'finish': 'complete', 'duration_ms': 0, 'events': events}
@@ -358,7 +417,9 @@ def main(only=None,materials_only=False):
         evidence['cream-' + clip] = registration
         entries.append({'clip': clip, 'character': 0, 'source': cream.name, 'columns': columns, 'rows': rows,
             'reference_height': REFERENCE_HEIGHT, 'frames': records, 'frame_count': len(records),
-            'sha256': sha(cream), 'sequence': sequence})
+            'sha256': sha(cream), 'sequence': sequence,
+            **({'stride_pixels':40 if clip=='walk' else 82,'standing_frame':0,
+                'movement_delay_ms':1176 if clip=='walk' else 0} if clip in ('walk','run') else {})})
         if materials_only:
             tuxedo=DIRECTORY/f'tuxedo-{clip}.png';registration=evidence['tuxedo-'+clip]
         else:
@@ -420,7 +481,7 @@ def main(only=None,materials_only=False):
     write_json(iris_path, iris)
     write_json(DIRECTORY / 'registration.json', evidence)
     header = ['// Generated by tools/pack_video_actions.py from annotated source-video paws.',
-        '#pragma once', '#include "cat_deformation.hpp"', '#include <array>',
+        '#pragma once', '#include "cat_deformation.hpp"', '#include "cat_sprite_sequence.hpp"', '#include <array>',
         'namespace cat::video_actions {', 'using Paws = std::array<cat::deform::Point,2>;']
     for action in ('reach','ball'):
         for character in ('cream', 'tuxedo'):
@@ -434,6 +495,13 @@ def main(only=None,materials_only=False):
             '    return points[std::min<unsigned>(frame,points.size()-1)];', '}'])
     header.append('}')
     header.pop()
+    for action in ('walk','run','eat','turn'):
+        for character in ('cream','tuxedo'):
+            indices=evidence[character+'-'+action]['selected_frame_indices']
+            header.append(f'inline constexpr std::array<unsigned,{len(indices)}> k{character.title()}{action.title()}Source{{{{'+','.join(map(str,indices))+'}};')
+        header.extend([f'inline unsigned {action.title()}SourceFrame(unsigned character,unsigned frame) {{',
+            f'    const auto& frames=character==8?kTuxedo{action.title()}Source:kCream{action.title()}Source;',
+            '    return frames[std::min<unsigned>(frame,frames.size()-1)];','}'])
     for character in ('cream','tuxedo'):
         points=evidence[character+'-toy']['prop_points_logical']
         header.append(f'inline constexpr std::array<cat::deform::Point,{len(points)}> k{character.title()}ToyProp{{{{')

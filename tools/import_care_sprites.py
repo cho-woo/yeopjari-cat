@@ -51,7 +51,7 @@ LAYOUT={name:(index,enum,columns,rows) for index,(name,enum,columns,rows) in enu
 LAYOUT.update({'walk':(9,'Walk',4,2),'run':(10,'Run',4,2)})
 LAYOUT.update({'knead':(11,'Knead',8,1),'reach':(12,'Reach',8,1)})
 LAYOUT.update({name:(13+index,enum,8,1) for index,(name,enum) in enumerate(
-    [('ball','BallPlay'),('toy','ToyPlay'),('brake','Brake'),('slide','Slide'),('stumble','Stumble'),('climb','Climb'),('fly','FlyHunt')])})
+    [('ball','BallPlay'),('toy','ToyPlay'),('brake','Brake'),('slide','Slide'),('stumble','Stumble'),('climb','Climb'),('fly','FlyHunt'),('turn','RunningTurn')])})
 MAX_FRAMES=256
 MAX_STEPS=512
 MAX_CUES=64
@@ -441,10 +441,11 @@ def video_action_entries(root,originals):
             'Video action manifest drift')
     replacements=load_entries(manifest)
     sources={entry['clip']:entry['source'] for entry in json.loads(manifest.read_text(encoding='utf-8'))['clips']}
-    require({entry['clip'] for entry in replacements}=={'jump','groom','punch','knead','reach','ball','toy','brake','slide','stumble','climb','fish','fly'} and
+    require({entry['clip'] for entry in replacements}=={'jump','groom','punch','knead','reach','ball','toy','brake','slide','stumble','climb','fish','fly','turn','walk','run','eat'} and
             all(entry['character']==0 for entry in replacements), 'Incomplete video action family')
     for entry in replacements:
         entry['asset_path']=(Path('assets/video-actions')/sources[entry['clip']]).as_posix()
+        if entry['clip'] in ('walk','run','eat'):entry['nominal_fps']=24
     replaced={(entry['clip'],entry['character']) for entry in replacements}
     result=[entry for entry in originals if (entry['clip'],entry['character']) not in replaced]+replacements
     result.sort(key=lambda entry:(entry['character'],LAYOUT[entry['clip']][0]))

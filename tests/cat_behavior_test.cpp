@@ -303,12 +303,12 @@ void ContinuationsAreObservableWithoutChangingTheStory() {
         ctx.ticks+=observed.durationMs;
     }
     CHECK(protectedFollowups>100);
-    CHECK(Brain::NeutralRestDuration(0)==18000);
-    CHECK(Brain::NeutralRestDuration(std::numeric_limits<std::uint32_t>::max())==45000);
+    CHECK(Brain::NeutralRestDuration(0)==45000);
+    CHECK(Brain::NeutralRestDuration(std::numeric_limits<std::uint32_t>::max())==100000);
     std::uint64_t previous=0;
     for(std::uint64_t entropy=0;entropy<=std::numeric_limits<std::uint32_t>::max();entropy+=1000003) {
         const auto duration=Brain::NeutralRestDuration(static_cast<std::uint32_t>(entropy));
-        CHECK(duration>=18000&&duration<=45000&&duration>=previous);previous=duration;
+        CHECK(duration>=45000&&duration<=100000&&duration>=previous);previous=duration;
     }
 }
 }

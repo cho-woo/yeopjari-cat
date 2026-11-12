@@ -143,7 +143,7 @@ int Run() {
     unsigned attempts = 0, paws = 0, rests = 0;
     ULONGLONG restAt = 0;
     bool varied = false;
-    for (unsigned frame = 0; frame < 1400; ++frame) {
+    for (unsigned frame = 0; frame < 4000; ++frame) {
         const bool credited = host.Frame(fixedX,fixedHeight);
         const auto action = cursorInteraction.session.Action();
         if (credited && UpdateCursorContact(host.now,g.physics.CurrentPose())) return 243;
@@ -152,7 +152,7 @@ int Run() {
             if (action == Action::Paw || action == Action::Tiptoe || action == Action::BothPaws) {
                 ++attempts; paws += action == Action::Paw;
                 varied = varied || action != Action::Paw;
-                if (restAt && host.now-restAt < 900) return 244;
+                if (restAt && host.now-restAt < 5000) return 244;
             }
             previous = action;
         }

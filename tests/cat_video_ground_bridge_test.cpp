@@ -140,6 +140,13 @@ void JumpUsesMatchingRealTurnEndpoints() {
     CHECK(b.JumpReturning()&&b.Sample(d).frame==29);
     b.Update(6416,false,true,0);CHECK(b.Stopping()&&b.Sample(d).frame==20);
     b.Update(6417,false,true,0);CHECK(b.Neutral()&&!b.JumpReturning());
+    auto canonical=d;canonical.sourcePath="assets/video-actions/cream-walk.png";
+    const auto current=cat::video_ground_bridge::JumpTurns(canonical);
+    CHECK(current.valid&&current.entryMs==1167&&current.sideEntryMs==0);
+    b.Reset();b.Configure(1167,542,1167);b.BeginConnectedJumpExit(7000,canonical);
+    CHECK(b.JumpReturning()&&b.Sample(canonical).frame==48);
+    b.Update(7541,false,true,0);CHECK(b.JumpReturning()&&b.Sample(canonical).frame==60);
+    b.Update(7542,false,true,0);CHECK(b.Neutral()&&!b.JumpReturning());
     auto legacy=d;legacy.nominalFramesPerSecond=0;CHECK(!cat::video_ground_bridge::JumpTurns(legacy).valid);
 }
 }

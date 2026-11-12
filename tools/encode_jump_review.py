@@ -20,6 +20,8 @@ def encode(source: Path, output: Path) -> None:
     report = json.loads((source / "report.json").read_text(encoding="utf-8"))
     if report.get("test") != "jump-continuity-native" or report.get("status") != "passed":
         raise ValueError("A passed real Windows jump fixture report is required")
+    if report.get("comparison_baseline") is False:
+        raise ValueError("This authored-video review has no historical comparison baseline; do not label its current frames as old artwork.")
     trace = json.loads((source / "trace.json").read_text(encoding="utf-8"))
     if trace.get("fps") != 60 or report.get("frames_per_case") != 420:
         raise ValueError("Unexpected native clock/frame contract")

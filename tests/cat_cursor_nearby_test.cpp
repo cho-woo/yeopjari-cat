@@ -156,7 +156,7 @@ void StationaryHeightSelectsReachAtEveryScaleAndRefreshRate() {
 void StationaryLowPointerRepeatsWithQuietRestsAndRealContactLatches() {
     for (int fps : {30, 60, 120, 144}) {
         Host host; host.cursorWorldHeight = 40;
-        host.Run(18, fps);
+        host.Run(40, fps);
         unsigned reaches = 0, rests = 0, paws = 0;
         bool varied = false;
         for (std::size_t index = 0; index < host.changes.size(); ++index) {
@@ -168,11 +168,11 @@ void StationaryLowPointerRepeatsWithQuietRestsAndRealContactLatches() {
             CHECK(index && Reach(host.changes[index-1].action));
             if (index+1 < host.changes.size()) {
                 const auto rest = host.changes[index+1].at-change.at;
-                CHECK(rest >= 900 && rest <= 1500+static_cast<unsigned>(std::ceil(1000./fps)));
+                CHECK(rest >= 5000 && rest <= 9000+static_cast<unsigned>(std::ceil(1000./fps)));
             }
         }
         CHECK(reaches >= 4 && rests >= 3 && paws >= 2 && varied);
-        Host touching; touching.Run(10, fps);
+        Host touching; touching.Run(28, fps);
         CHECK(touching.contacts >= 4);
         CHECK(host.launches == 0);
         CHECK(std::abs(host.physics.CurrentPose().x-400) < .01);
@@ -192,7 +192,7 @@ void HighStationaryPointerHopsVerticallyAndWaitsForActualLandingRecovery() {
             CHECK(std::abs(physical.x-400) < .02);
             if (physical.landed) { ++landings; lastLanding = host.now; }
             if (host.launches != previousLaunches) {
-                if (previousLaunches) CHECK(lastLanding && host.now-lastLanding >= host.input.landingRecoveryMs+900);
+                if (previousLaunches) CHECK(lastLanding && host.now-lastLanding >= host.input.landingRecoveryMs+5000);
                 previousLaunches = host.launches;
             }
             if (host.session.InFlight()) CHECK(std::abs(host.session.TargetX()-400) < .01);

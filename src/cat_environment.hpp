@@ -276,7 +276,7 @@ private:
     }
     void NearbyRest(const CursorInput& input,bool landed=false) {
         contactAllowed_=false;launchAnswered_=launched_=false;
-        nearbyRestMs_=900+(nearbyAttempt_*173u)%601;
+        nearbyRestMs_=5000+(nearbyAttempt_*173u)%4001;
         if(landed)nearbyRestMs_+=std::min<std::uint64_t>(input.landingRecoveryMs,86400000);
         Change(CursorAction::Rest,input.nowMs);
     }

@@ -19,7 +19,7 @@ int NarrowArea(cat::Character character,NarrowResult& result) {
     SetMotion(Motion::Idle,0,host.now);g.autonomousResting=true;g.nextDecision=host.now;host.Frame(50);
     if(!g.randomZoomies.Active())return 639;
     result.chosenRun=g.randomZoomies.RemainingRunMs();const auto start=host.now;
-    while(g.randomZoomies.Active()&&host.now-start<result.chosenRun+60000) {
+    while(g.randomZoomies.Active()&&host.now-start<result.chosenRun+120000) {
         const auto before=g.physics.CurrentPose();const int priorDirection=g.direction;
         const auto bounds=MovementBoundsLogical();
         const bool edge=cat::motion::BrakeBeforeEdge(before.x,WalkingVelocity(before),
@@ -41,7 +41,7 @@ int Run() {
     std::ostringstream report;report.imbue(std::locale::classic());
     report<<"{\"schema\":1,\"test\":\"random-zoomies-native\",\"status\":\"passed\",\"version\":\""
         YEOPJARI_VERSION_STRING "\",\"host\":\"production dispatcher / GroundDrive / Box2D\","
-        "\"wait_min_ms\":60000,\"wait_max_ms\":300000,\"run_min_ms\":5000,\"run_max_ms\":15000,\"cases\":[";
+        "\"wait_min_ms\":120000,\"wait_max_ms\":420000,\"run_min_ms\":5000,\"run_max_ms\":15000,\"cases\":[";
     bool first=true;
     for(const auto character:{cat::Character::Cream,cat::Character::Tuxedo}) {
         Host host;host.Reset(character,false);g.workInterference=false;
@@ -49,9 +49,9 @@ int Run() {
         g.perch={};g.perch.nextTry=host.now+1000000;
         SetMotion(Motion::Sleep,400000,host.now);host.Rebase();
         host.Frame(50);const auto chosenWait=g.randomZoomies.WaitMs();
-        if(chosenWait<60000||chosenWait>300000)return 631;
+        if(chosenWait<120000||chosenWait>420000)return 631;
         const auto waitStart=host.now;
-        while(!g.randomZoomies.Due()&&host.now-waitStart<=300100)host.Frame(50);
+        while(!g.randomZoomies.Due()&&host.now-waitStart<=420100)host.Frame(50);
         if(!g.randomZoomies.Due()||g.randomZoomies.Active()||g.motion!=Motion::Sleep)return 632;
         for(unsigned i=0;i<40;++i)host.Frame(50);
         if(!g.randomZoomies.Due()||g.randomZoomies.Active())return 632;
@@ -62,7 +62,7 @@ int Run() {
         if(chosenRun<5000||chosenRun>15000)return 633;
         double distance=0,maxStep=0;int priorDirection=0;unsigned turns=0;
         std::uint64_t movingMs=0;
-        while(g.randomZoomies.Active()&&host.now-started<chosenRun+60000) {
+        while(g.randomZoomies.Active()&&host.now-started<chosenRun+120000) {
             const auto before=g.physics.CurrentPose();
             const auto budget=g.randomZoomies.RemainingRunMs();host.Frame(50);
             const auto after=g.physics.CurrentPose();const auto step=std::abs(after.x-before.x);
@@ -77,7 +77,7 @@ int Run() {
         }
         if(g.randomZoomies.Active()||movingMs!=chosenRun||turns<1||distance<300||
                 !g.autonomousResting||g.motion!=Motion::Idle||host.now-started<chosenRun||
-                g.randomZoomies.WaitMs()<60000||g.randomZoomies.WaitMs()>300000)return 635;
+                g.randomZoomies.WaitMs()<120000||g.randomZoomies.WaitMs()>420000)return 635;
         const auto elapsedWithConnections=host.now-started;
         const auto wait=g.randomZoomies.WaitMs();g.hidden=true;
         for(unsigned i=0;i<80;++i)AdvanceRandomZoomies(host.now+i*50,.05);

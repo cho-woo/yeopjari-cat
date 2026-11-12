@@ -378,7 +378,12 @@ void SpeciesLimitsAndBraking() {
     CHECK(m.Physical().velocityX>10);
     CHECK(m.Feed(c.nowUtc,c.ticks,false)==cat::nutrition::FeedResult::Accepted);
     CHECK(cat::animation::Travels(m.View(c.ticks).motion)); // A seated eating frame cannot slide during braking.
-    for(unsigned tick=0;tick<60 && m.View(c.ticks).motion!=cat::animation::Motion::Eat;++tick) {
+    const auto* walk=cat::sprite_assets::Find(cat::sprite_sequence::Clip::Walk,0,cat::sprite_assets::kCareSprites);
+    CHECK(walk);
+    const auto stopDeadline=c.ticks+1000+cat::sprite_sequence::Duration(walk->program,walk->program.outro);
+    // Finish braking and the complete side-to-front recovery before the
+    // self-contained meal movie takes ownership of the stationary cat.
+    for(;c.ticks<stopDeadline && m.View(c.ticks).motion!=cat::animation::Motion::Eat;) {
         Step(m,c,1);
         if(std::abs(m.Physical().velocityX)>cat::motion::kStoppedSpeed)
             CHECK(cat::animation::Walking(m.View(c.ticks).motion));
@@ -433,7 +438,8 @@ void NaturalTakeoffAndLandingUsePhysicalMotion() {
     bool wasGrounded=true,badSliding=false,badFacing=false;
     unsigned takeoffs=0,movingTakeoffs=0;std::uint64_t crouchStarted=0;
     double previousVelocity=0,flightVelocity=0;bool travelling=false;
-    for(unsigned frame=1;frame<24000;++frame) {
+    // Longer quiet intervals require a longer deterministic day sample.
+    for(unsigned frame=1;frame<144000;++frame) {
         c.ticks=frame*17;c.nowUtc=birthday+static_cast<std::int64_t>(c.ticks/1000);m.Tick(c);
         const auto view=m.View(c.ticks);
         const auto physical=m.Physical();
@@ -808,7 +814,9 @@ void CompanionJumpReturnOwnsTheCompletedRecoveryBoundary() {
     CHECK(jump&&walk);
     const auto profile=cat::video_ground_bridge::JumpTurns(*walk);CHECK(profile.valid);
     const auto recovery=cat::sprite_sequence::Duration(jump->program,jump->program.outro);
-    const auto turn=profile.entryMs;
+    const bool canonical=std::string_view(walk->sourcePath).find("assets/video-actions/")==0;
+    const auto turn=canonical?cat::sprite_sequence::Duration(walk->program,walk->program.outro):profile.entryMs;
+    const unsigned first=canonical?48:20,last=canonical?60:29;
     for(const auto character:{cat::Character::Cream,cat::Character::Tuxedo}) {
         State state=NewState(born);state.preferences.character=character;state.pet.position=.2;
         Model model;model.Bind(state);model.Reset(0,2400,700);
@@ -820,7 +828,7 @@ void CompanionJumpReturnOwnsTheCompletedRecoveryBoundary() {
             Step(model,c,1);const auto physical=model.Physical();const auto view=model.View(c.ticks);
             if(physical.landed)landed=c.ticks;
             if(landed && c.ticks-landed>=recovery && view.animation.spriteClip==Clip::Walk &&
-                    view.animation.spriteFrame>=20 && view.animation.spriteFrame<=29) {
+                    view.animation.spriteFrame>=first && view.animation.spriteFrame<=last) {
                 returning=c.ticks;break;
             }
         }
@@ -833,7 +841,7 @@ void CompanionJumpReturnOwnsTheCompletedRecoveryBoundary() {
             // The old waitingForStop recovery extension must not resurrect
             // Jump or reset this just-started real side-to-front turn.
             if(c.ticks-returning<turn)
-                CHECK(view.animation.spriteClip==Clip::Walk&&view.animation.spriteFrame>=20&&view.animation.spriteFrame<=29);
+                CHECK(view.animation.spriteClip==Clip::Walk&&view.animation.spriteFrame>=first&&view.animation.spriteFrame<=last);
             else CHECK(view.animation.spriteClip==Clip::None&&view.animation.frame==4);
             Step(model,c,1);
         }
