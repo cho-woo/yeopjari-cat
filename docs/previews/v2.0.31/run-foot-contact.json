@@ -1,0 +1,14 @@
+{
+  "cream": {
+    "backward_foot_samples": 1857,
+    "median_support_speed": 117.60558583106267,
+    "q25": 96.82135558583106,
+    "q75": 139.02410273331063
+  },
+  "tuxedo": {
+    "backward_foot_samples": 1459,
+    "median_support_speed": 119.31701826464578,
+    "q25": 82.28779057391009,
+    "q75": 149.13668681880108
+  }
+}

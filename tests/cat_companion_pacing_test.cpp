@@ -218,8 +218,11 @@ void SocialGesturesFinishBeforeFollowingTheNextPosition() {
         CHECK(model.TrySocial(kind,c));model.Tick(c);
         const auto gesture=model.View(c.ticks).motion;
         c.primary.x+=100; // The other cat shifts after the gesture has begun.
-        while(c.ticks<2050) {Step(model,c);CHECK(model.View(c.ticks).motion==gesture);}
-        while(c.ticks<2150)Step(model,c);
+        const auto* knead=cat::sprite_assets::Find(cat::sprite_sequence::Clip::Knead,0,cat::sprite_assets::kCareSprites);
+        const auto duration=kind==Interaction::FoodCompetition&&knead?
+            std::max<std::uint64_t>(2000,cat::sprite_sequence::ProgramDuration(knead->program)):2000;
+        while(c.ticks<100+duration-50) {Step(model,c);CHECK(model.View(c.ticks).motion==gesture);}
+        while(c.ticks<100+duration+50)Step(model,c);
         CHECK(cat::animation::Walking(model.View(c.ticks).motion));
     }
 }

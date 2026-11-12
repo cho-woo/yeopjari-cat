@@ -10,6 +10,7 @@ from __future__ import annotations
 import hashlib
 import argparse
 import json
+from io import BytesIO
 from pathlib import Path
 
 import cv2
@@ -51,6 +52,15 @@ BALL_KEYS = {
 
 def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def save_atlas(image, path):
+    """Choose the smaller lossless PNG encoding without changing any pixels."""
+    candidates=[]
+    for optimize in (False,True):
+        stream=BytesIO();image.save(stream,format='PNG',optimize=optimize)
+        candidates.append(stream.getvalue())
+    path.write_bytes(min(candidates,key=len))
 
 
 def write_json(path, value):
@@ -107,11 +117,21 @@ def foreground(rgb, palette=None, remove_ball=False, remove_wall=False, keep_fea
                     left-70<x+w and x<left+width+70 and top+height-90<y<top+height+40:
                 mask[labels==component]=1
     if remove_ball:
+        # Include the dark red rim. Removing just the bright hemisphere
+        # leaves a crescent under the paw when the physics ball rolls away.
         red_ball=(red>180)&(green<90)&(blue<95)&(red>green*2)
         count,labels,stats,_=cv2.connectedComponentsWithStats(red_ball.astype(np.uint8),8)
+        seeds=np.zeros(mask.shape,np.uint8)
         for component in range(1,count):
             if stats[component,cv2.CC_STAT_AREA]>350:
-                mask[cv2.dilate((labels==component).astype(np.uint8),np.ones((3,3),np.uint8))>0]=0
+                seeds[labels==component]=1
+        # Grow only the identified ball seed into its dark rim. A broad red
+        # threshold by itself also selects ginger stripes and pink ear fur.
+        dark_red=(red>35)&(red>green*1.5+12)&(red>blue*1.5+12)
+        _,regions=cv2.connectedComponents(dark_red.astype(np.uint8),8)
+        ids=np.unique(regions[seeds>0]);ids=ids[ids!=0]
+        removal=np.isin(regions,ids).astype(np.uint8)
+        mask[cv2.dilate(removal,np.ones((3,3),np.uint8))>0]=0
         count,labels,stats,_=cv2.connectedComponentsWithStats(mask,8)
         if count>1:mask=(labels==1+np.argmax(stats[1:,cv2.CC_STAT_AREA])).astype(np.uint8)
     # Preserve dark eyes, mouth and fur enclosed by the character outline.
@@ -174,7 +194,7 @@ def eye_material(source, rect, clip):
     return eyes, mask
 
 
-def snow_material(source, eyes):
+def snow_material(source, eyes, props=None):
     rgba = np.asarray(source)
     rgb = rgba[:, :, :3].astype(np.float32)
     red, green, blue = rgb.transpose(2, 0, 1)
@@ -196,6 +216,7 @@ def snow_material(source, eyes):
         hsv[:, :, 2][selected] = np.minimum(240, hsv[:, :, 2][selected].astype(float) * 1.12).astype(np.uint8)
     painted = np.asarray(Image.fromarray(hsv, 'HSV').convert('RGB'))
     result[eyes > 0] = painted[eyes > 0]
+    if props is not None:result[props]=rgb[props]
     output = np.clip(np.dstack((result, rgba[:, :, 3])), 0, 255).astype(np.uint8)
     output[rgba[:, :, 3] == 0, :3] = 0
     return Image.fromarray(output, 'RGBA'), {'alpha_exact': np.array_equal(output[:, :, 3], rgba[:, :, 3]),
@@ -285,9 +306,13 @@ def bake(clip, character, indices):
         local_palette=background_palette(original) if clip=='stumble' and character=='cream' else palette
         image = foreground(original,local_palette,clip=='ball',clip=='climb',clip in ('toy','fish','eat'),clip=='fly')
         anchor_x, anchor_y = center, float(image.getbbox()[3])
+        if settings.get('fixed_ground_root'):
+            # Gallop suspension is part of the original pose. Registering
+            # every airborne toe to the floor would erase the small flight.
+            anchor_y=max(anchor_y,settings['fixed_ground_root'][character])
         if clip in ('ball','brake','slide','stumble','climb'):
             anchor_x,_,_=head_root(image)
-        if clip=='walk' and settings.get('fixed_horizontal_root'):
+        if settings.get('fixed_horizontal_root'):
             anchor_x=settings['fixed_horizontal_root'][character]
         elif clip in ('walk','run'):
             alpha=np.asarray(image.getchannel('A'));x0,y0,x1,y1=image.getbbox()
@@ -370,16 +395,19 @@ def bake(clip, character, indices):
         for i,visible in enumerate(prop_visible):
             if not visible:props[i]=[float(np.interp(i,known,[props[j][axis] for j in known])) for axis in (0,1)]
     output = DIRECTORY / f'{character}-{clip}.png'
-    atlas.save(output)
+    save_atlas(atlas,output)
     return output, records, columns, rows, {'source': path.relative_to(DIRECTORY).as_posix(),
         'sha256': sha(path), 'source_fps': fps, 'source_frame_count': len(frames),
         'selected_frame_indices': indices, 'scale': factor, 'neutral_root': [center, bottom],
-        **({'selected_source_files':selected_files,'source_files':source_records,
+        'selected_source_files':selected_files,'source_files':source_records,
+        'source_roots':source_roots,'ground_registration':
+            'source_floor_with_penetration_guard' if settings.get('fixed_ground_root') else 'painted_sole',
+        **({
             'fixed_horizontal_root':settings['fixed_horizontal_root'][character],
-            'source_roots':source_roots,'ground_registration':'painted_sole'} if settings.get('source_files') else {}),
+            } if settings.get('fixed_horizontal_root') else {}),
         'reference_height': REFERENCE_HEIGHT, 'paw_points_logical': paws,'prop_points_logical':props,'prop_visible':prop_visible,
         **({'source_contact_frames':[96,112,124,136] if character=='cream' else [104,116,128,140],
-            'edited_source_ranges':[[0,143],[170,191]],'attack_exposure_ms':30} if clip=='fly' else {})}
+            'edited_source_ranges':[[0,191]],'attack_exposure_ms':'original_24_fps'} if clip=='fly' else {})}
 
 
 def main(only=None,materials_only=False):
@@ -470,7 +498,27 @@ def main(only=None,materials_only=False):
                 x, y, width, height = record['rect']
                 eyes, local_mask = eye_material(source, record['rect'], clip)
                 local = source.crop((x, y, x + width, y + height))
-                painted, checks = snow_material(local, local_mask)
+                # Fur material must not recolor the feather, food or plate.
+                # Registered prop regions stay below the muzzle and outside
+                # the planted front-paw band of the canonical source.
+                yy,xx=np.mgrid[:height,:width];ax,ay=record['anchor']
+                props=None
+                if clip=='toy':
+                    point=evidence['cream-'+clip]['prop_points_logical'][index]
+                    px=ax+point[0]*REFERENCE_HEIGHT/110;py=ay-point[1]*REFERENCE_HEIGHT/110
+                    rgb=np.asarray(local)[:,:,:3].astype(float)
+                    pigment=(rgb.max(axis=2)<235)&((rgb.max(axis=2)-rgb.min(axis=2)>22)|(rgb.max(axis=2)<65))
+                    props=(((xx-px)/27)**2+((yy-py)/7)**2<1)&pigment&(xx>ax-5)&(yy>ay-11)
+                elif clip=='fish':
+                    rgb=np.asarray(local)[:,:,:3].astype(float)
+                    props=(xx>ax+20)&(yy>ay-16)&(rgb[:,:,2]>rgb[:,:,1]*.95)
+                elif clip=='eat':
+                    rgb=np.asarray(local)[:,:,:3].astype(float)
+                    metal=(rgb.max(axis=2)-rgb.min(axis=2)<18)&(rgb.max(axis=2)>65)&(rgb.max(axis=2)<220)
+                    region=(xx>ax-43)&(xx<ax-2)&(yy>ay-14)
+                    food=(xx>ax-35)&(xx<ax-15)&(yy<ay-4)&(rgb[:,:,0]>rgb[:,:,1]*1.35)&(rgb[:,:,0]>rgb[:,:,2]*1.35)
+                    props=region&(metal|food) if np.count_nonzero(region&metal)>30 else None
+                painted, checks = snow_material(local, local_mask, props)
                 if not checks['alpha_exact'] or not checks['skin_rgb_exact']:
                     raise ValueError(f'OddEye {clip} frame {index} changed geometry or skin: {checks}')
                 snow.paste(painted, (x, y))
@@ -478,7 +526,7 @@ def main(only=None,materials_only=False):
                 annotations.append({'frame': index, 'eyes': eyes})
             snow_path = ROOT / 'assets/styled-sprites' / f'c10-r{resource}.png'
             mask_path = snow_path.parent / 'odd-eye-masks' / snow_path.name
-            snow.save(snow_path)
+            save_atlas(snow,snow_path)
             mask.save(mask_path)
             styles['atlases'].append({'character': 10, 'base_resource_id': resource,
                 'resource_id': 900 + resource, 'source': snow_path.name})

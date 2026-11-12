@@ -16,7 +16,7 @@ int Run(std::string& context) {
         const auto saved=host.Saved();host.Command(kFlyHuntCommand);
         const auto* sprite=LoadedCareSprite(Clip::FlyHunt,character);
         if(!sprite||!g.flyActive||!g.manualMotionActive||g.motion!=Motion::Watch||
-                sprite->layout->frameCount!=166||sprite->layout->program.cueCount!=4)return 872;
+                sprite->layout->frameCount!=192||sprite->layout->program.cueCount!=4)return 872;
         const auto duration=cat::sprite_sequence::ProgramDuration(sprite->layout->program);
         const auto origin=g.physics.CurrentPose().x;
         std::vector<bool> visited(sprite->layout->frameCount,false);unsigned distinct=0,sample=0;

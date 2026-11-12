@@ -17,12 +17,13 @@ int Run(std::string& context) {
         g.cursorPlay=g.workInterference=false;
         g.work.right=g.work.left+static_cast<LONG>(900*g.dpiScale);ResetMovement();
         for(unsigned i=0;i<12;++i)g.physics.Update(1./60);
-        host.Command(kManualRunCommand);g.nextDecision=host.now+14000;
+        host.Command(kManualRunCommand);g.nextDecision=host.now+32000;
         const auto saved=host.Saved();const auto* sprite=LoadedCareSprite(Clip::RunningTurn,character);
-        if(!sprite||sprite->layout->frameCount!=80||cat::sprite_sequence::ProgramDuration(sprite->layout->program)!=1744)return 882;
-        std::vector<bool> seen(80,false);unsigned distinct=0,turns=0,sample=0;bool previousTurning=false;
+        if(!sprite||sprite->layout->frameCount!=110||cat::sprite_sequence::ProgramDuration(sprite->layout->program)!=
+                cat::running_turn::Turn::BrakeMs+cat::running_turn::Turn::PivotMs+cat::running_turn::Turn::LaunchMs)return 882;
+        std::vector<bool> seen(sprite->layout->frameCount,false);unsigned distinct=0,turns=0,sample=0;bool previousTurning=false;
         double maxStep=0;const auto start=host.now;bool rested=false;
-        for(unsigned tick=0;tick<1600;++tick) {
+        for(unsigned tick=0;tick<3200;++tick) {
             const auto before=g.physics.RenderPose();
             if(tick)host.Frame(start+static_cast<ULONGLONG>(tick)*1000/60-host.now);
             const auto physical=g.physics.RenderPose();const auto pose=PrimaryDisplayedPose(host.now,physical);
@@ -64,14 +65,14 @@ int Run(std::string& context) {
                 if(painted<500)return 886;
                 if(first) {wchar_t path[180]{};swprintf(path,180,L"render-self-test/identity-turn/c%u-turn-%03u.png",
                     static_cast<unsigned>(character),index);if(!SaveNativeWalkingReview(*actor.image,path))return 887;}
-                if(sample<8&&index>=79*sample/7){Graphics graphics(board.image.get());graphics.DrawImage(actor.image.get(),static_cast<int>(sample*340),static_cast<int>(row*260));++sample;}
+                if(sample<8&&index>=(sprite->layout->frameCount-1)*sample/7){Graphics graphics(board.image.get());graphics.DrawImage(actor.image.get(),static_cast<int>(sample*340),static_cast<int>(row*260));++sample;}
             }
             if(!g.manualMotionActive&&!turning&&g.stopClip==Clip::None&&!g.waitingForStop&&
-                    g.groundArtBridge.Neutral()&&host.now-start>14000){rested=true;break;}
+                    g.groundArtBridge.Neutral()&&host.now-start>32000){rested=true;break;}
         }
         context="turn character="+std::to_string(static_cast<unsigned>(character))+" turns="+std::to_string(turns)+
             " frames="+std::to_string(distinct)+" rested="+std::to_string(rested);
-        if(!rested||turns<2||distinct!=80||sample!=8||host.Saved()!=saved)return 888;
+        if(!rested||turns<2||distinct!=sprite->layout->frameCount||sample!=8||host.Saved()!=saved)return 888;
         const auto restSerial=g.motionSerial,restDeadline=g.nextDecision;
         for(unsigned i=0;i<1200;++i)host.Frame(16);
         if(g.motionSerial!=restSerial||g.nextDecision!=restDeadline||host.Saved()!=saved)return 889;

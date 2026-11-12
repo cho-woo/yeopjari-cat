@@ -2,7 +2,7 @@
   "schema": 1,
   "created_date": "2026-11-11",
   "provider": "Dropshot",
-  "total_credits": 9840,
+  "total_credits": 10000,
   "jobs": [
     {
       "character": "cream",
@@ -1540,6 +1540,46 @@
         "duration": 4,
         "resolution": "768p",
         "aspect_ratio": "1:1"
+      }
+    },
+    {
+      "character": "cream",
+      "action": "run-cycle",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_1f65530558714df89666aeeb27ddf569",
+      "credit_cost": 80,
+      "source_file": "sources/run-v31/cream-cycle.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_1f65530558714df89666aeeb27ddf569/output/output_0.mp4",
+      "accepted": true,
+      "identity_policy": "identity-v29.json",
+      "options": {
+        "prompt": "A seamless FOUR SECOND continuous running-in-place loop of exactly the reference cream kitten, facing RIGHT throughout. The first and last images are identical phases of its running gait, never a seated pause. Start running immediately, stay running until the final frame. Four paws alternate in a real feline bounding gallop: hind legs gather under hips, hind-paw push, spine extends, front paws reach, front-paw landing, brief suspension, gather again. Repeat several complete smooth strides. Paw soles at the same floor line; torso remains centered at exactly the reference location, with natural small vertical spinal flex and head stabilization. LOCK the reference character's face, head size, ear shapes, muzzle, eye color, coat markings, short fluffy body and tail; no changes in design or age. Preserve the original pixel scale and camera framing from the reference. Static orthographic camera. Flat pure chroma green background. No props, no text, no shadows, no camera movement, no zoom, no cuts. No standing still, sitting, walking, turning around, entry or exit sequence. Make the last stride smoothly continue into the first stride.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f5a17e175ec54a5a9cd9d6a1cd69979f/cream-side-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f5a17e175ec54a5a9cd9d6a1cd69979f/cream-side-identity-v29.png",
+        "duration": 4,
+        "resolution": "768p",
+        "aspect_ratio": "1:1",
+        "generation_mode": "frame"
+      }
+    },
+    {
+      "character": "tuxedo",
+      "action": "run-cycle",
+      "model": "minimax/h3-lite",
+      "job_id": "mcp_2ff4ef09c6b648389b5e15e9cf344edf",
+      "credit_cost": 80,
+      "source_file": "sources/run-v31/tuxedo-cycle.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_2ff4ef09c6b648389b5e15e9cf344edf/output/output_0.mp4",
+      "accepted": true,
+      "identity_policy": "identity-v29.json",
+      "options": {
+        "prompt": "A seamless FOUR SECOND continuous running-in-place loop of exactly the reference tuxedo kitten, facing RIGHT throughout. The first and last images are identical phases of its running gait, never a seated pause. Start running immediately, stay running until the final frame. Four paws alternate in a real feline bounding gallop: hind legs gather under hips, hind-paw push, spine extends, front paws reach, front-paw landing, brief suspension, gather again. Repeat several complete smooth strides. Paw soles at the same floor line; torso remains centered at exactly the reference location, with natural small vertical spinal flex and head stabilization. LOCK the reference character's face, head size, ear shapes, muzzle, eye color, coat markings, short fluffy body and tail; no changes in design or age. Preserve the original pixel scale and camera framing from the reference. Static orthographic camera. Flat pure chroma green background. No props, no text, no shadows, no camera movement, no zoom, no cuts. No standing still, sitting, walking, turning around, entry or exit sequence. Make the last stride smoothly continue into the first stride.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/de550c28744345e49f7eaa5169c60231/tuxedo-side-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/de550c28744345e49f7eaa5169c60231/tuxedo-side-identity-v29.png",
+        "duration": 4,
+        "resolution": "768p",
+        "aspect_ratio": "1:1",
+        "generation_mode": "frame"
       }
     }
   ]

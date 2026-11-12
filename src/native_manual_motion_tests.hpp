@@ -118,6 +118,12 @@ int Run(std::string& proof) {
             const auto saved = host.Saved();
             const auto start = g.physics.CurrentPose().x;
             host.Command(action ? kManualRunCommand : kManualWalkCommand);
+            // Source contact calibration determines speed. Measure progress
+            // against the requested moving time, excluding its planted entry.
+            const auto entryMs=cat::sprite_sequence::Duration(walk->layout->program,walk->layout->program.intro);
+            const auto commandMs=g.nextDecision-host.now;
+            const double minimumTravel=(action?expectedRunSpeed:expectedWalkSpeed)*
+                (commandMs>entryMs?commandMs-entryMs:0)/1000.*.70;
             if (!g.manualMotionActive || !g.pet.roamingPaused ||
                     g.motion != (action ? Motion::Zoomies : Motion::Walk)) return 522;
             unsigned frames = 0;
@@ -131,12 +137,20 @@ int Run(std::string& proof) {
             distances[action] = g.physics.CurrentPose().x - start;
             if (g.manualMotionActive || g.motion != Motion::Idle || !g.autonomousResting ||
                     host.Saved() != saved || !g.pet.roamingPaused ||
-                    distances[action] < (action ? 180 : 80) ||
+                    distances[action] < minimumTravel ||
                     peaks[action]<(action?expectedRunSpeed:expectedWalkSpeed)*1.03 ||
-                    peaks[action]>(action?expectedRunSpeed:expectedWalkSpeed)*1.28) return 524;
+                    peaks[action]>(action?expectedRunSpeed:expectedWalkSpeed)*1.28) {
+                WriteBytes(L"render-self-test/manual-motion-failure.txt","character="+std::to_string(static_cast<unsigned>(character))+
+                    " action="+std::to_string(action)+" active="+std::to_string(g.manualMotionActive)+
+                    " motion="+std::to_string(static_cast<unsigned>(g.motion))+" frames="+std::to_string(frames)+
+                    " distance="+std::to_string(distances[action])+" peak="+std::to_string(peaks[action])+
+                    " expected="+std::to_string(action?expectedRunSpeed:expectedWalkSpeed)+
+                    " save="+std::to_string(host.Saved()==saved));
+                return 524;
+            }
             g.workInterference = false;
             // A source-backed skid or tumble owns up to2600ms of recovery.
-            for (unsigned frame = 0; frame < 230; ++frame) host.Frame();
+            for (unsigned frame = 0; frame < 460; ++frame) host.Frame();
             if (std::abs(WalkingVelocity(g.physics.CurrentPose())) > .5 || host.Saved() != saved) return 525;
         }
         // A moving request preserves the actual velocity from this same

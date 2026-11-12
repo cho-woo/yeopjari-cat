@@ -31,7 +31,9 @@ inline BallChase ChaseBall(double catX,double catVelocity,const BallPose& ball,d
     }
     result.target=ClampCenter(target,low,high);
     const double separation=result.direction*delta;
-    const bool close=separation>=std::max(4.,standOff-12)&&separation<=standOff+5;
+    // Arrival must use the source paw's stand-off, not an entire ball-radius
+    // band that lets the body stop with the ball underneath the planted paw.
+    const bool close=separation>=std::max(4.,standOff-3)&&separation<=standOff+3;
     result.arrived=close&&std::abs(catVelocity)<=2&&std::abs(ball.velocity)<=18&&ball.lift<=8;
     if(result.arrived || (close&&(result.target-catX)*result.direction<0))return result;
     result.velocity=ApproachVelocity(result.target-catX,maxSpeed,300);
@@ -39,11 +41,12 @@ inline BallChase ChaseBall(double catX,double catVelocity,const BallPose& ball,d
 }
 
 inline bool BallPawContactAt(std::uint64_t elapsed,bool& consumed,double pawX,double pawHeight,
-                             const BallPose& ball,double growth,bool available) {
+                             const BallPose& ball,double growth,bool available,
+                             std::uint64_t contactStart=kPawContactMs,std::uint64_t contactEnd=kPawContactEndMs) {
     if(consumed||!available||!std::isfinite(pawX)||!std::isfinite(pawHeight)||!std::isfinite(ball.x)||
             !std::isfinite(ball.lift)||!std::isfinite(growth)||growth<=0)return false;
-    if(elapsed>=kPawContactEndMs){consumed=true;return false;}
-    if(elapsed<kPawContactMs||ball.lift>24*growth)return false;
+    if(elapsed>=contactEnd){consumed=true;return false;}
+    if(elapsed<contactStart||ball.lift>24*growth)return false;
     const double distance=std::hypot(ball.x-pawX,ball.lift+PhysicsBall::Radius-pawHeight);
     if(distance>PhysicsBall::Radius+4*growth)return false;
     consumed=true;return true;

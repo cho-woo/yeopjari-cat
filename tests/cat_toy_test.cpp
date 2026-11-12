@@ -145,6 +145,13 @@ std::vector<cat::toy::Phase> FirstActivity(cat::toy::Kind kind) {
 
 void DistinctActivitiesAndInterruptions() {
     using namespace cat::toy;
+    for(const auto kind:{Kind::Ball,Kind::FishingRod,Kind::Cushion}) {
+        Session authored;authored.Start(kind);authored.Set(Phase::Interact);authored.authoredPhaseMs=6583;
+        for(unsigned tick=0;tick<390;++tick)CHECK(!authored.Advance(1./60,true,true));
+        CHECK(authored.phase==Phase::Interact&&authored.PhaseDuration()==6583);
+        for(unsigned tick=0;tick<6;++tick)authored.Advance(1./60,true,true);
+        CHECK(authored.phase!=Phase::Interact&&authored.authoredPhaseMs==0);
+    }
     CHECK((FirstActivity(Kind::Box)==std::vector<Phase>{Phase::Discover,Phase::Approach,Phase::Inspect,
         Phase::Enter,Phase::Interact,Phase::Sleep,Phase::Exit,Phase::Wait}));
     CHECK((FirstActivity(Kind::PaperBag)==std::vector<Phase>{Phase::Discover,Phase::Approach,Phase::Inspect,

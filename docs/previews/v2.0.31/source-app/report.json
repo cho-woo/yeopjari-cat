@@ -1,0 +1,315 @@
+{
+  "schema": 1,
+  "native_version": "2.0.31",
+  "comparison": "original RGB source at registered reference scale vs shipping GDI+ drawing",
+  "normal_motion_states": 32,
+  "coats": 3,
+  "clips": [
+    {
+      "clip": "groom",
+      "drawings": 158,
+      "program_ms": 6583,
+      "comparison": "groom-source-app.png",
+      "sources": [
+        {
+          "coat": "cream",
+          "path": "sources/cream-wipe.mp4",
+          "sha256": "e3a24ad5660b2a4be497db209f1f2e0779580c2fc1f2fd3b3397c78456662f41"
+        },
+        {
+          "coat": "tuxedo",
+          "path": "sources/tuxedo-wipe.mp4",
+          "sha256": "fd353f9df2093be784f5c7cc02df5e78c6d3c063ec6ac3e5fbe2d8bcfea2ae5f"
+        }
+      ]
+    },
+    {
+      "clip": "fish",
+      "drawings": 158,
+      "program_ms": 6583,
+      "comparison": "fish-source-app.png",
+      "sources": [
+        {
+          "coat": "cream",
+          "path": "sources/cream-fish.mp4",
+          "sha256": "97c7cc5e96054a1f2cd264e1fa6509ad701dc63c32576fd2ae871fa90d3cc377"
+        },
+        {
+          "coat": "tuxedo",
+          "path": "sources/tuxedo-fish.mp4",
+          "sha256": "45e96e09356e33f2b86d6b24b60ac7a1b2ccefbd27f5b84b3e25e5f5cd71d053"
+        }
+      ]
+    },
+    {
+      "clip": "punch",
+      "drawings": 158,
+      "program_ms": 6583,
+      "comparison": "punch-source-app.png",
+      "sources": [
+        {
+          "coat": "cream",
+          "path": "sources/cream-punch.mp4",
+          "sha256": "d60ef45c67db3126fd4c1ec5fdbbcb8546237c29eb6b728987a97324ccc8fc09"
+        },
+        {
+          "coat": "tuxedo",
+          "path": "sources/tuxedo-punch.mp4",
+          "sha256": "74d02cc6e9692ecf0e48d2ca677b967c02bead2211c4bcda7cdd12a1756dbdc3"
+        }
+      ]
+    },
+    {
+      "clip": "eat",
+      "drawings": 158,
+      "program_ms": 6583,
+      "comparison": "eat-source-app.png",
+      "sources": [
+        {
+          "coat": "cream",
+          "path": "sources/cream-eat.mp4",
+          "sha256": "a9039b32635c4303ac9aa6b441d978eb58fbdff974b6ad73cc7d6f050764d572"
+        },
+        {
+          "coat": "tuxedo",
+          "path": "sources/tuxedo-eat.mp4",
+          "sha256": "e63bdb3be7223266581acdfebe82d5321fbffb8412308108095836613229e447"
+        }
+      ]
+    },
+    {
+      "clip": "jump",
+      "drawings": 62,
+      "program_ms": 1700,
+      "comparison": "jump-source-app.png",
+      "sources": [
+        {
+          "coat": "cream",
+          "path": "sources/cream-jump.mp4",
+          "sha256": "33d23f94123ff36d47e674a037a43a719ffaf31593ca8c837034584e935af34a"
+        },
+        {
+          "coat": "tuxedo",
+          "path": "sources/tuxedo-jump.mp4",
+          "sha256": "cf061a6743beeb0780ec3301077f606e0ddb737d9d193c862302f67bd1a09354"
+        }
+      ]
+    },
+    {
+      "clip": "walk",
+      "drawings": 245,
+      "program_ms": 8846,
+      "comparison": "walk-source-app.png",
+      "sources": [
+        {
+          "coat": "cream",
+          "path": "sources/walk-v30/cream-cycle.mp4",
+          "sha256": "9f52339a9a9ceefe5a6646c175e0c6eef1a313d35e39cc7dcbd8a61f51552bb7"
+        },
+        {
+          "coat": "tuxedo",
+          "path": "sources/walk-v30/tuxedo-cycle.mp4",
+          "sha256": "d7de4daea248c33757ae6be593f240b823ee438324260a3541398882da132dac"
+        }
+      ]
+    },
+    {
+      "clip": "run",
+      "drawings": 106,
+      "program_ms": 4417,
+      "comparison": "run-source-app.png",
+      "sources": [
+        {
+          "coat": "cream",
+          "path": "sources/run-v31/cream-cycle.mp4",
+          "sha256": "b243c20f2d00b88cec8f2e044d8e60bee69f806d3eb5f653eaea62a6e9b21a49"
+        },
+        {
+          "coat": "tuxedo",
+          "path": "sources/run-v31/tuxedo-cycle.mp4",
+          "sha256": "f47648611bd6b7a7255419138c3d4afd9f5dffd52487edaa4be720618adf2299"
+        }
+      ]
+    },
+    {
+      "clip": "knead",
+      "drawings": 158,
+      "program_ms": 6583,
+      "comparison": "knead-source-app.png",
+      "sources": [
+        {
+          "coat": "cream",
+          "path": "sources/cream-knead.mp4",
+          "sha256": "5a27ac3b903e2d5e048d95f6e77ad768f5de670761a6dd2e18445bdb5ec5b359"
+        },
+        {
+          "coat": "tuxedo",
+          "path": "sources/tuxedo-knead.mp4",
+          "sha256": "b861fe30fa44021687061779c2608cd7583a2748f41312877a61f79514d8930f"
+        }
+      ]
+    },
+    {
+      "clip": "reach",
+      "drawings": 158,
+      "program_ms": 6583,
+      "comparison": "reach-source-app.png",
+      "sources": [
+        {
+          "coat": "cream",
+          "path": "sources/cream-reach.mp4",
+          "sha256": "e0079e0b2373f34ea745ac5902c07a7873a19493c447ce583d47668c58152cf4"
+        },
+        {
+          "coat": "tuxedo",
+          "path": "sources/tuxedo-reach.mp4",
+          "sha256": "33ccf3950946f75346cc78856b9938d3ca45deb6008b3cd9ef221f051749e3ad"
+        }
+      ]
+    },
+    {
+      "clip": "ball",
+      "drawings": 158,
+      "program_ms": 6583,
+      "comparison": "ball-source-app.png",
+      "sources": [
+        {
+          "coat": "cream",
+          "path": "sources/cream-ball.mp4",
+          "sha256": "46ef9d5e13b5815d0e0ff9a90df8543a435585fa8a185eb499a7c7a21c6764e8"
+        },
+        {
+          "coat": "tuxedo",
+          "path": "sources/tuxedo-ball.mp4",
+          "sha256": "3a726a99b52b90c5b124552ff2da74e0aa7b4c48ca0fcb4111fa72f9e1246e2e"
+        }
+      ]
+    },
+    {
+      "clip": "toy",
+      "drawings": 158,
+      "program_ms": 6583,
+      "comparison": "toy-source-app.png",
+      "sources": [
+        {
+          "coat": "cream",
+          "path": "sources/cream-toy.mp4",
+          "sha256": "daa357c2867868e4c8bb20dba2bc9dbd46a9f2750cdb6760c4e524338129edd2"
+        },
+        {
+          "coat": "tuxedo",
+          "path": "sources/tuxedo-toy.mp4",
+          "sha256": "e172353f05dc774b53c573593a140cbca4a6bbee90d927a72f64df06e11c5458"
+        }
+      ]
+    },
+    {
+      "clip": "brake",
+      "drawings": 116,
+      "program_ms": 4833,
+      "comparison": "brake-source-app.png",
+      "sources": [
+        {
+          "coat": "cream",
+          "path": "sources/cream-brake.mp4",
+          "sha256": "832cc4bdafc44677724524ad144257c8e34ddea668f2a152b30a6e15ecabd743"
+        },
+        {
+          "coat": "tuxedo",
+          "path": "sources/tuxedo-brake.mp4",
+          "sha256": "84d44356610ee2b9cb714165f4c84c5966d8634111b30a523fe5889ed086f530"
+        }
+      ]
+    },
+    {
+      "clip": "slide",
+      "drawings": 116,
+      "program_ms": 4833,
+      "comparison": "slide-source-app.png",
+      "sources": [
+        {
+          "coat": "cream",
+          "path": "sources/cream-slide.mp4",
+          "sha256": "f523c03beef5c01b2e995d5453212e21990641149a8735d354ba7edb640fa2bb"
+        },
+        {
+          "coat": "tuxedo",
+          "path": "sources/tuxedo-slide.mp4",
+          "sha256": "703354fcca67da6d464503ab71edd79956248836ed1e9d87c1e2cc9cdccea5df"
+        }
+      ]
+    },
+    {
+      "clip": "stumble",
+      "drawings": 113,
+      "program_ms": 4708,
+      "comparison": "stumble-source-app.png",
+      "sources": [
+        {
+          "coat": "cream",
+          "path": "sources/cream-stumble.mp4",
+          "sha256": "ed6fca228dea7253c28ab6ab18be1e18f23e14d42eddadb0dd6a30cd89830f60"
+        },
+        {
+          "coat": "tuxedo",
+          "path": "sources/tuxedo-stumble.mp4",
+          "sha256": "46fe56d9828c40e04902f5217d1fe57c9e7905b6d9b59011366e7f730fe338fa"
+        }
+      ]
+    },
+    {
+      "clip": "climb",
+      "drawings": 158,
+      "program_ms": 6583,
+      "comparison": "climb-source-app.png",
+      "sources": [
+        {
+          "coat": "cream",
+          "path": "sources/cream-climb.mp4",
+          "sha256": "2bb58420d5201b847510517e26fbd9b84c19f1b506167691224fa6bba1c713d5"
+        },
+        {
+          "coat": "tuxedo",
+          "path": "sources/tuxedo-climb.mp4",
+          "sha256": "cdb1df67bf659076ef6b7905d0b13540f606850ab5c0eec7a6ae153e559a9cdd"
+        }
+      ]
+    },
+    {
+      "clip": "fly",
+      "drawings": 192,
+      "program_ms": 8000,
+      "comparison": "fly-source-app.png",
+      "sources": [
+        {
+          "coat": "cream",
+          "path": "sources/cream-fly.mp4",
+          "sha256": "44b718e79f7fe1e21d1a49387b2ef7041bb125dd54a33f175359a61c286448b7"
+        },
+        {
+          "coat": "tuxedo",
+          "path": "sources/tuxedo-fly.mp4",
+          "sha256": "0c1224ded954136750678e6fcb8762d75df1f9296dc8135cd1edab0800a156ee"
+        }
+      ]
+    },
+    {
+      "clip": "turn",
+      "drawings": 110,
+      "program_ms": 4583,
+      "comparison": "turn-source-app.png",
+      "sources": [
+        {
+          "coat": "cream",
+          "path": "sources/cream-turn.mp4",
+          "sha256": "98c106d16bd54c7ab7e1f5b70f644b941cf56f6532aa9f74582c1ecefaa22620"
+        },
+        {
+          "coat": "tuxedo",
+          "path": "sources/tuxedo-turn.mp4",
+          "sha256": "84c020b085966db2fd3153b10adb410f5199f97a33971603f917e2147e85205c"
+        }
+      ]
+    }
+  ]
+}

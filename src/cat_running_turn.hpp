@@ -8,7 +8,7 @@ namespace cat::running_turn {
 // A physical stop can extend only the brace; it never skips the pivot artwork.
 class Turn {
 public:
-    static constexpr std::uint64_t BrakeMs=400,PivotMs=704,LaunchMs=640;
+    static constexpr std::uint64_t BrakeMs=1000,PivotMs=1500,LaunchMs=2083;
     enum class Phase {None,Braking,Pivot,Launching};
     void Reset(){phase_=Phase::None;age_=0;from_=to_=1;released_=false;}
     bool Begin(int from,int to) {

@@ -41,7 +41,7 @@ cd "$DESKCAT_ROOT/src"
 # LLVM windres must receive the source encoding explicitly: the RC pragma alone
 # does not select UTF-8 in this toolchain's preprocessing/resource pipeline.
 "$DESKCAT_RC" --codepage=65001 resources.rc -O coff -o "$DESKCAT_ROOT/build/resources.o"
-"$DESKCAT_COMPILER" -std=c++17 -O2 -static -municode -mwindows -Wall -Wextra \
+"$DESKCAT_COMPILER" -std=c++17 -O2 -static -municode -mwindows -Wl,-s -Wall -Wextra \
   -I"$DESKCAT_BOX2D/include" main.cpp cat_physics.cpp "$DESKCAT_ROOT/build/resources.o" \
   "$DESKCAT_BOX2D_BUILD/libbox2d.a" \
   -lgdiplus -lgdi32 -luser32 -lshell32 -lole32 -lcomdlg32 -lshlwapi -lwinhttp -lbcrypt -lversion -lwinmm -ldwmapi \

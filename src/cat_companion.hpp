@@ -875,6 +875,7 @@ private:
             else if(m==cat::animation::Motion::Punch)requestedClip=Clip::Punch;
             else if(m==cat::animation::Motion::Eat)requestedClip=Clip::Eat;
             else if(m==cat::animation::Motion::Treat)requestedClip=Clip::Treat;
+            else if(m==cat::animation::Motion::Knead)requestedClip=Clip::Knead;
         }
         if(requestedClip!=Clip::None)duration=RegisteredDuration(requestedClip,duration);
         if(motion_==cat::animation::Motion::Sleep && m==cat::animation::Motion::Stretch) {

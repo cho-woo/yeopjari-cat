@@ -1,0 +1,27 @@
+{
+  "version": "2.0.31",
+  "python": {
+    "tests": 107,
+    "skips": 5,
+    "status": "passed"
+  },
+  "native_commands_passed": [
+    "--manual-motion-self-test",
+    "--render-source-audit",
+    "--render-ball-play",
+    "--render-lively-review",
+    "--render-fish-review",
+    "--render-fly-review",
+    "--render-identity-turn-review",
+    "--cursor-host-self-test",
+    "--render-groom-review"
+  ],
+  "reference_master_unchanged": true,
+  "comparison_families": 17,
+  "registered_sheets": 20,
+  "motion_states": 32,
+  "coats": 3,
+  "new_dropshot_jobs": 2,
+  "new_credits": 160,
+  "ball_contact_arrival_tolerance_px": 3
+}
