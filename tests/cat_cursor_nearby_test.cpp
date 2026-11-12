@@ -291,6 +291,31 @@ void OutsideHeightOrBoundsNeverStartsAReach() {
         CHECK(std::none_of(host.changes.begin(), host.changes.end(), [](const Change& c) { return Reach(c.action); }));
     }
 }
+
+void ActivePursuitKeepsTheWholeMonitorAndWaitsForPlantedTurns() {
+    cat::environment::CursorReaction planner;
+    cat::environment::CursorInput input;
+    input.enabled=input.available=input.canStart=input.canContinue=input.pursuePointer=true;
+    input.minX=60;input.maxX=1220;input.catX=200;input.cursorX=1100;input.cursorHeight=110;
+    cat::environment::CursorOutput output;
+    for(input.nowMs=1000;input.nowMs<2500;input.nowMs+=16)output=planner.Step(input);
+    CHECK(output.action==Action::Chase&&output.velocity>100);
+    CHECK(planner.Active()); // A900px gap no longer cancels explicit play.
+    input.catX=900;input.cursorX=1005;input.catVelocityX=140;input.canAttack=false;
+    for(unsigned frame=0;frame<100;++frame){input.nowMs+=16;output=planner.Step(input);}
+    CHECK(output.action==Action::Chase); // Finish the source pivot before an attack.
+    input.canAttack=true;input.nowMs+=16;output=planner.Step(input);
+    CHECK(output.action==Action::Pounce);
+    const auto target=planner.TargetX();
+    planner.ConfirmLaunch(true);input.grounded=false;input.cursorX=100;input.nowMs+=16;
+    output=planner.Step(input);
+    CHECK(planner.InFlight()&&planner.TargetX()==target&&output.velocity==0);
+    CHECK(!planner.ContactAllowed()); // No fictitious catch after a large escape.
+    input.enabled=false;input.nowMs+=16;planner.Step(input);
+    CHECK(planner.InFlight()); // An OFF toggle cannot undo a Box2D impulse.
+    input.grounded=true;input.nowMs+=16;planner.Step(input);
+    CHECK(!planner.Active());
+}
 } // namespace
 
 int main() {
@@ -302,6 +327,7 @@ int main() {
         DepartingPointerCancelsGroundPlayAndCannotRetargetAnExistingHop();
         PauseAndNewActionKeepTheirOwnClocksAndContactOwnership();
         OutsideHeightOrBoundsNeverStartsAReach();
+        ActivePursuitKeepsTheWholeMonitorAndWaitsForPlantedTurns();
         std::cout << "cat_cursor_nearby_test: " << checks << " checks passed\n";
         return 0;
     } catch (const std::exception& failure) {

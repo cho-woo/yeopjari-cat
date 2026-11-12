@@ -2,7 +2,7 @@
   "schema": 1,
   "created_date": "2026-11-11",
   "provider": "Dropshot",
-  "total_credits": 10000,
+  "total_credits": 10640,
   "jobs": [
     {
       "character": "cream",
@@ -1581,6 +1581,70 @@
         "aspect_ratio": "1:1",
         "generation_mode": "frame"
       }
+    },
+    {
+      "character": "cream",
+      "action": "cursor-swat",
+      "model": "minimax/h3",
+      "job_id": "mcp_733274107da342df8b16accfb6851506",
+      "credit_cost": 160,
+      "source_file": "sources/cursor-v32/cream-cursor-swat.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_733274107da342df8b16accfb6851506/output/output_0.mp4",
+      "prompt": "The EXACT cream desktop kitten in the first and last reference images. LOCK its identical face, round eyes and eye colors, ears, muzzle, coat markings, head size, short fluffy body, paw proportions and tail. Same detailed soft 3D illustration style, pixel scale, camera angle, lighting and framing as the reference. One fast playful hunting paw combination aimed at an invisible mouse pointer immediately IN FRONT of the kitten at low chest height. Begin with all four paws planted in the exact reference right-facing pose. In the FIRST 1.5 SECONDS: focus eyes and ears forward, lower shoulders, briefly draw the near forepaw back, execute TWO quick decisive forward/downward swats in succession, alternately supporting the chest on the other planted forepaw, retract the forepaw and return to the EXACT reference four-paw stance. Strong anticipation, very fast attack, soft natural paw retraction. Then remain in the exact same reference pose with only subtle breathing for the rest. The same four anatomical limbs throughout. Do not stand upright, spin, sit, or change expression into a different character. Full body and all paws visible at every moment. Fixed camera. Flat uniform pure #00FF00 green backdrop and floor, no shadows, no props, no actual cursor or target marker, no text, no zoom, no cuts, no size change. Do not replace, stretch or redesign the face. Keep paws connected to shoulders throughout. First and last pose must be the supplied exact right-facing side reference.",
+      "reference_images": [
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f5a17e175ec54a5a9cd9d6a1cd69979f/cream-side-identity-v29.png"
+      ],
+      "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f5a17e175ec54a5a9cd9d6a1cd69979f/cream-side-identity-v29.png",
+      "status": "succeeded",
+      "identity": "identity-v29367px; canonical same-facing first and last frame"
+    },
+    {
+      "character": "cream",
+      "action": "cursor-pounce",
+      "model": "minimax/h3",
+      "job_id": "mcp_fa51bb8631a246c69ba2096daca25c60",
+      "credit_cost": 160,
+      "source_file": "sources/cursor-v32/cream-cursor-pounce.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_fa51bb8631a246c69ba2096daca25c60/output/output_0.mp4",
+      "prompt": "The EXACT cream desktop kitten in the first and last reference images. LOCK its identical face, round eyes and eye colors, ears, muzzle, coat markings, head size, short fluffy body, paw proportions and tail. Same detailed soft 3D illustration style, pixel scale, camera angle, lighting and framing as the reference. One athletic feline running-pounce-to-catch aimed at an invisible mouse pointer ahead and slightly above the head. Body translation will be supplied by the game: perform the action IN PLACE at the reference location, facing RIGHT throughout. In the FIRST TWO SECONDS: take two quick bounding running steps, gather hind legs under the hips, push off powerfully with hind feet, arch into a small smooth airborne leap, extend both forepaws FORWARD/upward to catch, make one quick airborne forepaw swat, gather hind legs under the belly, extend front paws down, land forepaws then hind paws, absorb the weight with bent elbows and hips, recover to the EXACT reference four-paw stance. Preserve the feeling of forward momentum, never a vertical begging hop. Hold the exact final reference stance after recovery for the rest. Small vertical leap with generous headroom. No turn or seated pause. Full body and all paws visible at every moment. Fixed camera. Flat uniform pure #00FF00 green backdrop and floor, no shadows, no props, no actual cursor or target marker, no text, no zoom, no cuts, no size change. Do not replace, stretch or redesign the face. Keep paws connected to shoulders throughout. First and last pose must be the supplied exact right-facing side reference.",
+      "reference_images": [
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f5a17e175ec54a5a9cd9d6a1cd69979f/cream-side-identity-v29.png"
+      ],
+      "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f5a17e175ec54a5a9cd9d6a1cd69979f/cream-side-identity-v29.png",
+      "status": "succeeded",
+      "identity": "identity-v29367px; canonical same-facing first and last frame"
+    },
+    {
+      "character": "tuxedo",
+      "action": "cursor-swat",
+      "model": "minimax/h3",
+      "job_id": "mcp_1141f4d924404e98aeb8f1216fb06c87",
+      "credit_cost": 160,
+      "source_file": "sources/cursor-v32/tuxedo-cursor-swat.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_1141f4d924404e98aeb8f1216fb06c87/output/output_0.mp4",
+      "prompt": "The EXACT tuxedo desktop kitten in the first and last reference images. LOCK its identical face, round eyes and eye colors, ears, muzzle, coat markings, head size, short fluffy body, paw proportions and tail. Same detailed soft 3D illustration style, pixel scale, camera angle, lighting and framing as the reference. One fast playful hunting paw combination aimed at an invisible mouse pointer immediately IN FRONT of the kitten at low chest height. Begin with all four paws planted in the exact reference right-facing pose. In the FIRST 1.5 SECONDS: focus eyes and ears forward, lower shoulders, briefly draw the near forepaw back, execute TWO quick decisive forward/downward swats in succession, alternately supporting the chest on the other planted forepaw, retract the forepaw and return to the EXACT reference four-paw stance. Strong anticipation, very fast attack, soft natural paw retraction. Then remain in the exact same reference pose with only subtle breathing for the rest. The same four anatomical limbs throughout. Do not stand upright, spin, sit, or change expression into a different character. Full body and all paws visible at every moment. Fixed camera. Flat uniform pure #00FF00 green backdrop and floor, no shadows, no props, no actual cursor or target marker, no text, no zoom, no cuts, no size change. Do not replace, stretch or redesign the face. Keep paws connected to shoulders throughout. First and last pose must be the supplied exact right-facing side reference.",
+      "reference_images": [
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/de550c28744345e49f7eaa5169c60231/tuxedo-side-identity-v29.png"
+      ],
+      "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/de550c28744345e49f7eaa5169c60231/tuxedo-side-identity-v29.png",
+      "status": "succeeded",
+      "identity": "identity-v29367px; canonical same-facing first and last frame"
+    },
+    {
+      "character": "tuxedo",
+      "action": "cursor-pounce",
+      "model": "minimax/h3",
+      "job_id": "mcp_a7ab03b3539e417c99e85c2b4fb80127",
+      "credit_cost": 160,
+      "source_file": "sources/cursor-v32/tuxedo-cursor-pounce.mp4",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_a7ab03b3539e417c99e85c2b4fb80127/output/output_0.mp4",
+      "prompt": "The EXACT tuxedo desktop kitten in the first and last reference images. LOCK its identical face, round eyes and eye colors, ears, muzzle, coat markings, head size, short fluffy body, paw proportions and tail. Same detailed soft 3D illustration style, pixel scale, camera angle, lighting and framing as the reference. One athletic feline running-pounce-to-catch aimed at an invisible mouse pointer ahead and slightly above the head. Body translation will be supplied by the game: perform the action IN PLACE at the reference location, facing RIGHT throughout. In the FIRST TWO SECONDS: take two quick bounding running steps, gather hind legs under the hips, push off powerfully with hind feet, arch into a small smooth airborne leap, extend both forepaws FORWARD/upward to catch, make one quick airborne forepaw swat, gather hind legs under the belly, extend front paws down, land forepaws then hind paws, absorb the weight with bent elbows and hips, recover to the EXACT reference four-paw stance. Preserve the feeling of forward momentum, never a vertical begging hop. Hold the exact final reference stance after recovery for the rest. Small vertical leap with generous headroom. No turn or seated pause. Full body and all paws visible at every moment. Fixed camera. Flat uniform pure #00FF00 green backdrop and floor, no shadows, no props, no actual cursor or target marker, no text, no zoom, no cuts, no size change. Do not replace, stretch or redesign the face. Keep paws connected to shoulders throughout. First and last pose must be the supplied exact right-facing side reference.",
+      "reference_images": [
+        "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/de550c28744345e49f7eaa5169c60231/tuxedo-side-identity-v29.png"
+      ],
+      "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/de550c28744345e49f7eaa5169c60231/tuxedo-side-identity-v29.png",
+      "status": "succeeded",
+      "identity": "identity-v29367px; canonical same-facing first and last frame"
     }
   ]
 }

@@ -58,31 +58,35 @@ struct Host {
             cursorInteraction.session.AdoptMotion(g.motionStart,g.waitingForStop,g.motionSerial);
         }
     }
-    bool Frame(double x, double height, bool available = true) {
-        Sample(x,height,16,available);
-        const auto before = g.physics.CurrentPose();
+    bool Frame(double x, double height, bool available = true,ULONGLONG step=16) {
+        Sample(x,height,step,available);
+        const auto beforeRendered=g.physics.RenderPose();
         const bool launchedBefore = g.jumpLaunched;
         const auto creditedBefore = cursorInteraction.awardedContacts;
-        AdvancePrimaryMotion(now,.016);
+        AdvancePrimaryMotion(now,step*.001);
         const auto physical = g.physics.CurrentPose();
+        const auto rendered=g.physics.RenderPose();
         if (!launchedBefore && g.jumpLaunched) {
             ++launches;
             continuousTakeoff = continuousTakeoff &&
-                std::abs(physical.x-before.x) <= std::abs(physical.velocityX)*.016+1 &&
-                std::abs(physical.lift-before.lift) <= std::abs(physical.velocityY)*.016+2;
+                std::abs(rendered.x-beforeRendered.x) <= std::abs(physical.velocityX)*step*.001+1 &&
+                std::abs(rendered.lift-beforeRendered.lift) <= std::abs(physical.velocityY)*step*.001+2;
         }
         const auto credited = cursorInteraction.awardedContacts-creditedBefore;
         contacts += credited;
         if (physical.landed) landingContacts += credited;
         return credited != 0;
     }
-    ULONGLONG PawDuration() const { return cat::cursor::DurationMs(cat::cursor::AttackKind::Gentle); }
-    ULONGLONG FirstPawContactMs() const { return 220; }
+    ULONGLONG PawDuration() const {
+        const auto* source=LoadedCareSprite(cat::sprite_sequence::Clip::Punch,g.preferences.character);
+        return source?cat::sprite_sequence::ProgramDuration(source->layout->program):850;
+    }
+    ULONGLONG FirstPawContactMs() const { return g.preferences.character==cat::Character::Tuxedo?667:500; }
     cat::deform::Point PawTarget() const {
-        const auto geometry = CursorAttackGeometry();
-        const auto pose = cat::cursor::AttackPose(cat::cursor::AttackKind::Gentle,270,g.direction,
-            g.direction*(geometry.pawAnchorX-.5)*geometry.width,12,geometry);
-        return cat::cursor::PawPosition(pose,geometry);
+        const auto points=cat::video_actions::PunchPaws(static_cast<unsigned>(g.preferences.character),
+            g.preferences.character==cat::Character::Tuxedo?18:14);
+        const auto body=cat::appearance::VisualModifiers(g.nutrition,g.preferences.character);
+        return {g.direction*points[0].x*body.bodyWidth,points[0].y*body.bodyHeight};
     }
     double PawX() const {
         return g.physics.CurrentPose().x+PawTarget().x*cat::GrowthScale(g.pet.bornUtc,UtcNow());
@@ -108,6 +112,59 @@ struct Host {
         return false;
     }
 };
+
+int MovingPursuit() {
+    Host host;std::ostringstream evidence;
+    evidence<<"{\"schema\":1,\"test\":\"production-pointer-pursuit\",\"runs\":[";
+    bool comma=false;
+    for(const auto character:cat::kAvailableCharacters)for(const ULONGLONG step:{8ULL,16ULL,33ULL}) {
+        host.Reset(character);
+        if(!EnsureCareCoats(character))return 262;
+        const auto saved=cat::Serialize(g.pet)+cat::memory::Serialize(g.memory.state)+cat::nutrition::Serialize(g.nutrition);
+        unsigned chase=0,turn=0,movingLaunch=0,flight=0,swat=0;
+        bool finite=true,ballistic=true,connected=true;
+        double lastX=g.physics.CurrentPose().x;
+        for(ULONGLONG elapsed=0;elapsed<42000;elapsed+=step) {
+            const double seconds=elapsed*.001;
+            const double x=elapsed<20000?800+300*std::sin(seconds*.55):
+                (static_cast<unsigned>((elapsed-20000)/5500)%2?100:1100);
+            const double height=elapsed<20000?110+35*std::sin(seconds*.9):8;
+            const auto before=g.physics.CurrentPose();
+            const bool launched=g.jumpLaunched;
+            host.Frame(x,height,true,step);
+            const auto physical=g.physics.CurrentPose();
+            const auto displayed=PrimaryDisplayedPose(host.now,g.physics.RenderPose());
+            chase+=cursorInteraction.session.Action()==Action::Chase;
+            turn+=displayed.spriteClip==cat::sprite_sequence::Clip::RunningTurn;
+            swat+=displayed.spriteClip==cat::sprite_sequence::Clip::Punch;
+            flight+=!physical.grounded;
+            if(!launched&&g.jumpLaunched&&std::abs(physical.velocityX)>20) {
+                ++movingLaunch;connected=connected&&!g.waitingForStop&&cursorInteraction.runningTakeoff;
+            }
+            if(!before.grounded&&!physical.grounded)
+                ballistic=ballistic&&std::abs(physical.velocityX-before.velocityX)<.01;
+            const auto bounds=MovementBoundsLogical();
+            finite=finite&&std::isfinite(physical.x)&&std::isfinite(physical.lift)&&
+                physical.x>=bounds.first-.1&&physical.x<=bounds.second+.1&&physical.lift>=0&&
+                std::abs(physical.x-lastX)<=450*step*.001+2;
+            lastX=physical.x;
+        }
+        if(comma)evidence<<',';comma=true;
+        evidence<<"{\"character\":"<<static_cast<unsigned>(character)<<",\"step_ms\":"<<step<<",\"chase_frames\":"<<chase
+            <<",\"turn_frames\":"<<turn<<",\"moving_launches\":"<<movingLaunch<<",\"airborne_frames\":"<<flight
+            <<",\"swat_frames\":"<<swat<<",\"finite\":"<<finite<<",\"ballistic\":"<<ballistic<<",\"connected\":"<<connected
+            <<",\"continuous_takeoff\":"<<host.continuousTakeoff<<",\"profile_unchanged\":"<<
+                (saved==cat::Serialize(g.pet)+cat::memory::Serialize(g.memory.state)+cat::nutrition::Serialize(g.nutrition))<<'}';
+        if(chase<100||!turn||!movingLaunch||!flight||!finite||!ballistic||!connected||!host.continuousTakeoff||
+                saved!=cat::Serialize(g.pet)+cat::memory::Serialize(g.memory.state)+cat::nutrition::Serialize(g.nutrition)) {
+            CreateDirectoryW(L"render-self-test",nullptr);
+            WriteBytes(L"render-self-test/pointer-pursuit-report.json",evidence.str()+"] ,\"passed\":false}\n");return 263;
+        }
+    }
+    CreateDirectoryW(L"render-self-test",nullptr);
+    WriteBytes(L"render-self-test/pointer-pursuit-report.json",evidence.str()+"],\"passed\":true}\n");
+    return 0;
+}
 
 int Run() {
     Host host;
@@ -142,33 +199,38 @@ int Run() {
     Action previous = Action::None;
     unsigned attempts = 0, paws = 0, rests = 0;
     ULONGLONG restAt = 0;
-    bool varied = false;
+    bool strong = false;
     for (unsigned frame = 0; frame < 4000; ++frame) {
         const bool credited = host.Frame(fixedX,fixedHeight);
         const auto action = cursorInteraction.session.Action();
         if (credited && UpdateCursorContact(host.now,g.physics.CurrentPose())) return 243;
         if (action != previous) {
             if (action == Action::Rest) { ++rests; restAt = host.now; }
-            if (action == Action::Paw || action == Action::Tiptoe || action == Action::BothPaws) {
+            if (action == Action::Paw || action == Action::Punch) {
                 ++attempts; paws += action == Action::Paw;
-                varied = varied || action != Action::Paw;
-                if (restAt && host.now-restAt < 5000) return 244;
+                strong = strong || action == Action::Punch;
+                if (restAt && host.now-restAt < 280) return 244;
             }
             previous = action;
         }
-        if (std::abs(g.physics.CurrentPose().x-400) > .02 || host.launches) return 245;
+        if (std::abs(g.physics.CurrentPose().x-400) > 80 || host.launches) return 245;
     }
-    if (attempts < 4 || paws < 2 || rests < 3 || !varied || !EnvironmentBusy()) return 244;
+    if (attempts < 4 || paws < 2 || rests < 3 || !strong || !EnvironmentBusy()) return 244;
     if (cat::Serialize(g.pet) != savedPet || cat::memory::Serialize(g.memory.state) != savedMemory ||
             cat::nutrition::Serialize(g.nutrition) != savedNutrition) return 245;
 
-    // Gentle contact uses the displayed procedural paw and the same two cue
-    // windows. Paused walking still permits stationary interaction.
+    // Source-video paws and both extension windows. A live pointer following
+    // the actual toe can contact once per stroke while roaming is paused.
     host.Reset(); g.pet.roamingPaused = true;
-    const double pawX = host.PawX(), pawHeight = host.PawHeight();
+    const double pawHeight = host.PawHeight();
     if (!host.StartPaw(pawHeight)) return 246;
     while (cursorInteraction.session.Action() == Action::Paw) {
-        if (host.Frame(pawX,pawHeight) && UpdateCursorContact(host.now,g.physics.CurrentPose())) return 243;
+        cat::animation::Pose visible;
+        ApplyCursorAttackPose(visible,host.now+16,g.physics.CurrentPose());
+        const auto toe=cat::cursor::PawPositions(visible,CursorAttackGeometry())[0];
+        const auto body=cat::appearance::VisualModifiers(g.nutrition,g.preferences.character);
+        if (host.Frame(g.physics.CurrentPose().x+toe.x*body.bodyWidth,toe.y*body.bodyHeight) &&
+                UpdateCursorContact(host.now,g.physics.CurrentPose())) return 243;
     }
     if (host.contacts != 2 || !g.lifeInteractionUntil) return 247;
     // An elapsed cue with a distant pointer cannot manufacture a contact.
@@ -258,7 +320,7 @@ int Run() {
         if (host.contacts != contacts || g.lifeInteractionUntil || !g.physics.CurrentPose().grounded ||
                 (reason == 4 && (g.motion != Motion::Eat || g.motionSerial != serial))) return 261;
     }
-    return 0;
+    return MovingPursuit();
 }
 } // namespace native_cursor_tests
 

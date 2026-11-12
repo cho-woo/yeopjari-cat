@@ -86,7 +86,8 @@ int Run(std::string& context) {
         WriteBytes(L"render-self-test/identity-turn/report.json",report.str())?0:887;
 }
 int IdentityBoard() {
-    Surface actor,board;if(!actor.Create(320,240)||!board.Create(320*10,240*6))return 890;
+    constexpr unsigned rows=(cat::sprite_sequence::kAuthoredClips.size()+9)/10;
+    Surface actor,board;if(!actor.Create(320,240)||!board.Create(320*10,240*rows*cat::kAvailableCharacters.size()))return 890;
     {Graphics graphics(board.image.get());graphics.Clear(Color(255,245,247,249));}
     unsigned row=0;
     for(const auto character:cat::kAvailableCharacters) {
@@ -99,7 +100,7 @@ int IdentityBoard() {
             {Graphics graphics(actor.image.get());graphics.Clear(Color(0,0,0,0));graphics.SetInterpolationMode(InterpolationModeHighQualityBicubic);
                 DrawPetStyle(graphics,character,cat::Outfit::None,pose,
                     cat::appearance::VisualModifiers(g.nutrition,character),140,220,110);graphics.Flush(FlushIntentionSync);}
-            {Graphics graphics(board.image.get());graphics.DrawImage(actor.image.get(),static_cast<int>((ordinal%10)*320),static_cast<int>((row*2+ordinal/10)*240));}
+            {Graphics graphics(board.image.get());graphics.DrawImage(actor.image.get(),static_cast<int>((ordinal%10)*320),static_cast<int>((row*rows+ordinal/10)*240));}
             ++ordinal;
         }
         ++row;

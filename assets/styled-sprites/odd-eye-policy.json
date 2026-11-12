@@ -191,18 +191,6 @@
       "skin_rgb_exact": true
     },
     {
-      "base_resource_id": 117,
-      "base_source": "assets/video-actions/cream-punch.png",
-      "source": "c10-r117.png",
-      "input_sha256": "a6eeddd20b056d4595d1f0a1460f395f51da24b6b3ec5c0f255fd1ea5397de23",
-      "output_sha256": "2ad4c0a9aa1a342ea9ff715c9060919774856446c8aafe66877890f5d881cb67",
-      "source_alpha_sha256": "340e6d2d13ec9eff9f6c132b20d4094ce27d407e4ec8e2cf7cbef9a8719491a5",
-      "iris_mask": "odd-eye-masks/c10-r117.png",
-      "iris_mask_sha256": "b5d0b3065ad94411008494f43776ddb76a9b6c8df89b13db05f12622f226fafa",
-      "alpha_exact": true,
-      "skin_rgb_exact": true
-    },
-    {
       "base_resource_id": 440,
       "base_source": "assets/video-actions/cream-knead.png",
       "source": "c10-r440.png",
@@ -345,9 +333,33 @@
       "iris_mask_sha256": "f5b0b4415ec0d96f3e62c67f88399ffeea4c82fc5db43d46d246e2ce3f5621bc",
       "alpha_exact": true,
       "skin_rgb_exact": true
+    },
+    {
+      "base_resource_id": 117,
+      "base_source": "assets/video-actions/cream-punch.png",
+      "source": "c10-r117.png",
+      "input_sha256": "978bace659aaf262b4966e3f7befb2e1cfedff0dc2a8275966c6145c5ee5bb2d",
+      "output_sha256": "c67aa36ab462578f28dbdf6d1ca766a779a1b58cdff41b64d9b7ba0d16751178",
+      "source_alpha_sha256": "50d17d07630715a8011fb01f3b8696f1413c3265ab9c4e7d172a19ef8a6c7052",
+      "iris_mask": "odd-eye-masks/c10-r117.png",
+      "iris_mask_sha256": "673db76dfe1c7321c00201ad873692e35866505f005a5d9c9bb21639ca66bbdc",
+      "alpha_exact": true,
+      "skin_rgb_exact": true
+    },
+    {
+      "base_resource_id": 438,
+      "base_source": "assets/video-actions/cream-cursor-pounce.png",
+      "source": "c10-r438.png",
+      "input_sha256": "620a46d993b8194c515b8ba6f1ece70cc49407b22c88348021c67bb0ba0cd769",
+      "output_sha256": "75c8fdfbe76ba0c19a0b7811bef4c94e18a9d1b5bec5235c3c8ee192679569ff",
+      "source_alpha_sha256": "dfda00bcc95ebb3a607b30ec94a625203db33c7cc16da0ccd38259afdfbd045e",
+      "iris_mask": "odd-eye-masks/c10-r438.png",
+      "iris_mask_sha256": "eab97c090773af2189f374b02ecb6708507ca4f712a2d1c8a55676b7bb521aff",
+      "alpha_exact": true,
+      "skin_rgb_exact": true
     }
   ],
   "tool_sha256": "38aff80a6a8fe818168305d47c6f697ab0d9af7892119f3e5ab903e5c41c86c4",
   "additional_authoring_tool": "tools/pack_video_actions.py",
-  "additional_authoring_tool_sha256": "b6e39b58fd28847edf4e59742921a1eff34bed863ebc4c9f2dcb146b0dbe5844"
+  "additional_authoring_tool_sha256": "0463f8b50eedb11a271d1d68c2cf03c7346d29e40b4161df9cad46add0091071"
 }
