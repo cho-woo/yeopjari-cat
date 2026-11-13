@@ -48,6 +48,7 @@ public:
         jumpAction_=jumpTurnReady_=preparingJump_=startFromSide_=false;
         jumpReturn_=false;
         reverseSideExit_=false;
+        reverseEntrance_=false;
         connectedReturnMs_=0;
     }
     void Freeze(std::uint64_t milliseconds) {
@@ -77,7 +78,7 @@ public:
         // but still own the return so landing holds cannot cover its frames.
     }
     bool Update(std::uint64_t ticks,bool requestedTravel,bool grounded,double relativeVelocity,
-                bool allowStart=true,bool sideAction=false,bool jumpAction=false) {
+                bool allowStart=true,bool sideAction=false,bool jumpAction=false,bool reversible=false) {
         const auto prior=phase_;
         if(clockReady_&&ticks<lastTick_)RebaseClock(ticks);
         clockReady_=true;lastTick_=ticks;
@@ -109,6 +110,15 @@ public:
             }
         } else if(phase_==Phase::Starting) {
             if(!requestedSide) {
+                if(reversible&&!moving&&!startForSide_) {
+                    const auto age=std::min(Age(),StartDuration());
+                    const bool side=startFromSide_&&reverseSideExit_;
+                    const auto duration=side?outroMs_:introMs_;
+                    Begin(Phase::Stopping,ticks);reverseEntrance_=!side;
+                    carriedAge_=duration>age?duration-age-1:0;
+                    completedOutro_=loopReady_=false;
+                    return phase_!=prior;
+                }
                 // Explicit interruption can occur after the first steps
                 // release the motor. Preserve moving paws through braking.
                 Begin(moving?Phase::Braking:Phase::Neutral,ticks);
@@ -136,7 +146,11 @@ public:
             }
         } else if(phase_==Phase::Stopping) {
             if(requestedSide){
-                if(sideAction_&&!jumpAction_) {
+                if(reversible&&reverseEntrance_) {
+                    const auto age=std::min(Age(),introMs_);
+                    Begin(Phase::Starting,ticks);startFromSide_=startForSide_=false;
+                    carriedAge_=introMs_>age?introMs_-age-1:0;
+                } else if((sideAction_&&!jumpAction_)||reversible) {
                     const auto priorAge=std::min(Age(),outroMs_);
                     Begin(Phase::Starting,ticks);startFromSide_=startForSide_=reverseSideExit_=true;
                     carriedAge_=outroMs_>priorAge?outroMs_-priorAge-1:0;
@@ -144,7 +158,9 @@ public:
                 jumpReturn_=false;connectedReturnMs_=0;
             }
             else if(moving)Begin(Phase::Braking,ticks);
-            else if(Age()>=(connectedReturnMs_?connectedReturnMs_:outroMs_))FinishExit();
+            else if(Age()>=(reverseEntrance_?introMs_:connectedReturnMs_?connectedReturnMs_:outroMs_)) {
+                const bool entry=reverseEntrance_;FinishExit();if(entry)completedOutro_=false;
+            }
         }
         return phase_!=prior;
     }
@@ -160,16 +176,17 @@ public:
         return sideAction_||Stopping()||(Starting()&&Age()<movementDelayMs_);
     }
     bool ConsumeLoopReady() {const bool ready=loopReady_;loopReady_=false;return ready;}
+    bool LoopFromReversedExit() const {return reverseSideExit_;}
     std::uint64_t Elapsed() const {return Age();}
 
     FrameSample Sample(const cat::sprite_assets::Descriptor& layout) const {
         using namespace cat::sprite_sequence;
         if(!cat::sprite_assets::Valid(layout))return {};
         Range range{};std::uint64_t elapsed=Age();
-        const bool reverseEntry=(Starting()&&reverseSideExit_) || (JumpTurns(layout).valid &&
+        const bool reverseEntry=(Stopping()&&reverseEntrance_) || (Starting()&&reverseSideExit_) || (JumpTurns(layout).valid &&
             ((Starting()&&startFromSide_&&jumpAction_) || (JumpReturning()&&connectedReturnMs_)));
         if(reverseEntry) {
-            range=reverseSideExit_?layout.program.outro:Starting()?Range{layout.program.intro.first+10,18}:Range{layout.program.intro.first,10};
+            range=reverseEntrance_?layout.program.intro:reverseSideExit_?layout.program.outro:Starting()?Range{layout.program.intro.first+10,18}:Range{layout.program.intro.first,10};
             std::uint64_t offset=0;
             for(unsigned i=0;i<range.count;++i) {
                 const unsigned step=range.first+range.count-1-i;const auto& pose=layout.program.steps[step];
@@ -205,7 +222,7 @@ private:
     }
     std::uint64_t Age() const {return Add(carriedAge_,lastTick_>=started_?lastTick_-started_:0);}
     std::uint64_t StartDuration() const {return startFromSide_?(reverseSideExit_?outroMs_:jumpSideEntryMs_):startForSide_?movementDelayMs_:introMs_;}
-    void Begin(Phase phase,std::uint64_t ticks) {phase_=phase;started_=ticks;carriedAge_=0;reverseSideExit_=false;}
+    void Begin(Phase phase,std::uint64_t ticks) {phase_=phase;started_=ticks;carriedAge_=0;reverseSideExit_=false;reverseEntrance_=false;}
     void BeginJumpFromSide(std::uint64_t ticks) {
         startForSide_=startFromSide_=true;preparingJump_=false;Begin(Phase::Starting,ticks);
     }
@@ -217,6 +234,7 @@ private:
     bool jumpAction_=false,jumpTurnReady_=false,preparingJump_=false,startFromSide_=false;
     bool jumpReturn_=false;
     bool reverseSideExit_=false;
+    bool reverseEntrance_=false;
     std::uint64_t connectedReturnMs_=0;
 };
 } // namespace cat::video_ground_bridge

@@ -183,6 +183,8 @@ inline Frame SampleProgram(Clip clip,const Program& program,std::uint64_t elapse
     const auto intro=Duration(program,program.intro),loop=Duration(program,program.loop);
     const auto stage=ProgramStage(clip,options);
     if(clip==Clip::Walk || clip==Clip::Run) {
+        if(stage==Stage::Entering&&program.intro.count)return SampleRange(program,program.intro,elapsed,false);
+        if(stage==Stage::Exiting&&program.outro.count)return SampleRange(program,program.outro,elapsed,false);
         const Range range=program.loop.count?program.loop:Range{0,program.stepCount};
         const auto duration=Duration(program,range);
         return SampleRange(program,range,static_cast<std::uint64_t>(UnitPhase(options.cyclePhase)*duration),true);

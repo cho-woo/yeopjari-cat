@@ -162,7 +162,12 @@ int Run(HINSTANCE instance,std::string& context) {
             const auto takeoffDeadline=GetTickCount64()+2000;
             while(g.physics.RenderPose().grounded&&GetTickCount64()<takeoffDeadline)Pump(10);
             Pump(60);
-        } else Pump(scenario==2?1500:scenario==4?750:120);
+        } else if(scenario==2) {
+            // Open the menu during actual walking, after the complete new
+            // planted entrance. A fixed 1.5 s wait sampled its last still pose.
+            const auto movementDeadline=GetTickCount64()+4000;
+            while(std::abs(WalkingVelocity(g.physics.RenderPose()))<=2&&GetTickCount64()<movementDeadline)Pump(10);
+        } else Pump(scenario==4?750:120);
         const auto saved=cat::Serialize(g.pet);const auto serial=g.motionSerial;
         const auto before=Alpha();const bool moving=scenario!=2||std::abs(WalkingVelocity(g.physics.RenderPose()))>2;
         const bool airborne=scenario!=3||!g.physics.RenderPose().grounded;

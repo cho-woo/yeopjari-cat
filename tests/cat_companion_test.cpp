@@ -446,7 +446,10 @@ void NaturalTakeoffAndLandingUsePhysicalMotion() {
         const double speed=view.physical.velocityX-view.physical.supportVelocityX;
         if(view.physical.grounded && std::abs(speed)>2) {
             badSliding=badSliding || !cat::animation::Walking(view.motion) || view.animation.frame<0 || view.animation.frame>3;
-            badFacing=badFacing || view.animation.flip!=(speed<0);
+            // The authored pivot keeps its original source orientation while
+            // the final drawings already face and push in the other direction.
+            if(view.animation.spriteClip!=cat::sprite_sequence::Clip::RunningTurn)
+                badFacing=badFacing || view.animation.flip!=(speed<0);
         }
         if(view.motion!=M::Jump && view.motion!=M::Pounce)crouchStarted=0;
         if(view.physical.grounded && (view.motion==M::Jump || view.motion==M::Pounce) && view.animation.frame==4) {
@@ -490,7 +493,7 @@ void SocialGesturesWaitForPlantedFeet() {
         CHECK(m.TakeEvent()==Interaction::None);CHECK(s.sniffs+s.mutualPlay+s.sharedSleeps+s.foodRaces==0);
         CHECK(cat::animation::Travels(m.View(c.ticks).motion));
         bool contacted=false;
-        for(unsigned frame=0;frame<90;++frame) {
+        for(unsigned frame=0;frame<240;++frame) {
             Step(m,c,1);
             if(m.TakeEvent()==kind) {
                 contacted=true;
@@ -639,7 +642,7 @@ void AuthoredCompanionWalkRunUsesItsRealRegisteredTravel() {
                     } else {
                         // The authored first steps finish before the real
                         // distance-driven cycle is seeded at its seam.
-                        if(!loopStarted){expectedPhase=0;loopStarted=true;}
+                        if(!loopStarted){expectedPhase=walk->frameCount==229?cat::video_actions::WalkBoundaryPhase(static_cast<unsigned>(character)):0;loopStarted=true;}
                         else expectedPhase=std::fmod(expectedPhase+std::abs(travel)/
                             (view.growthScale*layout->stridePixels*view.body.bodyWidth),1.0);
                         CHECK(std::abs(view.animation.spriteOptions.cyclePhase-expectedPhase)<1e-10);
@@ -649,7 +652,9 @@ void AuthoredCompanionWalkRunUsesItsRealRegisteredTravel() {
                     CHECK(view.animation.scaleX==1 && view.animation.scaleY==1 && view.animation.blendFrame==-1);
                     // Native video cadence is still walking. A distinctly
                     // faster shared sprint selects the separate run cycle.
-                    if(loopStarted && frame>180)CHECK(view.animation.spriteClip==(pace==runningPace?Clip::Run:Clip::Walk));
+                    // The 1.5 s planted entrance finishes before the motor
+                    // accelerates through the separate walk/run threshold.
+                    if(loopStarted && frame>240)CHECK(view.animation.spriteClip==(pace==runningPace?Clip::Run:Clip::Walk));
                     ++authored;
                 } else {
                     CHECK(view.animation.spriteClip==Clip::None && view.animation.originalWalk);
@@ -692,7 +697,7 @@ void OptionalWalkReviewKeepsBothCoatsOnTheRegisteredStride() {
             previousTravel=view.physical.relativeTravelX;
             CHECK(view.animation.spriteClip==Clip::Walk);
             if(view.animation.spriteTimed) {
-                if(!loopStarted){expectedPhase=0;loopStarted=true;}
+                if(!loopStarted){expectedPhase=authored.frameCount==229?cat::video_actions::WalkBoundaryPhase(static_cast<unsigned>(character)):0;loopStarted=true;}
                 else expectedPhase=std::fmod(expectedPhase+std::abs(travel)/
                     (view.growthScale*authored.stridePixels*view.body.bodyWidth),1.);
                 CHECK(std::abs(view.animation.spriteOptions.cyclePhase-expectedPhase)<1e-10);
@@ -898,6 +903,118 @@ void AuthoredSleepKeepsItsIdentityIncludingWindowRestAndWake() {
     CHECK(Valid(state));
 }
 }
+void CompanionPointerAndAuthoredActions() {
+    using C=cat::sprite_sequence::Clip;using A=cat::environment::CursorAction;
+    for(const auto coat:cat::kAvailableCharacters) {
+        State s=NewState(born-365*86400);s.preferences.character=coat;s.pet.position=.3;
+        Model model;model.Bind(s);model.Reset(0,1600,700);
+        Context c;c.nowUtc=born;c.ticks=1000;c.elapsedSeconds=.016;c.primaryVisible=false;
+        c.cursorEnabled=c.cursorAvailable=true;
+        const double root=model.Physical().x;unsigned swats=0,turns=0;
+        for(unsigned frame=0;frame<1250;++frame) {
+            c.ticks+=16;c.cursorX=root+48*std::sin(frame*.016*6*cat::animation::kPi);c.cursorWorldHeight=65;
+            model.Tick(c);const auto view=model.View(c.ticks);
+            swats+=view.animation.spriteClip==C::Punch;turns+=view.animation.spriteClip==C::RunningTurn;
+            CHECK(std::abs(view.physical.x-root)<.05);CHECK(view.physical.grounded);
+        }
+        CHECK(swats>900);CHECK(turns==0);
+        // An independent low pointer crosses the actual source swat arc;
+        // the higher stress pattern above deliberately may miss the paw.
+        for(unsigned frame=0;frame<1250;++frame) {
+            c.ticks+=16;c.cursorX=root+35+8*std::sin(frame*.016*6*cat::animation::kPi);c.cursorWorldHeight=35;
+            model.Tick(c);
+        }
+        CHECK(model.CursorContacts()>0);
+        c.cursorX=1250;c.cursorWorldHeight=95;bool chased=false,launched=false;
+        for(unsigned frame=0;frame<750;++frame) {
+            c.ticks+=16;model.Tick(c);
+            chased=chased||model.CursorAction()==A::Chase;
+            launched=launched||!model.Physical().grounded;
+        }
+        CHECK(chased);CHECK(model.Physical().x>root+250);CHECK(launched);
+        c.cursorEnabled=c.cursorAvailable=false;
+        for(unsigned frame=0;frame<400;++frame){c.ticks+=16;model.Tick(c);}
+        for(const auto clip:{C::FlyHunt,C::ToyPlay,C::BallPlay,C::Box,C::Groom,C::Knead,C::Punch}) {
+            CHECK(model.Perform(clip,c.ticks));
+            bool seen=false;unsigned last=0;bool progressed=false;double ballSpeed=0;
+            const auto* art=cat::sprite_assets::Find(clip,static_cast<unsigned>(coat),cat::sprite_assets::kCareSprites);
+            CHECK(art);const auto duration=cat::sprite_sequence::ProgramDuration(art->program);
+            for(unsigned frame=0;frame<(duration+2500)/16;++frame) {
+                c.ticks+=16;model.Tick(c);const auto view=model.View(c.ticks);const auto pose=view.animation;
+                if(view.ballVisible)ballSpeed=std::max(ballSpeed,std::abs(view.ball.velocity));
+                if(pose.spriteClip==clip) {
+                    auto options=pose.spriteOptions;options.sheetFrames=art->frameCount;
+                    const auto source=pose.spriteTimed?cat::sprite_sequence::SampleProgram(clip,art->program,pose.spriteElapsedMs,options).frame:pose.spriteFrame;
+                    CHECK(source<art->frameCount);progressed=progressed||source>last;last=source;seen=true;
+                }
+            }
+            CHECK(seen&&progressed);CHECK(s.pet.feedCount==0&&s.memory.meals==0);
+            if(clip==C::BallPlay)CHECK(ballSpeed>10);
+        }
+        CHECK(Valid(s));
+    }
+}
+void CompanionKeyboardAndNinePairings() {
+    using C=cat::sprite_sequence::Clip;
+    for(const auto coat:cat::kAvailableCharacters) {
+        State state=NewState(born-366*86400);state.preferences.character=coat;state.pet.position=.3;
+        Model model;model.Bind(state);model.Reset(0,3300,700);
+        Context c;c.nowUtc=born;c.ticks=1000;c.elapsedSeconds=.016;c.primaryVisible=false;
+        CHECK(model.BeginKeyboard(c.ticks));int direction=1;bool run=false,air=false;unsigned turns=0;
+        for(unsigned frame=0;frame<1250;++frame) {
+            if(frame==188||frame==414||frame==850)run=true;
+            if(frame==397||frame==650)run=false;
+            if(frame==313||frame==700)direction=-1;
+            if(frame==450||frame==650)direction=0;
+            if(frame==470||frame==1000)direction=1;
+            model.KeyboardDrive(direction,run,frame==1030);c.ticks+=16;model.Tick(c);
+            const auto view=model.View(c.ticks);air=air||!view.physical.grounded;turns+=view.animation.spriteClip==C::RunningTurn;
+        }
+        CHECK(air);CHECK(turns>40);model.EndKeyboard(c.ticks);CHECK(Valid(state));
+        model.DragTo(3290);CHECK(model.Perform(C::Climb,c.ticks));double climb=0;bool film=false;
+        for(unsigned frame=0;frame<1500;++frame) {
+            c.ticks+=16;model.Tick(c);const auto view=model.View(c.ticks);
+            climb=std::max(climb,view.physical.lift);film=film||view.animation.spriteClip==C::Climb;
+        }
+        CHECK(film&&climb>30);CHECK(model.Physical().grounded);
+        CHECK(model.Perform(C::Sleep,c.ticks));bool woke=false;
+        const auto* sleep=cat::sprite_assets::Find(C::Sleep,static_cast<unsigned>(coat),cat::sprite_assets::kCareSprites);
+        const auto sleepDuration=cat::sprite_sequence::ProgramDuration(sleep->program);
+        for(unsigned frame=0;frame<(sleepDuration+6000)/16;++frame) {
+            c.ticks+=16;model.Tick(c);const auto view=model.View(c.ticks);
+            if(view.motion==cat::animation::Motion::Stretch) {
+                CHECK(view.animation.spriteClip==C::Sleep);
+                CHECK(view.animation.spriteOptions.sleep==cat::sprite_sequence::SleepStage::Waking);woke=true;
+            }
+        }
+        CHECK(woke);
+    }
+    for(const auto first:cat::kAvailableCharacters)for(const auto second:cat::kAvailableCharacters) {
+        State a=NewState(born-366*86400),b=a;a.preferences.character=first;b.preferences.character=second;
+        a.pet.position=.5;b.pet.position=.418;Model primary,companion;
+        primary.Bind(a);companion.Bind(b);primary.Reset(0,1000,700);companion.Reset(0,1000,700);
+        Context c;c.nowUtc=born;c.ticks=1000;c.elapsedSeconds=.016;c.primary=primary.Physical();
+        Context p=c;p.primaryVisible=false;CHECK(companion.TrySocial(Interaction::Paw,c));
+        unsigned events=0,completeFirst=0,completeSecond=0;
+        for(unsigned frame=0;frame<1100;++frame) {
+            c.ticks+=16;p.ticks=c.ticks;c.primary=primary.Physical();companion.Tick(c);
+            if(companion.TakeEvent()==Interaction::Paw){++events;CHECK(primary.Perform(C::Punch,c.ticks));}
+            primary.Tick(p);
+            for(const auto which:{0,1}) {
+                const auto pose=(which?companion:primary).View(c.ticks).animation;
+                const auto* art=cat::sprite_assets::Find(C::Punch,static_cast<unsigned>(which?second:first),cat::sprite_assets::kCareSprites);
+                if(pose.spriteClip==C::Punch) {
+                    auto options=pose.spriteOptions;options.sheetFrames=art->frameCount;
+                    const auto source=pose.spriteTimed?cat::sprite_sequence::SampleProgram(C::Punch,art->program,pose.spriteElapsedMs,options).frame:pose.spriteFrame;
+                    if(source==art->frameCount-1){if(which)++completeSecond;else ++completeFirst;}
+                }
+            }
+        }
+        CHECK(events==2);CHECK(b.mutualPlay==1);CHECK(completeFirst>0&&completeSecond>0);
+        CHECK(a.pet.feedCount==0&&b.pet.feedCount==0&&a.memory.plays==0&&b.memory.plays==0);
+        CHECK(!companion.SocialActive());
+    }
+}
 int main() {
     try { SeparateAdoptionAndRestart();IndividualStableTemperaments();StrictBundleParsing();RecoveryAndFaults();IndependentCareAndAge();FishCareKeepsTheExistingMealAndBusyContracts();AcceptedFoodRestartsItsClockAfterLongMenuPauses();SocialContactAndCompetition();RealWindowFollowingAndClosure();SpeciesLimitsAndBraking();ManualCareIsNotInterrupted();NaturalTakeoffAndLandingUsePhysicalMotion();SocialGesturesWaitForPlantedFeet();BrakingPreservesTheCompleteMeal();PairedRunningUsesOneSupportAndBodyMultiplier();HighWindowFollowingRespectsTheRealCeiling();
         HighRefreshGaitFollowsRenderedTravel();AuthoredKneadDoesNotLeakLegacyJointsAcrossActions();
@@ -906,6 +1023,8 @@ int main() {
         ContactRecoveryFinishesBeforeAcceptedFishStarts();
         CompanionJumpReturnOwnsTheCompletedRecoveryBoundary();
         AuthoredSleepKeepsItsIdentityIncludingWindowRestAndWake();
+        CompanionPointerAndAuthoredActions();
+        CompanionKeyboardAndNinePairings();
         std::cout<<"companion checks passed: "<<checks<<'\n';return 0;
     } catch(const std::exception& e) { std::cerr<<e.what()<<'\n';return 1; }
 }

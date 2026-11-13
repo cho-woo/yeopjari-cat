@@ -457,7 +457,8 @@ def main(only=None,materials_only=False):
             sequence={'intro':steps[loop:loop+intro],'loop':steps[:loop],'outro':steps[loop+intro:],
                 'finish':'hold','duration_ms':0,'events':[]}
         elif clip == 'run' and clip in IDENTITY['clips']:
-            sequence={'intro':[],'loop':steps,'outro':[],'finish':'hold','duration_ms':0,'events':[]}
+            layout=IDENTITY['clips'][clip];loop=layout.get('loop_frames',len(steps));intro=layout.get('intro_frames',0)
+            sequence={'intro':steps[loop:loop+intro],'loop':steps[:loop],'outro':steps[loop+intro:],'finish':'hold','duration_ms':0,'events':[]}
         elif clip in ('jump','cursor-pounce'):
             intro = IDENTITY['clips'][clip].get('intro_frames',18) if clip in IDENTITY['clips'] else indices.index(60)
             landing = IDENTITY['clips'][clip].get('landing_frame',39) if clip in IDENTITY['clips'] else indices.index(81)
@@ -590,6 +591,33 @@ def main(only=None,materials_only=False):
             header.append(f'        if(frame>={first}&&frame<={last})return {index};')
         header.append('    }')
     header.extend(['    return 0;','}'])
+    punch=IDENTITY['clips']['punch'];turn=IDENTITY['clips']['turn'];run=IDENTITY['clips']['run']
+    header.append('inline unsigned PunchContact(unsigned character,unsigned frame) {')
+    for c in ('tuxedo','cream'):
+        header.append('    '+('if(character==8)' if c=='tuxedo' else 'else')+' {')
+        for n,(a,b) in enumerate(punch['contact_windows'][c],1):header.append(f'        if(frame>={a}&&frame<={b})return {n};')
+        header.append('    }')
+    header.extend(['    return 0;','}', 'inline unsigned PunchFirstContactFrame(unsigned character) {',
+        f'    return character==8?{punch["contact_windows"]["tuxedo"][0][0]+1}:{punch["contact_windows"]["cream"][0][0]+1};','}',
+        'inline unsigned PunchContactCount(unsigned character) {',
+        f'    return character==8?{len(punch["contact_windows"]["tuxedo"])}:{len(punch["contact_windows"]["cream"])};','}',
+        'inline std::array<std::uint64_t,7> PunchExitMs(unsigned character) {'])
+    exit_ms={c:[sum(punch['exposures_ms'][:f+1]) for f in punch['safe_exit_frames'][c]] for c in ('cream','tuxedo')}
+    for c in exit_ms:exit_ms[c]+=[0]*(7-len(exit_ms[c]))
+    header.extend(['    return character==8?std::array<std::uint64_t,7>{{'+','.join(map(str,exit_ms['tuxedo']))+'}}:std::array<std::uint64_t,7>{{'+','.join(map(str,exit_ms['cream']))+'}};','}',
+        'inline std::array<unsigned,3> TurnTiming(unsigned character) {'])
+    timing={}
+    for c in ('cream','tuxedo'):
+        a,b,_=turn['phase_steps'][c];e=turn['exposures_ms'];timing[c]=[sum(e[:a]),sum(e[a:a+b]),sum(e[a+b:])]
+    header.extend(['    return character==8?std::array<unsigned,3>{{'+','.join(map(str,timing['tuxedo']))+'}}:std::array<unsigned,3>{{'+','.join(map(str,timing['cream']))+'}};','}'])
+    for symbol,config,key in (('TurnArrivalPhase',turn,'arrival_phase'),('GaitArrivalPhase',run,'transition_arrival')):
+        header.extend([f'inline double {symbol}(unsigned character,bool running) {{',
+            f'    if(character==8)return running?{config[key]["tuxedo"]["run"]:.8f}:{config[key]["tuxedo"]["walk"]:.8f};',
+            f'    return running?{config[key]["cream"]["run"]:.8f}:{config[key]["cream"]["walk"]:.8f};','}'])
+    boundary=IDENTITY['clips']['walk']['boundary_arrival']
+    header.extend(['inline double WalkBoundaryPhase(unsigned character,bool reverseExit=false) {',
+        f'    if(character==8)return reverseExit?{boundary["tuxedo"]["reverse_exit"]:.8f}:{boundary["tuxedo"]["entry"]:.8f};',
+        f'    return reverseExit?{boundary["cream"]["reverse_exit"]:.8f}:{boundary["cream"]["entry"]:.8f};','}'])
     for action in ('walk','run','eat','turn'):
         for character in ('cream','tuxedo'):
             indices=evidence[character+'-'+action]['selected_frame_indices']

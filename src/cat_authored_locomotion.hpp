@@ -36,6 +36,9 @@ public:
     bool SetPhase(double phase) {
         if(!std::isfinite(phase)||phase<0||phase>1)return false;
         phase_=phase==1?0:phase;
+        // An explicit source-boundary seed is the new planted stance. Do not
+        // erase it on the first moving sample after the entrance's stillness.
+        stillSeconds_=0;
         return true;
     }
     Mode CurrentMode() const { return mode_; }

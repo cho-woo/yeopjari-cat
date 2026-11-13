@@ -488,12 +488,27 @@ int NativeActualCareSpriteRenderTest(std::string& context) {
     }
     if(!savePage())return 310;
     context="actual care sheet declared species ownership";
-    for(const auto clip:cat::sprite_sequence::kAuthoredClips)for(unsigned character=0;character<cat::kCharacterCount;++character) {
-        const CareSpriteAtlas* expected=nullptr;
-        for(const auto& asset:g.careSprites)if(asset->layout->clip==clip&&asset->layout->character==cat::sprite_assets::AuthoredCharacter(character))expected=asset.get();
-        cat::animation::Pose pose;pose.spriteTimed=false;pose.spriteClip=clip;
-        if(CareSpriteFor(pose,static_cast<cat::Character>(character))!=expected)return 307;
+    for(unsigned character=0;character<cat::kCharacterCount;++character) {
+        const auto coat=static_cast<cat::Character>(character);
+        // Registration ownership and texture residency are distinct. Load the
+        // coat under test rather than accepting a missing coat via Cream's ROI.
+        if(cat::CharacterAvailable(coat)&&!EnsureCareCoats(coat))return 307;
+        for(const auto clip:cat::sprite_sequence::kAuthoredClips) {
+            const CareSpriteAtlas* expected=nullptr;
+            for(const auto& asset:g.careSprites)if(asset->layout->clip==clip&&asset->layout->character==cat::sprite_assets::AuthoredCharacter(character))expected=asset.get();
+            // The retired box movie is archived Cream artwork only; no
+            // Tuxedo/OddEye texture is decoded or offered for that resource.
+            if(clip==Clip::Box&&character!=0)expected=nullptr;
+            cat::animation::Pose pose;pose.spriteTimed=false;pose.spriteClip=clip;
+            if(CareSpriteFor(pose,coat)!=expected) {
+                context="actual care ownership character="+std::to_string(character)+" clip="+std::to_string(static_cast<unsigned>(clip))+
+                    " expected="+std::to_string(expected?expected->layout->resourceId:0)+
+                    " actual="+std::to_string(CareSpriteFor(pose,coat)?CareSpriteFor(pose,coat)->layout->resourceId:0);
+                return 307;
+            }
+        }
     }
+    if(!EnsureCareCoats(cat::Character::Cream,cat::Character::Tuxedo))return 307;
     cat::animation::Pose pose;pose.spriteTimed=false;pose.spriteClip=Clip::Eat;pose.fishMeal=true;
     const auto* fish=CareSpriteFor(pose,cat::Character::Cream);
     if(fish) {

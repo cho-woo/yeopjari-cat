@@ -113,6 +113,98 @@ void MovingFailure(const char* phase,const MovingJump& jump,double normalPeak) {
     WriteBytes(L"render-self-test/keyboard-moving-jump-failure.txt",out.str());
 }
 
+void ContinuityKeys(unsigned i) {
+    const auto key=[](unsigned k,bool down=true){Key(k,down);};
+    if(i==0)key(VK_RIGHT);
+    if(i==188)key(VK_SHIFT);
+    if(i==313){key(VK_RIGHT,false);key(VK_LEFT);}
+    if(i==397)key(VK_SHIFT,false);
+    if(i==414)key(VK_SHIFT);
+    if(i==450)key(VK_LEFT,false);
+    if(i==470)key(VK_RIGHT);
+    if(i>=590&&i<650&&i%10==0)key(VK_SHIFT,(i/10)%2==0);
+    if(i==650){key(VK_RIGHT,false);key(VK_SHIFT,false);}
+    if(i==670||i==682)key(VK_RIGHT);
+    if(i==674||i==686)key(VK_RIGHT,false);
+    if(i==700)key(VK_LEFT);
+    if(i==850)key(VK_SHIFT);
+    if(i==1000){key(VK_LEFT,false);key(VK_RIGHT);}
+    if(i==1030){key(VK_SPACE);key(VK_SPACE,false);}
+}
+int Continuity() {
+    Host host;
+    for(const auto character:cat::kAvailableCharacters) {
+        if(!Start(host,character))return 788;
+        const auto saved=host.Saved();
+        bool turned=false;ULONGLONG turnMs=0,serial=g.motionSerial;Motion prior=g.motion;
+        for(unsigned i=0;i<1250;++i) {
+            ContinuityKeys(i);Step(host);
+            if(cat::animation::Walking(prior)&&cat::animation::Walking(g.motion)&&serial!=g.motionSerial)return 789;
+            if(turned&&!g.runningTurn.Active()) {
+                const auto* art=LoadedCareSprite(cat::sprite_sequence::Clip::RunningTurn,character);
+                if(turnMs+32<cat::sprite_sequence::ProgramDuration(art->layout->program))return 790;
+            }
+            if(turned&&g.runningTurn.Active()&&g.runningTurn.SpriteMs()<turnMs)return 790;
+            turned=g.runningTurn.Active();turnMs=g.runningTurn.SpriteMs();serial=g.motionSerial;prior=g.motion;
+        }
+        if(host.Saved()!=saved||!KeyboardPlayActive())return 791;
+        if(!Start(host,character))return 788;
+        const auto* art=LoadedCareSprite(cat::sprite_sequence::Clip::Walk,character);
+        const auto first=art->layout->program.steps[art->layout->program.intro.first].frame;
+        unsigned last=first;bool wasBoundary=false;
+        for(unsigned i=0;i<240;++i) {
+            if(i%20==0)Key(VK_RIGHT);
+            if(i%20==10)Key(VK_RIGHT,false);
+            Step(host);
+            const auto pose=PrimaryDisplayedPose(host.now,g.physics.RenderPose());
+            const auto frame=SpriteFrameFor(pose,*art->layout);
+            const bool boundary=pose.spriteClip==cat::sprite_sequence::Clip::Walk&&frame>=first;
+            if(wasBoundary&&boundary&&std::abs(int(frame)-int(last))>1)return 792;
+            if(wasBoundary&&!boundary&&last>first+1)return 792;
+            if(std::abs(g.physics.CurrentPose().x-400)>.05)return 793;
+            wasBoundary=boundary;last=frame;
+        }
+    }
+    Clear();return 0;
+}
+
+int CompanionTarget() {
+    CreateDirectoryW(L"render-self-test",nullptr);
+    const auto savedOutcome=g.companionStore.outcome;
+    Host host;
+    for(const auto coat:cat::kAvailableCharacters) {
+        Clear();host.Reset(cat::Character::Cream,false);
+        if(!EnsureCareCoats(cat::Character::Cream,coat))return 794;
+        auto& state=g.companionStore.state;state=cat::companion::NewState(g.pet.bornUtc);
+        g.companionStore.outcome=cat::companion::Outcome::Adopted;
+        state.enabled=true;state.preferences.character=coat;state.pet.position=.3;
+        g.companionModel.Bind(state);g.companionModel.Reset(0,3300,700);
+        keyboardPlay.fixture=true;keyboardPlay.companion=true;
+        if(!BeginKeyboardCapture(host.now))return 794;
+        const double primaryX=g.physics.CurrentPose().x;
+        unsigned turns=0;bool airborne=false;
+        for(unsigned frame=0;frame<1250;++frame) {
+            ContinuityKeys(frame);host.now+=16;UpdateKeyboardPlay(host.now,.016);
+            AdvancePrimaryMotion(host.now,.016);
+            cat::companion::Context c;c.nowUtc=UtcNow();c.ticks=host.now;c.elapsedSeconds=.016;c.primaryVisible=false;
+            g.companionModel.Tick(c);const auto view=g.companionModel.View(host.now);
+            turns+=view.animation.spriteClip==cat::sprite_sequence::Clip::RunningTurn;airborne=airborne||!view.physical.grounded;
+            if(std::abs(g.physics.CurrentPose().x-primaryX)>.05||EnvironmentBusy()||!keyboardPlay.input.Active()) {
+                WriteBytes(L"render-self-test/companion-keyboard-failure.txt","coat="+std::to_string(static_cast<unsigned>(coat))+
+                    " frame="+std::to_string(frame)+" primaryDelta="+std::to_string(g.physics.CurrentPose().x-primaryX)+
+                    " env="+std::to_string(EnvironmentBusy())+" active="+std::to_string(keyboardPlay.input.Active())+
+                    " target="+std::to_string(keyboardPlay.companion)+" serial="+std::to_string(g.motionSerial)+
+                    " owner="+std::to_string(keyboardPlay.serial));return 795;
+            }
+        }
+        if(!airborne||turns<40)return 796;
+        Key(VK_ESCAPE);if(KeyboardPlayActive()||keyboardPlay.hook||keyboardPlay.companion)return 797;
+        Clear();state.enabled=false;
+    }
+    g.companionStore.outcome=savedOutcome;
+    WriteBytes(L"render-self-test/companion-keyboard-report.json","{\"passed\":true,\"coats\":[0,8,10],\"primary_stationary\":true,\"companion_real_jump_and_turn\":true,\"escape_released_owner\":true,\"os_input_injected\":false}");
+    return 0;
+}
 int Run() {
     CreateDirectoryW(L"render-self-test",nullptr);
     Host host;
@@ -186,6 +278,8 @@ int Run() {
     }
     Clear();
     if(!result)result=HitTestScreens(host,clickThroughPixels);
+    if(!result)result=Continuity();
+    if(!result)result=CompanionTarget();
     CreateDirectoryW(L"render-self-test",nullptr);
     const std::string proof="{\"schema\":1,\"test\":\"keyboard-play-native\",\"version\":\"" YEOPJARI_VERSION_STRING
         "\",\"status\":\""+(result?std::string("failed"):std::string("passed"))+"\",\"exit_code\":"+std::to_string(result)+

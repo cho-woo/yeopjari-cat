@@ -13,13 +13,29 @@ class SourceClockTest(unittest.TestCase):
         # Jump follows real ballistic takeoff/landing. Walk retains its separately
         # reviewed entrance/exit edit and a contact-distance driven loop.
         for entry in manifest["clips"]:
-            if entry["clip"] in ("jump", "walk"):
+            if entry["clip"] == "jump":
                 continue
             sequence = entry["sequence"]
             steps = sum((sequence[part] for part in ("intro", "loop", "outro")), [])
             for coat in ("cream", "tuxedo"):
                 with self.subTest(clip=entry["clip"], coat=coat):
                     proof = registration[coat + "-" + entry["clip"]]
+                    if entry["clip"] in ("walk", "run"):
+                        # Each boundary is its own complete consecutive source
+                        # segment. The loop remains distance driven in the app.
+                        for part in ("intro", "loop", "outro"):
+                            part_steps = sequence[part]
+                            self.assertTrue(part_steps)
+                            indices = [proof["selected_frame_indices"][s["frame"]] for s in part_steps]
+                            files = [proof["selected_source_files"][s["frame"]] for s in part_steps]
+                            self.assertEqual(len(set(files)), 1)
+                            self.assertEqual(indices, list(range(indices[0], indices[-1]+1)))
+                            clock = 0
+                            for ordinal, step in enumerate(part_steps):
+                                self.assertLessEqual(abs(clock-ordinal*1000/24), 1)
+                                clock += step["ms"]
+                            self.assertLessEqual(abs(clock-len(part_steps)*1000/24), .51)
+                        continue
                     indices = proof["selected_frame_indices"]
                     self.assertEqual(proof["source_fps"], 24)
                     self.assertEqual(indices, list(range(indices[0], indices[-1] + 1)))

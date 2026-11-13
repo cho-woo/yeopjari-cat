@@ -167,18 +167,6 @@
       "skin_rgb_exact": true
     },
     {
-      "base_resource_id": 400,
-      "base_source": "assets/video-actions/cream-walk.png",
-      "source": "c10-r400.png",
-      "input_sha256": "c7d02d333fa387ec8d4eef7fd5ff30358a79eea712454dc76dec4fa3c17fc841",
-      "output_sha256": "757604ada3c3b30ad589ee95d4e0b5d00d5c955046c2b27ca1dc99f78bec650e",
-      "source_alpha_sha256": "a205c1662a97066c8b6b0f43177c90585fd6d93818daec272cd20041527a26c6",
-      "iris_mask": "odd-eye-masks/c10-r400.png",
-      "iris_mask_sha256": "352b275f3caccfc266ed5c73cff990f815948985bf1e283c155990321e123cdc",
-      "alpha_exact": true,
-      "skin_rgb_exact": true
-    },
-    {
       "base_resource_id": 113,
       "base_source": "assets/video-actions/cream-groom.png",
       "source": "c10-r113.png",
@@ -251,30 +239,6 @@
       "skin_rgb_exact": true
     },
     {
-      "base_resource_id": 437,
-      "base_source": "assets/video-actions/cream-turn.png",
-      "source": "c10-r437.png",
-      "input_sha256": "2a8c17bed9abe93276704addfba7752d5759dc5d54223cf6b19154d82e870624",
-      "output_sha256": "b0e2921c931baa84c70ac3b0cfd2641749aabb4804324ca1515d4fa29625dd87",
-      "source_alpha_sha256": "62a04addce9b0c77af86385a8c9096065a89abae1c9962e0c6c748306fef55da",
-      "iris_mask": "odd-eye-masks/c10-r437.png",
-      "iris_mask_sha256": "a9d54829c40051fa0010849ad525e2029ae0e65c9b88d6a5bde943aa808fc90c",
-      "alpha_exact": true,
-      "skin_rgb_exact": true
-    },
-    {
-      "base_resource_id": 401,
-      "base_source": "assets/video-actions/cream-run.png",
-      "source": "c10-r401.png",
-      "input_sha256": "808f32840f50cacb41d60d5acbf9e7b001ea32dc690cac742e9cef7b7dd69cad",
-      "output_sha256": "c94721ea0384d089ea3a5114fb085b9a47d2d316fd63c66586d1deb524e38687",
-      "source_alpha_sha256": "8253a3b12e5e86564a8b91c9891d043603c2332831f117bbbd49ff3ed7693faa",
-      "iris_mask": "odd-eye-masks/c10-r401.png",
-      "iris_mask_sha256": "62e83b34d5e734fef40dfc0f6d0ae6c035914262ed8e299deaa96658ad78a721",
-      "alpha_exact": true,
-      "skin_rgb_exact": true
-    },
-    {
       "base_resource_id": 430,
       "base_source": "assets/video-actions/cream-ball.png",
       "source": "c10-r430.png",
@@ -323,18 +287,6 @@
       "skin_rgb_exact": true
     },
     {
-      "base_resource_id": 117,
-      "base_source": "assets/video-actions/cream-punch.png",
-      "source": "c10-r117.png",
-      "input_sha256": "978bace659aaf262b4966e3f7befb2e1cfedff0dc2a8275966c6145c5ee5bb2d",
-      "output_sha256": "c67aa36ab462578f28dbdf6d1ca766a779a1b58cdff41b64d9b7ba0d16751178",
-      "source_alpha_sha256": "50d17d07630715a8011fb01f3b8696f1413c3265ab9c4e7d172a19ef8a6c7052",
-      "iris_mask": "odd-eye-masks/c10-r117.png",
-      "iris_mask_sha256": "673db76dfe1c7321c00201ad873692e35866505f005a5d9c9bb21639ca66bbdc",
-      "alpha_exact": true,
-      "skin_rgb_exact": true
-    },
-    {
       "base_resource_id": 438,
       "base_source": "assets/video-actions/cream-cursor-pounce.png",
       "source": "c10-r438.png",
@@ -357,9 +309,57 @@
       "iris_mask_sha256": "b293b881d838f5f98982c28ed3a334bf0dc336ee7d7591c04917e56a90e574ae",
       "alpha_exact": true,
       "skin_rgb_exact": true
+    },
+    {
+      "base_resource_id": 117,
+      "base_source": "assets/video-actions/cream-punch.png",
+      "source": "c10-r117.png",
+      "input_sha256": "d49b21a474e2d179375dbbf56886fef738d15d2c7bef1af26b5bc991bb5f7a71",
+      "output_sha256": "a2018a4051afbe24ef2a45bef3a6c3009501aa0e52c36abe6fd135eb2eb1d9a8",
+      "source_alpha_sha256": "ed25a7134193e7b344f651ba3ce84ee3c0ff36edf5b75fa9979a7d7a27b3411e",
+      "iris_mask": "odd-eye-masks/c10-r117.png",
+      "iris_mask_sha256": "70227c037ef3a9d6ecaaf024bbeb629234a8a8bfde1ab5ceab903087362db857",
+      "alpha_exact": true,
+      "skin_rgb_exact": true
+    },
+    {
+      "base_resource_id": 437,
+      "base_source": "assets/video-actions/cream-turn.png",
+      "source": "c10-r437.png",
+      "input_sha256": "3b5d005ce364eaad47d308967027d8177e4a8a88c18442e5543e252aef44767a",
+      "output_sha256": "a8a9e1252d4c0b840f10008f5c176f6f96f113fe2ff667052edd0ce2ea9e2aa5",
+      "source_alpha_sha256": "52e6c5476df56bd8a60f3e07dacbdac8aa2be07dd0c141fc7a770385cd6f7b03",
+      "iris_mask": "odd-eye-masks/c10-r437.png",
+      "iris_mask_sha256": "aa03468b3b4d7e05e0f2739002d55d342e971bad373d5d5831b2e116ec247caa",
+      "alpha_exact": true,
+      "skin_rgb_exact": true
+    },
+    {
+      "base_resource_id": 400,
+      "base_source": "assets/video-actions/cream-walk.png",
+      "source": "c10-r400.png",
+      "input_sha256": "7c10a04abd1fe277745a77528072f9fbd324f1be6672cd94954db5dd2d62e28a",
+      "output_sha256": "2868153f56d831023601e7c6f7f6dfcb5bb8094d4634851ce28093181ec61bbe",
+      "source_alpha_sha256": "c6499b2eb0b12ec9745767efbcab18bb8939fce777f2545270258d38015de2af",
+      "iris_mask": "odd-eye-masks/c10-r400.png",
+      "iris_mask_sha256": "6860a85fddd917af01165d6b867ba8b94b8559823c11b88abcfeeb257239caea",
+      "alpha_exact": true,
+      "skin_rgb_exact": true
+    },
+    {
+      "base_resource_id": 401,
+      "base_source": "assets/video-actions/cream-run.png",
+      "source": "c10-r401.png",
+      "input_sha256": "159d059d65d08fe9f85a684de926c3bc9e7cbc43dce2f814e17362af7b317e86",
+      "output_sha256": "3b4bed2e62b93ef663b0f702ada873d131bd7deb44f7763bdc893816b38fbc5f",
+      "source_alpha_sha256": "df00cee4b34e677ecd9deacc55de528e3f2995ddb6d2191fdd48fdc3067e0b7c",
+      "iris_mask": "odd-eye-masks/c10-r401.png",
+      "iris_mask_sha256": "b395840c2c539f996189aaa65fc83e27cbc22996ccabce7508e830824e7a5563",
+      "alpha_exact": true,
+      "skin_rgb_exact": true
     }
   ],
   "tool_sha256": "38aff80a6a8fe818168305d47c6f697ab0d9af7892119f3e5ab903e5c41c86c4",
   "additional_authoring_tool": "tools/pack_video_actions.py",
-  "additional_authoring_tool_sha256": "0dc3052dfb107dcf83ab42bdfba6a4ffdc95dd4c9978a4f80d9a353dffb13812"
+  "additional_authoring_tool_sha256": "bdf9c986ff8bf6e56541e76ea475813cd65b65983c6b766e2b84d76254f9017c"
 }

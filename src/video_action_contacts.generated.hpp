@@ -551,147 +551,223 @@ inline Paws BallPaws(unsigned character,unsigned frame) {
     const auto& points=character==8?kTuxedoBall:kCreamBall;
     return points[std::min<unsigned>(frame,points.size()-1)];
 }
-inline constexpr std::array<Paws,69> kCreamPunch{{
-    Paws{{cat::deform::Point{13.75000,9.16667},cat::deform::Point{-4.58333,5.72917}}},
-    Paws{{cat::deform::Point{13.75000,9.16667},cat::deform::Point{-4.58333,5.72917}}},
-    Paws{{cat::deform::Point{13.75000,9.16667},cat::deform::Point{-4.58333,5.72917}}},
-    Paws{{cat::deform::Point{17.18750,10.31250},cat::deform::Point{-4.58333,5.72917}}},
-    Paws{{cat::deform::Point{25.20833,18.33333},cat::deform::Point{-4.58333,5.72917}}},
-    Paws{{cat::deform::Point{32.08333,27.50000},cat::deform::Point{-4.58333,5.72917}}},
-    Paws{{cat::deform::Point{41.25000,38.95833},cat::deform::Point{-4.58333,5.72917}}},
-    Paws{{cat::deform::Point{41.25000,44.68750},cat::deform::Point{-4.58333,5.72917}}},
-    Paws{{cat::deform::Point{43.54167,48.12500},cat::deform::Point{-4.58333,5.72917}}},
-    Paws{{cat::deform::Point{45.83333,52.70833},cat::deform::Point{-4.58333,5.72917}}},
-    Paws{{cat::deform::Point{43.54167,42.39583},cat::deform::Point{-4.58333,5.72917}}},
-    Paws{{cat::deform::Point{40.10417,34.37500},cat::deform::Point{-4.58333,5.72917}}},
-    Paws{{cat::deform::Point{37.81250,22.91667},cat::deform::Point{-4.58333,5.72917}}},
-    Paws{{cat::deform::Point{30.93750,24.06250},cat::deform::Point{-4.58333,5.72917}}},
-    Paws{{cat::deform::Point{30.93750,24.06250},cat::deform::Point{-4.58333,5.72917}}},
-    Paws{{cat::deform::Point{34.37500,32.08333},cat::deform::Point{-4.58333,5.72917}}},
-    Paws{{cat::deform::Point{38.95833,43.54167},cat::deform::Point{-4.58333,5.72917}}},
-    Paws{{cat::deform::Point{40.10417,43.54167},cat::deform::Point{-4.58333,5.72917}}},
-    Paws{{cat::deform::Point{41.25000,49.27083},cat::deform::Point{-4.58333,5.72917}}},
-    Paws{{cat::deform::Point{37.81250,27.50000},cat::deform::Point{-4.58333,5.72917}}},
-    Paws{{cat::deform::Point{25.20833,19.47917},cat::deform::Point{-4.58333,5.72917}}},
-    Paws{{cat::deform::Point{19.47917,11.45833},cat::deform::Point{-4.58333,5.72917}}},
-    Paws{{cat::deform::Point{14.89583,9.16667},cat::deform::Point{-4.58333,6.87500}}},
-    Paws{{cat::deform::Point{13.75000,8.02083},cat::deform::Point{-4.58333,6.87500}}},
-    Paws{{cat::deform::Point{13.75000,4.58333},cat::deform::Point{-4.58333,5.72917}}},
-    Paws{{cat::deform::Point{11.45833,14.89583},cat::deform::Point{-4.58333,5.72917}}},
-    Paws{{cat::deform::Point{14.89583,25.20833},cat::deform::Point{-4.58333,5.72917}}},
-    Paws{{cat::deform::Point{26.35417,36.66667},cat::deform::Point{-4.58333,5.72917}}},
-    Paws{{cat::deform::Point{32.08333,38.95833},cat::deform::Point{-4.58333,5.72917}}},
-    Paws{{cat::deform::Point{37.81250,41.25000},cat::deform::Point{-4.58333,5.72917}}},
-    Paws{{cat::deform::Point{43.54167,44.68750},cat::deform::Point{-4.58333,5.72917}}},
-    Paws{{cat::deform::Point{43.54167,40.10417},cat::deform::Point{-4.58333,5.72917}}},
-    Paws{{cat::deform::Point{43.54167,35.52083},cat::deform::Point{-4.58333,5.72917}}},
-    Paws{{cat::deform::Point{43.54167,30.93750},cat::deform::Point{-4.58333,5.72917}}},
-    Paws{{cat::deform::Point{40.10417,24.06250},cat::deform::Point{1.14583,5.72917}}},
-    Paws{{cat::deform::Point{37.81250,18.33333},cat::deform::Point{8.02083,5.72917}}},
-    Paws{{cat::deform::Point{34.37500,12.60417},cat::deform::Point{12.60417,5.72917}}},
-    Paws{{cat::deform::Point{34.37500,11.45833},cat::deform::Point{12.60417,5.72917}}},
-    Paws{{cat::deform::Point{33.22917,10.31250},cat::deform::Point{12.60417,5.72917}}},
-    Paws{{cat::deform::Point{33.22917,9.16667},cat::deform::Point{12.60417,5.72917}}},
-    Paws{{cat::deform::Point{33.22917,9.16667},cat::deform::Point{12.60417,5.72917}}},
-    Paws{{cat::deform::Point{33.22917,8.02083},cat::deform::Point{12.60417,5.72917}}},
-    Paws{{cat::deform::Point{33.22917,8.02083},cat::deform::Point{12.60417,5.72917}}},
-    Paws{{cat::deform::Point{33.22917,8.02083},cat::deform::Point{12.60417,5.72917}}},
-    Paws{{cat::deform::Point{33.22917,8.02083},cat::deform::Point{12.60417,5.72917}}},
-    Paws{{cat::deform::Point{33.22917,8.02083},cat::deform::Point{12.60417,5.72917}}},
-    Paws{{cat::deform::Point{33.22917,8.02083},cat::deform::Point{12.60417,5.72917}}},
-    Paws{{cat::deform::Point{33.22917,8.02083},cat::deform::Point{12.60417,5.72917}}},
-    Paws{{cat::deform::Point{33.22917,8.02083},cat::deform::Point{12.60417,5.72917}}},
-    Paws{{cat::deform::Point{33.22917,8.02083},cat::deform::Point{12.60417,5.72917}}},
-    Paws{{cat::deform::Point{33.22917,8.02083},cat::deform::Point{12.60417,5.72917}}},
-    Paws{{cat::deform::Point{33.22917,8.02083},cat::deform::Point{12.60417,5.72917}}},
-    Paws{{cat::deform::Point{33.22917,8.02083},cat::deform::Point{12.60417,5.72917}}},
-    Paws{{cat::deform::Point{33.22917,8.02083},cat::deform::Point{12.60417,5.72917}}},
-    Paws{{cat::deform::Point{33.22917,8.02083},cat::deform::Point{12.60417,5.72917}}},
-    Paws{{cat::deform::Point{33.22917,8.02083},cat::deform::Point{12.60417,5.72917}}},
-    Paws{{cat::deform::Point{33.22917,8.02083},cat::deform::Point{12.60417,5.72917}}},
-    Paws{{cat::deform::Point{33.22917,8.02083},cat::deform::Point{12.60417,5.72917}}},
-    Paws{{cat::deform::Point{33.22917,8.02083},cat::deform::Point{12.60417,5.72917}}},
-    Paws{{cat::deform::Point{33.22917,8.02083},cat::deform::Point{12.60417,5.72917}}},
-    Paws{{cat::deform::Point{33.22917,8.02083},cat::deform::Point{12.60417,5.72917}}},
-    Paws{{cat::deform::Point{33.22917,8.02083},cat::deform::Point{12.60417,5.72917}}},
-    Paws{{cat::deform::Point{33.22917,8.02083},cat::deform::Point{12.60417,5.72917}}},
-    Paws{{cat::deform::Point{33.22917,8.02083},cat::deform::Point{12.60417,5.72917}}},
-    Paws{{cat::deform::Point{33.22917,8.02083},cat::deform::Point{12.60417,5.72917}}},
-    Paws{{cat::deform::Point{33.22917,8.02083},cat::deform::Point{12.60417,5.72917}}},
-    Paws{{cat::deform::Point{33.22917,8.02083},cat::deform::Point{12.60417,5.72917}}},
-    Paws{{cat::deform::Point{33.22917,8.02083},cat::deform::Point{12.60417,5.72917}}},
-    Paws{{cat::deform::Point{33.22917,8.02083},cat::deform::Point{12.60417,5.72917}}},
+inline constexpr std::array<Paws,107> kCreamPunch{{
+    Paws{{cat::deform::Point{0.00000,4.58333},cat::deform::Point{8.02083,5.72917}}},
+    Paws{{cat::deform::Point{0.00000,4.58333},cat::deform::Point{8.02083,5.72917}}},
+    Paws{{cat::deform::Point{0.00000,4.58333},cat::deform::Point{8.02083,5.72917}}},
+    Paws{{cat::deform::Point{0.00000,4.58333},cat::deform::Point{8.02083,5.72917}}},
+    Paws{{cat::deform::Point{0.00000,4.58333},cat::deform::Point{8.02083,5.72917}}},
+    Paws{{cat::deform::Point{0.00000,4.58333},cat::deform::Point{8.02083,5.72917}}},
+    Paws{{cat::deform::Point{0.00000,2.29167},cat::deform::Point{8.02083,3.43750}}},
+    Paws{{cat::deform::Point{0.00000,2.29167},cat::deform::Point{8.02083,3.43750}}},
+    Paws{{cat::deform::Point{0.00000,2.29167},cat::deform::Point{8.02083,3.43750}}},
+    Paws{{cat::deform::Point{0.00000,3.43750},cat::deform::Point{8.02083,4.58333}}},
+    Paws{{cat::deform::Point{0.00000,4.58333},cat::deform::Point{8.02083,5.72917}}},
+    Paws{{cat::deform::Point{0.00000,4.58333},cat::deform::Point{8.02083,5.72917}}},
+    Paws{{cat::deform::Point{0.00000,4.58333},cat::deform::Point{8.02083,5.72917}}},
+    Paws{{cat::deform::Point{0.00000,4.58333},cat::deform::Point{8.02083,5.72917}}},
+    Paws{{cat::deform::Point{0.00000,4.58333},cat::deform::Point{8.02083,5.72917}}},
+    Paws{{cat::deform::Point{0.00000,4.58333},cat::deform::Point{8.02083,5.72917}}},
+    Paws{{cat::deform::Point{0.00000,4.58333},cat::deform::Point{8.02083,5.72917}}},
+    Paws{{cat::deform::Point{0.00000,4.58333},cat::deform::Point{8.02083,5.72917}}},
+    Paws{{cat::deform::Point{0.00000,4.58333},cat::deform::Point{8.02083,5.72917}}},
+    Paws{{cat::deform::Point{0.00000,4.58333},cat::deform::Point{9.16667,5.72917}}},
+    Paws{{cat::deform::Point{0.00000,4.58333},cat::deform::Point{9.16667,5.72917}}},
+    Paws{{cat::deform::Point{0.00000,4.58333},cat::deform::Point{10.31250,5.72917}}},
+    Paws{{cat::deform::Point{5.72917,6.87500},cat::deform::Point{5.72917,4.58333}}},
+    Paws{{cat::deform::Point{10.31250,10.31250},cat::deform::Point{0.00000,4.58333}}},
+    Paws{{cat::deform::Point{14.89583,11.45833},cat::deform::Point{-5.72917,3.43750}}},
+    Paws{{cat::deform::Point{21.77083,22.91667},cat::deform::Point{-8.02083,3.43750}}},
+    Paws{{cat::deform::Point{29.79167,33.22917},cat::deform::Point{-8.02083,3.43750}}},
+    Paws{{cat::deform::Point{36.66667,44.68750},cat::deform::Point{-8.02083,3.43750}}},
+    Paws{{cat::deform::Point{32.08333,36.66667},cat::deform::Point{-8.02083,3.43750}}},
+    Paws{{cat::deform::Point{26.35417,28.64583},cat::deform::Point{-8.02083,3.43750}}},
+    Paws{{cat::deform::Point{21.77083,20.62500},cat::deform::Point{-8.02083,3.43750}}},
+    Paws{{cat::deform::Point{18.33333,16.04167},cat::deform::Point{-8.02083,3.43750}}},
+    Paws{{cat::deform::Point{14.89583,10.31250},cat::deform::Point{-8.02083,3.43750}}},
+    Paws{{cat::deform::Point{10.31250,4.58333},cat::deform::Point{1.14583,8.02083}}},
+    Paws{{cat::deform::Point{18.33333,17.18750},cat::deform::Point{-8.02083,3.43750}}},
+    Paws{{cat::deform::Point{26.35417,29.79167},cat::deform::Point{-8.02083,3.43750}}},
+    Paws{{cat::deform::Point{34.37500,43.54167},cat::deform::Point{-11.45833,3.43750}}},
+    Paws{{cat::deform::Point{28.64583,37.81250},cat::deform::Point{-8.02083,3.43750}}},
+    Paws{{cat::deform::Point{21.77083,33.22917},cat::deform::Point{2.29167,14.89583}}},
+    Paws{{cat::deform::Point{17.18750,28.64583},cat::deform::Point{10.31250,6.87500}}},
+    Paws{{cat::deform::Point{25.20833,36.66667},cat::deform::Point{3.43750,6.87500}}},
+    Paws{{cat::deform::Point{32.08333,43.54167},cat::deform::Point{-8.02083,5.72917}}},
+    Paws{{cat::deform::Point{43.54167,45.83333},cat::deform::Point{-11.45833,5.72917}}},
+    Paws{{cat::deform::Point{35.52083,36.66667},cat::deform::Point{-8.02083,5.72917}}},
+    Paws{{cat::deform::Point{28.64583,26.35417},cat::deform::Point{-1.14583,14.89583}}},
+    Paws{{cat::deform::Point{20.62500,17.18750},cat::deform::Point{12.60417,6.87500}}},
+    Paws{{cat::deform::Point{19.47917,16.04167},cat::deform::Point{5.72917,5.72917}}},
+    Paws{{cat::deform::Point{17.18750,14.89583},cat::deform::Point{1.14583,8.02083}}},
+    Paws{{cat::deform::Point{16.04167,10.31250},cat::deform::Point{-3.43750,6.87500}}},
+    Paws{{cat::deform::Point{19.47917,21.77083},cat::deform::Point{-8.02083,5.72917}}},
+    Paws{{cat::deform::Point{22.91667,33.22917},cat::deform::Point{-8.02083,5.72917}}},
+    Paws{{cat::deform::Point{27.50000,43.54167},cat::deform::Point{-8.02083,5.72917}}},
+    Paws{{cat::deform::Point{26.35417,38.95833},cat::deform::Point{-8.02083,4.58333}}},
+    Paws{{cat::deform::Point{26.35417,33.22917},cat::deform::Point{6.87500,3.43750}}},
+    Paws{{cat::deform::Point{26.35417,27.50000},cat::deform::Point{11.45833,1.14583}}},
+    Paws{{cat::deform::Point{20.62500,26.35417},cat::deform::Point{8.02083,3.43750}}},
+    Paws{{cat::deform::Point{19.47917,22.91667},cat::deform::Point{-3.43750,9.16667}}},
+    Paws{{cat::deform::Point{19.47917,20.62500},cat::deform::Point{-8.02083,3.43750}}},
+    Paws{{cat::deform::Point{25.20833,27.50000},cat::deform::Point{-8.02083,3.43750}}},
+    Paws{{cat::deform::Point{32.08333,29.79167},cat::deform::Point{-8.02083,4.58333}}},
+    Paws{{cat::deform::Point{41.25000,32.08333},cat::deform::Point{-8.02083,4.58333}}},
+    Paws{{cat::deform::Point{35.52083,25.20833},cat::deform::Point{-8.02083,4.58333}}},
+    Paws{{cat::deform::Point{38.95833,38.95833},cat::deform::Point{-8.02083,4.58333}}},
+    Paws{{cat::deform::Point{37.81250,37.81250},cat::deform::Point{-8.02083,5.72917}}},
+    Paws{{cat::deform::Point{36.66667,41.25000},cat::deform::Point{-8.02083,4.58333}}},
+    Paws{{cat::deform::Point{34.37500,45.83333},cat::deform::Point{-8.02083,4.58333}}},
+    Paws{{cat::deform::Point{37.81250,38.95833},cat::deform::Point{-9.16667,4.58333}}},
+    Paws{{cat::deform::Point{34.37500,36.66667},cat::deform::Point{-9.16667,4.58333}}},
+    Paws{{cat::deform::Point{29.79167,33.22917},cat::deform::Point{-9.16667,4.58333}}},
+    Paws{{cat::deform::Point{25.20833,30.93750},cat::deform::Point{-8.02083,3.43750}}},
+    Paws{{cat::deform::Point{20.62500,29.79167},cat::deform::Point{-8.02083,4.58333}}},
+    Paws{{cat::deform::Point{17.18750,26.35417},cat::deform::Point{-8.02083,4.58333}}},
+    Paws{{cat::deform::Point{12.60417,24.06250},cat::deform::Point{-8.02083,4.58333}}},
+    Paws{{cat::deform::Point{12.60417,22.91667},cat::deform::Point{-8.02083,4.58333}}},
+    Paws{{cat::deform::Point{12.60417,20.62500},cat::deform::Point{-8.02083,3.43750}}},
+    Paws{{cat::deform::Point{9.16667,22.91667},cat::deform::Point{-8.02083,3.43750}}},
+    Paws{{cat::deform::Point{9.16667,22.91667},cat::deform::Point{-8.02083,3.43750}}},
+    Paws{{cat::deform::Point{8.02083,20.62500},cat::deform::Point{-8.02083,3.43750}}},
+    Paws{{cat::deform::Point{13.75000,16.04167},cat::deform::Point{-8.02083,3.43750}}},
+    Paws{{cat::deform::Point{10.31250,11.45833},cat::deform::Point{6.87500,5.72917}}},
+    Paws{{cat::deform::Point{8.02083,9.16667},cat::deform::Point{3.43750,4.58333}}},
+    Paws{{cat::deform::Point{6.87500,8.02083},cat::deform::Point{4.58333,4.58333}}},
+    Paws{{cat::deform::Point{4.58333,8.02083},cat::deform::Point{5.72917,6.87500}}},
+    Paws{{cat::deform::Point{2.29167,5.72917},cat::deform::Point{6.87500,5.72917}}},
+    Paws{{cat::deform::Point{0.00000,4.58333},cat::deform::Point{9.16667,5.72917}}},
+    Paws{{cat::deform::Point{0.00000,4.58333},cat::deform::Point{9.16667,5.72917}}},
+    Paws{{cat::deform::Point{0.00000,5.72917},cat::deform::Point{9.16667,6.87500}}},
+    Paws{{cat::deform::Point{0.00000,5.72917},cat::deform::Point{9.16667,6.87500}}},
+    Paws{{cat::deform::Point{0.00000,5.72917},cat::deform::Point{9.16667,6.87500}}},
+    Paws{{cat::deform::Point{0.00000,5.72917},cat::deform::Point{9.16667,6.87500}}},
+    Paws{{cat::deform::Point{0.00000,5.72917},cat::deform::Point{9.16667,6.87500}}},
+    Paws{{cat::deform::Point{0.00000,5.72917},cat::deform::Point{9.16667,6.87500}}},
+    Paws{{cat::deform::Point{0.00000,5.72917},cat::deform::Point{9.16667,6.87500}}},
+    Paws{{cat::deform::Point{0.00000,5.72917},cat::deform::Point{9.16667,6.87500}}},
+    Paws{{cat::deform::Point{0.00000,5.72917},cat::deform::Point{9.16667,6.87500}}},
+    Paws{{cat::deform::Point{0.00000,5.72917},cat::deform::Point{9.16667,6.87500}}},
+    Paws{{cat::deform::Point{0.00000,5.72917},cat::deform::Point{9.16667,6.87500}}},
+    Paws{{cat::deform::Point{0.00000,5.72917},cat::deform::Point{9.16667,6.87500}}},
+    Paws{{cat::deform::Point{0.00000,5.72917},cat::deform::Point{9.16667,6.87500}}},
+    Paws{{cat::deform::Point{0.00000,5.72917},cat::deform::Point{9.16667,6.87500}}},
+    Paws{{cat::deform::Point{0.00000,5.72917},cat::deform::Point{9.16667,6.87500}}},
+    Paws{{cat::deform::Point{0.00000,5.72917},cat::deform::Point{9.16667,6.87500}}},
+    Paws{{cat::deform::Point{0.00000,5.72917},cat::deform::Point{9.16667,6.87500}}},
+    Paws{{cat::deform::Point{0.00000,5.72917},cat::deform::Point{9.16667,6.87500}}},
+    Paws{{cat::deform::Point{0.00000,5.72917},cat::deform::Point{9.16667,6.87500}}},
+    Paws{{cat::deform::Point{0.00000,5.72917},cat::deform::Point{9.16667,6.87500}}},
+    Paws{{cat::deform::Point{0.00000,5.72917},cat::deform::Point{9.16667,6.87500}}},
 }};
-inline constexpr std::array<Paws,69> kTuxedoPunch{{
-    Paws{{cat::deform::Point{11.45833,5.72917},cat::deform::Point{-5.72917,4.58333}}},
-    Paws{{cat::deform::Point{12.60417,5.72917},cat::deform::Point{-4.58333,4.58333}}},
-    Paws{{cat::deform::Point{12.60417,5.72917},cat::deform::Point{-4.58333,4.58333}}},
-    Paws{{cat::deform::Point{12.60417,5.72917},cat::deform::Point{-4.58333,4.58333}}},
-    Paws{{cat::deform::Point{12.60417,5.72917},cat::deform::Point{-4.58333,4.58333}}},
-    Paws{{cat::deform::Point{12.60417,5.72917},cat::deform::Point{-4.58333,4.58333}}},
-    Paws{{cat::deform::Point{12.60417,5.72917},cat::deform::Point{-4.58333,4.58333}}},
-    Paws{{cat::deform::Point{12.60417,5.72917},cat::deform::Point{-4.58333,4.58333}}},
-    Paws{{cat::deform::Point{12.60417,5.72917},cat::deform::Point{-4.58333,4.58333}}},
-    Paws{{cat::deform::Point{12.60417,5.72917},cat::deform::Point{-4.58333,3.43750}}},
-    Paws{{cat::deform::Point{-1.14583,10.31250},cat::deform::Point{1.14583,2.29167}}},
-    Paws{{cat::deform::Point{-13.75000,17.18750},cat::deform::Point{6.87500,3.43750}}},
-    Paws{{cat::deform::Point{-27.50000,24.06250},cat::deform::Point{11.45833,3.43750}}},
-    Paws{{cat::deform::Point{-26.35417,28.64583},cat::deform::Point{11.45833,3.43750}}},
-    Paws{{cat::deform::Point{-17.18750,34.37500},cat::deform::Point{11.45833,3.43750}}},
-    Paws{{cat::deform::Point{22.91667,35.52083},cat::deform::Point{11.45833,3.43750}}},
-    Paws{{cat::deform::Point{30.93750,14.89583},cat::deform::Point{11.45833,3.43750}}},
-    Paws{{cat::deform::Point{28.64583,5.72917},cat::deform::Point{11.45833,3.43750}}},
-    Paws{{cat::deform::Point{19.47917,6.87500},cat::deform::Point{11.45833,3.43750}}},
-    Paws{{cat::deform::Point{12.60417,4.58333},cat::deform::Point{8.02083,3.43750}}},
-    Paws{{cat::deform::Point{12.60417,6.87500},cat::deform::Point{3.43750,5.72917}}},
+inline constexpr std::array<Paws,107> kTuxedoPunch{{
+    Paws{{cat::deform::Point{18.33333,6.87500},cat::deform::Point{-3.43750,5.72917}}},
+    Paws{{cat::deform::Point{18.33333,6.87500},cat::deform::Point{-3.43750,5.72917}}},
+    Paws{{cat::deform::Point{18.33333,6.87500},cat::deform::Point{-3.43750,5.72917}}},
+    Paws{{cat::deform::Point{18.33333,6.87500},cat::deform::Point{-3.43750,5.72917}}},
+    Paws{{cat::deform::Point{18.33333,6.87500},cat::deform::Point{-3.43750,5.72917}}},
+    Paws{{cat::deform::Point{18.33333,6.87500},cat::deform::Point{-3.43750,5.72917}}},
+    Paws{{cat::deform::Point{18.33333,6.87500},cat::deform::Point{-3.43750,5.72917}}},
+    Paws{{cat::deform::Point{18.33333,6.87500},cat::deform::Point{-3.43750,5.72917}}},
+    Paws{{cat::deform::Point{14.89583,6.87500},cat::deform::Point{-3.43750,5.72917}}},
+    Paws{{cat::deform::Point{13.75000,6.87500},cat::deform::Point{-3.43750,5.72917}}},
+    Paws{{cat::deform::Point{12.60417,6.87500},cat::deform::Point{-3.43750,5.72917}}},
+    Paws{{cat::deform::Point{12.60417,6.87500},cat::deform::Point{-3.43750,5.72917}}},
+    Paws{{cat::deform::Point{12.60417,6.87500},cat::deform::Point{-3.43750,5.72917}}},
+    Paws{{cat::deform::Point{12.60417,6.87500},cat::deform::Point{-2.29167,5.72917}}},
     Paws{{cat::deform::Point{12.60417,6.87500},cat::deform::Point{-1.14583,5.72917}}},
-    Paws{{cat::deform::Point{11.45833,5.72917},cat::deform::Point{-5.72917,4.58333}}},
-    Paws{{cat::deform::Point{11.45833,5.72917},cat::deform::Point{-5.72917,4.58333}}},
-    Paws{{cat::deform::Point{11.45833,5.72917},cat::deform::Point{-5.72917,4.58333}}},
-    Paws{{cat::deform::Point{11.45833,5.72917},cat::deform::Point{-5.72917,4.58333}}},
-    Paws{{cat::deform::Point{11.45833,5.72917},cat::deform::Point{-5.72917,4.58333}}},
-    Paws{{cat::deform::Point{11.45833,5.72917},cat::deform::Point{-5.72917,4.58333}}},
-    Paws{{cat::deform::Point{11.45833,5.72917},cat::deform::Point{-5.72917,4.58333}}},
-    Paws{{cat::deform::Point{11.45833,5.72917},cat::deform::Point{-5.72917,4.58333}}},
-    Paws{{cat::deform::Point{11.45833,5.72917},cat::deform::Point{-5.72917,4.58333}}},
-    Paws{{cat::deform::Point{11.45833,5.72917},cat::deform::Point{-5.72917,4.58333}}},
-    Paws{{cat::deform::Point{11.45833,5.72917},cat::deform::Point{-5.72917,4.58333}}},
-    Paws{{cat::deform::Point{11.45833,5.72917},cat::deform::Point{-5.72917,4.58333}}},
-    Paws{{cat::deform::Point{11.45833,5.72917},cat::deform::Point{-5.72917,4.58333}}},
-    Paws{{cat::deform::Point{11.45833,5.72917},cat::deform::Point{-5.72917,4.58333}}},
-    Paws{{cat::deform::Point{11.45833,5.72917},cat::deform::Point{-5.72917,4.58333}}},
-    Paws{{cat::deform::Point{11.45833,5.72917},cat::deform::Point{-5.72917,4.58333}}},
-    Paws{{cat::deform::Point{11.45833,5.72917},cat::deform::Point{-5.72917,4.58333}}},
-    Paws{{cat::deform::Point{11.45833,5.72917},cat::deform::Point{-5.72917,4.58333}}},
-    Paws{{cat::deform::Point{11.45833,5.72917},cat::deform::Point{-5.72917,4.58333}}},
-    Paws{{cat::deform::Point{1.14583,12.60417},cat::deform::Point{0.00000,4.58333}}},
-    Paws{{cat::deform::Point{-10.31250,18.33333},cat::deform::Point{5.72917,3.43750}}},
-    Paws{{cat::deform::Point{-21.77083,25.20833},cat::deform::Point{11.45833,3.43750}}},
-    Paws{{cat::deform::Point{-18.33333,27.50000},cat::deform::Point{11.45833,3.43750}}},
-    Paws{{cat::deform::Point{-14.89583,28.64583},cat::deform::Point{11.45833,3.43750}}},
-    Paws{{cat::deform::Point{-3.43750,38.95833},cat::deform::Point{11.45833,3.43750}}},
-    Paws{{cat::deform::Point{27.50000,28.64583},cat::deform::Point{11.45833,3.43750}}},
-    Paws{{cat::deform::Point{36.66667,11.45833},cat::deform::Point{11.45833,3.43750}}},
-    Paws{{cat::deform::Point{30.93750,8.02083},cat::deform::Point{11.45833,3.43750}}},
-    Paws{{cat::deform::Point{10.31250,4.58333},cat::deform::Point{-5.72917,2.29167}}},
-    Paws{{cat::deform::Point{10.31250,4.58333},cat::deform::Point{-5.72917,3.43750}}},
-    Paws{{cat::deform::Point{11.45833,5.72917},cat::deform::Point{-5.72917,4.58333}}},
-    Paws{{cat::deform::Point{11.45833,5.72917},cat::deform::Point{-5.72917,4.58333}}},
-    Paws{{cat::deform::Point{11.45833,5.72917},cat::deform::Point{-5.72917,4.58333}}},
-    Paws{{cat::deform::Point{12.60417,5.72917},cat::deform::Point{-3.43750,4.58333}}},
-    Paws{{cat::deform::Point{12.60417,6.87500},cat::deform::Point{-2.29167,4.58333}}},
-    Paws{{cat::deform::Point{12.60417,6.87500},cat::deform::Point{-1.14583,4.58333}}},
-    Paws{{cat::deform::Point{12.60417,6.87500},cat::deform::Point{0.00000,4.58333}}},
-    Paws{{cat::deform::Point{12.60417,6.87500},cat::deform::Point{1.14583,4.58333}}},
-    Paws{{cat::deform::Point{12.60417,6.87500},cat::deform::Point{2.29167,4.58333}}},
-    Paws{{cat::deform::Point{12.60417,6.87500},cat::deform::Point{3.43750,5.72917}}},
-    Paws{{cat::deform::Point{12.60417,6.87500},cat::deform::Point{4.58333,5.72917}}},
-    Paws{{cat::deform::Point{18.33333,16.04167},cat::deform::Point{5.72917,3.43750}}},
-    Paws{{cat::deform::Point{26.35417,9.16667},cat::deform::Point{6.87500,3.43750}}},
-    Paws{{cat::deform::Point{27.50000,9.16667},cat::deform::Point{8.02083,3.43750}}},
-    Paws{{cat::deform::Point{28.64583,10.31250},cat::deform::Point{9.16667,3.43750}}},
-    Paws{{cat::deform::Point{30.93750,10.31250},cat::deform::Point{10.31250,3.43750}}},
-    Paws{{cat::deform::Point{32.08333,11.45833},cat::deform::Point{11.45833,3.43750}}},
+    Paws{{cat::deform::Point{12.60417,6.87500},cat::deform::Point{-1.14583,5.72917}}},
+    Paws{{cat::deform::Point{12.60417,9.16667},cat::deform::Point{0.00000,5.72917}}},
+    Paws{{cat::deform::Point{12.60417,11.45833},cat::deform::Point{1.14583,4.58333}}},
+    Paws{{cat::deform::Point{14.89583,16.04167},cat::deform::Point{2.29167,4.58333}}},
+    Paws{{cat::deform::Point{26.35417,20.62500},cat::deform::Point{-1.14583,3.43750}}},
+    Paws{{cat::deform::Point{41.25000,27.50000},cat::deform::Point{-3.43750,3.43750}}},
+    Paws{{cat::deform::Point{42.39583,34.37500},cat::deform::Point{-5.72917,4.58333}}},
+    Paws{{cat::deform::Point{37.81250,30.93750},cat::deform::Point{-2.29167,4.58333}}},
+    Paws{{cat::deform::Point{32.08333,26.35417},cat::deform::Point{-1.14583,5.72917}}},
+    Paws{{cat::deform::Point{27.50000,22.91667},cat::deform::Point{-1.14583,5.72917}}},
+    Paws{{cat::deform::Point{25.20833,21.77083},cat::deform::Point{6.87500,10.31250}}},
+    Paws{{cat::deform::Point{21.77083,19.47917},cat::deform::Point{4.58333,10.31250}}},
+    Paws{{cat::deform::Point{19.47917,14.89583},cat::deform::Point{4.58333,9.16667}}},
+    Paws{{cat::deform::Point{26.35417,21.77083},cat::deform::Point{4.58333,9.16667}}},
+    Paws{{cat::deform::Point{33.22917,25.20833},cat::deform::Point{5.72917,5.72917}}},
+    Paws{{cat::deform::Point{41.25000,32.08333},cat::deform::Point{-1.14583,3.43750}}},
+    Paws{{cat::deform::Point{37.81250,38.95833},cat::deform::Point{-1.14583,3.43750}}},
+    Paws{{cat::deform::Point{38.95833,41.25000},cat::deform::Point{-1.14583,3.43750}}},
+    Paws{{cat::deform::Point{37.81250,45.83333},cat::deform::Point{-1.14583,3.43750}}},
+    Paws{{cat::deform::Point{35.52083,38.95833},cat::deform::Point{-1.14583,3.43750}}},
+    Paws{{cat::deform::Point{32.08333,30.93750},cat::deform::Point{-1.14583,3.43750}}},
+    Paws{{cat::deform::Point{28.64583,24.06250},cat::deform::Point{-1.14583,3.43750}}},
+    Paws{{cat::deform::Point{24.06250,18.33333},cat::deform::Point{-1.14583,3.43750}}},
+    Paws{{cat::deform::Point{18.33333,16.04167},cat::deform::Point{-1.14583,8.02083}}},
+    Paws{{cat::deform::Point{13.75000,11.45833},cat::deform::Point{-1.14583,9.16667}}},
+    Paws{{cat::deform::Point{21.77083,22.91667},cat::deform::Point{-1.14583,8.02083}}},
+    Paws{{cat::deform::Point{29.79167,35.52083},cat::deform::Point{-1.14583,8.02083}}},
+    Paws{{cat::deform::Point{37.81250,43.54167},cat::deform::Point{-1.14583,3.43750}}},
+    Paws{{cat::deform::Point{40.10417,40.10417},cat::deform::Point{-1.14583,3.43750}}},
+    Paws{{cat::deform::Point{41.25000,36.66667},cat::deform::Point{-1.14583,3.43750}}},
+    Paws{{cat::deform::Point{42.39583,33.22917},cat::deform::Point{-1.14583,3.43750}}},
+    Paws{{cat::deform::Point{34.37500,26.35417},cat::deform::Point{-1.14583,3.43750}}},
+    Paws{{cat::deform::Point{26.35417,18.33333},cat::deform::Point{-1.14583,3.43750}}},
+    Paws{{cat::deform::Point{18.33333,13.75000},cat::deform::Point{-1.14583,6.87500}}},
+    Paws{{cat::deform::Point{19.47917,19.47917},cat::deform::Point{-1.14583,8.02083}}},
+    Paws{{cat::deform::Point{19.47917,22.91667},cat::deform::Point{-1.14583,8.02083}}},
+    Paws{{cat::deform::Point{20.62500,27.50000},cat::deform::Point{-1.14583,8.02083}}},
+    Paws{{cat::deform::Point{29.79167,26.35417},cat::deform::Point{-1.14583,4.58333}}},
+    Paws{{cat::deform::Point{38.95833,28.64583},cat::deform::Point{-1.14583,4.58333}}},
+    Paws{{cat::deform::Point{48.12500,27.50000},cat::deform::Point{-1.14583,3.43750}}},
+    Paws{{cat::deform::Point{45.83333,32.08333},cat::deform::Point{-1.14583,3.43750}}},
+    Paws{{cat::deform::Point{41.25000,35.52083},cat::deform::Point{-1.14583,3.43750}}},
+    Paws{{cat::deform::Point{42.39583,42.39583},cat::deform::Point{-1.14583,3.43750}}},
+    Paws{{cat::deform::Point{37.81250,40.10417},cat::deform::Point{-1.14583,8.02083}}},
+    Paws{{cat::deform::Point{33.22917,35.52083},cat::deform::Point{-1.14583,8.02083}}},
+    Paws{{cat::deform::Point{28.64583,27.50000},cat::deform::Point{-1.14583,3.43750}}},
+    Paws{{cat::deform::Point{27.50000,26.35417},cat::deform::Point{-1.14583,3.43750}}},
+    Paws{{cat::deform::Point{26.35417,26.35417},cat::deform::Point{-1.14583,3.43750}}},
+    Paws{{cat::deform::Point{25.20833,25.20833},cat::deform::Point{-1.14583,3.43750}}},
+    Paws{{cat::deform::Point{25.20833,25.20833},cat::deform::Point{-1.14583,3.43750}}},
+    Paws{{cat::deform::Point{24.06250,25.20833},cat::deform::Point{-1.14583,3.43750}}},
+    Paws{{cat::deform::Point{22.91667,27.50000},cat::deform::Point{-1.14583,6.87500}}},
+    Paws{{cat::deform::Point{25.20833,29.79167},cat::deform::Point{-1.14583,8.02083}}},
+    Paws{{cat::deform::Point{28.64583,30.93750},cat::deform::Point{-1.14583,8.02083}}},
+    Paws{{cat::deform::Point{30.93750,32.08333},cat::deform::Point{-1.14583,6.87500}}},
+    Paws{{cat::deform::Point{33.22917,29.79167},cat::deform::Point{-1.14583,4.58333}}},
+    Paws{{cat::deform::Point{36.66667,30.93750},cat::deform::Point{-1.14583,4.58333}}},
+    Paws{{cat::deform::Point{40.10417,32.08333},cat::deform::Point{-1.14583,4.58333}}},
+    Paws{{cat::deform::Point{37.81250,28.64583},cat::deform::Point{-1.14583,4.58333}}},
+    Paws{{cat::deform::Point{32.08333,26.35417},cat::deform::Point{-2.29167,4.58333}}},
+    Paws{{cat::deform::Point{27.50000,26.35417},cat::deform::Point{-1.14583,6.87500}}},
+    Paws{{cat::deform::Point{25.20833,25.20833},cat::deform::Point{-1.14583,6.87500}}},
+    Paws{{cat::deform::Point{21.77083,22.91667},cat::deform::Point{-1.14583,6.87500}}},
+    Paws{{cat::deform::Point{20.62500,10.31250},cat::deform::Point{-1.14583,5.72917}}},
+    Paws{{cat::deform::Point{20.62500,10.31250},cat::deform::Point{-2.29167,5.72917}}},
+    Paws{{cat::deform::Point{20.62500,10.31250},cat::deform::Point{-2.29167,5.72917}}},
+    Paws{{cat::deform::Point{19.47917,9.16667},cat::deform::Point{-2.29167,5.72917}}},
+    Paws{{cat::deform::Point{18.33333,8.02083},cat::deform::Point{-2.29167,5.72917}}},
+    Paws{{cat::deform::Point{16.04167,6.87500},cat::deform::Point{-2.29167,5.72917}}},
+    Paws{{cat::deform::Point{14.89583,5.72917},cat::deform::Point{-2.29167,5.72917}}},
+    Paws{{cat::deform::Point{14.89583,5.72917},cat::deform::Point{-2.29167,5.72917}}},
+    Paws{{cat::deform::Point{14.89583,5.72917},cat::deform::Point{-2.29167,5.72917}}},
+    Paws{{cat::deform::Point{14.89583,5.72917},cat::deform::Point{-2.29167,5.72917}}},
+    Paws{{cat::deform::Point{14.89583,5.72917},cat::deform::Point{-2.29167,5.72917}}},
+    Paws{{cat::deform::Point{14.89583,5.72917},cat::deform::Point{-2.29167,5.72917}}},
+    Paws{{cat::deform::Point{14.89583,5.72917},cat::deform::Point{-2.29167,5.72917}}},
+    Paws{{cat::deform::Point{16.04167,5.72917},cat::deform::Point{-2.29167,5.72917}}},
+    Paws{{cat::deform::Point{16.04167,5.72917},cat::deform::Point{-2.29167,5.72917}}},
+    Paws{{cat::deform::Point{16.04167,5.72917},cat::deform::Point{-2.29167,5.72917}}},
+    Paws{{cat::deform::Point{16.04167,5.72917},cat::deform::Point{-2.29167,5.72917}}},
+    Paws{{cat::deform::Point{16.04167,5.72917},cat::deform::Point{-2.29167,5.72917}}},
+    Paws{{cat::deform::Point{16.04167,5.72917},cat::deform::Point{-2.29167,5.72917}}},
+    Paws{{cat::deform::Point{16.04167,5.72917},cat::deform::Point{-2.29167,5.72917}}},
+    Paws{{cat::deform::Point{17.18750,5.72917},cat::deform::Point{-2.29167,5.72917}}},
+    Paws{{cat::deform::Point{17.18750,5.72917},cat::deform::Point{-2.29167,5.72917}}},
+    Paws{{cat::deform::Point{17.18750,6.87500},cat::deform::Point{-2.29167,5.72917}}},
+    Paws{{cat::deform::Point{17.18750,6.87500},cat::deform::Point{-2.29167,5.72917}}},
+    Paws{{cat::deform::Point{17.18750,6.87500},cat::deform::Point{-2.29167,5.72917}}},
+    Paws{{cat::deform::Point{17.18750,6.87500},cat::deform::Point{-2.29167,5.72917}}},
+    Paws{{cat::deform::Point{17.18750,6.87500},cat::deform::Point{-2.29167,5.72917}}},
+    Paws{{cat::deform::Point{18.33333,6.87500},cat::deform::Point{-2.29167,5.72917}}},
+    Paws{{cat::deform::Point{18.33333,6.87500},cat::deform::Point{-2.29167,5.72917}}},
 }};
 inline Paws PunchPaws(unsigned character,unsigned frame) {
     const auto& points=character==8?kTuxedoPunch:kCreamPunch;
@@ -857,20 +933,62 @@ inline unsigned ReachContact(unsigned character,unsigned frame) {
     }
     return 0;
 }
-inline constexpr std::array<unsigned,245> kCreamWalkSource{{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137,138,139,140,141,142,143,144,145,146,147,148,149,150,151,152,153,154,155,156,0,16,18,19,21,23,24,26,28,29,31,33,34,36,38,39,41,43,44,46,48,49,51,53,54,56,58,59,61,63,64,66,68,69,71,73,74,76,78,79,81,83,84,86,88,89,91,93,94,96,98,99,101,103,104,106,0,2,4,5,7,9,11,12,14,16,18,20,21,23,25,27,28,30,32,34,36,37,39,41,43,44,46,48,49,68,87,106}};
-inline constexpr std::array<unsigned,245> kTuxedoWalkSource{{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137,138,139,140,141,142,143,144,145,146,147,148,149,150,151,152,153,154,155,156,0,16,18,19,21,23,24,26,28,29,31,33,34,36,38,39,41,43,44,46,48,49,51,53,54,56,58,59,61,63,64,66,68,69,71,73,74,76,78,79,81,83,84,86,88,89,91,93,94,96,98,99,101,103,104,106,0,2,4,5,7,9,11,12,14,16,18,20,21,23,25,27,28,30,32,34,36,37,39,41,43,44,46,48,49,68,87,106}};
+inline unsigned PunchContact(unsigned character,unsigned frame) {
+    if(character==8) {
+        if(frame>=20&&frame<=23)return 1;
+        if(frame>=31&&frame<=35)return 2;
+        if(frame>=42&&frame<=46)return 3;
+        if(frame>=53&&frame<=58)return 4;
+        if(frame>=70&&frame<=74)return 5;
+    }
+    else {
+        if(frame>=26&&frame<=29)return 1;
+        if(frame>=35&&frame<=38)return 2;
+        if(frame>=41&&frame<=44)return 3;
+        if(frame>=50&&frame<=53)return 4;
+        if(frame>=59&&frame<=62)return 5;
+        if(frame>=65&&frame<=69)return 6;
+    }
+    return 0;
+}
+inline unsigned PunchFirstContactFrame(unsigned character) {
+    return character==8?21:27;
+}
+inline unsigned PunchContactCount(unsigned character) {
+    return character==8?5:6;
+}
+inline std::array<std::uint64_t,7> PunchExitMs(unsigned character) {
+    return character==8?std::array<std::uint64_t,7>{{542,1167,1667,2042,3542,4458,0}}:std::array<std::uint64_t,7>{{792,1417,2042,3542,4458,0,0}};
+}
+inline std::array<unsigned,3> TurnTiming(unsigned character) {
+    return character==8?std::array<unsigned,3>{{417,833,500}}:std::array<unsigned,3>{{583,584,583}};
+}
+inline double TurnArrivalPhase(unsigned character,bool running) {
+    if(character==8)return running?0.96226415:0.35668790;
+    return running?0.00000000:0.69426752;
+}
+inline double GaitArrivalPhase(unsigned character,bool running) {
+    if(character==8)return running?0.22641509:0.31847134;
+    return running?0.48113208:0.63694268;
+}
+inline double WalkBoundaryPhase(unsigned character,bool reverseExit=false) {
+    if(character==8)return reverseExit?0.00636943:0.80254777;
+    return reverseExit?0.82802548:0.00000000;
+}
+inline constexpr std::array<unsigned,229> kCreamWalkSource{{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137,138,139,140,141,142,143,144,145,146,147,148,149,150,151,152,153,154,155,156,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41}};
+inline constexpr std::array<unsigned,229> kTuxedoWalkSource{{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137,138,139,140,141,142,143,144,145,146,147,148,149,150,151,152,153,154,155,156,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41}};
 inline unsigned WalkSourceFrame(unsigned character,unsigned frame) {
     const auto& frames=character==8?kTuxedoWalkSource:kCreamWalkSource;
     return frames[std::min<unsigned>(frame,frames.size()-1)];
 }
-inline constexpr std::array<const char*,245> kCreamWalkFiles{{"sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-entry.mp4","sources/walk-v30/cream-exit.mp4","sources/walk-v30/cream-exit.mp4","sources/walk-v30/cream-exit.mp4","sources/walk-v30/cream-exit.mp4","sources/walk-v30/cream-exit.mp4","sources/walk-v30/cream-exit.mp4","sources/walk-v30/cream-exit.mp4","sources/walk-v30/cream-exit.mp4","sources/walk-v30/cream-exit.mp4","sources/walk-v30/cream-exit.mp4","sources/walk-v30/cream-exit.mp4","sources/walk-v30/cream-exit.mp4","sources/walk-v30/cream-exit.mp4","sources/walk-v30/cream-exit.mp4","sources/walk-v30/cream-exit.mp4","sources/walk-v30/cream-exit.mp4","sources/walk-v30/cream-exit.mp4","sources/walk-v30/cream-exit.mp4","sources/walk-v30/cream-exit.mp4","sources/walk-v30/cream-exit.mp4","sources/walk-v30/cream-exit.mp4","sources/walk-v30/cream-exit.mp4","sources/walk-v30/cream-exit.mp4","sources/walk-v30/cream-exit.mp4","sources/walk-v30/cream-exit.mp4","sources/walk-v30/cream-exit.mp4","sources/walk-v30/cream-exit.mp4","sources/walk-v30/cream-exit.mp4","sources/walk-v30/cream-exit.mp4","sources/walk-v30/cream-exit.mp4","sources/walk-v30/cream-exit.mp4","sources/walk-v30/cream-exit.mp4"}};
-inline constexpr std::array<const char*,245> kTuxedoWalkFiles{{"sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-entry.mp4","sources/walk-v30/tuxedo-exit.mp4","sources/walk-v30/tuxedo-exit.mp4","sources/walk-v30/tuxedo-exit.mp4","sources/walk-v30/tuxedo-exit.mp4","sources/walk-v30/tuxedo-exit.mp4","sources/walk-v30/tuxedo-exit.mp4","sources/walk-v30/tuxedo-exit.mp4","sources/walk-v30/tuxedo-exit.mp4","sources/walk-v30/tuxedo-exit.mp4","sources/walk-v30/tuxedo-exit.mp4","sources/walk-v30/tuxedo-exit.mp4","sources/walk-v30/tuxedo-exit.mp4","sources/walk-v30/tuxedo-exit.mp4","sources/walk-v30/tuxedo-exit.mp4","sources/walk-v30/tuxedo-exit.mp4","sources/walk-v30/tuxedo-exit.mp4","sources/walk-v30/tuxedo-exit.mp4","sources/walk-v30/tuxedo-exit.mp4","sources/walk-v30/tuxedo-exit.mp4","sources/walk-v30/tuxedo-exit.mp4","sources/walk-v30/tuxedo-exit.mp4","sources/walk-v30/tuxedo-exit.mp4","sources/walk-v30/tuxedo-exit.mp4","sources/walk-v30/tuxedo-exit.mp4","sources/walk-v30/tuxedo-exit.mp4","sources/walk-v30/tuxedo-exit.mp4","sources/walk-v30/tuxedo-exit.mp4","sources/walk-v30/tuxedo-exit.mp4","sources/walk-v30/tuxedo-exit.mp4","sources/walk-v30/tuxedo-exit.mp4","sources/walk-v30/tuxedo-exit.mp4","sources/walk-v30/tuxedo-exit.mp4"}};
+inline constexpr std::array<const char*,229> kCreamWalkFiles{{"sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/walk-v30/cream-cycle.mp4","sources/controls-v34/cream-walk-entry.mp4","sources/controls-v34/cream-walk-entry.mp4","sources/controls-v34/cream-walk-entry.mp4","sources/controls-v34/cream-walk-entry.mp4","sources/controls-v34/cream-walk-entry.mp4","sources/controls-v34/cream-walk-entry.mp4","sources/controls-v34/cream-walk-entry.mp4","sources/controls-v34/cream-walk-entry.mp4","sources/controls-v34/cream-walk-entry.mp4","sources/controls-v34/cream-walk-entry.mp4","sources/controls-v34/cream-walk-entry.mp4","sources/controls-v34/cream-walk-entry.mp4","sources/controls-v34/cream-walk-entry.mp4","sources/controls-v34/cream-walk-entry.mp4","sources/controls-v34/cream-walk-entry.mp4","sources/controls-v34/cream-walk-entry.mp4","sources/controls-v34/cream-walk-entry.mp4","sources/controls-v34/cream-walk-entry.mp4","sources/controls-v34/cream-walk-entry.mp4","sources/controls-v34/cream-walk-entry.mp4","sources/controls-v34/cream-walk-entry.mp4","sources/controls-v34/cream-walk-entry.mp4","sources/controls-v34/cream-walk-entry.mp4","sources/controls-v34/cream-walk-entry.mp4","sources/controls-v34/cream-walk-entry.mp4","sources/controls-v34/cream-walk-entry.mp4","sources/controls-v34/cream-walk-entry.mp4","sources/controls-v34/cream-walk-entry.mp4","sources/controls-v34/cream-walk-entry.mp4","sources/controls-v34/cream-walk-entry.mp4","sources/controls-v34/cream-walk-entry.mp4","sources/controls-v34/cream-walk-entry.mp4","sources/controls-v34/cream-walk-entry.mp4","sources/controls-v34/cream-walk-entry.mp4","sources/controls-v34/cream-walk-entry.mp4","sources/controls-v34/cream-walk-entry.mp4","sources/controls-v34/cream-walk-exit.mp4","sources/controls-v34/cream-walk-exit.mp4","sources/controls-v34/cream-walk-exit.mp4","sources/controls-v34/cream-walk-exit.mp4","sources/controls-v34/cream-walk-exit.mp4","sources/controls-v34/cream-walk-exit.mp4","sources/controls-v34/cream-walk-exit.mp4","sources/controls-v34/cream-walk-exit.mp4","sources/controls-v34/cream-walk-exit.mp4","sources/controls-v34/cream-walk-exit.mp4","sources/controls-v34/cream-walk-exit.mp4","sources/controls-v34/cream-walk-exit.mp4","sources/controls-v34/cream-walk-exit.mp4","sources/controls-v34/cream-walk-exit.mp4","sources/controls-v34/cream-walk-exit.mp4","sources/controls-v34/cream-walk-exit.mp4","sources/controls-v34/cream-walk-exit.mp4","sources/controls-v34/cream-walk-exit.mp4","sources/controls-v34/cream-walk-exit.mp4","sources/controls-v34/cream-walk-exit.mp4","sources/controls-v34/cream-walk-exit.mp4","sources/controls-v34/cream-walk-exit.mp4","sources/controls-v34/cream-walk-exit.mp4","sources/controls-v34/cream-walk-exit.mp4","sources/controls-v34/cream-walk-exit.mp4","sources/controls-v34/cream-walk-exit.mp4","sources/controls-v34/cream-walk-exit.mp4","sources/controls-v34/cream-walk-exit.mp4","sources/controls-v34/cream-walk-exit.mp4","sources/controls-v34/cream-walk-exit.mp4","sources/controls-v34/cream-walk-exit.mp4","sources/controls-v34/cream-walk-exit.mp4","sources/controls-v34/cream-walk-exit.mp4","sources/controls-v34/cream-walk-exit.mp4","sources/controls-v34/cream-walk-exit.mp4","sources/controls-v34/cream-walk-exit.mp4"}};
+inline constexpr std::array<const char*,229> kTuxedoWalkFiles{{"sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/walk-v30/tuxedo-cycle.mp4","sources/controls-v34/tuxedo-walk-entry.mp4","sources/controls-v34/tuxedo-walk-entry.mp4","sources/controls-v34/tuxedo-walk-entry.mp4","sources/controls-v34/tuxedo-walk-entry.mp4","sources/controls-v34/tuxedo-walk-entry.mp4","sources/controls-v34/tuxedo-walk-entry.mp4","sources/controls-v34/tuxedo-walk-entry.mp4","sources/controls-v34/tuxedo-walk-entry.mp4","sources/controls-v34/tuxedo-walk-entry.mp4","sources/controls-v34/tuxedo-walk-entry.mp4","sources/controls-v34/tuxedo-walk-entry.mp4","sources/controls-v34/tuxedo-walk-entry.mp4","sources/controls-v34/tuxedo-walk-entry.mp4","sources/controls-v34/tuxedo-walk-entry.mp4","sources/controls-v34/tuxedo-walk-entry.mp4","sources/controls-v34/tuxedo-walk-entry.mp4","sources/controls-v34/tuxedo-walk-entry.mp4","sources/controls-v34/tuxedo-walk-entry.mp4","sources/controls-v34/tuxedo-walk-entry.mp4","sources/controls-v34/tuxedo-walk-entry.mp4","sources/controls-v34/tuxedo-walk-entry.mp4","sources/controls-v34/tuxedo-walk-entry.mp4","sources/controls-v34/tuxedo-walk-entry.mp4","sources/controls-v34/tuxedo-walk-entry.mp4","sources/controls-v34/tuxedo-walk-entry.mp4","sources/controls-v34/tuxedo-walk-entry.mp4","sources/controls-v34/tuxedo-walk-entry.mp4","sources/controls-v34/tuxedo-walk-entry.mp4","sources/controls-v34/tuxedo-walk-entry.mp4","sources/controls-v34/tuxedo-walk-entry.mp4","sources/controls-v34/tuxedo-walk-entry.mp4","sources/controls-v34/tuxedo-walk-entry.mp4","sources/controls-v34/tuxedo-walk-entry.mp4","sources/controls-v34/tuxedo-walk-entry.mp4","sources/controls-v34/tuxedo-walk-entry.mp4","sources/controls-v34/tuxedo-walk-entry.mp4","sources/controls-v34/tuxedo-walk-exit.mp4","sources/controls-v34/tuxedo-walk-exit.mp4","sources/controls-v34/tuxedo-walk-exit.mp4","sources/controls-v34/tuxedo-walk-exit.mp4","sources/controls-v34/tuxedo-walk-exit.mp4","sources/controls-v34/tuxedo-walk-exit.mp4","sources/controls-v34/tuxedo-walk-exit.mp4","sources/controls-v34/tuxedo-walk-exit.mp4","sources/controls-v34/tuxedo-walk-exit.mp4","sources/controls-v34/tuxedo-walk-exit.mp4","sources/controls-v34/tuxedo-walk-exit.mp4","sources/controls-v34/tuxedo-walk-exit.mp4","sources/controls-v34/tuxedo-walk-exit.mp4","sources/controls-v34/tuxedo-walk-exit.mp4","sources/controls-v34/tuxedo-walk-exit.mp4","sources/controls-v34/tuxedo-walk-exit.mp4","sources/controls-v34/tuxedo-walk-exit.mp4","sources/controls-v34/tuxedo-walk-exit.mp4","sources/controls-v34/tuxedo-walk-exit.mp4","sources/controls-v34/tuxedo-walk-exit.mp4","sources/controls-v34/tuxedo-walk-exit.mp4","sources/controls-v34/tuxedo-walk-exit.mp4","sources/controls-v34/tuxedo-walk-exit.mp4","sources/controls-v34/tuxedo-walk-exit.mp4","sources/controls-v34/tuxedo-walk-exit.mp4","sources/controls-v34/tuxedo-walk-exit.mp4","sources/controls-v34/tuxedo-walk-exit.mp4","sources/controls-v34/tuxedo-walk-exit.mp4","sources/controls-v34/tuxedo-walk-exit.mp4","sources/controls-v34/tuxedo-walk-exit.mp4","sources/controls-v34/tuxedo-walk-exit.mp4","sources/controls-v34/tuxedo-walk-exit.mp4","sources/controls-v34/tuxedo-walk-exit.mp4","sources/controls-v34/tuxedo-walk-exit.mp4","sources/controls-v34/tuxedo-walk-exit.mp4","sources/controls-v34/tuxedo-walk-exit.mp4"}};
 inline const char* WalkSourceFile(unsigned character,unsigned frame) {
     const auto& files=character==8?kTuxedoWalkFiles:kCreamWalkFiles;
     return files[std::min<unsigned>(frame,files.size()-1)];
 }
-inline constexpr std::array<unsigned,106> kCreamRunSource{{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105}};
-inline constexpr std::array<unsigned,106> kTuxedoRunSource{{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105}};
+inline constexpr std::array<unsigned,154> kCreamRunSource{{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75}};
+inline constexpr std::array<unsigned,154> kTuxedoRunSource{{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81}};
 inline unsigned RunSourceFrame(unsigned character,unsigned frame) {
     const auto& frames=character==8?kTuxedoRunSource:kCreamRunSource;
     return frames[std::min<unsigned>(frame,frames.size()-1)];
@@ -881,8 +999,8 @@ inline unsigned EatSourceFrame(unsigned character,unsigned frame) {
     const auto& frames=character==8?kTuxedoEatSource:kCreamEatSource;
     return frames[std::min<unsigned>(frame,frames.size()-1)];
 }
-inline constexpr std::array<unsigned,110> kCreamTurnSource{{48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137,138,139,140,141,142,143,144,145,146,147,148,149,150,151,152,153,154,155,156,157}};
-inline constexpr std::array<unsigned,110> kTuxedoTurnSource{{48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137,138,139,140,141,142,143,144,145,146,147,148,149,150,151,152,153,154,155,156,157}};
+inline constexpr std::array<unsigned,42> kCreamTurnSource{{4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45}};
+inline constexpr std::array<unsigned,42> kTuxedoTurnSource{{4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45}};
 inline unsigned TurnSourceFrame(unsigned character,unsigned frame) {
     const auto& frames=character==8?kTuxedoTurnSource:kCreamTurnSource;
     return frames[std::min<unsigned>(frame,frames.size()-1)];

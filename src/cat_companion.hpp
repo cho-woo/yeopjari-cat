@@ -3,6 +3,11 @@
 #include "pet_state.hpp"
 #include "cat_animation.hpp"
 #include "cat_cursor_animation.hpp"
+#include "cat_cursor_attack.hpp"
+#include "cat_cursor_reach_hop.hpp"
+#include "cat_lively_motion.hpp"
+#include "cat_gait_transition.hpp"
+#include "cat_ball_play.hpp"
 #include "cat_behavior.hpp"
 #include "cat_memory.hpp"
 #include "cat_life.hpp"
@@ -12,6 +17,7 @@
 #include "cat_physics.hpp"
 #include "cat_running_jump.hpp"
 #include "cat_running_turn.hpp"
+#include "video_action_contacts.generated.hpp"
 #include "cat_motion_gate.hpp"
 #include "cat_pose_transition.hpp"
 #include "cat_video_ground_bridge.hpp"
@@ -246,6 +252,8 @@ struct Context {
     cat::physics::Pose primary;
     cat::animation::Motion primaryMotion = cat::animation::Motion::Idle;
     Platform primaryPlatform, supportPlatform;
+    bool cursorEnabled=false,cursorAvailable=false;
+    double cursorX=0,cursorWorldHeight=0;
 };
 struct Snapshot {
     bool enabled = false;
@@ -262,6 +270,10 @@ struct Snapshot {
     Interaction interaction = Interaction::None;
     std::uint64_t presentationTicks=0,presentationGeneration=0;
     bool presentationPaused=false;
+    cat::environment::CursorAction cursorAction=cat::environment::CursorAction::None;
+    unsigned cursorContacts=0;
+    bool ballVisible=false;
+    cat::toy::BallPose ball;
 };
 
 // Owns one independent Box2D world/body and one birthday-derived Brain. The
@@ -291,11 +303,12 @@ public:
         storyActive_=quietActive_=false;
         presentationTicks_=0;presentationPaused_=false;++presentationGeneration_;
         presentationIdentity_=state.preferences.character;
+        ResetControls();
     }
     bool Bound() const { return state_ && brain_; }
     bool Busy() const {
         if(!Bound() || !ready_ || !state_->enabled) return false;
-        return randomZoomies_.Active() || !physics_.CurrentPose().grounded || StationaryLanding(lastTicks_,physics_.CurrentPose()) ||
+        return cursor_.Active() || actionClip_!=cat::sprite_sequence::Clip::None || wallApproaching_ || randomZoomies_.Active() || !physics_.CurrentPose().grounded || StationaryLanding(lastTicks_,physics_.CurrentPose()) ||
             waitingForStop_ || jumpPending_ || interaction_!=Interaction::None ||
             motion_==cat::animation::Motion::Eat || motion_==cat::animation::Motion::Treat ||
             motion_==cat::animation::Motion::TailRaise || motion_==cat::animation::Motion::ToyPaw;
@@ -318,6 +331,7 @@ public:
     std::uintptr_t SupportId() const { return supportId_; }
     cat::physics::Pose Physical() const { return physics_.CurrentPose(); }
     Interaction TakeEvent() { const auto value=event_; event_=Interaction::None; return value; }
+    bool SocialActive() const {return Bound()&&state_->enabled&&interaction_!=Interaction::None;}
     bool RandomZoomiesActive() const {return randomZoomies_.Active();}
     std::uint64_t RandomZoomiesWaitMs() const {return randomZoomies_.WaitMs();}
     std::uint64_t RandomZoomiesRemainingRunMs() const {return randomZoomies_.RemainingRunMs();}
@@ -346,6 +360,7 @@ public:
             motionStart_+=frozen; nextDecision_+=frozen; socialUntil_+=frozen; careUntil_+=frozen; lastTicks_=c.ticks;
             if(landedAt_) landedAt_+=frozen;
             poseTransition_.Pause(frozen); groundArtBridge_.Freeze(frozen);
+            PauseControls(frozen);
             physics_.Update(0,true); return;
         }
         presentationPaused_=false;
@@ -367,12 +382,13 @@ public:
             brain_->Interrupt(c.ticks); BeginQuiet(c.ticks);
         }
         lastTicks_=c.ticks;
+        UpdateControls(c,wallDelta);
         if(!landingRecovery && interaction_!=Interaction::None && c.ticks >= socialUntil_) FinishSocial(c);
         if(interaction_!=Interaction::None && (!c.primaryVisible || Busy(c,interaction_) || state_->pet.roamingPaused)) {
             FinishSocial(c);
         }
         AdvanceRandomZoomies(c,before,landingRecovery);
-        if(!runningTurn_.Active() && !randomZoomies_.Active() && !landingRecovery && before.grounded && !waitingForStop_ && !jumpPending_ && interaction_==Interaction::None &&
+        if(!keyboardActive_ && !cursor_.Active() && actionClip_==cat::sprite_sequence::Clip::None && !wallApproaching_ && !runningTurn_.Active() && !randomZoomies_.Active() && !landingRecovery && before.grounded && !waitingForStop_ && !jumpPending_ && interaction_==Interaction::None &&
                 c.ticks>=nextDecision_ && !AuthoredCareHolding(c.ticks)) {
             const bool continuation=storyActive_ && !quietActive_ && brain_->HasContinuation();
             if(!quietActive_ && !continuation) BeginQuiet(c.ticks);
@@ -393,7 +409,10 @@ public:
         PrepareGroundArt(c.ticks,!landingRecovery);
         double velocity=0;
         if(!landingRecovery && !runningJump_.active && interaction_!=Interaction::None) velocity=SocialVelocity(c);
-        else if(!landingRecovery && cat::animation::Walking(motion_) && !state_->pet.roamingPaused) velocity=direction_*speed_;
+        else if(!landingRecovery && cat::animation::Walking(motion_) && (!state_->pet.roamingPaused||keyboardActive_||explicitTravel_)) velocity=direction_*speed_;
+        if(cursor_.Active())velocity=cursor_.Velocity();
+        if(cursor_.Action()==cat::environment::CursorAction::Pounce&&jumpPending_&&cursorTakeoffVelocity_)velocity=cursorTakeoffVelocity_;
+        if(wallApproaching_)velocity=direction_*speed_;
         // Keep the complete action and care interval after the moving body has
         // actually braked. Rendering alone must not hide a sliding meal/crouch.
         if(waitingForStop_) {
@@ -404,11 +423,11 @@ public:
             if(careUntil_>start) careUntil_+=motionStart_-start;
             velocity=0;
         }
-        if(!runningJump_.active && before.grounded && !before.onPlatform && cat::motion::BrakeBeforeEdge(
+        if(!wallApproaching_ && !runningJump_.active && before.grounded && !before.onPlatform && cat::motion::BrakeBeforeEdge(
                 before.x,before.velocityX-before.supportVelocityX,velocity,minX_,maxX_)) {
             direction_=velocity<0?1:-1; velocity=0;
             if(motion_==cat::animation::Motion::Zoomies&&Registered(cat::sprite_sequence::Clip::RunningTurn)) {
-                runningTurn_.Begin(facing_,direction_);groundArtBridge_.ContinueLocomotion(c.ticks);waitingForStop_=false;
+                runningTurn_.Begin(facing_,direction_,cat::video_actions::TurnTiming(static_cast<unsigned>(state_->preferences.character)));groundArtBridge_.ContinueLocomotion(c.ticks);waitingForStop_=false;
             }
         }
         // Stay on a finite ledge until an explicit ballistic transfer. A gentle
@@ -431,13 +450,13 @@ public:
                 displayedPhysical.velocityX-displayedPhysical.supportVelocityX)) {
             direction_=facing_=runningTurn_.To();groundDrive_.Reset(facing_);
         }
-        if(wasTurning&&!runningTurn_.Active()){groundArtBridge_.ContinueLocomotion(c.ticks);gait_.SetAuthoredPhase(0);}
+        if(wasTurning&&!runningTurn_.Active()){groundArtBridge_.ContinueLocomotion(c.ticks);gait_.SetAuthoredPhase(cat::video_actions::TurnArrivalPhase(static_cast<unsigned>(state_->preferences.character),gait_.AuthoredMode()==cat::authored_locomotion::Mode::Run));}
         velocity=runningTurn_.Motor(velocity);
         velocity=groundDrive_.Update(velocity,before.velocityX-before.supportVelocityX,
             displayedPhysical.velocityX-displayedPhysical.supportVelocityX,before.grounded,c.elapsedSeconds);
         if(before.grounded) {facing_=groundDrive_.Facing();physics_.SetTargetVelocity(velocity);}
         const auto* jumpArt=Registered(cat::sprite_sequence::Clip::Jump);
-        const auto takeoff=runningJump_.active?cat::running_jump::Plan::PreparationMs:jumpArt && jumpArt->program.stepCount?
+        const auto takeoff=cursor_.Active()?CursorPreparationMs():runningJump_.active?cat::running_jump::Plan::PreparationMs:jumpArt && jumpArt->program.stepCount?
             cat::sprite_sequence::Duration(jumpArt->program,jumpArt->program.intro):
             (motion_==cat::animation::Motion::Jump?220U:240U);
         if(!waitingForStop_ && jumpPending_ && before.grounded && c.ticks>=motionStart_ &&
@@ -446,7 +465,7 @@ public:
             const auto body=cat::appearance::VisualModifiers(state_->nutrition,state_->preferences.character);
             const double growth=cat::GrowthScale(state_->pet.bornUtc,state_->pet.updatedUtc);
             const double jump=growth*body.jump*species.jumpHeightMultiplier;
-            const bool launched=motion_==cat::animation::Motion::Jump?(runningJump_.active?
+            const bool launched=cursor_.Active()?LaunchCursor(c):motion_==cat::animation::Motion::Jump?(runningJump_.active?
                 physics_.JumpWithMomentum(55*jump):physics_.Jump(55*jump)):
                 physics_.Pounce(direction_,30*jump,state_->pet.roamingPaused?0:72*body.speed*species.movementSpeedMultiplier);
             if(launched) {
@@ -460,6 +479,7 @@ public:
         const auto rendered=physics_.RenderPose();
         if(after.landed) {
             landedAt_=c.ticks; landingStrength_=std::clamp(after.landingSpeed/300.0,.2,1.0);
+            if(cursorLaunched_)cursorLanded_=c.ticks;
             if(runningJump_.active && runningJump_.launched) {
                 const auto carried=runningJump_;runningJump_={};
                 // A travelling landing continues its side-view gait. It must
@@ -489,12 +509,14 @@ public:
         }
         gait_.Advance(walking,stride/std::max(.1,cat::GrowthScale(state_->pet.bornUtc,state_->pet.updatedUtc)),
             c.elapsedSeconds,rendered.grounded);
-        if(groundArtBridge_.ConsumeLoopReady())gait_.SetAuthoredPhase(0);
+        if(groundArtBridge_.ConsumeLoopReady())gait_.SetAuthoredPhase(walk&&walk->frameCount==229?
+            cat::video_actions::WalkBoundaryPhase(static_cast<unsigned>(state_->preferences.character),groundArtBridge_.LoopFromReversedExit()):0);
+        UpdateCursorContact(c);
         state_->pet.position=std::clamp((after.x-minX_)/(maxX_-minX_),0.0,1.0);
     }
 
     bool TrySocial(Interaction kind,const Context& c) {
-        if(!Bound() || !ready_ || !state_->enabled || randomZoomies_.Active() || c.ticks<careUntil_ || c.paused || !c.primaryVisible || Busy(c,kind) || state_->pet.roamingPaused) return false;
+        if(!Bound() || !ready_ || !state_->enabled || cursor_.Active() || actionClip_!=cat::sprite_sequence::Clip::None || wallApproaching_ || randomZoomies_.Active() || c.ticks<careUntil_ || c.paused || !c.primaryVisible || Busy(c,kind) || state_->pet.roamingPaused) return false;
         const auto own=physics_.CurrentPose();
         if(!own.grounded || !std::isfinite(c.primary.x) || !std::isfinite(c.primary.lift)) return false;
         if(kind==Interaction::WindowFollow) {
@@ -514,6 +536,7 @@ public:
         if(own.onPlatform!=c.primary.onPlatform || (own.onPlatform && supportId_!=c.primaryPlatform.id)) return false;
         if(kind==Interaction::FoodCompetition && state_->nutrition.fullness>85) return false;
         interaction_=kind; socialUntil_=c.ticks+(kind==Interaction::SharedSleep?30000:kind==Interaction::RunTogether?10000:12000);
+        pairRound_=0;pairRestUntil_=0;
         storyActive_=true;quietActive_=false;
         contactRecorded_=false; brain_->Interrupt(c.ticks); nextDecision_=socialUntil_;
         return true;
@@ -538,6 +561,7 @@ public:
         const bool treat=cat::feeding::IsTreat(kind);
         const auto result=cat::feeding::TryFeed(state_->pet,state_->nutrition,state_->memory,state_->pet.updatedUtc,kind,random01);
         if(result!=cat::nutrition::FeedResult::Accepted) return result;
+        ResetControls();
         brain_->Fed(ticks,treat); interaction_=Interaction::None;storyActive_=true;quietActive_=false;
         const auto clip=kind==cat::feeding::FoodKind::Fish?cat::sprite_sequence::Clip::Fish:
             treat?cat::sprite_sequence::Clip::Treat:cat::sprite_sequence::Clip::Eat;
@@ -552,6 +576,7 @@ public:
     bool Pet(std::int64_t now,std::uint64_t ticks) {
         if(!Bound() || !ready_ || !state_->enabled || Feeding(ticks) || !physics_.CurrentPose().grounded) return false;
         Advance(now); brain_->Pet(ticks); interaction_=Interaction::None;storyActive_=true;quietActive_=false;
+        ResetControls();
         SetMotion(cat::animation::Motion::TailRaise,ticks,3400,0);
         careUntil_=nextDecision_;
         state_->pet.affection=std::min(100.0,state_->pet.affection+1);
@@ -570,6 +595,7 @@ public:
         runningJump_={};
         physics_.SetCeiling(maxLift_);
         state_->pet.position=std::clamp((physics_.CurrentPose().x-minX_)/(maxX_-minX_),0.0,1.0);
+        ResetControls();
         interaction_=Interaction::None; nextDecision_=careUntil_=landedAt_=0;
         waitingForStop_=jumpPending_=false;
         storyActive_=quietActive_=false;
@@ -589,6 +615,9 @@ public:
         s.presentationTicks=presentationTicks_;
         s.presentationGeneration=presentationGeneration_+(presentationIdentity_!=state_->preferences.character?1:0);
         s.presentationPaused=presentationPaused_;
+        s.cursorAction=cursor_.Action();s.cursorContacts=cursorContacts_;
+        s.ballVisible=actionClip_==cat::sprite_sequence::Clip::BallPlay;
+        if(s.ballVisible)s.ball=ball_.RenderPose();
         const double relativeVelocity=s.physical.velocityX-s.physical.supportVelocityX;
         const auto displayed=cat::motion::DisplayedMotion(motion_,walkingMotion_,s.physical.grounded,waitingForStop_,relativeVelocity);
         const int displayedFacing=s.physical.grounded && std::abs(relativeVelocity)>2?(relativeVelocity<0?-1:1):facing_;
@@ -680,6 +709,12 @@ public:
             cat::animation::AttachSprite(s.animation,cat::sprite_sequence::Clip::RunningTurn,runningTurn_.SpriteMs());
             s.animation.flip=runningTurn_.From()<0;
         }
+        ApplyControlsPose(s.animation,ticks,s.physical);
+        if(s.animation.spriteClip==cat::sprite_sequence::Clip::BallPlay&&s.ballVisible) {
+            // The small matte remnant under the filmed paw is covered by the
+            // same physical ball used for contact, as in the primary renderer.
+            cat::animation::UseAuthoredSprite(s.animation);
+        }
         if(Registered(s.animation.spriteClip))cat::animation::UseAuthoredSprite(s.animation);
         if(s.animation.spriteClip==cat::sprite_sequence::Clip::Jump && RegisteredVideoWalk()) {
             s.animation.jumpRig=true;
@@ -695,6 +730,7 @@ public:
         return s;
     }
 private:
+    #include "cat_companion_controls.hpp"
     State* state_=nullptr;
     void PrepareCompletedJumpReturn(std::uint64_t ticks,const cat::physics::Pose& physical) {
         using Clip=cat::sprite_sequence::Clip;using Motion=cat::animation::Motion;
@@ -723,18 +759,19 @@ private:
                 cat::sprite_sequence::Duration(videoWalk->program,videoWalk->program.outro),
                 jumpPreparation?jumpTurn.entryMs:videoWalk->movementDelayMs,jumpTurn.sideEntryMs);
             const auto visible=physics_.RenderPose();
-            const bool travel=cat::animation::Walking(motion_) && !state_->pet.roamingPaused;
-            if(motion_!=cat::animation::Motion::Zoomies)runningTurn_.Reset();
-            if(motion_==cat::animation::Motion::Zoomies&&visible.grounded&&Registered(cat::sprite_sequence::Clip::RunningTurn)) {
-                if(travel&&direction_!=facing_&&(groundArtBridge_.Side()||std::abs(visible.velocityX-visible.supportVelocityX)>2))
-                    runningTurn_.Begin(facing_,direction_);
+            const bool travel=cat::animation::Walking(motion_) && (!state_->pet.roamingPaused||keyboardActive_||explicitTravel_);
+            if(!cat::animation::Walking(motion_))runningTurn_.Reset();
+            if(cat::animation::Walking(motion_)&&visible.grounded&&Registered(cat::sprite_sequence::Clip::RunningTurn)) {
+                if(!keyboardGait_.Active()&&travel&&direction_!=facing_&&(groundArtBridge_.Side()||std::abs(visible.velocityX-visible.supportVelocityX)>2))
+                    runningTurn_.Begin(facing_,direction_,cat::video_actions::TurnTiming(static_cast<unsigned>(state_->preferences.character)));
                 if(runningTurn_.Active()){groundArtBridge_.ContinueLocomotion(ticks);waitingForStop_=false;return;}
+                if(keyboardGait_.Active()){groundArtBridge_.ContinueLocomotion(ticks);return;}
             }
             if(travel && groundArtBridge_.Neutral() && std::abs(visible.velocityX-visible.supportVelocityX)<=.5 && direction_!=facing_) {
                 facing_=direction_;groundDrive_.Reset(direction_);
             }
-            groundArtBridge_.Update(ticks,travel && direction_==facing_,
-                visible.grounded,visible.velocityX-visible.supportVelocityX,true,sideMeal||jumpPreparation,jumpPreparation);
+            groundArtBridge_.Update(ticks,travel && (direction_==facing_||(keyboardActive_&&groundArtBridge_.Starting()&&keyboardDirection_)),
+                visible.grounded,visible.velocityX-visible.supportVelocityX,true,sideMeal||jumpPreparation,jumpPreparation,keyboardActive_);
             // Reversing an existing walk gates its motor without restarting
             // the whole action clock on every short work-area crossing.
             if(!travel && (groundArtBridge_.Stopping() || groundArtBridge_.StartingForSideAction()))waitingForStop_=true;
@@ -780,6 +817,8 @@ private:
     cat::animation::Motion walkingMotion_=cat::animation::Motion::Walk;
     cat::feeding::FoodKind feedingKind_=cat::feeding::FoodKind::Meal;
     Interaction interaction_=Interaction::None,event_=Interaction::None;
+    unsigned pairRound_=0;
+    std::uint64_t pairRestUntil_=0;
     double Random() { rng_^=rng_>>12; rng_^=rng_<<25; rng_^=rng_>>27; return ((rng_*2685821657736338717ULL)>>11)*(1.0/9007199254740992.0); }
     const cat::sprite_assets::Descriptor* Registered(cat::sprite_sequence::Clip clip) const {
         if(Bound() && reviewWalk_ && clip==cat::sprite_sequence::Clip::Walk &&
@@ -939,6 +978,7 @@ private:
     }
     void AdvanceRandomZoomies(const Context& c,const cat::physics::Pose& physical,bool landingRecovery) {
         using Motion=cat::animation::Motion;
+        if(keyboardActive_||cursor_.Active()||actionClip_!=cat::sprite_sequence::Clip::None||wallApproaching_)return;
         const bool owned=motion_==Motion::Zoomies && motionSerial_==randomZoomiesOwner_ &&
             interaction_==Interaction::None && !state_->pet.roamingPaused && !physical.onPlatform;
         const bool cancelled=randomZoomies_.Active()&&!owned;
@@ -1016,9 +1056,9 @@ private:
             return 0;
         }
         const double delta=c.primary.x-own.x;
-        const double spacing=interaction_==Interaction::Paw?48:interaction_==Interaction::SharedSleep?65:60;
+        const double spacing=interaction_==Interaction::Paw?82:interaction_==Interaction::SharedSleep?65:60;
         if(std::abs(own.lift-c.primary.lift)>8 || !c.primary.grounded) { FinishSocial(c); return 0; }
-        const bool gesture=motion_==cat::animation::Motion::ToyPaw || motion_==cat::animation::Motion::Sniff ||
+        const bool gesture=motion_==cat::animation::Motion::ToyPaw || motion_==cat::animation::Motion::Punch || motion_==cat::animation::Motion::Sniff ||
             motion_==cat::animation::Motion::Knead || motion_==cat::animation::Motion::Sleep;
         if(gesture && (waitingForStop_ || c.ticks<nextDecision_)) {
             if(!waitingForStop_ && groundDrive_.Settled() &&
@@ -1037,6 +1077,21 @@ private:
             return direction_*speed_;
         }
         facing_=delta<0?-1:1;
+        if(interaction_==Interaction::Paw) {
+            direction_=facing_;
+            if(pairRound_&&motion_==cat::animation::Motion::Punch) {
+                SetMotion(cat::animation::Motion::Watch,c.ticks,900,0);
+                pairRestUntil_=c.ticks+900;return 0;
+            }
+            if(c.ticks<pairRestUntil_)return 0;
+            if(pairRound_>=2){FinishSocial(c);return 0;}
+            SetMotion(cat::animation::Motion::Punch,c.ticks,RegisteredDuration(cat::sprite_sequence::Clip::Punch,4458),0);
+            ++pairRound_;socialUntil_=std::max(socialUntil_,nextDecision_+900);
+            if(!waitingForStop_&&groundDrive_.Settled()&&cat::motion::ReadyToStart(own.grounded,own.velocityX-own.supportVelocityX)) {
+                if(!contactRecorded_)RecordContact(c);else event_=Interaction::Paw;
+            }
+            return 0;
+        }
         const double primarySpeed=c.primary.velocityX-c.primary.supportVelocityX;
         if(interaction_==Interaction::RunTogether && std::abs(primarySpeed)>5) {
             RecordContact(c);
