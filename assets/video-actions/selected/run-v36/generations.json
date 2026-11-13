@@ -1,0 +1,78 @@
+[
+  {
+    "character": "cream",
+    "args": {
+      "client_token": "yeopjari-v36-responsive-gait-cream-20261113-1",
+      "model": "bytedance/seedance-2.5",
+      "options": {
+        "prompt": "Animate the exact same small established desktop kitten from the supplied first and last frames. Preserve its exact face, ears, eye colors, fur markings, rounded paws, head/body proportions, illustrated soft 3D fur, view angle, canvas scale and painted floor height. Locked camera and uniform saturated chroma green #00FF00 background, no camera moves or zoom, no shadow, no text, no props, entire animal visible with generous margin. The kitten is facing RIGHT throughout. This is a quick, alert, light-footed WALK TO RUN TO WALK transition reference, NOT slow motion. Begin in the exact planted side-view reference stance. Immediately take two brisk walking steps, use a short clear hind-leg load and accelerate into a springy realistic feline gallop by 0.65 seconds. Gallop energetically in place from 0.65 to 2.7 seconds, with coherent alternating leg contacts, shoulder/hip weight transfer, supple back, a lively but stable head, elastic hind-leg push and light front-paw landings. No frozen paw poses, no sitting, no looking into camera. Between 2.7 and 3.2 seconds, smoothly shorten the stride and decelerate back into brisk walking in the same RIGHT-facing direction, then settle onto four planted paws in the exact last reference stance. All acceleration and deceleration should be complete within about 0.4 seconds each. Keep the root centered and floor contact fixed, use footfalls to convey the forward run. Exactly one acceleration, one continuous run, one deceleration; no repeating start-stop sequence. End facing RIGHT, same identity and scale as start. This is the cream and ginger kitten; preserve its exact cream muzzle and ginger forehead markings.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/a51a2fd8db74428193c60b6470818c44/cream-planted-side-v35.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/a51a2fd8db74428193c60b6470818c44/cream-planted-side-v35.png",
+        "duration": 4,
+        "resolution": "720p",
+        "aspect_ratio": "1:1",
+        "generate_audio": false,
+        "generation_mode": "frame",
+        "prompt_enhance": false
+      }
+    },
+    "result": {
+      "job_id": "mcp_6ad5d27ff1124d51a6b8a63b2c66ade5",
+      "creditCost": 460,
+      "reused": false
+    },
+    "poll": {
+      "jobId": "mcp_6ad5d27ff1124d51a6b8a63b2c66ade5",
+      "status": "succeeded",
+      "modelName": "bytedance/seedance-2.5",
+      "createdAt": "2026-11-13T09:51:51.754Z",
+      "completedAt": null,
+      "outputList": [
+        {
+          "imageUrl": null,
+          "videoUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_6ad5d27ff1124d51a6b8a63b2c66ade5/output/output_0.mp4",
+          "posterUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_6ad5d27ff1124d51a6b8a63b2c66ade5/output/output_0_poster.jpg",
+          "text": null
+        }
+      ]
+    }
+  },
+  {
+    "character": "tuxedo",
+    "args": {
+      "client_token": "yeopjari-v36-responsive-gait-tuxedo-20261113-1",
+      "model": "bytedance/seedance-2.5",
+      "options": {
+        "prompt": "Animate the exact same small established desktop kitten from the supplied first and last frames. Preserve its exact face, ears, eye colors, fur markings, rounded paws, head/body proportions, illustrated soft 3D fur, view angle, canvas scale and painted floor height. Locked camera and uniform saturated chroma green #00FF00 background, no camera moves or zoom, no shadow, no text, no props, entire animal visible with generous margin. The kitten is facing RIGHT throughout. This is a quick, alert, light-footed WALK TO RUN TO WALK transition reference, NOT slow motion. Begin in the exact planted side-view reference stance. Immediately take two brisk walking steps, use a short clear hind-leg load and accelerate into a springy realistic feline gallop by 0.65 seconds. Gallop energetically in place from 0.65 to 2.7 seconds, with coherent alternating leg contacts, shoulder/hip weight transfer, supple back, a lively but stable head, elastic hind-leg push and light front-paw landings. No frozen paw poses, no sitting, no looking into camera. Between 2.7 and 3.2 seconds, smoothly shorten the stride and decelerate back into brisk walking in the same RIGHT-facing direction, then settle onto four planted paws in the exact last reference stance. All acceleration and deceleration should be complete within about 0.4 seconds each. Keep the root centered and floor contact fixed, use footfalls to convey the forward run. Exactly one acceleration, one continuous run, one deceleration; no repeating start-stop sequence. End facing RIGHT, same identity and scale as start. This is the charcoal and white tuxedo kitten; preserve exact white chest and paws.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/34ce4a4d60864b75b828d732f26b21dc/tuxedo-planted-side-v35.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/34ce4a4d60864b75b828d732f26b21dc/tuxedo-planted-side-v35.png",
+        "duration": 4,
+        "resolution": "720p",
+        "aspect_ratio": "1:1",
+        "generate_audio": false,
+        "generation_mode": "frame",
+        "prompt_enhance": false
+      }
+    },
+    "result": {
+      "job_id": "mcp_93c8122eaa104c2ab94fd104e48bd682",
+      "creditCost": 460,
+      "reused": false
+    },
+    "poll": {
+      "jobId": "mcp_93c8122eaa104c2ab94fd104e48bd682",
+      "status": "succeeded",
+      "modelName": "bytedance/seedance-2.5",
+      "createdAt": "2026-11-13T09:51:52.881Z",
+      "completedAt": null,
+      "outputList": [
+        {
+          "imageUrl": null,
+          "videoUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_93c8122eaa104c2ab94fd104e48bd682/output/output_0.mp4",
+          "posterUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_93c8122eaa104c2ab94fd104e48bd682/output/output_0_poster.jpg",
+          "text": null
+        }
+      ]
+    }
+  }
+]

@@ -209,7 +209,7 @@ def eye_material(source, rect, clip):
     return eyes, mask
 
 
-def snow_material(source, eyes, props=None):
+def snow_material(source, eyes, props=None, strict_skin=False):
     rgba = np.asarray(source)
     rgb = rgba[:, :, :3].astype(np.float32)
     red, green, blue = rgb.transpose(2, 0, 1)
@@ -219,6 +219,10 @@ def snow_material(source, eyes, props=None):
     # Orange fur and pink skin overlap at low resolution. Require the pink
     # blue-channel component so forehead/tail fur cannot become pink islands.
     pink = (red > 100) & (red - green > 8) & (green - blue < 18) & (blue > red * .52)
+    if strict_skin:
+        # Warm cream fur can satisfy the broad legacy pink threshold. The
+        # run's nose/ear/pad pigment has blue at least as strong as green.
+        pink &= blue >= green-2
     weight = np.clip((red - green - 8) / 20, 0, 1) * np.clip((18 - (green - blue)) / 12, 0, 1) * pink
     result = result * (1 - weight[:, :, None]) + rgb * weight[:, :, None]
     skin = (weight >= .999) & (eyes == 0)
@@ -321,14 +325,17 @@ def bake(clip, character, indices):
         local_palette=background_palette(original) if clip=='stumble' and character=='cream' else palette
         image = foreground(original,local_palette,clip=='ball',clip=='climb',clip in ('toy','fish','eat'),clip=='fly')
         anchor_x, anchor_y = center, float(image.getbbox()[3])
-        if settings.get('fixed_ground_root'):
+        source_registration=settings.get('source_registration',{}).get(selected_files[ordinal],{})
+        ground_root=source_registration.get('fixed_ground_root',settings.get('fixed_ground_root',{}).get(character))
+        if ground_root is not None:
             # Gallop suspension is part of the original pose. Registering
             # every airborne toe to the floor would erase the small flight.
-            anchor_y=max(anchor_y,settings['fixed_ground_root'][character])
+            anchor_y=max(anchor_y,ground_root)
         if clip in ('ball','brake','slide','stumble','climb'):
             anchor_x,_,_=head_root(image)
-        if settings.get('fixed_horizontal_root'):
-            anchor_x=settings['fixed_horizontal_root'][character]
+        horizontal_root=source_registration.get('fixed_horizontal_root',settings.get('fixed_horizontal_root',{}).get(character))
+        if horizontal_root is not None:
+            anchor_x=horizontal_root
         elif clip in ('walk','run'):
             alpha=np.asarray(image.getchannel('A'));x0,y0,x1,y1=image.getbbox()
             yy,xx=np.where((alpha>180)&(np.indices(alpha.shape)[0]>y0+(y1-y0)*.60)&
@@ -562,7 +569,8 @@ def main(only=None,materials_only=False):
                     region=(xx>ax-43)&(xx<ax-2)&(yy>ay-14)
                     food=(xx>ax-35)&(xx<ax-15)&(yy<ay-4)&(rgb[:,:,0]>rgb[:,:,1]*1.35)&(rgb[:,:,0]>rgb[:,:,2]*1.35)
                     props=region&(metal|food) if np.count_nonzero(region&metal)>30 else None
-                painted, checks = snow_material(local, local_mask, props)
+                painted, checks = snow_material(local, local_mask, props,
+                    bool(IDENTITY['clips'].get(clip,{}).get('strict_pink_skin')))
                 if not checks['alpha_exact'] or not checks['skin_rgb_exact']:
                     raise ValueError(f'OddEye {clip} frame {index} changed geometry or skin: {checks}')
                 snow.paste(painted, (x, y))
@@ -636,6 +644,20 @@ def main(only=None,materials_only=False):
     for c in ('cream','tuxedo'):
         a,b,_=turn['phase_steps'][c];e=turn['exposures_ms'];timing[c]=[sum(e[:a]),sum(e[a:a+b]),sum(e[a+b:])]
     header.extend(['    return character==8?std::array<unsigned,3>{{'+','.join(map(str,timing['tuxedo']))+'}}:std::array<unsigned,3>{{'+','.join(map(str,timing['cream']))+'}};','}'])
+    if run.get('distance_knots'):
+        for character in ('cream','tuxedo'):
+            knots=run['distance_knots'][character]
+            if len(knots)!=run['loop_frames']+1 or knots[0]!=0 or knots[-1]!=1 or any(a>=b for a,b in zip(knots,knots[1:])):
+                raise ValueError('Run source distance clock must preserve every ordered source drawing')
+            header.append(f'inline constexpr std::array<double,{len(knots)}> k{character.title()}RunDistance{{{{'+','.join(f'{x:.12f}' for x in knots)+'}};')
+        header.extend(['inline double RunSourcePhase(unsigned character,double distancePhase) {',
+            '    if(!std::isfinite(distancePhase))return 0;',
+            '    const double phase=distancePhase-std::floor(distancePhase);',
+            '    const auto& knots=character==8?kTuxedoRunDistance:kCreamRunDistance;',
+            '    const auto next=std::upper_bound(knots.begin(),knots.end(),phase);',
+            '    const auto index=std::min<std::size_t>(knots.size()-2,static_cast<std::size_t>(next-knots.begin()-1));',
+            '    return (index+(phase-knots[index])/(knots[index+1]-knots[index]))/(knots.size()-1);','}'])
+    else:header.extend(['inline double RunSourcePhase(unsigned,double phase) {return phase;}'])
     for symbol,config,key in (('TurnArrivalPhase',turn,'arrival_phase'),('GaitArrivalPhase',run,'transition_arrival')):
         header.extend([f'inline double {symbol}(unsigned character,bool running) {{',
             f'    if(character==8)return running?{config[key]["tuxedo"]["run"]:.8f}:{config[key]["tuxedo"]["walk"]:.8f};',

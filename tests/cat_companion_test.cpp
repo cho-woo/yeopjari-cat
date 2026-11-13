@@ -649,7 +649,8 @@ void AuthoredCompanionWalkRunUsesItsRealRegisteredTravel() {
                         if(!loopStarted){expectedPhase=walk->frameCount==229?cat::video_actions::WalkBoundaryPhase(static_cast<unsigned>(character)):0;loopStarted=true;}
                         else expectedPhase=std::fmod(expectedPhase+std::abs(travel)/
                             (view.growthScale*layout->stridePixels*view.body.bodyWidth),1.0);
-                        CHECK(std::abs(view.animation.spriteOptions.cyclePhase-expectedPhase)<1e-10);
+                        const double sourcePhase=layout==run?cat::video_actions::RunSourcePhase(static_cast<unsigned>(character),expectedPhase):expectedPhase;
+                        CHECK(std::abs(view.animation.spriteOptions.cyclePhase-sourcePhase)<1e-10);
                     }
                     CHECK(!view.animation.originalWalk && !view.animation.jointWalk && !view.animation.walkingRig);
                     CHECK(view.animation.x==0 && view.animation.lift==0 && view.animation.angle==0);

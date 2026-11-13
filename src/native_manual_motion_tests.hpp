@@ -138,8 +138,10 @@ int Run(std::string& proof) {
             if (g.manualMotionActive || g.motion != Motion::Idle || !g.autonomousResting ||
                     host.Saved() != saved || !g.pet.roamingPaused ||
                     distances[action] < minimumTravel ||
-                    peaks[action]<(action?expectedRunSpeed:expectedWalkSpeed)*1.03 ||
-                    peaks[action]>(action?expectedRunSpeed:expectedWalkSpeed)*1.28) {
+                    // A short run need not hit the crest of its gentle10%
+                    // rhythm. Its old25% overspeed crest is no longer wanted.
+                    peaks[action]<(action?expectedRunSpeed*.90:expectedWalkSpeed*1.03) ||
+                    peaks[action]>(action?expectedRunSpeed*1.12:expectedWalkSpeed*1.28)) {
                 WriteBytes(L"render-self-test/manual-motion-failure.txt","character="+std::to_string(static_cast<unsigned>(character))+
                     " action="+std::to_string(action)+" active="+std::to_string(g.manualMotionActive)+
                     " motion="+std::to_string(static_cast<unsigned>(g.motion))+" frames="+std::to_string(frames)+

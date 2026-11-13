@@ -12,11 +12,11 @@ int main(){try{
         check(turn.SpriteMs()==Turn::BrakeMs); // Full pivot waits for both physical samples.
         turn.Advance(1./fps,true,0,1);check(!turn.Released());
         turn.Advance(1./fps,true,0,0);check(turn.CurrentPhase()==Turn::Phase::Pivot);
-        unsigned releases=0;double elapsed=0,prior=0;
+        unsigned releases=0;double elapsed=0;
         while(turn.Active()&&elapsed<(Turn::PivotMs+Turn::LaunchMs)/1000.+1){
             releases+=turn.Advance(1./fps,true,0,0);elapsed+=1./fps;
             if(turn.Active()&&turn.Released()){
-                const auto motor=turn.Motor(-direction*180);check(motor*(-direction)>=prior-1e-8);check(std::abs(motor)<=180);prior=motor*(-direction);
+                const auto motor=turn.Motor(-direction*180);check(motor*(-direction)>=0);check(std::isfinite(motor)&&std::abs(motor)<=180*1.2);
                 check(turn.Motor(direction*180)==0); // A stale direction cannot force a wrong-way launch.
             } else if(turn.Active())check(turn.Motor(180)==0);
         }

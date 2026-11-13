@@ -180,6 +180,7 @@ int CompanionTarget() {
     CreateDirectoryW(L"render-self-test",nullptr);
     const auto savedOutcome=g.companionStore.outcome;
     Host host;
+    std::string companionRunResponses;
     for(const auto coat:cat::kAvailableCharacters) {
         Clear();host.Reset(cat::Character::Cream,false);
         if(!EnsureCareCoats(cat::Character::Cream,coat))return 794;
@@ -190,12 +191,18 @@ int CompanionTarget() {
         keyboardPlay.fixture=true;keyboardPlay.companion=true;
         if(!BeginKeyboardCapture(host.now))return 794;
         const double primaryX=g.physics.CurrentPose().x;
-        unsigned turns=0,preparationSamples=0;std::uint64_t preparationSourceMs=0;bool airborne=false;
+        unsigned turns=0,preparationSamples=0,runResponseMs=0;std::uint64_t preparationSourceMs=0;bool airborne=false;
         for(unsigned frame=0;frame<1250;++frame) {
             ContinuityKeys(frame);host.now+=16;UpdateKeyboardPlay(host.now,.016);
             AdvancePrimaryMotion(host.now,.016);
             cat::companion::Context c;c.nowUtc=UtcNow();c.ticks=host.now;c.elapsedSeconds=.016;c.primaryVisible=false;
             g.companionModel.Tick(c);const auto view=g.companionModel.View(host.now);
+            if(frame>=188&&frame<313&&!runResponseMs) {
+                const auto* run=LoadedCareSprite(cat::sprite_sequence::Clip::Run,coat);
+                if(run&&std::abs(view.physical.velocityX-view.physical.supportVelocityX)>=
+                        cat::sprite_assets::NominalLocomotionSpeed(*run->layout)*view.body.speed*
+                            cat::species::ProfileFor(coat).movementSpeedMultiplier*.9)runResponseMs=(frame-188)*16;
+            }
             if(view.travellingJump&&view.physical.grounded&&view.animation.spriteClip==cat::sprite_sequence::Clip::Jump&&
                     view.animation.spriteOptions.jump==cat::sprite_sequence::JumpPhase::Crouch) {
                 ++preparationSamples;preparationSourceMs=std::max(preparationSourceMs,view.animation.spriteElapsedMs);
@@ -210,6 +217,11 @@ int CompanionTarget() {
             }
         }
         if(!airborne||turns<40)return 796;
+        if(!runResponseMs||runResponseMs>650) {
+            WriteBytes(L"render-self-test/companion-run-response-failure.txt","coat="+std::to_string(static_cast<unsigned>(coat))+" responseMs="+std::to_string(runResponseMs));return 800;
+        }
+        if(!companionRunResponses.empty())companionRunResponses+=",";
+        companionRunResponses+="{\"coat\":"+std::to_string(static_cast<unsigned>(coat))+",\"run_90_percent_response_ms\":"+std::to_string(runResponseMs)+"}";
         const auto* jump=LoadedCareSprite(cat::sprite_sequence::Clip::Jump,coat);
         if(!jump||preparationSamples<3||preparationSourceMs<
                 cat::sprite_sequence::Duration(jump->layout->program,jump->layout->program.intro)*8/10)return 798;
@@ -217,7 +229,7 @@ int CompanionTarget() {
         Clear();state.enabled=false;
     }
     g.companionStore.outcome=savedOutcome;
-    WriteBytes(L"render-self-test/companion-keyboard-report.json","{\"passed\":true,\"coats\":[0,8,10],\"primary_stationary\":true,\"companion_real_jump_and_turn\":true,\"moving_jump_preparation_reaches_push_off\":true,\"escape_released_owner\":true,\"os_input_injected\":false}");
+    WriteBytes(L"render-self-test/companion-keyboard-report.json","{\"passed\":true,\"coats\":[0,8,10],\"primary_stationary\":true,\"companion_real_jump_and_turn\":true,\"moving_jump_preparation_reaches_push_off\":true,\"escape_released_owner\":true,\"os_input_injected\":false,\"run_response\":["+companionRunResponses+"]}");
     return 0;
 }
 int Run() {
@@ -236,7 +248,27 @@ int Run() {
         const double walk=WalkingVelocity(g.physics.CurrentPose());
         if(walk<10||g.physics.CurrentPose().x-x<20||!g.manualMotionActive||EnvironmentBusy()||
             CanStartAutonomousStory(host.now)){result=772;break;}
-        Key(VK_SHIFT);Step(host,150);const double run=WalkingVelocity(g.physics.CurrentPose());
+        Key(VK_SHIFT);
+        unsigned runResponseMs=0,maxCompressedHoldMs=0,previousSource=cat::sprite_sequence::kMaxAuthoredFrames;
+        ULONGLONG heldAt=host.now;const auto shiftedAt=host.now;
+        for(unsigned frame=0;frame<350;++frame) {
+            Step(host);
+            const auto shown=g.physics.RenderPose();
+            if(!runResponseMs&&WalkingVelocity(shown)>=RegisteredRunSpeed()*.9)runResponseMs=static_cast<unsigned>(host.now-shiftedAt);
+            const auto pose=PrimaryDisplayedPose(host.now,shown);
+            if(pose.spriteClip!=cat::sprite_sequence::Clip::Run||!pose.spriteTimed||
+                    pose.spriteOptions.stage!=cat::sprite_sequence::Stage::Automatic||WalkingVelocity(shown)<RegisteredRunSpeed()*.9) {
+                previousSource=cat::sprite_sequence::kMaxAuthoredFrames;continue;
+            }
+            const auto* runArt=LoadedCareSprite(cat::sprite_sequence::Clip::Run,character);
+            const unsigned source=SpriteFrameFor(pose,*runArt->layout);
+            if(source!=previousSource){previousSource=source;heldAt=host.now;}
+            const auto& knots=character==cat::Character::Tuxedo?cat::video_actions::kTuxedoRunDistance:cat::video_actions::kCreamRunDistance;
+            if(source+1<knots.size()&&(knots[source+1]-knots[source])*(knots.size()-1)<.5)
+                maxCompressedHoldMs=std::max(maxCompressedHoldMs,static_cast<unsigned>(host.now-heldAt));
+        }
+        const double run=WalkingVelocity(g.physics.CurrentPose());
+        if(!runResponseMs||runResponseMs>650||maxCompressedHoldMs>33){result=800;break;}
         if(run<walk*1.4){result=773;break;}
         Key(VK_RIGHT,false);Key(VK_LEFT);
         int flips=0,previousFacing=g.facing;
@@ -270,6 +302,8 @@ int Run() {
         if(!characters.empty())characters+=",";
         characters+="{\"character\":"+std::to_string(static_cast<unsigned>(character))+",\"walk_speed\":"+
             std::to_string(walk)+",\"run_speed\":"+std::to_string(run)+
+            ",\"run_90_percent_response_ms\":"+std::to_string(runResponseMs)+
+            ",\"max_low_motion_source_hold_ms\":"+std::to_string(maxCompressedHoldMs)+
             ",\"normal_jump_peak\":"+std::to_string(normal.peak)+",\"walk_jump_distance\":"+std::to_string(walkingJump.distance)+
             ",\"walk_jump_preparation_source_ms\":"+std::to_string(walkingJump.preparationSourceMs)+
             ",\"run_jump_preparation_source_ms\":"+std::to_string(runningJump.preparationSourceMs)+
