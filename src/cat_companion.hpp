@@ -587,7 +587,7 @@ public:
     bool Play(std::int64_t now,std::uint64_t ticks) {
         if(!Bound() || !ready_ || !state_->enabled || Feeding(ticks) || !physics_.CurrentPose().grounded) return false;
         Advance(now); brain_->Interrupt(ticks); interaction_=Interaction::None;storyActive_=true;quietActive_=false;
-        SetMotion(cat::animation::Motion::ToyPaw,ticks,3000,0);
+        SetMotion(cat::animation::Motion::ToyPaw,ticks,RegisteredDuration(cat::sprite_sequence::Clip::Punch,3000),0);
         careUntil_=nextDecision_;
         return cat::memory::Record(state_->memory,cat::memory::Event::Play,state_->pet.updatedUtc);
     }

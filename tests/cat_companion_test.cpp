@@ -933,6 +933,28 @@ void AuthoredSleepKeepsItsIdentityIncludingWindowRestAndWake() {
     CHECK(Valid(state));
 }
 }
+void ExplicitPlayKeepsCompleteSourceRecovery() {
+    using C=cat::sprite_sequence::Clip;
+    for(const auto coat:cat::kAvailableCharacters) {
+        State state=NewState(born-365*86400);state.preferences.character=coat;
+        Model model;model.Bind(state);model.Reset(0,1600,700);
+        auto c=Frame(1000,1000);c.primaryVisible=false;
+        CHECK(model.Play(c.nowUtc,c.ticks));
+        const auto* art=cat::sprite_assets::Find(C::Punch,static_cast<unsigned>(coat),cat::sprite_assets::kCareSprites);
+        CHECK(art);const auto duration=cat::sprite_sequence::ProgramDuration(art->program);
+        bool finalSeen=false,quietSeen=false;
+        for(unsigned frame=0;frame<(duration+1000)/17;++frame) {
+            Step(model,c,1);const auto view=model.View(c.ticks);
+            if(view.animation.spriteClip==C::Punch) {
+                auto options=view.animation.spriteOptions;options.sheetFrames=art->frameCount;
+                const auto sample=cat::sprite_sequence::SampleProgram(C::Punch,art->program,view.animation.spriteElapsedMs,options);
+                finalSeen=finalSeen||sample.frame==art->frameCount-1;
+            }
+            if(view.motion==cat::animation::Motion::Idle) {CHECK(finalSeen);quietSeen=true;}
+        }
+        CHECK(finalSeen&&quietSeen);CHECK(state.memory.plays==1&&state.pet.feedCount==0);
+    }
+}
 void CompanionPointerAndAuthoredActions() {
     using C=cat::sprite_sequence::Clip;using A=cat::environment::CursorAction;
     for(const auto coat:cat::kAvailableCharacters) {
@@ -1074,6 +1096,7 @@ int main() {
         CompanionJumpReturnOwnsTheCompletedRecoveryBoundary();
         ExplicitCompanionJumpReturnsWhenTheRecoveryFinishes();
         AuthoredSleepKeepsItsIdentityIncludingWindowRestAndWake();
+        ExplicitPlayKeepsCompleteSourceRecovery();
         CompanionPointerAndAuthoredActions();
         CompanionKeyboardAndNinePairings();
         ManualRequestsWaitForTheCompleteWake();
