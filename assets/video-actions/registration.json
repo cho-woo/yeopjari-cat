@@ -33313,21 +33313,6 @@
       103,
       104,
       105,
-      6,
-      7,
-      8,
-      9,
-      10,
-      11,
-      12,
-      13,
-      14,
-      15,
-      16,
-      17,
-      18,
-      19,
-      20,
       21,
       22,
       23,
@@ -33337,30 +33322,21 @@
       27,
       28,
       29,
-      52,
-      53,
-      54,
-      55,
-      56,
-      57,
-      58,
-      59,
-      60,
-      61,
-      62,
-      63,
-      64,
-      65,
-      66,
-      67,
-      68,
-      69,
-      70,
-      71,
-      72,
-      73,
-      74,
-      75
+      30,
+      31,
+      32,
+      84,
+      85,
+      86,
+      87,
+      88,
+      89,
+      90,
+      91,
+      92,
+      93,
+      94,
+      95
     ],
     "scale": 0.34877384196185285,
     "neutral_root": [
@@ -33474,54 +33450,30 @@
       "sources/run-v31/cream-cycle.mp4",
       "sources/run-v31/cream-cycle.mp4",
       "sources/run-v31/cream-cycle.mp4",
-      "sources/controls-v34/cream-gait-transition.mp4",
-      "sources/controls-v34/cream-gait-transition.mp4",
-      "sources/controls-v34/cream-gait-transition.mp4",
-      "sources/controls-v34/cream-gait-transition.mp4",
-      "sources/controls-v34/cream-gait-transition.mp4",
-      "sources/controls-v34/cream-gait-transition.mp4",
-      "sources/controls-v34/cream-gait-transition.mp4",
-      "sources/controls-v34/cream-gait-transition.mp4",
-      "sources/controls-v34/cream-gait-transition.mp4",
-      "sources/controls-v34/cream-gait-transition.mp4",
-      "sources/controls-v34/cream-gait-transition.mp4",
-      "sources/controls-v34/cream-gait-transition.mp4",
-      "sources/controls-v34/cream-gait-transition.mp4",
-      "sources/controls-v34/cream-gait-transition.mp4",
-      "sources/controls-v34/cream-gait-transition.mp4",
-      "sources/controls-v34/cream-gait-transition.mp4",
-      "sources/controls-v34/cream-gait-transition.mp4",
-      "sources/controls-v34/cream-gait-transition.mp4",
-      "sources/controls-v34/cream-gait-transition.mp4",
-      "sources/controls-v34/cream-gait-transition.mp4",
-      "sources/controls-v34/cream-gait-transition.mp4",
-      "sources/controls-v34/cream-gait-transition.mp4",
-      "sources/controls-v34/cream-gait-transition.mp4",
-      "sources/controls-v34/cream-gait-transition.mp4",
-      "sources/controls-v34/cream-gait-transition.mp4",
-      "sources/controls-v34/cream-gait-transition.mp4",
-      "sources/controls-v34/cream-gait-transition.mp4",
-      "sources/controls-v34/cream-gait-transition.mp4",
-      "sources/controls-v34/cream-gait-transition.mp4",
-      "sources/controls-v34/cream-gait-transition.mp4",
-      "sources/controls-v34/cream-gait-transition.mp4",
-      "sources/controls-v34/cream-gait-transition.mp4",
-      "sources/controls-v34/cream-gait-transition.mp4",
-      "sources/controls-v34/cream-gait-transition.mp4",
-      "sources/controls-v34/cream-gait-transition.mp4",
-      "sources/controls-v34/cream-gait-transition.mp4",
-      "sources/controls-v34/cream-gait-transition.mp4",
-      "sources/controls-v34/cream-gait-transition.mp4",
-      "sources/controls-v34/cream-gait-transition.mp4",
-      "sources/controls-v34/cream-gait-transition.mp4",
-      "sources/controls-v34/cream-gait-transition.mp4",
-      "sources/controls-v34/cream-gait-transition.mp4",
-      "sources/controls-v34/cream-gait-transition.mp4",
-      "sources/controls-v34/cream-gait-transition.mp4",
-      "sources/controls-v34/cream-gait-transition.mp4",
-      "sources/controls-v34/cream-gait-transition.mp4",
-      "sources/controls-v34/cream-gait-transition.mp4",
-      "sources/controls-v34/cream-gait-transition.mp4"
+      "sources/run-v36/cream-responsive-run-768.avi",
+      "sources/run-v36/cream-responsive-run-768.avi",
+      "sources/run-v36/cream-responsive-run-768.avi",
+      "sources/run-v36/cream-responsive-run-768.avi",
+      "sources/run-v36/cream-responsive-run-768.avi",
+      "sources/run-v36/cream-responsive-run-768.avi",
+      "sources/run-v36/cream-responsive-run-768.avi",
+      "sources/run-v36/cream-responsive-run-768.avi",
+      "sources/run-v36/cream-responsive-run-768.avi",
+      "sources/run-v36/cream-responsive-run-768.avi",
+      "sources/run-v36/cream-responsive-run-768.avi",
+      "sources/run-v36/cream-responsive-run-768.avi",
+      "sources/run-v36/cream-responsive-run-768.avi",
+      "sources/run-v36/cream-responsive-run-768.avi",
+      "sources/run-v36/cream-responsive-run-768.avi",
+      "sources/run-v36/cream-responsive-run-768.avi",
+      "sources/run-v36/cream-responsive-run-768.avi",
+      "sources/run-v36/cream-responsive-run-768.avi",
+      "sources/run-v36/cream-responsive-run-768.avi",
+      "sources/run-v36/cream-responsive-run-768.avi",
+      "sources/run-v36/cream-responsive-run-768.avi",
+      "sources/run-v36/cream-responsive-run-768.avi",
+      "sources/run-v36/cream-responsive-run-768.avi",
+      "sources/run-v36/cream-responsive-run-768.avi"
     ],
     "source_files": [
       {
@@ -33531,9 +33483,9 @@
         "fps": 24.0
       },
       {
-        "path": "sources/controls-v34/cream-gait-transition.mp4",
-        "sha256": "23d850de4318135fb9179be2bdcd610e0203848eba7d4406485d2d731f00ffbc",
-        "frame_count": 107,
+        "path": "sources/run-v36/cream-responsive-run-768.avi",
+        "sha256": "8081602df2aa1f1b8981b1bfa39c61558f2e0f3944b0247700800dcde3991096",
+        "frame_count": 97,
         "fps": 24.0
       }
     ],
@@ -33964,35 +33916,11 @@
       ],
       [
         384,
-        550.0
+        552.0
       ],
       [
         384,
-        550.0
-      ],
-      [
-        384,
-        548.0
-      ],
-      [
-        384,
-        548.0
-      ],
-      [
-        384,
-        548.0
-      ],
-      [
-        384,
-        548.0
-      ],
-      [
-        384,
-        548.0
-      ],
-      [
-        384,
-        548.0
+        552.0
       ],
       [
         384,
@@ -34004,127 +33932,55 @@
       ],
       [
         384,
-        550.0
+        549.0
       ],
       [
         384,
-        548.0
+        549.0
       ],
       [
         384,
-        548.0
+        549.0
       ],
       [
         384,
-        548.0
+        549.0
       ],
       [
         384,
-        548.0
+        549.0
       ],
       [
         384,
-        546.0
+        549.0
       ],
       [
         384,
-        544
+        549.0
       ],
       [
         384,
-        544
+        553.0
       ],
       [
         384,
-        544.0
+        549.0
       ],
       [
         384,
-        552.0
+        549.0
       ],
       [
         384,
-        552.0
+        549.0
       ],
       [
         384,
-        550.0
+        549.0
       ],
       [
         384,
-        548.0
-      ],
-      [
-        384,
-        544.0
-      ],
-      [
-        384,
-        548.0
-      ],
-      [
-        384,
-        548.0
-      ],
-      [
-        384,
-        544
-      ],
-      [
-        384,
-        544
-      ],
-      [
-        384,
-        544
-      ],
-      [
-        384,
-        552.0
-      ],
-      [
-        384,
-        552.0
-      ],
-      [
-        384,
-        550.0
-      ],
-      [
-        384,
-        548.0
-      ],
-      [
-        384,
-        548.0
-      ],
-      [
-        384,
-        548.0
-      ],
-      [
-        384,
-        548.0
-      ],
-      [
-        384,
-        546.0
-      ],
-      [
-        384,
-        544.0
-      ],
-      [
-        384,
-        544
-      ],
-      [
-        384,
-        544
-      ],
-      [
-        384,
-        552.0
+        549.0
       ],
       [
         384,
@@ -34144,15 +34000,15 @@
       ],
       [
         384,
-        550.0
+        549.0
       ],
       [
         384,
-        550.0
+        549.0
       ],
       [
         384,
-        550.0
+        549.0
       ]
     ],
     "ground_registration": "source_floor_with_penetration_guard",
@@ -34274,54 +34130,30 @@
       103,
       104,
       105,
-      6,
-      7,
-      8,
-      9,
-      10,
-      11,
-      12,
-      13,
-      14,
-      15,
-      16,
-      17,
-      18,
-      19,
-      20,
-      21,
-      22,
-      23,
-      24,
       25,
       26,
       27,
       28,
       29,
-      58,
-      59,
-      60,
-      61,
-      62,
-      63,
-      64,
-      65,
-      66,
-      67,
-      68,
-      69,
-      70,
-      71,
-      72,
-      73,
-      74,
-      75,
-      76,
-      77,
-      78,
-      79,
-      80,
-      81
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      84,
+      85,
+      86,
+      87,
+      88,
+      89,
+      90,
+      91,
+      92,
+      93,
+      94,
+      95
     ],
     "scale": 0.34877384196185285,
     "neutral_root": [
@@ -34435,54 +34267,30 @@
       "sources/run-v31/tuxedo-cycle.mp4",
       "sources/run-v31/tuxedo-cycle.mp4",
       "sources/run-v31/tuxedo-cycle.mp4",
-      "sources/controls-v34/tuxedo-gait-transition.mp4",
-      "sources/controls-v34/tuxedo-gait-transition.mp4",
-      "sources/controls-v34/tuxedo-gait-transition.mp4",
-      "sources/controls-v34/tuxedo-gait-transition.mp4",
-      "sources/controls-v34/tuxedo-gait-transition.mp4",
-      "sources/controls-v34/tuxedo-gait-transition.mp4",
-      "sources/controls-v34/tuxedo-gait-transition.mp4",
-      "sources/controls-v34/tuxedo-gait-transition.mp4",
-      "sources/controls-v34/tuxedo-gait-transition.mp4",
-      "sources/controls-v34/tuxedo-gait-transition.mp4",
-      "sources/controls-v34/tuxedo-gait-transition.mp4",
-      "sources/controls-v34/tuxedo-gait-transition.mp4",
-      "sources/controls-v34/tuxedo-gait-transition.mp4",
-      "sources/controls-v34/tuxedo-gait-transition.mp4",
-      "sources/controls-v34/tuxedo-gait-transition.mp4",
-      "sources/controls-v34/tuxedo-gait-transition.mp4",
-      "sources/controls-v34/tuxedo-gait-transition.mp4",
-      "sources/controls-v34/tuxedo-gait-transition.mp4",
-      "sources/controls-v34/tuxedo-gait-transition.mp4",
-      "sources/controls-v34/tuxedo-gait-transition.mp4",
-      "sources/controls-v34/tuxedo-gait-transition.mp4",
-      "sources/controls-v34/tuxedo-gait-transition.mp4",
-      "sources/controls-v34/tuxedo-gait-transition.mp4",
-      "sources/controls-v34/tuxedo-gait-transition.mp4",
-      "sources/controls-v34/tuxedo-gait-transition.mp4",
-      "sources/controls-v34/tuxedo-gait-transition.mp4",
-      "sources/controls-v34/tuxedo-gait-transition.mp4",
-      "sources/controls-v34/tuxedo-gait-transition.mp4",
-      "sources/controls-v34/tuxedo-gait-transition.mp4",
-      "sources/controls-v34/tuxedo-gait-transition.mp4",
-      "sources/controls-v34/tuxedo-gait-transition.mp4",
-      "sources/controls-v34/tuxedo-gait-transition.mp4",
-      "sources/controls-v34/tuxedo-gait-transition.mp4",
-      "sources/controls-v34/tuxedo-gait-transition.mp4",
-      "sources/controls-v34/tuxedo-gait-transition.mp4",
-      "sources/controls-v34/tuxedo-gait-transition.mp4",
-      "sources/controls-v34/tuxedo-gait-transition.mp4",
-      "sources/controls-v34/tuxedo-gait-transition.mp4",
-      "sources/controls-v34/tuxedo-gait-transition.mp4",
-      "sources/controls-v34/tuxedo-gait-transition.mp4",
-      "sources/controls-v34/tuxedo-gait-transition.mp4",
-      "sources/controls-v34/tuxedo-gait-transition.mp4",
-      "sources/controls-v34/tuxedo-gait-transition.mp4",
-      "sources/controls-v34/tuxedo-gait-transition.mp4",
-      "sources/controls-v34/tuxedo-gait-transition.mp4",
-      "sources/controls-v34/tuxedo-gait-transition.mp4",
-      "sources/controls-v34/tuxedo-gait-transition.mp4",
-      "sources/controls-v34/tuxedo-gait-transition.mp4"
+      "sources/run-v36/tuxedo-responsive-run-768.avi",
+      "sources/run-v36/tuxedo-responsive-run-768.avi",
+      "sources/run-v36/tuxedo-responsive-run-768.avi",
+      "sources/run-v36/tuxedo-responsive-run-768.avi",
+      "sources/run-v36/tuxedo-responsive-run-768.avi",
+      "sources/run-v36/tuxedo-responsive-run-768.avi",
+      "sources/run-v36/tuxedo-responsive-run-768.avi",
+      "sources/run-v36/tuxedo-responsive-run-768.avi",
+      "sources/run-v36/tuxedo-responsive-run-768.avi",
+      "sources/run-v36/tuxedo-responsive-run-768.avi",
+      "sources/run-v36/tuxedo-responsive-run-768.avi",
+      "sources/run-v36/tuxedo-responsive-run-768.avi",
+      "sources/run-v36/tuxedo-responsive-run-768.avi",
+      "sources/run-v36/tuxedo-responsive-run-768.avi",
+      "sources/run-v36/tuxedo-responsive-run-768.avi",
+      "sources/run-v36/tuxedo-responsive-run-768.avi",
+      "sources/run-v36/tuxedo-responsive-run-768.avi",
+      "sources/run-v36/tuxedo-responsive-run-768.avi",
+      "sources/run-v36/tuxedo-responsive-run-768.avi",
+      "sources/run-v36/tuxedo-responsive-run-768.avi",
+      "sources/run-v36/tuxedo-responsive-run-768.avi",
+      "sources/run-v36/tuxedo-responsive-run-768.avi",
+      "sources/run-v36/tuxedo-responsive-run-768.avi",
+      "sources/run-v36/tuxedo-responsive-run-768.avi"
     ],
     "source_files": [
       {
@@ -34492,9 +34300,9 @@
         "fps": 24.0
       },
       {
-        "path": "sources/controls-v34/tuxedo-gait-transition.mp4",
-        "sha256": "1d138ecd72b637ce21fb073c0d7f2c91bf6b2da449614557b1c95f320a491177",
-        "frame_count": 107,
+        "path": "sources/run-v36/tuxedo-responsive-run-768.avi",
+        "sha256": "b48d165368f72da7cdfb99f1a03e5be8cf29592571c0c6cbd062429f3e76c9a2",
+        "frame_count": 97,
         "fps": 24.0
       }
     ],
@@ -34925,11 +34733,39 @@
       ],
       [
         384,
-        546.0
+        551.0
       ],
       [
         384,
-        546.0
+        551.0
+      ],
+      [
+        384,
+        551.0
+      ],
+      [
+        384,
+        550.0
+      ],
+      [
+        384,
+        550.0
+      ],
+      [
+        384,
+        550.0
+      ],
+      [
+        384,
+        550.0
+      ],
+      [
+        384,
+        550.0
+      ],
+      [
+        384,
+        550.0
       ],
       [
         384,
@@ -34937,11 +34773,11 @@
       ],
       [
         384,
-        554.0
+        552.0
       ],
       [
         384,
-        554.0
+        551.0
       ],
       [
         384,
@@ -34957,83 +34793,7 @@
       ],
       [
         384,
-        550.0
-      ],
-      [
-        384,
-        550.0
-      ],
-      [
-        384,
-        548.0
-      ],
-      [
-        384,
-        548.0
-      ],
-      [
-        384,
-        548.0
-      ],
-      [
-        384,
-        546
-      ],
-      [
-        384,
-        546
-      ],
-      [
-        384,
-        546
-      ],
-      [
-        384,
-        554.0
-      ],
-      [
-        384,
-        554.0
-      ],
-      [
-        384,
-        552.0
-      ],
-      [
-        384,
-        550.0
-      ],
-      [
-        384,
-        550.0
-      ],
-      [
-        384,
-        548.0
-      ],
-      [
-        384,
-        548.0
-      ],
-      [
-        384,
-        548.0
-      ],
-      [
-        384,
-        550.0
-      ],
-      [
-        384,
-        554.0
-      ],
-      [
-        384,
-        554.0
-      ],
-      [
-        384,
-        552.0
+        551.0
       ],
       [
         384,
@@ -35066,54 +34826,6 @@
       [
         384,
         550.0
-      ],
-      [
-        384,
-        550.0
-      ],
-      [
-        384,
-        550.0
-      ],
-      [
-        384,
-        550.0
-      ],
-      [
-        384,
-        550.0
-      ],
-      [
-        384,
-        550.0
-      ],
-      [
-        384,
-        550.0
-      ],
-      [
-        384,
-        550.0
-      ],
-      [
-        384,
-        550.0
-      ],
-      [
-        384,
-        550.0
-      ],
-      [
-        384,
-        549.0
-      ],
-      [
-        384,
-        548.0
-      ],
-      [
-        384,
-        548.0
       ]
     ],
     "ground_registration": "source_floor_with_penetration_guard",

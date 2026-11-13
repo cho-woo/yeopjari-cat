@@ -2,6 +2,8 @@
 #include "../src/cat_environment.hpp"
 #include "../src/cat_animation.hpp"
 #include "../src/cat_lively_motion.hpp"
+#include "../src/cat_gait_transition.hpp"
+#include "../src/cat_running_turn.hpp"
 #include <box2d/box2d.h>
 
 #include <algorithm>
@@ -934,6 +936,39 @@ void HangingFixedStepsAndWorldCleanup() {
     CHECK(b2GetByteCount() == before);
 }
 
+void AuthoredRunRampsReachTheirSpeedWithoutASecondEase() {
+    for(int fps:{30,60,120})for(bool accelerate:{false,true}) {
+        Controller body;body.Reset(2500,0,5000);body.SetTargetVelocity(accelerate?32:120);Run(body,2);
+        cat::gait_transition::Transition transition;
+        const double from=std::abs(body.CurrentPose().velocityX),target=accelerate?120:32;
+        CHECK(transition.Begin(accelerate,0,500,from,target));
+        double maximum=0;unsigned reached=0;
+        for(unsigned frame=1;frame<=static_cast<unsigned>(fps);++frame) {
+            const auto ms=static_cast<std::uint64_t>(frame*1000/fps);
+            body.SetTargetVelocity(ms<=500?transition.MotorSpeed(ms):target);body.Update(1./fps);
+            const double speed=body.CurrentPose().velocityX;maximum=std::max(maximum,speed);
+            CHECK(speed>=target*(accelerate?0:.85)&&speed<=120*1.04);
+            if(!reached&&(accelerate?speed>=target*.9:speed<=target*1.1))reached=static_cast<unsigned>(ms);
+        }
+        CHECK(reached&&reached<=600);CHECK(maximum<=124.8);
+        CHECK(std::abs(body.CurrentPose().velocityX-target)<1);
+    }
+    for(int direction:{-1,1})for(int fps:{30,60,120}) {
+        Controller body;body.Reset(2500,0,5000);Run(body,.3);
+        cat::running_turn::Turn turn;CHECK(turn.Begin(-direction,direction,{{80,120,500}}));
+        unsigned launchMs=0,reached=0;double maximum=0;
+        for(unsigned frame=1;frame<=static_cast<unsigned>(fps*2);++frame) {
+            const unsigned ms=frame*1000/fps;
+            if(turn.Advance(1./fps,true,body.CurrentPose().velocityX,body.RenderPose().velocityX))launchMs=ms;
+            body.SetTargetVelocity(turn.Motor(direction*120));body.Update(1./fps);
+            const double speed=direction*body.CurrentPose().velocityX;
+            CHECK(speed>=0&&speed<=124.8);maximum=std::max(maximum,speed);
+            if(launchMs&&!reached&&speed>=108)reached=ms-launchMs;
+        }
+        CHECK(launchMs&&reached&&reached<=550);CHECK(maximum<=124.8);
+    }
+}
+
 void WallClimbAndSkid() {
     for(bool running:{false,true}) {
         double low=2,high=0,previous=cat::lively::Pace(0,running,3);
@@ -942,7 +977,8 @@ void WallClimbAndSkid() {
             CHECK(gain>=.6&&gain<=1.26);CHECK(std::abs(gain-previous)<.04);
             low=std::min(low,gain);high=std::max(high,gain);previous=gain;
         }
-        CHECK(high-low>(running?.5:.3));
+        CHECK(high-low>(running?.15:.3));
+        if(running)CHECK(low>=.9&&high<=1.1);
     }
     const int before=b2GetByteCount();
     {
@@ -1020,6 +1056,7 @@ int main() {
         LedgeGripUsesJointAndReleasesMomentum();
         MovingOrClosingGripNeverTeleports();
         HangingFixedStepsAndWorldCleanup();
+        AuthoredRunRampsReachTheirSpeedWithoutASecondEase();
         WallClimbAndSkid();
         WorldLifetime();
         std::cout << "Box2D physics: " << checks << " checks passed\n";

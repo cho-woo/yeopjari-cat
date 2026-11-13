@@ -24,6 +24,13 @@ public:
         const double t=std::clamp(double(Elapsed(now))/std::max<std::uint64_t>(1,duration_),0.,1.);
         return from_+(to_-from_)*t*t*(3-2*t);
     }
+    double MotorSpeed(std::uint64_t now)const {
+        const double t=std::clamp(double(Elapsed(now))/std::max<std::uint64_t>(1,duration_),0.,1.);
+        // Box2D's ground motor already has a 100/130ms response. Feed forward
+        // this finite source ramp's derivative instead of easing it twice.
+        const double acceleration=(to_-from_)*6*t*(1-t)*1000/std::max<std::uint64_t>(1,duration_);
+        return std::max(0.,Speed(now)+(to_<from_?.10:.13)*acceleration);
+    }
 private:
     bool active_=false,toRun_=false;
     std::uint64_t started_=0,duration_=0;

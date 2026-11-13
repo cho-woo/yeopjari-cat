@@ -413,6 +413,8 @@ public:
         if(cursor_.Active())velocity=cursor_.Velocity();
         if(cursor_.Action()==cat::environment::CursorAction::Pounce&&jumpPending_&&cursorTakeoffVelocity_)velocity=cursorTakeoffVelocity_;
         if(wallApproaching_)velocity=direction_*speed_;
+        if(!keyboardActive_&&!cursor_.Active()&&!runningJump_.active&&interaction_==Interaction::None&&motion_==cat::animation::Motion::Zoomies)
+            velocity*=cat::lively::Pace(c.ticks>=motionStart_?c.ticks-motionStart_:0,true,static_cast<unsigned>(motionSerial_));
         // Keep the complete action and care interval after the moving body has
         // actually braked. Rendering alone must not hide a sliding meal/crouch.
         if(waitingForStop_) {
@@ -716,6 +718,9 @@ public:
             cat::animation::UseAuthoredSprite(s.animation);
         }
         if(Registered(s.animation.spriteClip))cat::animation::UseAuthoredSprite(s.animation);
+        if(s.animation.spriteClip==cat::sprite_sequence::Clip::Run&&s.animation.spriteTimed&&
+                s.animation.spriteOptions.stage==cat::sprite_sequence::Stage::Automatic)
+            s.animation.spriteOptions.cyclePhase=cat::video_actions::RunSourcePhase(static_cast<unsigned>(s.preferences.character),s.animation.spriteOptions.cyclePhase);
         if(s.animation.spriteClip==cat::sprite_sequence::Clip::Jump && RegisteredVideoWalk()) {
             s.animation.jumpRig=true;
             if(!s.physical.grounded) {

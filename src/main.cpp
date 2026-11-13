@@ -3282,6 +3282,9 @@ cat::animation::Pose PrimaryDisplayedPose(ULONGLONG ticks,const cat::physics::Po
     }
     cat::animation::ApplyAuthoredLocomotion(pose,displayed,g.gait,
         LoadedCareSprite(cat::animation::AuthoredLocomotionClip(g.gait),g.preferences.character)!=nullptr);
+    if(pose.spriteClip==cat::sprite_sequence::Clip::Run&&pose.spriteTimed&&
+            pose.spriteOptions.stage==cat::sprite_sequence::Stage::Automatic)
+        pose.spriteOptions.cyclePhase=cat::video_actions::RunSourcePhase(static_cast<unsigned>(g.preferences.character),pose.spriteOptions.cyclePhase);
     // The final sheet's awake pose is the common neutral, not a different
     // legacy cat between every meal, grooming action and nap.
     if((displayed==Motion::Idle || displayed==Motion::Watch) && physical.grounded &&
@@ -4336,7 +4339,7 @@ void UpdateKeyboardPlay(ULONGLONG ticks,double elapsed) {
     const bool running=keyboardPlay.input.Running();
     if(direction)g.direction=direction;
     if(g.runningTurn.Active()||keyboardPlay.gaitTransition.Active()) {
-        const double speed=keyboardPlay.gaitTransition.Active()?keyboardPlay.gaitTransition.Speed(ticks):
+        const double speed=keyboardPlay.gaitTransition.Active()?keyboardPlay.gaitTransition.MotorSpeed(ticks):
             running?RegisteredRunSpeed():RegisteredWalkSpeed();
         g.speed=direction&&direction==g.facing?speed*g.dpiScale:0;
         keyboardPlay.direction=direction;keyboardPlay.running=running;
@@ -4359,7 +4362,8 @@ void UpdateKeyboardPlay(ULONGLONG ticks,double elapsed) {
                     if(const auto* run=LoadedCareSprite(cat::sprite_sequence::Clip::Run,g.preferences.character)) {
                         const auto range=running?run->layout->program.intro:run->layout->program.outro;
                         keyboardPlay.gaitTransition.Begin(running,ticks,cat::sprite_sequence::Duration(run->layout->program,range),
-                            std::abs(WalkingVelocity(physical)),running?RegisteredRunSpeed():RegisteredWalkSpeed());
+                            std::abs(WalkingVelocity(physical))/(cat::appearance::VisualModifiers(g.nutrition,g.preferences.character).speed*
+                                cat::species::ProfileFor(g.preferences.character).movementSpeedMultiplier),running?RegisteredRunSpeed():RegisteredWalkSpeed());
                     }
                 g.motion=desired;g.walkingMotion=desired;
             }
@@ -4368,7 +4372,7 @@ void UpdateKeyboardPlay(ULONGLONG ticks,double elapsed) {
         }
     }
     g.speed=(direction?(running?RegisteredRunSpeed():RegisteredWalkSpeed()):0)*g.dpiScale;
-    if(keyboardPlay.gaitTransition.Active())g.speed=keyboardPlay.gaitTransition.Speed(ticks)*g.dpiScale;
+    if(keyboardPlay.gaitTransition.Active())g.speed=keyboardPlay.gaitTransition.MotorSpeed(ticks)*g.dpiScale;
     keyboardPlay.direction=direction;keyboardPlay.running=running;
 }
 

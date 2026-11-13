@@ -44,7 +44,9 @@ public:
         if(phase_!=Phase::Launching)return 0;
         if(desired*to_<=0)return 0; // Never accelerate toward a stale target.
         const double t=std::clamp(age_/launch_,0.,1.);
-        return desired*t*t*(3-2*t);
+        // This is a motor demand, not an instantaneous physical speed. The
+        // derivative compensates its130ms response while Box2D limits force.
+        return desired*(t*t*(3-2*t)+.13*6*t*(1-t)*1000/launch_);
     }
 private:
     Phase phase_=Phase::None;double age_=0;int from_=1,to_=1;bool released_=false;

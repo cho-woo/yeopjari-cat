@@ -145,14 +145,16 @@ void UpdateControls(const Context& c,std::uint64_t elapsed) {
                                 if(keyboardRun_!=(gait_.AuthoredMode()==cat::authored_locomotion::Mode::Run)&&groundArtBridge_.Side())
                                     if(const auto* run=Registered(C::Run))keyboardGait_.Begin(keyboardRun_,c.ticks,
                                         cat::sprite_sequence::Duration(run->program,keyboardRun_?run->program.intro:run->program.outro),
-                                        std::abs(physical.velocityX-physical.supportVelocityX),speed);
+                                        std::abs(physical.velocityX-physical.supportVelocityX)/
+                                            (cat::appearance::VisualModifiers(state_->nutrition,state_->preferences.character).speed*
+                                             cat::species::ProfileFor(state_->preferences.character).movementSpeedMultiplier),speed);
                                 motion_=walkingMotion_=desired;
                             }
                         } else SetMotion(desired,c.ticks,3600000,speed);
                     }
                 }
             }
-            speed_=keyboardDirection_&&direction_==facing_?(keyboardGait_.Active()?keyboardGait_.Speed(c.ticks):speed):0;
+            speed_=keyboardDirection_&&direction_==facing_?(keyboardGait_.Active()?keyboardGait_.MotorSpeed(c.ticks):speed):0;
         }
         return;
     }
