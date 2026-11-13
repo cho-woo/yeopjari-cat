@@ -6187,6 +6187,7 @@ int NativeMenuContractTest() {
 #include "native_video_motion_capture.hpp"
 #include "native_cute_idle_capture.hpp"
 #include "native_cursor_play_capture.hpp"
+#include "native_cursor_jitter_diagnostic.hpp"
 #include "native_groom_review.hpp"
 #include "native_ball_play_capture.hpp"
 #include "native_fish_review.hpp"
@@ -6233,6 +6234,7 @@ int SelfTest(HINSTANCE instance) {
 }
 
 int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
+    if(commandLine && wcsstr(commandLine,L"--cursor-jitter-diagnostic"))return NativeCursorJitterDiagnostic(instance);
     if(commandLine && wcsstr(commandLine,L"--cursor-host-self-test"))return NativeCursorHostTest(instance);
     if(commandLine && wcsstr(commandLine,L"--render-source-audit"))return NativeSourceAudit(instance);
     if(commandLine && wcsstr(commandLine,L"--render-identity-turn-review"))return NativeIdentityTurnReview(instance);
