@@ -46,6 +46,7 @@
 #include "cat_pose_transition.hpp"
 #include "cat_video_ground_bridge.hpp"
 #include "cat_care_presentation.hpp"
+#include "cat_raster_transition.hpp"
 #include "cat_locomotion_rig.hpp"
 #include "cat_articulated_walk.hpp"
 #include "cat_motion_gate.hpp"
@@ -397,6 +398,8 @@ struct App {
     std::uint64_t motionSerial = 0; // Transient ownership; clocks can be rebased during pauses.
     bool autonomousResting = false, autonomousDispatching = false, companionReaction = false;
     bool manualMotionActive = false; // Transient ownership; never changes the saved roaming preference.
+    bool manualWakePending=false;
+    Motion manualWakeMotion=Motion::Idle;
     bool flyActive=false;
     std::uint64_t flySerial=0;
     int flyFacing=1;
@@ -447,6 +450,7 @@ double MotionClock() {
 }
 void ResetMovement();
 void RefreshAnimationTimer();
+bool CarePresentationActive(std::uint64_t ticks);
 bool PrimaryAuthoredCareHolding(ULONGLONG ticks);
 LONG CurrentGroundY(ULONGLONG ticks);
 void CancelPerch();
@@ -845,7 +849,7 @@ void StartUpdateCheck(bool manual) {
     updates.cancel.store(false);
     updates.finished.store(false);
     updates.operation = UpdateState::Operation::Checking;
-    updates.nextCheck = GetTickCount64() + 6ULL * 60 * 60 * 1000;
+    updates.nextCheck = GetTickCount64() + 30ULL * 60 * 1000;
     const std::string feed = updates.feed;
     try {
         updates.worker = std::thread([feed] {
@@ -928,6 +932,10 @@ void ShowUpdateDetails() {
     if (choice == IDOK) StartUpdateDownload();
     else if (choice == -1) UpdateMessage(L"업데이트 안내를 열지 못했어요. 잠시 뒤 다시 시도해 주세요.", kTitle, MB_OK | MB_ICONWARNING);
 }
+bool CatUpdateBubbleVisible() {
+    return !updates.applying&&updates.operation!=UpdateState::Operation::Downloading&&
+        updates.announcement.HasAvailable(kVersion);
+}
 void PollUpdates() {
     if (g.closing || g.menuOpen || g.dragging || updates.applying) return;
     if (updates.operation != UpdateState::Operation::None && updates.finished.load(std::memory_order_acquire)) {
@@ -937,6 +945,8 @@ void PollUpdates() {
         auto result = std::move(updates.result);
         updates.result = {};
         if (!result.success) {
+            if(completed==UpdateState::Operation::Checking)
+                updates.nextCheck=GetTickCount64()+5ULL*60*1000;
             if (!result.stagedExe.empty()) cat::update::CleanupStagedDownload(result.stagedExe);
             if (updates.manual || completed == UpdateState::Operation::Downloading) {
                 const auto error = result.error.empty() ? L"인터넷 연결을 확인한 뒤 다시 시도해 주세요." : result.error;
@@ -1858,6 +1868,15 @@ void RefreshAnimationTimer() {
             !(second.animation.spriteClip==cat::sprite_sequence::Clip::None && second.animation.frame==4 &&
                 (second.animation.face.blink>0 || second.animation.joints.leftEar>0 || second.animation.joints.rightEar>0 ||
                  second.animation.joints.frontLeft>0 || second.animation.joints.frontRight>0));
+        if(second.animation.spriteClip!=cat::sprite_sequence::Clip::None) {
+            const auto* source=cat::sprite_assets::Find(second.animation.spriteClip,
+                static_cast<unsigned>(second.preferences.character),cat::sprite_assets::kCareSprites);
+            if(source&&source->program.stepCount) {
+                auto options=second.animation.spriteOptions;options.sheetFrames=source->frameCount;
+                if(!second.animation.spriteTimed||!cat::sprite_sequence::SampleProgram(source->clip,source->program,
+                    second.animation.spriteElapsedMs,options).holding)companionResting=false;
+            }
+        }
     }
     const bool toysResting = (g.toy != ToyKind::Ball ||
         (std::abs(g.toyBall.velocity) < .5 && std::abs(g.toyBall.verticalVelocity) < .5 && g.toyBall.lift < .2)) &&
@@ -1869,7 +1888,12 @@ void RefreshAnimationTimer() {
     const bool idleActing=(g.motion==Motion::Idle||g.motion==Motion::Watch) && !g.waitingForStop && !g.jumpPending &&
         g.groundArtBridge.Neutral() && ticks>=g.motionStart &&
         cat::idle_gestures::NeedsFineCadence(ticks-g.motionStart);
-    const UINT interval = g.hidden ? 250 : (g.menuOpen || g.dragging || (resting&&!idleActing&&!CursorNeedsFineCadence(ticks)) ? 40 : 16);
+    const auto age=ticks>=g.motionStart?ticks-g.motionStart:0;
+    const auto* sleep=LoadedCareSprite(cat::sprite_sequence::Clip::Sleep,g.preferences.character);
+    const bool sourceActing=(g.flyActive&&g.flySerial==g.motionSerial)||ticks<g.stopUntil||age<240||
+        (g.motion==Motion::Sleep&&sleep&&age<cat::animation::ReferenceSleepIntroMs(&sleep->layout->program,
+            sleep->layout->frameCount)+cat::care_presentation::Transition::DurationMs)||CarePresentationActive(ticks);
+    const UINT interval = g.hidden ? 250 : (g.menuOpen || g.dragging || (resting&&!idleActing&&!sourceActing&&!CursorNeedsFineCadence(ticks)) ? 40 : 16);
     const bool precise = interval == 16;
     if (precise && !g.preciseTimer) g.preciseTimer = timeBeginPeriod(1) == TIMERR_NOERROR;
     else if (!precise && g.preciseTimer) { timeEndPeriod(1); g.preciseTimer = false; }
@@ -1909,6 +1933,7 @@ void KeepOnWorkArea(bool reposition = false) {
 }
 double Random(double low, double high) { return std::uniform_real_distribution<double>(low, high)(g.random); }
 void SetMotion(Motion motion, ULONGLONG duration,ULONGLONG actionTicks=0,bool continueManualMotion=false) {
+    g.manualWakePending=false;
     g.runningTurn.Reset();
     g.flyActive=false;
     if(motion==Motion::BoxSit)motion=Motion::Idle; // Retired box/bag events cannot re-enter through legacy queues.
@@ -1962,6 +1987,9 @@ void SetMotion(Motion motion, ULONGLONG duration,ULONGLONG actionTicks=0,bool co
     if(g.autonomousDispatching)g.autonomousClaimedAt=g.autonomousTick;
     if(motion==Motion::Sleep)g.sleepVariant=LoadedCareSprite(Clip::Sleep,g.preferences.character)?0:
         cat::sprite_sequence::SelectSleepVariant(Random(0,1),false);
+    if(motion==Motion::Sleep)if(const auto* sleep=LoadedCareSprite(Clip::Sleep,g.preferences.character))
+        duration=std::max<ULONGLONG>(duration,
+            cat::animation::ReferenceSleepIntroMs(&sleep->layout->program,sleep->layout->frameCount)+1500);
     if(motion==Motion::Groom)g.groomVariant=static_cast<unsigned>(g.random()%3);
     g.fishMeal = false;
     if (!g.lifeDispatching) {
@@ -2868,13 +2896,19 @@ void DrawStyledAnimationDirect(Graphics& graphics, cat::animation::Pose pose, RE
 
 struct CarePresentationRenderer {
     cat::care_presentation::Transition transition;
+    cat::raster_transition::RegisteredMorph morph;
     Surface previous,from,target;
     double center=0,bottom=0,scale=0,bodyWidth=0,bodyHeight=0;
-    bool geometry=false;
-    void Reset() {transition.Reset();geometry=false;}
+    bool geometry=false,targetOnly=false;
+    unsigned lastRepresentation=0;
+    void Reset() {transition.Reset();morph.Reset();geometry=false;targetOnly=false;lastRepresentation=0;}
 };
 CarePresentationRenderer& PrimaryCarePresentation() {static CarePresentationRenderer state;return state;}
 CarePresentationRenderer& CompanionCarePresentation() {static CarePresentationRenderer state;return state;}
+bool CarePresentationActive(std::uint64_t ticks) {
+    return PrimaryCarePresentation().transition.Active(ticks)||
+        (g.companionStore.enabled()&&CompanionCarePresentation().transition.Active(ticks));
+}
 void PausePrimaryCarePresentation(std::uint64_t milliseconds) {PrimaryCarePresentation().transition.Pause(milliseconds);}
 void ResetPrimaryCarePresentation() {PrimaryCarePresentation().Reset();}
 void ReleaseCarePresentation() {
@@ -2895,14 +2929,13 @@ void DrawStyledAnimation(Graphics& graphics, cat::animation::Pose pose, REAL cen
     if(cat::CharacterAvailable(character) && !g.careSprites.empty()) {
         if(pose.blendFrame>=0 && pose.blend>=.5)pose.frame=pose.blendFrame;
         pose.blendFrame=-1;pose.blend=0;
-        if(presentation)presentation->Reset();
-        direct(graphics,pose);return;
     }
     if(!presentation) {direct(graphics,pose);return;}
     auto& state=*presentation;
     const auto* authored=CareSpriteFor(pose,character);
     using Clip=cat::sprite_sequence::Clip;
-    const auto calm=[](Clip clip) {return clip==Clip::Groom||clip==Clip::Sleep||clip==Clip::Eat||clip==Clip::Treat||clip==Clip::Fish;};
+    const auto calm=[](Clip clip) {return clip==Clip::Groom||clip==Clip::Sleep||clip==Clip::Eat||
+        clip==Clip::Treat||clip==Clip::Fish||clip==Clip::Knead||clip==Clip::ToyPlay||clip==Clip::FlyHunt;};
     const bool hasCalm=std::any_of(g.careSprites.begin(),g.careSprites.end(),[&](const auto& sprite) {
         return sprite->layout->character==cat::sprite_assets::AuthoredCharacter(static_cast<unsigned>(character))&&calm(sprite->layout->clip);
     });
@@ -2910,27 +2943,47 @@ void DrawStyledAnimation(Graphics& graphics, cat::animation::Pose pose, REAL cen
     const bool fixed=pose.groundContact&&!pose.jointWalk&&!pose.walkingRig&&!pose.originalWalk&&
         !pose.bellyRig&&!pose.centerPivot&&pose.x==0&&pose.lift==0&&pose.angle==0&&
         pose.scaleX==1&&pose.scaleY==1&&pose.blendFrame<0;
-    // Large curled/supine silhouettes and all physical impacts must stay
-    // single drawings. The authored waking story reaches neutral on its own.
-    const bool curled=authored&&authored->layout->clip==Clip::Sleep&&SpriteFrameFor(pose,*authored->layout)>=3;
-    const bool eligible=fixed&&!curled&&(authored?calm(authored->layout->clip):pose.frame==4)&&
+    // A stopped source turn may join anticipation or the already-completed
+    // landing recovery. Flight, impact, planted paw contacts and moving gait
+    // keep their exact source drawing and physical clock.
+    const bool groundTurn=authored&&authored->layout->clip==Clip::Walk&&!pose.spriteTimed;
+    const bool jumpBoundary=authored&&authored->layout->clip==Clip::Jump&&pose.spriteOptions.grounded&&
+        (pose.spriteOptions.jump==cat::sprite_sequence::JumpPhase::Crouch||
+         (pose.spriteOptions.jump==cat::sprite_sequence::JumpPhase::Landing&&
+          pose.spriteOptions.contactElapsedMs+cat::care_presentation::Transition::DurationMs>=
+              cat::sprite_sequence::Duration(authored->layout->program,authored->layout->program.outro)));
+    const bool eligible=fixed&&(authored?(calm(authored->layout->clip)||groundTurn||jumpBoundary):pose.frame==4||pose.frame==cat::animation::kReferenceSleepFrame)&&
         pose.joints.pawReachX==0&&pose.joints.pawReachY==0&&pose.joints.pawAnchorX==0&&!cat::cursor_rig::Active(pose.cursorReach);
     if(!eligible) {state.Reset();direct(graphics,pose);return;}
     const bool changed=!state.previous.image||!state.from.image||!state.target.image||
         state.previous.width!=canvasWidth||state.previous.height!=canvasHeight;
     if(changed && (!state.previous.Create(canvasWidth,canvasHeight)||!state.from.Create(canvasWidth,canvasHeight)||
             !state.target.Create(canvasWidth,canvasHeight))) {state.Reset();direct(graphics,pose);return;}
-    if(changed || (state.geometry&&(std::abs(state.center-center)>.5||std::abs(state.bottom-bottom)>.5||
-            std::abs(state.scale-scale)>.01||std::abs(state.bodyWidth-body.bodyWidth)>.015||
-            std::abs(state.bodyHeight-body.bodyHeight)>.015)))state.transition.Reset();
-    state.center=center;state.bottom=bottom;state.scale=scale;state.bodyWidth=body.bodyWidth;state.bodyHeight=body.bodyHeight;state.geometry=true;
-    const bool neutral=cat::sprite_assets::Find(Clip::Sleep,static_cast<unsigned>(character),cat::sprite_assets::kCareSprites)!=nullptr;
-    cat::care_presentation::Tag tag;
-    tag.representation=authored?1+static_cast<unsigned>(authored->layout->clip):0;
-    tag.identity=static_cast<unsigned>(character);tag.generation=generation;tag.eligible=true;
-    tag.authored=authored!=nullptr;tag.flip=pose.flip;tag.neutralBridge=neutral;
-    const auto plan=state.transition.Update(tag,ticks,paused);
+    const bool reshaped=state.geometry&&(std::abs(state.scale-scale)>.01||
+        std::abs(state.bodyWidth-body.bodyWidth)>.015||std::abs(state.bodyHeight-body.bodyHeight)>.015);
+    const float dx=float(center-state.center),dy=float(bottom-state.bottom);
+    const bool translated=!changed&&!reshaped&&state.geometry&&(std::abs(dx)>.5||std::abs(dy)>.5)&&
+        std::abs(dx)<48&&std::abs(dy)<48;
     const std::size_t bytes=static_cast<std::size_t>(canvasWidth)*canvasHeight*4;
+    if(translated) {
+        // A meal's lower prop safety inset moves the local floor and window
+        // together. Register history to that floor instead of cancelling the
+        // boundary. The actor's world position must not jump with the canvas.
+        for(auto* buffer:{&state.previous,&state.from}) {
+            std::memcpy(state.target.pixels,buffer->pixels,bytes);
+            cat::raster_transition::RegisteredMorph::Translate(state.target.pixels,buffer->pixels,
+                canvasWidth,canvasHeight,dx,dy);
+        }
+    } else if(changed||reshaped||(state.geometry&&(std::abs(dx)>.5||std::abs(dy)>.5)))state.transition.Reset();
+    state.center=center;state.bottom=bottom;state.scale=scale;state.bodyWidth=body.bodyWidth;state.bodyHeight=body.bodyHeight;state.geometry=true;
+    cat::care_presentation::Tag tag;
+    tag.representation=authored?1+static_cast<unsigned>(authored->layout->clip):
+        pose.frame==cat::animation::kReferenceSleepFrame?1000:0;
+    tag.identity=static_cast<unsigned>(character);tag.generation=generation;tag.eligible=true;
+    tag.authored=authored!=nullptr;tag.flip=pose.flip;tag.neutralBridge=false;
+    const auto plan=state.transition.Update(tag,ticks,paused);
+    if(plan.capture)state.targetOnly=jumpBoundary||state.lastRepresentation==1+static_cast<unsigned>(Clip::Jump);
+    state.lastRepresentation=tag.representation;
     if(plan.capture)std::memcpy(state.from.pixels,state.previous.pixels,bytes);
     auto drawing=pose;
     if(plan.bridge) {
@@ -2945,7 +2998,14 @@ void DrawStyledAnimation(Graphics& graphics, cat::animation::Pose pose, REAL cen
         target.SetPixelOffsetMode(PixelOffsetModeHighQuality);
         direct(target,drawing);target.Flush(FlushIntentionSync);
     }
-    if(plan.blend)cat::care_presentation::BlendPremultiplied(state.from.pixels,state.target.pixels,state.previous.pixels,bytes,plan.weight);
+    if(plan.capture||(translated&&plan.blend))state.morph.Prepare(state.from.pixels,state.target.pixels,canvasWidth,canvasHeight);
+    if(plan.blend) {
+        const bool rendered=state.targetOnly?
+            state.morph.RenderTarget(state.from.pixels,state.target.pixels,state.previous.pixels,canvasWidth,canvasHeight,plan.weight):
+            state.morph.Render(state.from.pixels,state.target.pixels,state.previous.pixels,canvasWidth,canvasHeight,plan.weight);
+        if(!rendered)
+            std::memcpy(state.previous.pixels,state.target.pixels,bytes);
+    }
     else std::memcpy(state.previous.pixels,state.target.pixels,bytes);
     graphics.DrawImage(state.previous.image.get(),Rect(0,0,canvasWidth,canvasHeight),0,0,canvasWidth,canvasHeight,UnitPixel);
 }
@@ -3145,7 +3205,7 @@ void RenderToy() {
 // landing/contact selection, authored transitions and final pose cannot drift.
 cat::animation::Pose PrimaryDisplayedPose(ULONGLONG ticks,const cat::physics::Pose& physical) {
     const auto actionElapsed = ticks >= g.motionStart ? ticks - g.motionStart : 0;
-    const Motion displayed = cat::motion::DisplayedMotion(g.motion,g.walkingMotion,
+    const Motion displayed = g.runningJump.active&&g.jumpPending&&PrimaryVideoGroundArt()?g.motion:cat::motion::DisplayedMotion(g.motion,g.walkingMotion,
         physical.grounded,g.waitingForStop,WalkingVelocity(physical));
     auto pose = cat::animation::Evaluate(displayed, actionElapsed, ticks, g.facing, g.gait);
     if(pose.spriteTimed && (displayed==Motion::Eat || displayed==Motion::Treat || displayed==Motion::Punch))
@@ -3289,19 +3349,27 @@ cat::animation::Pose PrimaryDisplayedPose(ULONGLONG ticks,const cat::physics::Po
     if(!cursorAttack && pose.spriteClip==cat::sprite_sequence::Clip::Jump && PrimaryVideoGroundArt()) {
         pose.jumpRig=true;
         const double growth=cat::GrowthScale(g.pet.bornUtc,UtcNow());
-        if(!physical.grounded)pose.jumpControls=g.jumpPresentation.Flight(physical.velocityY,physical.lift,growth);
+        if(!physical.grounded) {
+            pose.jumpControls=g.jumpPresentation.Flight(physical.velocityY,physical.lift,growth);
+            pose.spriteOptions.flightProgress=g.jumpPresentation.SourceFlightProgress();
+        }
         else if(pose.spriteOptions.jump==cat::sprite_sequence::JumpPhase::Landing)
             pose.jumpControls=g.jumpPresentation.Land(pose.spriteOptions.contactElapsedMs,g.landingStrength,physical.lift);
-        else pose.jumpControls=g.jumpPresentation.Prepare(actionElapsed,PrimaryTakeoffMs(displayed==Motion::Pounce),physical.lift);
+        else {
+            const auto sourcePreparation=PrimaryTakeoffMs(displayed==Motion::Pounce);
+            const auto preparation=g.runningJump.active?cat::running_jump::Plan::PreparationMs:sourcePreparation;
+            if(g.runningJump.active&&pose.spriteTimed)
+                pose.spriteElapsedMs=cat::jump_animation::PreparationSourceClock(actionElapsed,preparation,sourcePreparation);
+            pose.jumpControls=g.jumpPresentation.Prepare(actionElapsed,preparation,physical.lift);
+        }
     } else if(physical.grounded)g.jumpPresentation.Ground(physical.lift);
     pose = g.poseTransition.Apply(pose,ticks,g.motionSerial,
         static_cast<unsigned>(g.preferences.character), !cursorAttack,g.motionStart);
     return pose;
 }
 
-void Render() {
+void RenderFrame(ULONGLONG ticks,bool withPresentation,bool submitWindow=true) {
     if (!g.window || !g.surface.image || g.hidden) return;
-    const ULONGLONG ticks = GetTickCount64();
     const auto now = UtcNow();
     const REAL scale = static_cast<REAL>(110.0 * g.dpiScale * cat::GrowthScale(g.pet.bornUtc, now) / CurrentArt().base.standingHeight);
     const auto physical = g.physics.RenderPose();
@@ -3341,7 +3409,7 @@ void Render() {
     const REAL toyLocalX = static_cast<REAL>(g.toyX - windowLeft);
     RenderToy();
     DrawAnimatedPet(graphics, pose, static_cast<REAL>(center + pose.x * bodyScale), bottom, scale,
-        &PrimaryCarePresentation(),ticks);
+        withPresentation?&PrimaryCarePresentation():nullptr,ticks);
     DrawToyForeground(graphics, toyLocalX, static_cast<REAL>(g.surface.height - 1-bottomInset));
     if (g.motion == Motion::Sleep) {
         Font font(L"Segoe UI", static_cast<REAL>(13 * g.dpiScale), FontStyleRegular, UnitPixel);
@@ -3349,7 +3417,7 @@ void Render() {
         const REAL rise = static_cast<REAL>((ticks % 2600) / 2600.0 * 13 * g.dpiScale);
         graphics.DrawString(L"z", -1, &font, PointF(center + 40 * g.dpiScale, bottom - 62 * g.dpiScale - rise), &text);
     }
-    const bool updateBubble=!updates.applying&&updates.announcement.HasAvailable(kVersion);
+    const bool updateBubble=CatUpdateBubbleVisible();
     if (updateBubble || (ticks < g.bubbleUntil && !g.bubble.empty())) {
         const auto* bubbleText=updateBubble?cat::update::kCatUpdateMessage:g.bubble.c_str();
         const bool twoLines = !updateBubble&&g.bubble.find(L'\n') != std::wstring::npos;
@@ -3365,6 +3433,7 @@ void Render() {
         graphics.DrawString(bubbleText, -1, &font, RectF(x, y, width, height), &format, &text);
     }
     graphics.Flush(FlushIntentionSync);
+    if(!submitWindow)return;
     POINT destination{windowLeft, placement.windowTop};
     SIZE size{g.surface.width, g.surface.height}; POINT origin{};
     BLENDFUNCTION blend{AC_SRC_OVER, 0, static_cast<BYTE>(std::lround(255*g.lifeCrossing.Opacity())), AC_SRC_ALPHA};
@@ -3372,6 +3441,7 @@ void Render() {
     UpdateLayeredWindow(g.window, screen, &destination, &size, g.surface.dc, &origin, 0, &blend, ULW_ALPHA);
     ReleaseDC(nullptr, screen);
 }
+void Render() {RenderFrame(GetTickCount64(),true);}
 HICON CreateCatIcon() {
     Surface icon; if (!icon.Create(32, 32)) return CopyIcon(LoadIconW(nullptr, IDI_APPLICATION));
     {
@@ -4306,10 +4376,18 @@ void StartManualMotion(Motion motion,ULONGLONG actionTicks=0) {
     // Recheck at dispatch: a supporting window or update can change after the menu opens.
     if (!ManualMotionAvailable()) return;
     if(motion==Motion::Jump && g.jumpPending)return;
+    if(g.manualWakePending&&g.motion==Motion::Stretch&&g.wakingFromSleep) {
+        g.manualWakeMotion=motion;return;
+    }
     const auto ticks = actionTicks?actionTicks:GetTickCount64();
     if (g.brain) g.brain->Interrupt(ticks);
     cursorInteraction = {};
     g.prank.Clear(); g.bubbleUntil = 0;
+    if(g.motion==Motion::Sleep) {
+        SetMotion(Motion::Stretch,3500,ticks);
+        g.manualWakePending=true;g.manualWakeMotion=motion;g.manualMotionActive=true;
+        g.toyRewardPending=false;return;
+    }
     // Use the existing safe motor bounds and head toward the larger clear space.
     const auto bounds = MovementBoundsLogical();
     if(motion!=Motion::Jump||std::abs(WalkingVelocity(g.physics.CurrentPose()))<8)
@@ -4360,7 +4438,15 @@ void StartFlyHunt(ULONGLONG actionTicks=0) {
 }
 
 void FinishManualMotion(ULONGLONG ticks) {
-    if (g.wallPhase==App::WallPhase::None && !g.runningTurn.Active() && !KeyboardPlayActive() && g.manualMotionActive && ticks >= g.nextDecision && !g.waitingForStop &&
+    if(g.manualWakePending&&g.manualMotionActive&&g.motion==Motion::Stretch&&ticks>=g.nextDecision&&
+            !g.waitingForStop&&g.physics.CurrentPose().grounded) {
+        const auto requested=g.manualWakeMotion;g.manualWakePending=false;
+        StartManualMotion(requested,ticks);return;
+    }
+    const auto* jump=LoadedCareSprite(cat::sprite_sequence::Clip::Jump,g.preferences.character);
+    const bool jumpRecovered=g.motion==Motion::Jump&&g.jumpLaunched&&g.landedAt&&ticks>=g.landedAt&&
+        jump&&ticks-g.landedAt>=cat::sprite_sequence::Duration(jump->layout->program,jump->layout->program.outro);
+    if (g.wallPhase==App::WallPhase::None && !g.runningTurn.Active() && !KeyboardPlayActive() && g.manualMotionActive && (ticks >= g.nextDecision||jumpRecovered) && !g.waitingForStop &&
             g.physics.CurrentPose().grounded && !g.jumpPending)
         BeginAutonomousRest(ticks);
 }
@@ -6264,6 +6350,7 @@ int NativeMenuContractTest() {
 #include "native_identity_turn_review.hpp"
 #include "native_lively_review.hpp"
 #include "native_source_audit.hpp"
+#include "native_boundary_review.hpp"
 #include "native_menu_visibility_tests.hpp"
 
 int SelfTest(HINSTANCE instance) {
@@ -6297,12 +6384,17 @@ int SelfTest(HINSTANCE instance) {
     if (toyResult) return toyResult;
     const int menuResult = record("menu",NativeMenuContractTest());
     if (menuResult) return menuResult;
+    const int updateNoticeResult=record("automatic-update-notice",NativeAutomaticUpdateNoticeTest());
+    if(updateNoticeResult)return updateNoticeResult;
     const int cursorResult = record("cursor",NativeCursorHostTest(instance));
     if (cursorResult) return cursorResult;
     return record("manual-motion",NativeManualMotionTest(instance));
 }
 
 int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
+    if(commandLine && wcsstr(commandLine,L"--render-jump-review"))return NativeManualMotionTest(instance,false,true);
+    if(commandLine && wcsstr(commandLine,L"--render-update-notice"))return NativeBoundaryReview(instance,true);
+    if(commandLine && wcsstr(commandLine,L"--render-boundary-review"))return NativeBoundaryReview(instance);
     if(commandLine && wcsstr(commandLine,L"--keyboard-jitter-diagnostic"))return NativeKeyboardJitterDiagnostic(instance);
     if(commandLine && wcsstr(commandLine,L"--cursor-jitter-diagnostic"))return NativeCursorJitterDiagnostic(instance);
     if(commandLine && wcsstr(commandLine,L"--cursor-host-self-test"))return NativeCursorHostTest(instance);

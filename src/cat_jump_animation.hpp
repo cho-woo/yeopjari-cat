@@ -24,6 +24,14 @@ inline Controls Blend(Controls a,Controls b,double t) {
 // The immutable texture is the real entrance's final three-quarter drawing.
 constexpr unsigned kSourceFrame=29;
 constexpr std::uint64_t kPreparationMs=300,kContactReleaseMs=440;
+// A travelling hop keeps its short input response and real momentum, but
+// must still reach the authored push-off pose before physics takes over.
+inline std::uint64_t PreparationSourceClock(std::uint64_t elapsed,std::uint64_t physicalDuration,
+                                           std::uint64_t sourceDuration) {
+    if(!sourceDuration)return 0;
+    if(!physicalDuration||elapsed>=physicalDuration)return sourceDuration-1;
+    return std::min(sourceDuration-1,elapsed*sourceDuration/physicalDuration);
+}
 inline Controls Preparation(std::uint64_t elapsed,std::uint64_t duration=kPreparationMs) {
     const double t=duration?std::clamp(static_cast<double>(elapsed)/duration,0.,1.):1.;
     // Load the hindlegs, then push before the physical takeoff. Both ends are
@@ -42,8 +50,8 @@ inline Controls Contact(std::uint64_t elapsed,double strength) {
 // hop and a small pounce never race through a nominal animation clock.
 class Driver {
 public:
-    void Reset(double supportHeight=0) {ground_=supportHeight;launch_=0;air_=false;last_={};contactStart_={};}
-    void Ground(double height) {if(std::isfinite(height))ground_=height;air_=false;last_={};}
+    void Reset(double supportHeight=0) {ground_=supportHeight;launch_=0;progress_=0;air_=false;last_={};contactStart_={};}
+    void Ground(double height) {if(std::isfinite(height))ground_=height;air_=false;progress_=0;last_={};}
     Controls Prepare(std::uint64_t elapsed,std::uint64_t duration,double height) {
         Ground(height);return last_=Preparation(elapsed,duration);
     }
@@ -52,6 +60,10 @@ public:
         if(!air_){air_=true;launch_=std::max(40.,vy);}
         launch_=std::max(launch_,vy);
         const double speed=std::max(40.,launch_);
+        // Authored flight poses follow this particular physical impulse.
+        // The old fixed +/-200px/s clock clamped both ends of a normal
+        // ~315px/s jump, holding its first/last flight drawing for ~130ms.
+        progress_=std::clamp((speed-vy)/(2*speed),0.,1.);
         const double rise=cat::deform::Smooth((speed-vy)/(.62*speed));
         const double reach=cat::deform::Smooth((speed+vy)/(.62*speed));
         const double clearance=std::isfinite(height)?std::max(0.,height-ground_):0;
@@ -59,6 +71,7 @@ public:
         const double tuck=rise*reach*lift;
         return last_={0,.84*tuck,.70*tuck,.22*tuck};
     }
+    double SourceFlightProgress() const {return progress_;}
     Controls Land(std::uint64_t elapsed,double strength,double height) {
         if(air_){contactStart_=last_;air_=false;}
         if(std::isfinite(height))ground_=height;
@@ -71,7 +84,7 @@ public:
         return last_=settled;
     }
 private:
-    double ground_=0,launch_=0;bool air_=false;
+    double ground_=0,launch_=0,progress_=0;bool air_=false;
     Controls last_{},contactStart_{};
 };
 

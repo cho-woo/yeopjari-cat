@@ -192,6 +192,20 @@ int Run(std::string& proof) {
     }
     // Explicit movement interrupts safe floor stories, including a long held
     // sleep/box pose, without awarding care or modifying any serialized record.
+    for(const auto character:cat::kAvailableCharacters) {
+        host.Reset(character,true);const auto saved=host.Saved();
+        SetMotion(Motion::Sleep,60000,host.now);host.Rebase();
+        for(unsigned frame=0;frame<300;++frame)host.Frame();
+        const auto x=g.physics.CurrentPose().x;
+        host.Command(kManualWalkCommand);
+        if(!g.manualWakePending||g.motion!=Motion::Stretch||!g.wakingFromSleep||!g.manualMotionActive)return 530;
+        unsigned frames=0;
+        while(g.manualWakePending&&frames++<400) {
+            if(std::abs(g.physics.CurrentPose().x-x)>.5)return 530;
+            host.Frame();
+        }
+        if(g.manualWakePending||g.motion!=Motion::Walk||!g.manualMotionActive||host.Saved()!=saved)return 530;
+    }
     for (const auto prior : {Motion::Sleep,Motion::BoxSit,Motion::Walk}) {
         host.Reset(); SetMotion(prior,30000);
         g.toy = ToyKind::Box; g.toySession.Start(g.toy); g.toyEngaged = true;
@@ -281,14 +295,15 @@ int Run(std::string& proof) {
 }
 } // namespace native_manual_motion_tests
 
-int NativeManualMotionTest(HINSTANCE instance,bool companionKeyboardOnly=false) {
+int NativeManualMotionTest(HINSTANCE instance,bool companionKeyboardOnly=false,bool jumpReviewOnly=false) {
     g.instance = instance;
     ULONG_PTR token = 0; GdiplusStartupInput startup;
     if (GdiplusStartup(&token,&startup,nullptr) != Ok) return 519;
     std::string proof;
-    const int result = LoadAtlas() ? companionKeyboardOnly?native_manual_motion_tests::keyboard_native::CompanionTarget():native_manual_motion_tests::Run(proof) : 520;
+    const int result = LoadAtlas() ? jumpReviewOnly?native_manual_motion_tests::jump_continuity::Run(true):
+        companionKeyboardOnly?native_manual_motion_tests::keyboard_native::CompanionTarget():native_manual_motion_tests::Run(proof) : 520;
     if (result) proof = "{\"schema\":1,\"test\":\"manual-motion-native\",\"status\":\"failed\",\"exit_code\":" + std::to_string(result) + "}\n";
-    const bool written = WriteBytes(L"manual-motion-self-test.json",proof);
+    const bool written = jumpReviewOnly||WriteBytes(L"manual-motion-self-test.json",proof);
     ReleaseAtlases(); GdiplusShutdown(token);
     cursorInteraction = {}; g.manualMotionActive = false; g.initialized = false; g.window = nullptr;
     g.physics.SetTargetVelocity(0);

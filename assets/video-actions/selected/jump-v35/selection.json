@@ -1,0 +1,79 @@
+{
+  "schema": 1,
+  "source_fps": 24,
+  "takeoff_source_frame": 23,
+  "landing_source_frame": 61,
+  "selection": "complete single jump and full planted recovery; all97 original frames retained",
+  "masters_unchanged": true,
+  "coats": [
+    "cream",
+    "tuxedo",
+    "snow derived from cream"
+  ],
+  "selected_frames": [
+    {
+      "path": "selected/jump-v35/cream-source-000.png",
+      "sha256": "a35e5db8512be495e6abb14ce22c77cdb11dfc9b0725ec0c7944d40001ddffad"
+    },
+    {
+      "path": "selected/jump-v35/cream-source-022.png",
+      "sha256": "7627a6f0c498685fb9fb1f3a972e8f8e170de5052d9a3bc25110b5432b13c4f2"
+    },
+    {
+      "path": "selected/jump-v35/cream-source-040.png",
+      "sha256": "f8942b663ec06e9784f7cbf1c37dd06f7aea0b41b5c0b162f06a32584c2ee128"
+    },
+    {
+      "path": "selected/jump-v35/cream-source-060.png",
+      "sha256": "5bea7e0de4e36b23684c113f7d3b4ec611ea3aaea54a5ec7e2f862c800d16c8a"
+    },
+    {
+      "path": "selected/jump-v35/cream-source-061.png",
+      "sha256": "3c08e7316329a590ad384c4bcb3075f0255fc6938cc8ab52b3640c7bd1162bfc"
+    },
+    {
+      "path": "selected/jump-v35/cream-source-068.png",
+      "sha256": "98f4996b206d5389b1ae16f70c5935cf8762694ddcfe4fa1b0c97e16bbd65239"
+    },
+    {
+      "path": "selected/jump-v35/cream-source-080.png",
+      "sha256": "17dc746455b05f37b93150251d8f20fa644a8938d49c9a9a9d9e073a798cccb3"
+    },
+    {
+      "path": "selected/jump-v35/cream-source-096.png",
+      "sha256": "947abaa63f2b2f62118c180839564d43cfdf39217d3b6c6806a97dd52107c911"
+    },
+    {
+      "path": "selected/jump-v35/tuxedo-source-000.png",
+      "sha256": "7b1e279002d1c73d4248057902bcdda0075d1821a4fab26fcd27eb3d16185267"
+    },
+    {
+      "path": "selected/jump-v35/tuxedo-source-022.png",
+      "sha256": "3dd8a233a789f87810a1af8ce74540fec8856951ab34152111484693490c3fed"
+    },
+    {
+      "path": "selected/jump-v35/tuxedo-source-040.png",
+      "sha256": "850a413bdb29c09261df01d0296b28a2988f1c01ad6095e0408abb73b5c02dff"
+    },
+    {
+      "path": "selected/jump-v35/tuxedo-source-060.png",
+      "sha256": "4d4f70967952f70c12040a4f43452be1f0c8613b770fadf5272d4536f84c25bc"
+    },
+    {
+      "path": "selected/jump-v35/tuxedo-source-061.png",
+      "sha256": "1c39281c984b9e85d1db3ee81d1ebff253d8f4397517a23cbb07ac25173c8a31"
+    },
+    {
+      "path": "selected/jump-v35/tuxedo-source-068.png",
+      "sha256": "8db5ec0495cc238c1344ceedee3354d66ee54dfb8ac28e3c0714881796776428"
+    },
+    {
+      "path": "selected/jump-v35/tuxedo-source-080.png",
+      "sha256": "95d8be4aa5e96d70260bf7ef0dd8b2fb823ee9a3d87e6289f736cb6a35437588"
+    },
+    {
+      "path": "selected/jump-v35/tuxedo-source-096.png",
+      "sha256": "4b6c62f94d92e75012b860de8e9794f854ba4c8d1bbd155d465cedfaacb061ae"
+    }
+  ]
+}

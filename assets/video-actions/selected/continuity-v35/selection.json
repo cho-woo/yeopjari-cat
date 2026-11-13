@@ -1,0 +1,92 @@
+{
+  "schema": 1,
+  "source_fps": 24,
+  "reference_height": 367,
+  "review": "Source boards reviewed for both master coats. Complete sleep entrances and exits selected. Snow coat retains exact Cream alpha with registered material/iris masks. New swat trial rejected: paw does not plant between strokes. Settling trials retained for boundary timing reference only.",
+  "frames": [
+    {
+      "source": "sources/continuity-v35/cream-sleep-entry.mp4",
+      "source_sha256": "5d75826b555f8fea012f98c8a4572cc1da1928c9cd9240cd14352f58025e1745",
+      "frame": 0,
+      "selected_png": "selected/continuity-v35/cream-sleep-entry-000.png",
+      "sha256": "855a3848e3a25737bd40d5923402d97d766a310fab5b5adcc0567cbaf1f3de46"
+    },
+    {
+      "source": "sources/continuity-v35/cream-sleep-entry.mp4",
+      "source_sha256": "5d75826b555f8fea012f98c8a4572cc1da1928c9cd9240cd14352f58025e1745",
+      "frame": 53,
+      "selected_png": "selected/continuity-v35/cream-sleep-entry-053.png",
+      "sha256": "2e3f997b1386a764cf599da9db35430f56701a90eef971b8e4f417d353f56fd2"
+    },
+    {
+      "source": "sources/continuity-v35/cream-sleep-entry.mp4",
+      "source_sha256": "5d75826b555f8fea012f98c8a4572cc1da1928c9cd9240cd14352f58025e1745",
+      "frame": 106,
+      "selected_png": "selected/continuity-v35/cream-sleep-entry-106.png",
+      "sha256": "9cfad152f05b6e90fc8c2d6447f8a770d9babd425dd1716e53c4921cf5a5fe00"
+    },
+    {
+      "source": "sources/continuity-v35/cream-wake.mp4",
+      "source_sha256": "7b5523f0d511ae540b5216f819dce8f4d381b3f7983d570877d0072b60f57a15",
+      "frame": 0,
+      "selected_png": "selected/continuity-v35/cream-wake-000.png",
+      "sha256": "5b5ce75abee9424f791de0a151a37f217b45eeb5cee1ba5835cdc38547c231cb"
+    },
+    {
+      "source": "sources/continuity-v35/cream-wake.mp4",
+      "source_sha256": "7b5523f0d511ae540b5216f819dce8f4d381b3f7983d570877d0072b60f57a15",
+      "frame": 53,
+      "selected_png": "selected/continuity-v35/cream-wake-053.png",
+      "sha256": "373968edc3e9a980097bcb42398ae68bf826e8f660fa2e95af671a4bd2e5316e"
+    },
+    {
+      "source": "sources/continuity-v35/cream-wake.mp4",
+      "source_sha256": "7b5523f0d511ae540b5216f819dce8f4d381b3f7983d570877d0072b60f57a15",
+      "frame": 106,
+      "selected_png": "selected/continuity-v35/cream-wake-106.png",
+      "sha256": "b8c84834fcc64a87b391ffe59b537bfd614527f3b909c0ef89601f330c522bd0"
+    },
+    {
+      "source": "sources/continuity-v35/tuxedo-sleep-entry.mp4",
+      "source_sha256": "34521f6b5f5c8682c2795c6025125c53ae2f78f1601bf2d726d8f770a967a4ce",
+      "frame": 0,
+      "selected_png": "selected/continuity-v35/tuxedo-sleep-entry-000.png",
+      "sha256": "f5624da6e1fbe6d0f0ffa6e24c512562211633fc2f66ec0d96285b57fc298efd"
+    },
+    {
+      "source": "sources/continuity-v35/tuxedo-sleep-entry.mp4",
+      "source_sha256": "34521f6b5f5c8682c2795c6025125c53ae2f78f1601bf2d726d8f770a967a4ce",
+      "frame": 53,
+      "selected_png": "selected/continuity-v35/tuxedo-sleep-entry-053.png",
+      "sha256": "97f27cc282daf0bcf06cd308d41fcff8484a1a9482d5887ba45be3212037b6a3"
+    },
+    {
+      "source": "sources/continuity-v35/tuxedo-sleep-entry.mp4",
+      "source_sha256": "34521f6b5f5c8682c2795c6025125c53ae2f78f1601bf2d726d8f770a967a4ce",
+      "frame": 106,
+      "selected_png": "selected/continuity-v35/tuxedo-sleep-entry-106.png",
+      "sha256": "792ae73eb3a66bef8bd0a3f053b534c26633cafaf05d0d12125b08ecb7e68fc9"
+    },
+    {
+      "source": "sources/continuity-v35/tuxedo-wake.mp4",
+      "source_sha256": "4dbcefa61fbe0806ac4603ab055fad9d5990c352ae350ebf2f91f12be8764034",
+      "frame": 0,
+      "selected_png": "selected/continuity-v35/tuxedo-wake-000.png",
+      "sha256": "327c6933e79133bb0a1ca6e97565434f293f3e744f74be70a89ecf0bbcff1a43"
+    },
+    {
+      "source": "sources/continuity-v35/tuxedo-wake.mp4",
+      "source_sha256": "4dbcefa61fbe0806ac4603ab055fad9d5990c352ae350ebf2f91f12be8764034",
+      "frame": 53,
+      "selected_png": "selected/continuity-v35/tuxedo-wake-053.png",
+      "sha256": "e0c729a67b1c743699a57819d6d1002a9de329b9b9d258a047ce084ff41c7c33"
+    },
+    {
+      "source": "sources/continuity-v35/tuxedo-wake.mp4",
+      "source_sha256": "4dbcefa61fbe0806ac4603ab055fad9d5990c352ae350ebf2f91f12be8764034",
+      "frame": 106,
+      "selected_png": "selected/continuity-v35/tuxedo-wake-106.png",
+      "sha256": "cb186338b1f19f28e7bd984ac90d2f94f2617a20c2e860208a039e0eae33eff2"
+    }
+  ]
+}

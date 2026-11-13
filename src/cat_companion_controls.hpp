@@ -5,6 +5,7 @@ cat::environment::CursorAction cursorLastAttack_=cat::environment::CursorAction:
 cat::animation::Motion cursorMotion_=cat::animation::Motion::Watch;
 cat::cursor::PawContact cursorContact_;
 cat::sprite_sequence::Clip actionClip_=cat::sprite_sequence::Clip::None;
+cat::sprite_sequence::Clip wakeQueuedClip_=cat::sprite_sequence::Clip::None;
 std::uint64_t cursorLaunchedAt_=0,cursorLanded_=0,nextFly_=0;
 double cursorLaunchVy_=0,cursorAirPawHeight_=55;
 double cursorTakeoffVelocity_=0;
@@ -17,6 +18,7 @@ cat::toy::PhysicsBall ball_;
 bool ballContact_=false;
 
 void ResetControls() {
+    wakeQueuedClip_=cat::sprite_sequence::Clip::None;
     cursor_={};cursorContact_.Reset();cursorLastAttack_=cat::environment::CursorAction::None;
     actionClip_=cat::sprite_sequence::Clip::None;cursorLaunchedAt_=cursorLanded_=nextFly_=0;
     cursorLaunched_=wallApproaching_=false;cursorContacts_=0;
@@ -70,10 +72,15 @@ bool Perform(cat::sprite_sequence::Clip clip,std::uint64_t ticks) {
     using C=cat::sprite_sequence::Clip;using M=cat::animation::Motion;
     if(!Bound()||!ready_||!state_->enabled||!physics_.CurrentPose().grounded||Feeding(ticks)||
             runningTurn_.Active()||physics_.WallClimbing()||!Registered(clip))return false;
+    if(wakeQueuedClip_!=C::None&&motion_==M::Stretch&&wakingFromSleep_) {wakeQueuedClip_=clip;return true;}
+    const bool wakeFirst=motion_==M::Sleep&&clip!=C::Sleep;
     cursor_={};cursorContact_.Reset();cursorLaunched_=false;cursorLanded_=0;
     keyboardActive_=false;keyboardGait_.Reset();explicitTravel_=false;
     interaction_=Interaction::None;brain_->Interrupt(ticks);storyActive_=true;quietActive_=false;
     actionClip_=C::None;wallApproaching_=false;
+    if(wakeFirst) {
+        SetMotion(M::Stretch,ticks,3500,0);wakeQueuedClip_=clip;return true;
+    }
     if(clip==C::Walk||clip==C::Run||clip==C::Jump||clip==C::Climb) {
         direction_=physics_.CurrentPose().x<(minX_+maxX_)*.5?1:-1;
         const auto* art=Registered(clip==C::Run?C::Run:C::Walk);
@@ -105,6 +112,9 @@ private:
 void UpdateControls(const Context& c,std::uint64_t elapsed) {
     using C=cat::sprite_sequence::Clip;using A=cat::environment::CursorAction;using M=cat::animation::Motion;
     const auto physical=physics_.CurrentPose();
+    if(wakeQueuedClip_!=C::None&&c.ticks>=nextDecision_&&physical.grounded&&!waitingForStop_) {
+        const auto queued=wakeQueuedClip_;wakeQueuedClip_=C::None;Perform(queued,c.ticks);return;
+    }
     if(actionClip_==C::BallPlay&&!waitingForStop_) {
         ball_.Advance(c.elapsedSeconds,std::max(minX_,physical.x-95),std::min(maxX_,physical.x+95));
         const auto* art=Registered(C::BallPlay);const auto age=c.ticks>=motionStart_?c.ticks-motionStart_:0;
@@ -146,7 +156,10 @@ void UpdateControls(const Context& c,std::uint64_t elapsed) {
         }
         return;
     }
-    if(explicitTravel_&&c.ticks>=nextDecision_&&physical.grounded&&!runningTurn_.Active()&&!wallApproaching_) {
+    const auto* jumpArt=Registered(C::Jump);
+    const bool explicitJumpRecovered=motion_==M::Jump&&!jumpPending_&&landedAt_&&c.ticks>=landedAt_&&jumpArt&&
+        c.ticks-landedAt_>=cat::sprite_sequence::Duration(jumpArt->program,jumpArt->program.outro);
+    if(explicitTravel_&&(c.ticks>=nextDecision_||explicitJumpRecovered)&&physical.grounded&&!runningTurn_.Active()&&!wallApproaching_) {
         explicitTravel_=false;BeginQuiet(c.ticks);
     }
     if(wallApproaching_&&physical.grounded&&physical.x>=maxX_-1.9&&

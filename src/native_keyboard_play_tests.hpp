@@ -76,7 +76,8 @@ int HitTestScreens(Host& host,unsigned& clickThroughPixels) {
     g.window=nullptr;DestroyWindow(hidden);g.surface.Reset();Clear();
     return result;
 }
-struct MovingJump {double peak=0,distance=0,speed=0,actualAirSpeed=0;bool returned=false,airborne=false;unsigned lastFrame=0;};
+struct MovingJump {double peak=0,distance=0,speed=0,actualAirSpeed=0;bool returned=false,airborne=false;
+    unsigned lastFrame=0,preparationSamples=0;std::uint64_t preparationSourceMs=0;};
 MovingJump HopMoving(Host& host) {
     MovingJump jump;jump.speed=WalkingVelocity(g.physics.CurrentPose());
     const double origin=g.physics.CurrentPose().x;
@@ -84,6 +85,12 @@ MovingJump HopMoving(Host& host) {
     bool airborne=false;
     for(unsigned frame=0;frame<160;++frame) {
         Step(host);const auto physical=g.physics.CurrentPose();
+        const auto shown=PrimaryDisplayedPose(host.now,g.physics.RenderPose());
+        if(g.runningJump.active&&physical.grounded&&shown.spriteClip==cat::sprite_sequence::Clip::Jump&&
+                shown.spriteOptions.jump==cat::sprite_sequence::JumpPhase::Crouch) {
+            ++jump.preparationSamples;
+            jump.preparationSourceMs=std::max(jump.preparationSourceMs,shown.spriteElapsedMs);
+        }
         jump.lastFrame=frame;
         jump.peak=std::max(jump.peak,physical.lift);
         if(!physical.grounded) {
@@ -106,6 +113,7 @@ void MovingFailure(const char* phase,const MovingJump& jump,double normalPeak) {
     out<<"phase="<<phase<<" returned="<<jump.returned<<" peak="<<jump.peak<<" normalPeak="<<normalPeak
         <<" distance="<<jump.distance<<" speed="<<jump.speed<<" airSpeed="<<jump.actualAirSpeed
         <<" airborne="<<jump.airborne<<" frame="<<jump.lastFrame<<" motion="<<static_cast<unsigned>(g.motion)
+        <<" preparationSamples="<<jump.preparationSamples<<" preparationSourceMs="<<jump.preparationSourceMs
         <<" vx="<<g.physics.CurrentPose().velocityX<<" lift="<<g.physics.CurrentPose().lift
         <<" grounded="<<g.physics.CurrentPose().grounded<<" active="<<g.runningJump.active
         <<" pending="<<g.jumpPending<<" keyboardJump="<<keyboardPlay.jumping
@@ -182,12 +190,16 @@ int CompanionTarget() {
         keyboardPlay.fixture=true;keyboardPlay.companion=true;
         if(!BeginKeyboardCapture(host.now))return 794;
         const double primaryX=g.physics.CurrentPose().x;
-        unsigned turns=0;bool airborne=false;
+        unsigned turns=0,preparationSamples=0;std::uint64_t preparationSourceMs=0;bool airborne=false;
         for(unsigned frame=0;frame<1250;++frame) {
             ContinuityKeys(frame);host.now+=16;UpdateKeyboardPlay(host.now,.016);
             AdvancePrimaryMotion(host.now,.016);
             cat::companion::Context c;c.nowUtc=UtcNow();c.ticks=host.now;c.elapsedSeconds=.016;c.primaryVisible=false;
             g.companionModel.Tick(c);const auto view=g.companionModel.View(host.now);
+            if(view.travellingJump&&view.physical.grounded&&view.animation.spriteClip==cat::sprite_sequence::Clip::Jump&&
+                    view.animation.spriteOptions.jump==cat::sprite_sequence::JumpPhase::Crouch) {
+                ++preparationSamples;preparationSourceMs=std::max(preparationSourceMs,view.animation.spriteElapsedMs);
+            }
             turns+=view.animation.spriteClip==cat::sprite_sequence::Clip::RunningTurn;airborne=airborne||!view.physical.grounded;
             if(std::abs(g.physics.CurrentPose().x-primaryX)>.05||EnvironmentBusy()||!keyboardPlay.input.Active()) {
                 WriteBytes(L"render-self-test/companion-keyboard-failure.txt","coat="+std::to_string(static_cast<unsigned>(coat))+
@@ -198,11 +210,14 @@ int CompanionTarget() {
             }
         }
         if(!airborne||turns<40)return 796;
+        const auto* jump=LoadedCareSprite(cat::sprite_sequence::Clip::Jump,coat);
+        if(!jump||preparationSamples<3||preparationSourceMs<
+                cat::sprite_sequence::Duration(jump->layout->program,jump->layout->program.intro)*8/10)return 798;
         Key(VK_ESCAPE);if(KeyboardPlayActive()||keyboardPlay.hook||keyboardPlay.companion)return 797;
         Clear();state.enabled=false;
     }
     g.companionStore.outcome=savedOutcome;
-    WriteBytes(L"render-self-test/companion-keyboard-report.json","{\"passed\":true,\"coats\":[0,8,10],\"primary_stationary\":true,\"companion_real_jump_and_turn\":true,\"escape_released_owner\":true,\"os_input_injected\":false}");
+    WriteBytes(L"render-self-test/companion-keyboard-report.json","{\"passed\":true,\"coats\":[0,8,10],\"primary_stationary\":true,\"companion_real_jump_and_turn\":true,\"moving_jump_preparation_reaches_push_off\":true,\"escape_released_owner\":true,\"os_input_injected\":false}");
     return 0;
 }
 int Run() {
@@ -241,10 +256,12 @@ int Run() {
         Key(VK_RIGHT);Step(host,160);
         const auto walkingJump=HopMoving(host);
         if(!walkingJump.returned||walkingJump.distance<walkingJump.speed*.6||
+                walkingJump.preparationSamples<3||walkingJump.preparationSourceMs<PrimaryTakeoffMs()*8/10||
                 std::abs(walkingJump.peak-normal.peak)>2){MovingFailure("walk",walkingJump,normal.peak);result=778;break;}
         Key(VK_SHIFT);Step(host,150);
         const auto runningJump=HopMoving(host);
         if(!runningJump.returned||runningJump.distance<runningJump.speed*.6||
+                runningJump.preparationSamples<3||runningJump.preparationSourceMs<PrimaryTakeoffMs()*8/10||
                 runningJump.speed<walkingJump.speed*1.4||std::abs(runningJump.peak-normal.peak)>2){MovingFailure("run",runningJump,normal.peak);result=778;break;}
         Key(VK_RIGHT,false);Key(VK_SHIFT,false);Step(host,170);
         if(host.Saved()!=saved||!g.pet.roamingPaused){result=779;break;}
@@ -254,6 +271,8 @@ int Run() {
         characters+="{\"character\":"+std::to_string(static_cast<unsigned>(character))+",\"walk_speed\":"+
             std::to_string(walk)+",\"run_speed\":"+std::to_string(run)+
             ",\"normal_jump_peak\":"+std::to_string(normal.peak)+",\"walk_jump_distance\":"+std::to_string(walkingJump.distance)+
+            ",\"walk_jump_preparation_source_ms\":"+std::to_string(walkingJump.preparationSourceMs)+
+            ",\"run_jump_preparation_source_ms\":"+std::to_string(runningJump.preparationSourceMs)+
             ",\"run_jump_distance\":"+std::to_string(runningJump.distance)+"}";
     }
     unsigned safetyCases=0;

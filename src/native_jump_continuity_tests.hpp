@@ -5,7 +5,7 @@ namespace jump_continuity {
 using Clip=cat::sprite_sequence::Clip;
 constexpr unsigned Fps=60,Frames=540;
 struct Alpha {
-    int left=420,top=320,right=-1,bottom=-1;
+    int left=420,top=420,right=-1,bottom=-1;
     double x=0,y=0;
 };
 bool BoundedIdleGestures(const cat::animation::Pose& pose) {
@@ -31,13 +31,13 @@ Alpha Bounds(const Surface& surface) {
     if(weight){result.x/=weight;result.y/=weight;}
     return result;
 }
-int Run() {
+int Run(bool fullCapture=false) {
     for(const auto* path:{L"render-self-test",L"render-self-test/jump-continuity"})
         if(!CreateDirectoryW(path,nullptr)&&GetLastError()!=ERROR_ALREADY_EXISTS)return 580;
     const auto* walk=LoadedCareSprite(Clip::Walk,cat::Character::Cream);
     const auto* jump=LoadedCareSprite(Clip::Jump,cat::Character::Cream);
     if(!walk||!jump||!cat::video_ground_bridge::JumpTurns(*walk->layout).valid)return 581;
-    Surface frame,before,board;if(!frame.Create(420,320)||!before.Create(420,320)||!board.Create(2420,760))return 580;
+    Surface frame,before,board;if(!frame.Create(420,420)||!before.Create(420,420)||!board.Create(2420,1140))return 580;
     {
         Graphics graphics(board.image.get());graphics.Clear(Color(255,247,245,240));
     }
@@ -45,9 +45,9 @@ int Run() {
     trace<<"{\"schema\":1,\"fps\":60,\"frames\":[";
     report<<"{\"schema\":1,\"test\":\"jump-continuity-native\",\"status\":\"passed\",\"version\":\""
         YEOPJARI_VERSION_STRING "\",\"render_source\":\"Windows GDI+ / Box2D\",\"desktop_recording\":false,"
-        "\"comparison_baseline\":false,\"fps\":60,\"frames_per_case\":540,\"trace\":\"trace.json\",\"board\":\"entry-exit-board.png\",\"cases\":[";
+        "\"comparison_baseline\":false,\"render_scale\":1.5,\"fps\":60,\"frames_per_case\":540,\"trace\":\"trace.json\",\"board\":\"entry-exit-board.png\",\"cases\":[";
     bool firstTrace=true;unsigned caseIndex=0;
-    for(const auto character:{cat::Character::Cream,cat::Character::Tuxedo})for(const int facing:{1,-1})for(const bool moving:{false,true}) {
+    for(const auto character:{cat::Character::Cream,cat::Character::Tuxedo,cat::Character::OddEye})for(const int facing:{1,-1})for(const bool moving:{false,true}) {
         Host host;host.Reset(character,true);if(!host.artworkReady)return 581;g.workInterference=false;g.cursorPlay=false;
         g.work={0,0,1280,900};g.dpiScale=1;g.direction=g.facing=facing;
         g.centerX=facing>0?400:900;ResetMovement();
@@ -60,6 +60,13 @@ int Run() {
         ULONGLONG previousElapsed=0;unsigned captured=0;
         double maxPreparation=0,maxFlightTuck=0,maxContactCompression=0,maxJointDelta=0;
         bool priorRig=false;cat::jump_animation::Controls priorControls{};
+        CarePresentationRenderer presentation;
+        std::vector<BYTE> priorPixels(static_cast<std::size_t>(frame.width)*frame.height*4);
+        bool priorDrawing=false,priorGrounded=true;Clip priorClip=Clip::None;
+        unsigned registeredSeams=0;double maxRegisteredSeamDelta=0;
+        unsigned previousFlightSource=cat::sprite_sequence::kMaxAuthoredFrames;
+        ULONGLONG flightHoldStart=0,maxFlightHoldMs=0;
+        ULONGLONG finalLandingStart=0,maxFinalLandingHoldMs=0;
         for(unsigned i=0;i<Frames;++i) {
             const auto elapsed=static_cast<ULONGLONG>(i)*1000/Fps;
             if(i)host.Frame(start+elapsed-host.now);
@@ -95,6 +102,14 @@ int Run() {
             const bool videoJump=asset&&pose.spriteClip==Clip::Jump&&std::string_view(asset->layout->sourcePath).find("assets/video-actions/")==0;
             const auto* drawingAsset=videoJump?asset:pose.jumpRig?LoadedCareSprite(Clip::Walk,character):asset;
             const unsigned source=videoJump?logicalSource:pose.jumpRig?cat::jump_animation::kSourceFrame:logicalSource;
+            if(videoJump&&!rendered.grounded) {
+                if(source!=previousFlightSource){previousFlightSource=source;flightHoldStart=elapsed;}
+                maxFlightHoldMs=std::max(maxFlightHoldMs,elapsed-flightHoldStart);
+            } else previousFlightSource=cat::sprite_sequence::kMaxAuthoredFrames;
+            if(videoJump&&rendered.grounded&&!g.jumpPending&&source==jump->layout->frameCount-1) {
+                if(!finalLandingStart)finalLandingStart=elapsed;
+                maxFinalLandingHoldMs=std::max(maxFinalLandingHoldMs,elapsed-finalLandingStart);
+            } else finalLandingStart=0;
             if(pose.spriteClip==Clip::Jump&&!videoJump&&(!pose.jumpRig||!drawingAsset||
                     drawingAsset->layout->resourceId!=400||source!=29||!cat::jump_animation::Finite(pose.jumpControls)))return 582;
             const auto& base=CurrentArt(character).base;const auto& baseRect=base.frames[4];
@@ -135,9 +150,19 @@ int Run() {
                 graphics.Clear(Color(0,0,0,0));graphics.SetCompositingMode(CompositingModeSourceOver);
                 graphics.SetInterpolationMode(InterpolationModeHighQualityBicubic);graphics.SetPixelOffsetMode(PixelOffsetModeHighQuality);
                 DrawPetStyle(graphics,character,cat::Outfit::None,pose,body,
-                    static_cast<REAL>(210+rendered.x-origin),static_cast<REAL>(280-rendered.lift),110);
+                    static_cast<REAL>(210+(rendered.x-origin)*1.5),static_cast<REAL>(365-rendered.lift*1.5),165,
+                    &presentation,start+elapsed,1);
                 graphics.Flush(FlushIntentionSync);
             }
+            if(priorDrawing&&priorGrounded&&rendered.grounded&&
+                    ((priorClip==Clip::Walk&&pose.spriteClip==Clip::Jump)||(priorClip==Clip::Jump&&pose.spriteClip==Clip::Walk))) {
+                double delta=0;for(std::size_t byte=0;byte<priorPixels.size();++byte)
+                    delta+=std::abs(int(priorPixels[byte])-int(frame.pixels[byte]));
+                maxRegisteredSeamDelta=std::max(maxRegisteredSeamDelta,delta/(255*priorPixels.size()));++registeredSeams;
+            }
+            if(!rendered.grounded&&presentation.transition.Active(start+elapsed))return 590;
+            std::memcpy(priorPixels.data(),frame.pixels,priorPixels.size());
+            priorDrawing=true;priorGrounded=rendered.grounded;priorClip=pose.spriteClip;
             if((caseIndex==0||caseIndex==4)&&i%2==0&&std::string_view(jump->layout->sourcePath).find("assets/video-actions/")!=0) {
                 // Controlled artwork comparison, not a recording of an older
                 // app build: same current state/Box2D root, old raw16 poses.
@@ -146,7 +171,7 @@ int Run() {
                 graphics.Clear(Color(0,0,0,0));graphics.SetCompositingMode(CompositingModeSourceOver);
                 graphics.SetInterpolationMode(InterpolationModeHighQualityBicubic);graphics.SetPixelOffsetMode(PixelOffsetModeHighQuality);
                 DrawPetStyle(graphics,character,cat::Outfit::None,rawPose,body,
-                    static_cast<REAL>(210+rendered.x-origin),static_cast<REAL>(280-rendered.lift),110);
+                    static_cast<REAL>(210+(rendered.x-origin)*1.5),static_cast<REAL>(365-rendered.lift*1.5),165);
                 graphics.Flush(FlushIntentionSync);
                 const auto path=L"render-self-test/jump-continuity/before-case-"+std::to_wstring(caseIndex)+L"-"+std::to_wstring(i)+L".png";
                 if(!SaveNativeWalkingReview(*before.image,path.c_str()))return 587;
@@ -162,6 +187,7 @@ int Run() {
                 <<",\"grounded\":"<<(rendered.grounded?"true":"false")<<",\"jump_pending\":"<<(g.jumpPending?"true":"false")
                 <<",\"sprite_clip\":"<<static_cast<unsigned>(drawingAsset?drawingAsset->layout->clip:Clip::None)
                 <<",\"logical_clip\":"<<static_cast<unsigned>(pose.spriteClip)<<",\"sprite_resource\":"<<resource
+                <<",\"flight_progress\":"<<pose.spriteOptions.flightProgress
                 <<",\"sprite_frame\":"<<source<<",\"logical_frame\":"<<logicalSource
                 <<",\"jump_rig\":"<<(pose.jumpRig?"true":"false")
                 <<",\"jump_controls\":["<<pose.jumpControls.crouch<<','<<pose.jumpControls.fore<<','<<pose.jumpControls.hind<<','<<pose.jumpControls.tail<<']'
@@ -171,18 +197,18 @@ int Run() {
                 <<",\"alpha_bbox\":["<<alpha.left<<','<<alpha.top<<','<<alpha.right<<','<<alpha.bottom
                 <<"],\"alpha_centroid\":["<<alpha.x<<','<<alpha.y<<"],\"entry_turn\":"<<(entering?"true":"false")
                 <<",\"return_turn\":"<<(returning?"true":"false")<<'}';
-            if(((caseIndex==0||caseIndex==4)&&i%2==0) || i%30==0 || (entering&&(source==29||source==30)) || returning || physical.landed) {
+            if((fullCapture&&caseIndex%4==0)||i%30==0||physical.landed||(fullCapture&&returning)) {
                 const auto name=L"render-self-test/jump-continuity/case-"+std::to_wstring(caseIndex)+L"-"+std::to_wstring(i)+L".png";
                 if(!SaveNativeWalkingReview(*frame.image,name.c_str()))return 587;++captured;
             }
         }
         if(!entry||!flight||!landing||!returned||!neutral||!locked||maxLift<30||(moving&&!sideEntry)||
-                maxPreparation<.70||maxFlightTuck<.70||maxContactCompression<.10||maxJointDelta>.26) {
+                maxPreparation<.70||maxFlightTuck<.70||maxContactCompression<.10||maxJointDelta>.26||maxFlightHoldMs>83||maxFinalLandingHoldMs>83||registeredSeams<2||maxRegisteredSeamDelta>.003) {
             std::ostringstream failure;
             failure<<"case="<<caseIndex<<" entry="<<entry<<" sideEntry="<<sideEntry<<" flight="<<flight
                 <<" landed="<<landing<<" returned="<<returned<<" neutral="<<neutral<<" locked="<<locked
                 <<" lift="<<maxLift<<" preparation="<<maxPreparation<<" tuck="<<maxFlightTuck
-                <<" contact="<<maxContactCompression<<" controlDelta="<<maxJointDelta;
+                <<" contact="<<maxContactCompression<<" controlDelta="<<maxJointDelta<<" flightHoldMs="<<maxFlightHoldMs<<" finalHoldMs="<<maxFinalLandingHoldMs<<" seams="<<registeredSeams<<" seamDelta="<<maxRegisteredSeamDelta;
             WriteBytes(L"render-self-test/jump-continuity/failure.txt",failure.str());
             return 588;
         }
@@ -191,7 +217,10 @@ int Run() {
             <<",\"scenario\":\""<<(moving?"walk-stop-jump":"idle-jump")<<"\",\"entry_from_side_turn_seen\":"<<(sideEntry?"true":"false")
             <<",\"root_x_unchanged\":true,\"physical_height_only_once\":true,\"no_prelaunch_air_pose\":true,"
             "\"complete_landing_before_return\":true,\"entry_turn_seen\":true,\"return_turn_seen\":true,\"grounded_return\":true,\"reference_neutral_seen\":true,"
-            "\"connected_jump_source\":[119],\"unique_new_painted_frames\":62,\"source_video_geometry\":true,"
+            "\"connected_jump_source\":[119],\"unique_new_painted_frames\":"<<jump->layout->frameCount<<",\"source_video_geometry\":true,"
+            "\"max_flight_frame_hold_ms\":"<<maxFlightHoldMs<<','<<
+            "\"max_final_landing_hold_ms\":"<<maxFinalLandingHoldMs<<','<<
+            "\"registered_ground_seams\":"<<registeredSeams<<",\"max_registered_seam_delta\":"<<maxRegisteredSeamDelta<<','<<
             "\"max_preparation_compression\":"<<maxPreparation<<",\"max_flight_tuck\":"<<maxFlightTuck
             <<",\"max_contact_compression\":"<<maxContactCompression<<",\"max_joint_control_delta\":"<<maxJointDelta
             <<",\"max_root_dx\":"<<maxRootDx<<",\"max_frame_root_delta\":"<<maxDelta<<",\"max_integration_error\":"<<maxIntegrationError
@@ -201,7 +230,14 @@ int Run() {
             graphics.SetPixelOffsetMode(PixelOffsetModeHighQuality);Font label(L"Segoe UI",11,FontStyleRegular,UnitPixel);
             SolidBrush ink(Color(255,40,50,55));Pen floor(Color(255,170,180,185));
             const Clip clips[]{Clip::None,Clip::Walk,Clip::Walk,Clip::Walk,Clip::Walk,Clip::Jump,Clip::Jump,Clip::Jump,Clip::Walk,Clip::Walk,Clip::None};
-            const unsigned sources[]{4,20,29,47,30,0,2,15,29,20,4};
+            const auto middle=[](const cat::sprite_assets::Descriptor& art,cat::sprite_sequence::Range range){
+                return range.count?art.program.steps[range.first+range.count/2].frame:0U;};
+            const unsigned sources[]{4,middle(*walk->layout,walk->layout->program.intro),
+                walk->layout->program.steps[walk->layout->program.intro.first+walk->layout->program.intro.count-1].frame,
+                middle(*walk->layout,walk->layout->program.loop),middle(*walk->layout,walk->layout->program.loop),
+                middle(*jump->layout,jump->layout->program.intro),middle(*jump->layout,jump->layout->program.loop),
+                middle(*jump->layout,jump->layout->program.outro),middle(*walk->layout,walk->layout->program.outro),
+                walk->layout->program.steps[walk->layout->program.outro.first+walk->layout->program.outro.count-1].frame,4};
             for(unsigned column=0;column<11;++column) {
                 auto pose=cat::animation::Pose{};pose.spriteClip=clips[column];pose.spriteFrame=sources[column];pose.flip=facing<0;
                 if(clips[column]==Clip::None)pose.frame=4;
@@ -214,8 +250,8 @@ int Run() {
                 const REAL center=110+220*column,bottom=165+190*(caseIndex/2);
                 graphics.DrawLine(&floor,center-100,bottom+1,center+100,bottom+1);
                 DrawPetStyle(graphics,character,cat::Outfit::None,pose,body,center,bottom,110);
-                const auto text=(character==cat::Character::Cream?L"Cream ":L"Tuxedo ")+std::wstring(facing>0?L"right ":L"left ")+
-                    (clips[column]==Clip::Jump?(column==5?L"Rig400/29 crouch":column==6?L"Rig400/29 flight":L"Rig400/29 contact"):
+                const auto text=(character==cat::Character::Cream?L"Cream ":character==cat::Character::Tuxedo?L"Tuxedo ":L"Snow ")+std::wstring(facing>0?L"right ":L"left ")+
+                    (clips[column]==Clip::Jump?(column==5?L"Video preparation":column==6?L"Video flight":L"Video contact"):
                      (clips[column]==Clip::Walk?L"Walk ":L"Base ")+std::to_wstring(sources[column]));
                 graphics.DrawString(text.c_str(),-1,&label,PointF(center-95,bottom+5),&ink);
             }

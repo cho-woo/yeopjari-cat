@@ -442,7 +442,7 @@ def video_action_entries(root,originals):
             'Video action manifest drift')
     replacements=load_entries(manifest)
     sources={entry['clip']:entry['source'] for entry in json.loads(manifest.read_text(encoding='utf-8'))['clips']}
-    require({entry['clip'] for entry in replacements}=={'jump','groom','punch','knead','reach','ball','toy','brake','slide','stumble','climb','fish','fly','turn','walk','run','eat','cursor-pounce'} and
+    require({entry['clip'] for entry in replacements}=={'jump','groom','punch','knead','reach','ball','toy','brake','slide','stumble','climb','fish','fly','turn','walk','run','eat','cursor-pounce','sleep'} and
             all(entry['character']==0 for entry in replacements), 'Incomplete video action family')
     for entry in replacements:
         entry['asset_path']=(Path('assets/video-actions')/sources[entry['clip']]).as_posix()

@@ -444,15 +444,19 @@ void NaturalTakeoffAndLandingUsePhysicalMotion() {
         const auto view=m.View(c.ticks);
         const auto physical=m.Physical();
         const double speed=view.physical.velocityX-view.physical.supportVelocityX;
+        const bool travellingPreparation=view.travellingJump&&view.animation.spriteTimed&&
+            view.animation.spriteClip==cat::sprite_sequence::Clip::Jump&&
+            view.animation.spriteOptions.jump==cat::sprite_sequence::JumpPhase::Crouch;
         if(view.physical.grounded && std::abs(speed)>2) {
-            badSliding=badSliding || !cat::animation::Walking(view.motion) || view.animation.frame<0 || view.animation.frame>3;
+            badSliding=badSliding || (!travellingPreparation&&
+                (!cat::animation::Walking(view.motion) || view.animation.frame<0 || view.animation.frame>3));
             // The authored pivot keeps its original source orientation while
             // the final drawings already face and push in the other direction.
             if(view.animation.spriteClip!=cat::sprite_sequence::Clip::RunningTurn)
                 badFacing=badFacing || view.animation.flip!=(speed<0);
         }
         if(view.motion!=M::Jump && view.motion!=M::Pounce)crouchStarted=0;
-        if(view.physical.grounded && (view.motion==M::Jump || view.motion==M::Pounce) && view.animation.frame==4) {
+        if(view.physical.grounded && !travellingPreparation && (view.motion==M::Jump || view.motion==M::Pounce) && view.animation.frame==4) {
             if(!crouchStarted)crouchStarted=c.ticks;
             CHECK(std::abs(speed)<=2);
             CHECK(view.animation.scaleX==1 && view.animation.scaleY==1 && view.animation.angle==0);
@@ -859,6 +863,31 @@ void CompanionJumpReturnOwnsTheCompletedRecoveryBoundary() {
     }
 }
 
+void ExplicitCompanionJumpReturnsWhenTheRecoveryFinishes() {
+    using Clip=cat::sprite_sequence::Clip;
+    const auto* jump=cat::sprite_assets::Find(Clip::Jump,0,cat::sprite_assets::kCareSprites);
+    CHECK(jump);
+    const auto recovery=cat::sprite_sequence::Duration(jump->program,jump->program.outro);
+    for(const auto character:{cat::Character::Cream,cat::Character::Tuxedo,cat::Character::OddEye})for(bool paused:{false,true}) {
+        State state=NewState(born);state.preferences.character=character;state.pet.position=.2;state.pet.roamingPaused=paused;
+        Model model;model.Bind(state);model.Reset(0,2400,700);
+        auto c=Frame(100,1700);CHECK(model.Perform(Clip::Jump,c.ticks));
+        std::uint64_t landed=0,returned=0;double previousProgress=-1;
+        for(unsigned frame=0;frame<550;++frame) {
+            Step(model,c,1);const auto physical=model.Physical();const auto view=model.View(c.ticks);
+            if(!physical.grounded&&view.animation.spriteClip==Clip::Jump) {
+                const auto progress=view.animation.spriteOptions.flightProgress;
+                CHECK(progress>=0&&progress<=1&&progress>=previousProgress);previousProgress=progress;
+            }
+            if(physical.landed&&!landed)landed=c.ticks;
+            if(landed&&c.ticks-landed<recovery)CHECK(view.animation.spriteClip==Clip::Jump);
+            if(landed&&c.ticks-landed>=recovery&&view.animation.spriteClip==Clip::Walk){returned=c.ticks;break;}
+        }
+        CHECK(landed&&returned&&returned-landed>=recovery&&returned-landed<=recovery+34);
+        CHECK(previousProgress>.9&&state.pet.roamingPaused==paused&&state.pet.feedCount==0&&state.pet.snackCount==0);
+    }
+}
+
 void AuthoredSleepKeepsItsIdentityIncludingWindowRestAndWake() {
     using Clip=cat::sprite_sequence::Clip;
     const auto* sleep=cat::sprite_assets::Find(Clip::Sleep,0,cat::sprite_assets::kCareSprites);
@@ -1015,6 +1044,25 @@ void CompanionKeyboardAndNinePairings() {
         CHECK(!companion.SocialActive());
     }
 }
+void ManualRequestsWaitForTheCompleteWake() {
+    using C=cat::sprite_sequence::Clip;using M=cat::animation::Motion;
+    for(auto coat:cat::kAvailableCharacters) {
+        State state=NewState(born);state.preferences.character=coat;state.pet.roamingPaused=true;
+        Model model;model.Bind(state);model.Reset(0,2400,700);auto c=Frame(100,1600);
+        CHECK(model.Perform(C::Sleep,c.ticks));Step(model,c,300);
+        const auto x=model.Physical().x;
+        CHECK(model.Perform(C::Walk,c.ticks));
+        auto view=model.View(c.ticks);
+        CHECK(view.motion==M::Stretch&&view.animation.spriteClip==C::Sleep&&
+            view.animation.spriteOptions.sleep==cat::sprite_sequence::SleepStage::Waking);
+        unsigned frames=0;
+        while(model.View(c.ticks).motion==M::Stretch&&frames++<400) {
+            CHECK(std::abs(model.Physical().x-x)<.5);Step(model,c,1);
+        }
+        CHECK(model.View(c.ticks).motion==M::Walk);
+        CHECK(state.pet.bornUtc==born&&state.pet.feedCount==0&&state.pet.snackCount==0);
+    }
+}
 int main() {
     try { SeparateAdoptionAndRestart();IndividualStableTemperaments();StrictBundleParsing();RecoveryAndFaults();IndependentCareAndAge();FishCareKeepsTheExistingMealAndBusyContracts();AcceptedFoodRestartsItsClockAfterLongMenuPauses();SocialContactAndCompetition();RealWindowFollowingAndClosure();SpeciesLimitsAndBraking();ManualCareIsNotInterrupted();NaturalTakeoffAndLandingUsePhysicalMotion();SocialGesturesWaitForPlantedFeet();BrakingPreservesTheCompleteMeal();PairedRunningUsesOneSupportAndBodyMultiplier();HighWindowFollowingRespectsTheRealCeiling();
         HighRefreshGaitFollowsRenderedTravel();AuthoredKneadDoesNotLeakLegacyJointsAcrossActions();
@@ -1022,9 +1070,11 @@ int main() {
         OptionalWalkReviewKeepsBothCoatsOnTheRegisteredStride();
         ContactRecoveryFinishesBeforeAcceptedFishStarts();
         CompanionJumpReturnOwnsTheCompletedRecoveryBoundary();
+        ExplicitCompanionJumpReturnsWhenTheRecoveryFinishes();
         AuthoredSleepKeepsItsIdentityIncludingWindowRestAndWake();
         CompanionPointerAndAuthoredActions();
         CompanionKeyboardAndNinePairings();
+        ManualRequestsWaitForTheCompleteWake();
         std::cout<<"companion checks passed: "<<checks<<'\n';return 0;
     } catch(const std::exception& e) { std::cerr<<e.what()<<'\n';return 1; }
 }
