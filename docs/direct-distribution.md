@@ -39,7 +39,7 @@ HTTPS 도메인 인증, Google Workspace 메일 인증, Windows의 Authenticode 
 
 소개 페이지를 https://yeopjari-cat.joyden96.chatgpt.site 에 공개했습니다. 로그인 없이 표시되는 것을 브라우저로 확인했습니다. 세 외형 선택, 도움말 펼치기, PC 링크 복사, 390px 모바일 화면, 로컬 파일 연결을 확인했습니다. 사이트 소스 커밋은 `6b555021826bff91fa6babc540c228268e78a963`입니다.
 
-`cat.valuewander.com`은 사이트 측 등록을 마쳤고 Cloudflare DNS 기록 입력을 기다립니다. Google Workspace 설정은 사용자가 진행하며 메일 DNS를 임의로 변경하지 않습니다.
+`cat.valuewander.com`은 Cloudflare에 홈페이지용 CNAME 1개와 확인용 TXT 2개를 추가했습니다. 외부 DNS 조회, 호스팅의 도메인·HTTPS 인증서 `active` 상태, 실제 HTTPS 200 응답과 브라우저의 소개 페이지 표시를 확인했습니다. Google Workspace 설정은 사용자가 진행하며 메일 DNS는 변경하지 않았습니다.
 
 NSIS 3.13은 winget의 공식 설치 파일을 SHA-256 `db9a1038bbc0e53fef24f423fd609979bd578e942f1be1198db186d1c42652a3`으로 확인한 뒤 로컬 빌드 폴더에 추출했습니다. 검토용 설치 프로그램 빌드와 앱 원본 바이트 일치, 라이선스 동봉, 실행 중인 고양이가 있을 때 설치 차단을 검사했습니다. 실제 사용자 고양이는 종료하지 않았고, 전체 설치·업데이트·제거는 아직 별도 환경에서 검증하지 않았습니다.
 
