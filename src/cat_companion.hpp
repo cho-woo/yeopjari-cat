@@ -738,6 +738,7 @@ public:
                 s.animation.jumpControls=jumpPresentation_.Prepare(elapsed,preparation,s.physical.lift);
             }
         } else if(s.physical.grounded)jumpPresentation_.Ground(s.physical.lift);
+        s.animation.presentationSerial=motionSerial_;
         return s;
     }
 private:
@@ -762,6 +763,8 @@ private:
         if(runningJump_.active)return;
         const auto* videoWalk=RegisteredVideoWalk();
         const bool sideMeal=VideoSideMeal();
+        const bool sideStop=actionClip_==cat::sprite_sequence::Clip::Brake||
+            actionClip_==cat::sprite_sequence::Clip::Slide||actionClip_==cat::sprite_sequence::Clip::Stumble;
         const auto jumpTurn=videoWalk?cat::video_ground_bridge::JumpTurns(*videoWalk):cat::video_ground_bridge::JumpTurnProfile{};
         const bool jumpPreparation=jumpTurn.valid && jumpPending_ &&
             (motion_==cat::animation::Motion::Jump || motion_==cat::animation::Motion::Pounce);
@@ -782,7 +785,7 @@ private:
                 facing_=direction_;groundDrive_.Reset(direction_);
             }
             groundArtBridge_.Update(ticks,travel && (direction_==facing_||(keyboardActive_&&groundArtBridge_.Starting()&&keyboardDirection_)),
-                visible.grounded,visible.velocityX-visible.supportVelocityX,true,sideMeal||jumpPreparation,jumpPreparation,keyboardActive_);
+                visible.grounded,visible.velocityX-visible.supportVelocityX,true,sideMeal||sideStop||jumpPreparation,jumpPreparation,keyboardActive_);
             // Reversing an existing walk gates its motor without restarting
             // the whole action clock on every short work-area crossing.
             if(!travel && (groundArtBridge_.Stopping() || groundArtBridge_.StartingForSideAction()))waitingForStop_=true;
@@ -923,10 +926,14 @@ private:
             (m==cat::animation::Motion::Idle || m==cat::animation::Motion::Watch);
         if(requestedClip==Clip::None) {
             if(m==cat::animation::Motion::Groom)requestedClip=Clip::Groom;
+            else if(m==cat::animation::Motion::Scratch)requestedClip=Clip::Groom;
             else if(m==cat::animation::Motion::Punch)requestedClip=Clip::Punch;
             else if(m==cat::animation::Motion::Eat)requestedClip=Clip::Eat;
             else if(m==cat::animation::Motion::Treat)requestedClip=Clip::Treat;
             else if(m==cat::animation::Motion::Knead)requestedClip=Clip::Knead;
+            else if(m==cat::animation::Motion::Stretch)requestedClip=Clip::Settle;
+            else if(m==cat::animation::Motion::TailChase)requestedClip=Clip::TailChase;
+            else if(m==cat::animation::Motion::BellyRoll)requestedClip=Clip::Roll;
         }
         if(requestedClip!=Clip::None)duration=RegisteredDuration(requestedClip,duration);
         if(m==cat::animation::Motion::Sleep)if(const auto* sleep=Registered(Clip::Sleep))

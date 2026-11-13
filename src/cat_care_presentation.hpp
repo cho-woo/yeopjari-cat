@@ -13,6 +13,7 @@ struct Tag {
     unsigned representation=0,identity=0;
     std::uint64_t generation=0;
     bool eligible=false,authored=false,flip=false,neutralBridge=false;
+    std::uint64_t action=0;
 };
 struct Plan {
     bool capture=false,blend=false,bridge=false;
@@ -41,7 +42,7 @@ public:
             target.flip==previous_.flip;
         Plan plan;
         if(!compatible) {active_=waitingExit_=false;}
-        else if(previous_.representation!=target.representation) {
+        else if(previous_.representation!=target.representation || previous_.action!=target.action) {
             bridge_=previous_.authored && !target.authored && target.neutralBridge;
             started_=ticks;active_=true;waitingExit_=false;plan.capture=true;
         } else if(waitingExit_) {

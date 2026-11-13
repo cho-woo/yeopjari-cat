@@ -14,6 +14,13 @@ int main() {
     assert(!primary.Update(groom,1236).blend);
     // A different authored frame is deliberately the same representation.
     assert(!primary.Update(groom,1250).capture);
+    // A different owner can use the same neutral drawing, but must still join
+    // smoothly when its joints/expression differ. Source-frame advances inside
+    // that owner are never retimed.
+    auto nextAction=groom;nextAction.action=1;
+    assert(primary.Update(nextAction,1251).capture);
+    assert(!primary.Update(nextAction,1252).capture);
+    primary.Reset();primary.Update(groom,1250);
     auto bridge=primary.Update(idle,1260);assert(bridge.capture&&bridge.bridge&&bridge.weight==0);
     assert(primary.Update(idle,1480).bridge); // Fully drawn neutral bridge.
     auto exit=primary.Update(idle,1496);assert(exit.capture&&exit.blend&&!exit.bridge&&exit.weight==0);

@@ -964,7 +964,8 @@ void CompanionPointerAndAuthoredActions() {
         CHECK(chased);CHECK(model.Physical().x>root+250);CHECK(launched);
         c.cursorEnabled=c.cursorAvailable=false;
         for(unsigned frame=0;frame<400;++frame){c.ticks+=16;model.Tick(c);}
-        for(const auto clip:{C::FlyHunt,C::ToyPlay,C::BallPlay,C::Box,C::Groom,C::Knead,C::Punch}) {
+        for(const auto clip:{C::FlyHunt,C::ToyPlay,C::BallPlay,C::Box,C::Groom,C::Knead,C::Punch,
+                C::Settle,C::TailChase,C::Roll,C::Brake,C::Slide,C::Stumble}) {
             CHECK(model.Perform(clip,c.ticks));
             bool seen=false;unsigned last=0;bool progressed=false;double ballSpeed=0;
             const auto* art=cat::sprite_assets::Find(clip,static_cast<unsigned>(coat),cat::sprite_assets::kCareSprites);

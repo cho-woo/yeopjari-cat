@@ -18,11 +18,12 @@ class BallMaskTest(unittest.TestCase):
         sys.path.insert(0,str(ROOT/'tools'))
         from pack_video_actions import snow_material
         from PIL import Image
-        original=np.array([[[225,190,178,255],[235,135,157,255],[15,10,5,0]]],dtype=np.uint8)
-        result,proof=snow_material(Image.fromarray(original,'RGBA'),np.zeros((1,3),np.uint8),strict_skin=True)
+        original=np.array([[[225,190,178,255],[235,135,157,255],[15,10,5,0],[235,165,152,255]]],dtype=np.uint8)
+        result,proof=snow_material(Image.fromarray(original,'RGBA'),np.zeros((1,4),np.uint8),strict_skin=True)
         painted=np.asarray(result)
         self.assertLessEqual(int(painted[0,0,:3].max())-int(painted[0,0,:3].min()),2)
         np.testing.assert_array_equal(painted[0,1],original[0,1])
+        np.testing.assert_array_equal(painted[0,3],original[0,3])
         np.testing.assert_array_equal(painted[:,:,3],original[:,:,3])
         self.assertTrue(proof['alpha_exact'] and proof['skin_rgb_exact'])
 

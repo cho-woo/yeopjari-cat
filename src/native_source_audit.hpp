@@ -87,7 +87,8 @@ int Run(std::string& context) {
 int NativeSourceAudit(HINSTANCE instance) {
     g.instance=instance;ULONG_PTR token=0;GdiplusStartupInput startup;
     if(GdiplusStartup(&token,&startup,nullptr)!=Ok)return 899;
-    std::string context;const int result=LoadAtlas()?native_source_audit::Run(context):900;
+    std::string context;int result=LoadAtlas()?native_source_audit::Run(context):900;
+    if(!result)result=native_action_continuity::Run(context);
     WriteBytes(L"render-self-test/source-audit-report.txt","exit="+std::to_string(result)+" "+context+"\n");
     ReleaseAtlases();ReleaseCarePresentation();g.brain.reset();GdiplusShutdown(token);return result;
 }

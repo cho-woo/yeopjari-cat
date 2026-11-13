@@ -895,8 +895,8 @@ void AuthoredClipsFollowHostPhysicsAndPreserveFallbacks() {
     }
     for(unsigned elapsed=0;elapsed<2500;elapsed+=5) {
         const auto paw=Evaluate(Motion::ToyPaw,elapsed,elapsed,-1);
-        CHECK(paw.spriteClip==Clip::Punch && !paw.spriteTimed && paw.flip && paw.groundContact);
-        CHECK(paw.spriteFrame==cat::sprite_sequence::SampleToyPaw(elapsed).frame);
+        CHECK(paw.spriteClip==Clip::Punch && paw.spriteTimed && paw.flip && paw.groundContact);
+        CHECK(paw.spriteElapsedMs==elapsed);
         auto registered=paw;UseAuthoredSprite(registered);
         CHECK(registered.x==0 && registered.lift==0 && registered.blendFrame==-1);
     }

@@ -1963,9 +1963,11 @@ void SetMotion(Motion motion, ULONGLONG duration,ULONGLONG actionTicks=0,bool co
     // a paused-roaming keyboard cat latch a stop before ownership is restored.
     g.manualMotionActive = continueManualMotion && g.manualMotionActive;
     using Clip=cat::sprite_sequence::Clip;
-    const auto clip=motion==Motion::Groom?Clip::Groom:motion==Motion::Eat?Clip::Eat:
-        motion==Motion::Treat?Clip::Treat:motion==Motion::Punch?Clip::Punch:
-        motion==Motion::Knead?Clip::Knead:Clip::None;
+    const auto clip=motion==Motion::Groom||motion==Motion::Scratch?Clip::Groom:motion==Motion::Eat?Clip::Eat:
+        motion==Motion::Treat?Clip::Treat:motion==Motion::Punch||
+        (motion==Motion::ToyPaw&&!g.toyDispatching&&!EnvironmentBusy()&&!g.companionReaction)?Clip::Punch:
+        motion==Motion::Knead?Clip::Knead:motion==Motion::Stretch?Clip::Settle:
+        motion==Motion::TailChase?Clip::TailChase:motion==Motion::BellyRoll?Clip::Roll:Clip::None;
     if(const auto* asset=LoadedCareSprite(clip,g.preferences.character);asset && asset->layout->program.stepCount)
         duration=std::max<ULONGLONG>(duration,cat::sprite_sequence::ProgramDuration(asset->layout->program));
     if(motion==Motion::Jump || motion==Motion::Pounce) {
@@ -2935,13 +2937,16 @@ void DrawStyledAnimation(Graphics& graphics, cat::animation::Pose pose, REAL cen
     const auto* authored=CareSpriteFor(pose,character);
     using Clip=cat::sprite_sequence::Clip;
     const auto calm=[](Clip clip) {return clip==Clip::Groom||clip==Clip::Sleep||clip==Clip::Eat||
-        clip==Clip::Treat||clip==Clip::Fish||clip==Clip::Knead||clip==Clip::ToyPlay||clip==Clip::FlyHunt;};
+        clip==Clip::Treat||clip==Clip::Fish||clip==Clip::Knead||clip==Clip::ToyPlay||clip==Clip::FlyHunt||
+        clip==Clip::Brake||clip==Clip::Slide||clip==Clip::Stumble||clip==Clip::Settle||
+        clip==Clip::TailChase||clip==Clip::Roll;};
     const bool hasCalm=std::any_of(g.careSprites.begin(),g.careSprites.end(),[&](const auto& sprite) {
         return sprite->layout->character==cat::sprite_assets::AuthoredCharacter(static_cast<unsigned>(character))&&calm(sprite->layout->clip);
     });
     if(!hasCalm) {state.Reset();direct(graphics,pose);return;}
-    const bool fixed=pose.groundContact&&!pose.jointWalk&&!pose.walkingRig&&!pose.originalWalk&&
-        !pose.bellyRig&&!pose.centerPivot&&pose.x==0&&pose.lift==0&&pose.angle==0&&
+    const bool supportedHang=!authored&&pose.frame==26&&pose.bellyRig;
+    const bool fixed=(pose.groundContact||supportedHang)&&!pose.jointWalk&&!pose.walkingRig&&!pose.originalWalk&&
+        (!pose.bellyRig||supportedHang)&&!pose.centerPivot&&pose.x==0&&pose.lift==0&&pose.angle==0&&
         pose.scaleX==1&&pose.scaleY==1&&pose.blendFrame<0;
     // A stopped source turn may join anticipation or the already-completed
     // landing recovery. Flight, impact, planted paw contacts and moving gait
@@ -2952,7 +2957,10 @@ void DrawStyledAnimation(Graphics& graphics, cat::animation::Pose pose, REAL cen
          (pose.spriteOptions.jump==cat::sprite_sequence::JumpPhase::Landing&&
           pose.spriteOptions.contactElapsedMs+cat::care_presentation::Transition::DurationMs>=
               cat::sprite_sequence::Duration(authored->layout->program,authored->layout->program.outro)));
-    const bool eligible=fixed&&(authored?(calm(authored->layout->clip)||groundTurn||jumpBoundary):pose.frame==4||pose.frame==cat::animation::kReferenceSleepFrame)&&
+    const bool pawBoundary=authored&&pose.spriteTimed&&
+        (authored->layout->clip==Clip::Punch||authored->layout->clip==Clip::Reach)&&
+        (pose.spriteElapsedMs<=300||pose.spriteElapsedMs+500>=cat::sprite_sequence::ProgramDuration(authored->layout->program));
+    const bool eligible=fixed&&(authored?(calm(authored->layout->clip)||groundTurn||jumpBoundary||pawBoundary):pose.frame>=4&&pose.frame<cat::animation::kSpriteCount)&&
         pose.joints.pawReachX==0&&pose.joints.pawReachY==0&&pose.joints.pawAnchorX==0&&!cat::cursor_rig::Active(pose.cursorReach);
     if(!eligible) {state.Reset();direct(graphics,pose);return;}
     const bool changed=!state.previous.image||!state.from.image||!state.target.image||
@@ -2977,12 +2985,13 @@ void DrawStyledAnimation(Graphics& graphics, cat::animation::Pose pose, REAL cen
     } else if(changed||reshaped||(state.geometry&&(std::abs(dx)>.5||std::abs(dy)>.5)))state.transition.Reset();
     state.center=center;state.bottom=bottom;state.scale=scale;state.bodyWidth=body.bodyWidth;state.bodyHeight=body.bodyHeight;state.geometry=true;
     cat::care_presentation::Tag tag;
-    tag.representation=authored?1+static_cast<unsigned>(authored->layout->clip):
-        pose.frame==cat::animation::kReferenceSleepFrame?1000:0;
+    tag.representation=authored?1+static_cast<unsigned>(authored->layout->clip):1000+static_cast<unsigned>(pose.frame);
+    tag.action=pose.presentationSerial;
     tag.identity=static_cast<unsigned>(character);tag.generation=generation;tag.eligible=true;
     tag.authored=authored!=nullptr;tag.flip=pose.flip;tag.neutralBridge=false;
     const auto plan=state.transition.Update(tag,ticks,paused);
-    if(plan.capture)state.targetOnly=jumpBoundary||state.lastRepresentation==1+static_cast<unsigned>(Clip::Jump);
+    if(plan.capture)state.targetOnly=jumpBoundary||state.lastRepresentation==1+static_cast<unsigned>(Clip::Jump)||
+        !authored||state.lastRepresentation>=1000;
     state.lastRepresentation=tag.representation;
     if(plan.capture)std::memcpy(state.from.pixels,state.previous.pixels,bytes);
     auto drawing=pose;
@@ -3368,6 +3377,7 @@ cat::animation::Pose PrimaryDisplayedPose(ULONGLONG ticks,const cat::physics::Po
     } else if(physical.grounded)g.jumpPresentation.Ground(physical.lift);
     pose = g.poseTransition.Apply(pose,ticks,g.motionSerial,
         static_cast<unsigned>(g.preferences.character), !cursorAttack,g.motionStart);
+    pose.presentationSerial=g.motionSerial;
     return pose;
 }
 
@@ -3392,10 +3402,7 @@ void RenderFrame(ULONGLONG ticks,bool withPresentation,bool submitWindow=true) {
     // transparent room below the registered root for props and airborne legs,
     // without lifting/resizing the cat to fit the image's bounding box.
     int bottomInset=0;
-    if(authored && (authored->layout->clip==cat::sprite_sequence::Clip::Fish ||
-            authored->layout->clip==cat::sprite_sequence::Clip::Jump ||
-            authored->layout->clip==cat::sprite_sequence::Clip::CursorPounce ||
-            authored->layout->clip==cat::sprite_sequence::Clip::Eat)) {
+    if(authored) {
         bottomInset=cat::render::SpriteBottomSafetyInset(*authored->layout,110*bodyScale,
             cat::appearance::VisualModifiers(g.nutrition,g.preferences.character).bodyHeight);
         placement=cat::render::WithBottomSafetyInset(placement,bottomInset);
@@ -4984,7 +4991,11 @@ bool DispatchLifeEvent(cat::life::Event event, ULONGLONG ticks) {
     case Event::EdgeHang:
         SetMotion(Motion::Hang,1600);g.lifeHangUntil=ticks+1400;g.waitingForStop=false;break;
     case Event::ScreenCrossing:
-        SetMotion(Motion::Watch,1800);g.lifeCrossing.Start();break;
+        // A stroll must remain a visible physical journey. The old fade-out
+        // event reset the body at the opposite edge, even on a clear desktop.
+        g.lifeCrossing={};
+        g.direction=g.physics.CurrentPose().x<(MovementBoundsLogical().first+MovementBoundsLogical().second)/2?1:-1;
+        SetMotion(Motion::Walk,12000,ticks);g.speed=RegisteredWalkSpeed()*g.dpiScale;break;
     case Event::BondKnead:
         SetMotion(Motion::Knead,5200);g.lifeSequence[0]=Motion::Loaf;g.lifeSequenceCount=1;
         Speak(L"네 옆이 편해졌어 ♡",3200);break;
@@ -5029,15 +5040,10 @@ void UpdateLifeEvent(ULONGLONG ticks, double elapsed) {
         g.physics.EndHang(true);g.lifeHangUntil=0;
         g.airborneMotion=Motion::Jump;SetMotion(Motion::Startled,2000);
     }
-    if(!g.lifeCrossing.Active())return;
-    if(g.lifeCrossing.Advance(elapsed*1000,true)) {
-        const auto bounds=MovementBoundsLogical();
-        const bool fromLeft=g.physics.CurrentPose().x<(bounds.first+bounds.second)/2;
-        g.centerX=g.work.left+(fromLeft ? bounds.second : bounds.first)*g.dpiScale;
-        g.direction=fromLeft ? -1 : 1;
-        ResetMovement(); // Explicit rare event at opacity zero, on the floor.
-    }
-    if(!g.lifeCrossing.Active()) {g.speed=RegisteredWalkSpeed(45)*g.dpiScale;SetMotion(Motion::Walk,2400);}
+    // Legacy in-memory crossing state has no relocation authority. The event
+    // dispatcher now starts an ordinary physical walk with the normal turn.
+    (void)elapsed;
+    g.lifeCrossing={};
 }
 
 void DispatchAutonomousMotion(ULONGLONG ticks) {
@@ -5128,7 +5134,23 @@ bool AdvanceWallMotion(ULONGLONG ticks,double elapsed) {
 
 void AdvancePrimaryMotion(ULONGLONG ticks, double elapsed) {
     if(g.stopClip!=cat::sprite_sequence::Clip::None&&ticks>=g.stopUntil) {
-        g.stopClip=cat::sprite_sequence::Clip::None;g.physics.SetBrakeGrip(1);
+        const auto body=g.physics.CurrentPose(),visible=g.physics.RenderPose();
+        if(body.grounded&&std::max(std::abs(WalkingVelocity(body)),std::abs(WalkingVelocity(visible)))>.5) {
+            // Preserve the last supported recovery drawing if real friction
+            // needs another step. Never start an unrelated story mid-slide.
+            g.stopUntil=ticks+16;
+        } else {
+            g.stopClip=cat::sprite_sequence::Clip::None;g.stopStarted=g.stopUntil=0;
+            g.physics.SetBrakeGrip(1);
+            if(body.grounded&&g.motion==Motion::Idle) {
+                // Each stopping movie has already returned to the front rest.
+                // Replaying a side-to-front Walk outro here snapped it back
+                // sideways. Begin the actual quiet interval after recovery.
+                g.groundArtBridge.Reset(ticks);g.waitingForStop=false;
+                g.motionStart=ticks;g.autonomousClaimedAt=ticks;
+                g.nextDecision=ticks+cat::behavior::Brain::NeutralRestDuration(g.random());
+            }
+        }
     }
     UpdatePrimaryGroundArt(ticks);
     if(AdvanceWallMotion(ticks,elapsed))return;
@@ -5854,11 +5876,20 @@ int NativeLifeHostTest() {
     if(DispatchLifeEvent(Event::SmallBox,ticks) || g.motionSerial!=beforeRetiredEvent)return 164;
     if(g.smallBoxEvent||g.lifeSequenceCount)return 165;
     DispatchLifeEvent(Event::ScreenCrossing,ticks);
-    // A nearby companion must not replace Watch while this rare effect is
-    // fading; its normal social callback would otherwise cancel the crossing.
+    // The former opposite-edge fade is now an ordinary, continuously visible
+    // physical walk. A companion does not take over this owned story.
     if(!CompanionContext(ticks,0).primaryBusy)return 175;
-    for(int i=1;i<=12;++i)UpdateLifeEvent(ticks+i*100,.1);
-    if(g.lifeCrossing.Active()||g.lifeCrossing.Opacity()!=1||g.physics.CurrentPose().x<1100 ||
+    const auto strollStart=g.physics.RenderPose().x;auto priorStroll=g.physics.RenderPose();
+    for(unsigned i=1;i<=180;++i) {
+        const auto nowTicks=ticks+i*1000ULL/60;
+        UpdateLifeEvent(nowTicks,1./60);AdvancePrimaryMotion(nowTicks,1./60);
+        const auto current=g.physics.RenderPose();
+        if(std::abs(current.x-priorStroll.x)>std::max(std::abs(current.velocityX),std::abs(priorStroll.velocityX))/60+1 ||
+                g.lifeCrossing.Opacity()!=1)return 166;
+        priorStroll=current;
+    }
+    if(g.lifeCrossing.Active()||g.lifeCrossing.Opacity()!=1||g.physics.CurrentPose().x-strollStart<10||
+        g.physics.CurrentPose().x-strollStart>200||g.motion!=Motion::Walk||
         !g.physics.CurrentPose().grounded||g.physics.CurrentPose().lift>.1)return 166;
     g.centerX=500;ResetMovement();
     if(!g.physics.LaunchToPlatform(300,900,400,370,45))return 167;
@@ -6353,6 +6384,7 @@ int NativeMenuContractTest() {
 #include "native_fly_review.hpp"
 #include "native_identity_turn_review.hpp"
 #include "native_lively_review.hpp"
+#include "native_action_continuity_review.hpp"
 #include "native_source_audit.hpp"
 #include "native_boundary_review.hpp"
 #include "native_menu_visibility_tests.hpp"
@@ -6398,6 +6430,9 @@ int SelfTest(HINSTANCE instance) {
 int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
     if(commandLine && wcsstr(commandLine,L"--render-jump-review"))return NativeManualMotionTest(instance,false,true);
     if(commandLine && wcsstr(commandLine,L"--render-update-notice"))return NativeBoundaryReview(instance,true);
+    if(commandLine && wcsstr(commandLine,L"--life-host-self-test")){g.instance=instance;return NativeLifeHostTest();}
+    if(commandLine && wcsstr(commandLine,L"--render-pose-handoffs"))return NativeActionContinuityReview(instance,true);
+    if(commandLine && wcsstr(commandLine,L"--render-action-continuity"))return NativeActionContinuityReview(instance);
     if(commandLine && wcsstr(commandLine,L"--render-boundary-review"))return NativeBoundaryReview(instance);
     if(commandLine && wcsstr(commandLine,L"--keyboard-jitter-diagnostic"))return NativeKeyboardJitterDiagnostic(instance);
     if(commandLine && wcsstr(commandLine,L"--cursor-jitter-diagnostic"))return NativeCursorJitterDiagnostic(instance);

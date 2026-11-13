@@ -20,3 +20,6 @@
 436 RCDATA "../assets/video-actions/cream-fly.png"
 437 RCDATA "../assets/video-actions/cream-turn.png"
 438 RCDATA "../assets/video-actions/cream-cursor-pounce.png"
+439 RCDATA "../assets/video-actions/cream-settle.png"
+450 RCDATA "../assets/video-actions/cream-tail-chase.png"
+451 RCDATA "../assets/video-actions/cream-roll.png"

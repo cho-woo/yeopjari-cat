@@ -1,0 +1,260 @@
+[
+  {
+    "character": "cream",
+    "action": "brake",
+    "args": {
+      "client_token": "yeopjari-v37-connected-brake-cream-20261113-1",
+      "model": "bytedance/seedance-2.5",
+      "options": {
+        "prompt": "The exact established desktop kitten from the two supplied reference frames. First frame: planted four-legged side view facing RIGHT, matching the end of an existing gallop; last frame: the exact front-facing seated master. Preserve identical face, ears, iris colors, fur markings, head/body proportions, soft illustrated3D fur, animal size and painted floor height throughout. Locked orthographic camera and constant canvas scale; saturated uniform #00FF00 background, no cast shadows, text, props, cuts, zoom or reframing. All body parts remain connected, no extra paws, changing coat or enlarged head. The complete action starts immediately from the side stance; NEVER insert a front-facing sitting pose before the stopping movement. A realistic athletic BRAKING STOP from a rightward gallop: immediately take one short forward running footfall, lower the shoulders, plant both front paws ahead and let the hips briefly continue forward, flex elbows and hind legs to absorb momentum, then plant the hind paws and settle on all four feet by1.2seconds. No sliding or falling for this take. Only after the brake has completed, calmly turn toward the camera and sit into the exact final reference by3.3seconds. End with a calm seated hold in the final reference for at least0.5seconds. Four seconds total. Keep the overall physical root near the original center and floor plane fixed; the app supplies horizontal world travel. Show momentum through coherent paw contact, shoulders, hips and spine, with smooth acceleration and recovery, no sudden root or pose jumps.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/a51a2fd8db74428193c60b6470818c44/cream-planted-side-v35.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f91aa82183e14b82a31e69c0185697b5/cream-front-identity-v29.png",
+        "duration": 4,
+        "resolution": "720p",
+        "aspect_ratio": "1:1",
+        "generate_audio": false,
+        "generation_mode": "frame",
+        "prompt_enhance": false
+      }
+    },
+    "result": {
+      "job_id": "mcp_cb93aa66fb474c9293538fc32f8b1b92",
+      "creditCost": 460,
+      "reused": false
+    },
+    "generation": {
+      "jobId": "mcp_cb93aa66fb474c9293538fc32f8b1b92",
+      "status": "succeeded",
+      "modelName": "bytedance/seedance-2.5",
+      "createdAt": "2026-11-13T12:27:56.895Z",
+      "completedAt": null,
+      "outputList": [
+        {
+          "imageUrl": null,
+          "videoUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_cb93aa66fb474c9293538fc32f8b1b92/output/output_0.mp4",
+          "posterUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_cb93aa66fb474c9293538fc32f8b1b92/output/output_0_poster.jpg",
+          "text": null
+        }
+      ]
+    },
+    "source_path": "sources/continuity-v37/cream-brake.mp4",
+    "sha256": "3b8722a224551826c9409ad321766dd837d5fa8419eb25a1edbcbc952132a617",
+    "frame_count": 97,
+    "fps": 24.0
+  },
+  {
+    "character": "tuxedo",
+    "action": "brake",
+    "args": {
+      "client_token": "yeopjari-v37-connected-brake-tuxedo-20261113-1",
+      "model": "bytedance/seedance-2.5",
+      "options": {
+        "prompt": "The exact established desktop kitten from the two supplied reference frames. First frame: planted four-legged side view facing RIGHT, matching the end of an existing gallop; last frame: the exact front-facing seated master. Preserve identical face, ears, iris colors, fur markings, head/body proportions, soft illustrated3D fur, animal size and painted floor height throughout. Locked orthographic camera and constant canvas scale; saturated uniform #00FF00 background, no cast shadows, text, props, cuts, zoom or reframing. All body parts remain connected, no extra paws, changing coat or enlarged head. The complete action starts immediately from the side stance; NEVER insert a front-facing sitting pose before the stopping movement. A realistic athletic BRAKING STOP from a rightward gallop: immediately take one short forward running footfall, lower the shoulders, plant both front paws ahead and let the hips briefly continue forward, flex elbows and hind legs to absorb momentum, then plant the hind paws and settle on all four feet by1.2seconds. No sliding or falling for this take. Only after the brake has completed, calmly turn toward the camera and sit into the exact final reference by3.3seconds. End with a calm seated hold in the final reference for at least0.5seconds. Four seconds total. Keep the overall physical root near the original center and floor plane fixed; the app supplies horizontal world travel. Show momentum through coherent paw contact, shoulders, hips and spine, with smooth acceleration and recovery, no sudden root or pose jumps.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/34ce4a4d60864b75b828d732f26b21dc/tuxedo-planted-side-v35.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/83c1feedbe4d49e7928fcd973495a776/tuxedo-front-identity-v29.png",
+        "duration": 4,
+        "resolution": "720p",
+        "aspect_ratio": "1:1",
+        "generate_audio": false,
+        "generation_mode": "frame",
+        "prompt_enhance": false
+      }
+    },
+    "result": {
+      "job_id": "mcp_4ac801d745424c03adc51f7151001901",
+      "creditCost": 460,
+      "reused": false
+    },
+    "generation": {
+      "jobId": "mcp_4ac801d745424c03adc51f7151001901",
+      "status": "succeeded",
+      "modelName": "bytedance/seedance-2.5",
+      "createdAt": "2026-11-13T12:27:58.032Z",
+      "completedAt": null,
+      "outputList": [
+        {
+          "imageUrl": null,
+          "videoUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_4ac801d745424c03adc51f7151001901/output/output_0.mp4",
+          "posterUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_4ac801d745424c03adc51f7151001901/output/output_0_poster.jpg",
+          "text": null
+        }
+      ]
+    },
+    "source_path": "sources/continuity-v37/tuxedo-brake.mp4",
+    "sha256": "841685c90883752daf8cc84758a3b2502e51072d7131a7a6a98731c4804e1917",
+    "frame_count": 97,
+    "fps": 24.0
+  },
+  {
+    "character": "cream",
+    "action": "slide",
+    "args": {
+      "client_token": "yeopjari-v37-connected-slide-cream-20261113-1",
+      "model": "bytedance/seedance-2.5",
+      "options": {
+        "prompt": "The exact established desktop kitten from the two supplied reference frames. First frame: planted four-legged side view facing RIGHT, matching the end of an existing gallop; last frame: the exact front-facing seated master. Preserve identical face, ears, iris colors, fur markings, head/body proportions, soft illustrated3D fur, animal size and painted floor height throughout. Locked orthographic camera and constant canvas scale; saturated uniform #00FF00 background, no cast shadows, text, props, cuts, zoom or reframing. All body parts remain connected, no extra paws, changing coat or enlarged head. The complete action starts immediately from the side stance; NEVER insert a front-facing sitting pose before the stopping movement. A playful low-friction SKIDDING STOP from a rightward run: immediately plant the front paws ahead, spread the hind paws and lower the body, slide softly forward while leaning slightly back and flexing the elbows, then regain stable four-paw contact by1.8seconds. Convey the skid through the paw angles, shifting body weight and flexible back while keeping the center near its original position. Do not fall or roll. After regaining balance, turn toward the camera and sit into the exact final reference by3.3seconds. End with a calm seated hold in the final reference for at least0.5seconds. Four seconds total. Keep the overall physical root near the original center and floor plane fixed; the app supplies horizontal world travel. Show momentum through coherent paw contact, shoulders, hips and spine, with smooth acceleration and recovery, no sudden root or pose jumps.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/a51a2fd8db74428193c60b6470818c44/cream-planted-side-v35.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f91aa82183e14b82a31e69c0185697b5/cream-front-identity-v29.png",
+        "duration": 4,
+        "resolution": "720p",
+        "aspect_ratio": "1:1",
+        "generate_audio": false,
+        "generation_mode": "frame",
+        "prompt_enhance": false
+      }
+    },
+    "result": {
+      "job_id": "mcp_a404ebabbeaf40ab9d500c6955f607f0",
+      "creditCost": 460,
+      "reused": false
+    },
+    "generation": {
+      "jobId": "mcp_a404ebabbeaf40ab9d500c6955f607f0",
+      "status": "succeeded",
+      "modelName": "bytedance/seedance-2.5",
+      "createdAt": "2026-11-13T12:27:59.122Z",
+      "completedAt": null,
+      "outputList": [
+        {
+          "imageUrl": null,
+          "videoUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_a404ebabbeaf40ab9d500c6955f607f0/output/output_0.mp4",
+          "posterUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_a404ebabbeaf40ab9d500c6955f607f0/output/output_0_poster.jpg",
+          "text": null
+        }
+      ]
+    },
+    "source_path": "sources/continuity-v37/cream-slide.mp4",
+    "sha256": "a0bb30d682b2a92afed6f4456f5d175843664714e53236ef16750ee85d7b62d7",
+    "frame_count": 97,
+    "fps": 24.0
+  },
+  {
+    "character": "tuxedo",
+    "action": "slide",
+    "args": {
+      "client_token": "yeopjari-v37-connected-slide-tuxedo-20261113-1",
+      "model": "bytedance/seedance-2.5",
+      "options": {
+        "prompt": "The exact established desktop kitten from the two supplied reference frames. First frame: planted four-legged side view facing RIGHT, matching the end of an existing gallop; last frame: the exact front-facing seated master. Preserve identical face, ears, iris colors, fur markings, head/body proportions, soft illustrated3D fur, animal size and painted floor height throughout. Locked orthographic camera and constant canvas scale; saturated uniform #00FF00 background, no cast shadows, text, props, cuts, zoom or reframing. All body parts remain connected, no extra paws, changing coat or enlarged head. The complete action starts immediately from the side stance; NEVER insert a front-facing sitting pose before the stopping movement. A playful low-friction SKIDDING STOP from a rightward run: immediately plant the front paws ahead, spread the hind paws and lower the body, slide softly forward while leaning slightly back and flexing the elbows, then regain stable four-paw contact by1.8seconds. Convey the skid through the paw angles, shifting body weight and flexible back while keeping the center near its original position. Do not fall or roll. After regaining balance, turn toward the camera and sit into the exact final reference by3.3seconds. End with a calm seated hold in the final reference for at least0.5seconds. Four seconds total. Keep the overall physical root near the original center and floor plane fixed; the app supplies horizontal world travel. Show momentum through coherent paw contact, shoulders, hips and spine, with smooth acceleration and recovery, no sudden root or pose jumps.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/34ce4a4d60864b75b828d732f26b21dc/tuxedo-planted-side-v35.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/83c1feedbe4d49e7928fcd973495a776/tuxedo-front-identity-v29.png",
+        "duration": 4,
+        "resolution": "720p",
+        "aspect_ratio": "1:1",
+        "generate_audio": false,
+        "generation_mode": "frame",
+        "prompt_enhance": false
+      }
+    },
+    "result": {
+      "job_id": "mcp_ad60aa442f4241c19d4da96c79e75e92",
+      "creditCost": 460,
+      "reused": false
+    },
+    "generation": {
+      "jobId": "mcp_ad60aa442f4241c19d4da96c79e75e92",
+      "status": "succeeded",
+      "modelName": "bytedance/seedance-2.5",
+      "createdAt": "2026-11-13T12:28:00.652Z",
+      "completedAt": null,
+      "outputList": [
+        {
+          "imageUrl": null,
+          "videoUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_ad60aa442f4241c19d4da96c79e75e92/output/output_0.mp4",
+          "posterUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_ad60aa442f4241c19d4da96c79e75e92/output/output_0_poster.jpg",
+          "text": null
+        }
+      ]
+    },
+    "source_path": "sources/continuity-v37/tuxedo-slide.mp4",
+    "sha256": "3f8ec6cc542436b63753ceb69aff765830eb13d7be9593107f6277c8330ab405",
+    "frame_count": 97,
+    "fps": 24.0
+  },
+  {
+    "character": "cream",
+    "action": "stumble",
+    "args": {
+      "client_token": "yeopjari-v37-connected-stumble-cream-20261113-1",
+      "model": "bytedance/seedance-2.5",
+      "options": {
+        "prompt": "The exact established desktop kitten from the two supplied reference frames. First frame: planted four-legged side view facing RIGHT, matching the end of an existing gallop; last frame: the exact front-facing seated master. Preserve identical face, ears, iris colors, fur markings, head/body proportions, soft illustrated3D fur, animal size and painted floor height throughout. Locked orthographic camera and constant canvas scale; saturated uniform #00FF00 background, no cast shadows, text, props, cuts, zoom or reframing. All body parts remain connected, no extra paws, changing coat or enlarged head. The complete action starts immediately from the side stance; NEVER insert a front-facing sitting pose before the stopping movement. A cute mild STUMBLE while stopping a rightward run: immediately take one short forward running footfall, catch a front paw, lower the chest and gently tumble onto one supported shoulder, briefly roll through the side with the head and torso connected, then place the front paws and push back upright by2.6seconds. Keep this a soft playful trip, no hard impact or somersault through the air. Face the camera and sit into the exact final reference by3.4seconds. End with a calm seated hold in the final reference for at least0.5seconds. Four seconds total. Keep the overall physical root near the original center and floor plane fixed; the app supplies horizontal world travel. Show momentum through coherent paw contact, shoulders, hips and spine, with smooth acceleration and recovery, no sudden root or pose jumps.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/a51a2fd8db74428193c60b6470818c44/cream-planted-side-v35.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f91aa82183e14b82a31e69c0185697b5/cream-front-identity-v29.png",
+        "duration": 4,
+        "resolution": "720p",
+        "aspect_ratio": "1:1",
+        "generate_audio": false,
+        "generation_mode": "frame",
+        "prompt_enhance": false
+      }
+    },
+    "result": {
+      "job_id": "mcp_7afcfcbba40f4e0889d12a72335e5a24",
+      "creditCost": 460,
+      "reused": false
+    },
+    "generation": {
+      "jobId": "mcp_7afcfcbba40f4e0889d12a72335e5a24",
+      "status": "succeeded",
+      "modelName": "bytedance/seedance-2.5",
+      "createdAt": "2026-11-13T12:28:01.824Z",
+      "completedAt": null,
+      "outputList": [
+        {
+          "imageUrl": null,
+          "videoUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_7afcfcbba40f4e0889d12a72335e5a24/output/output_0.mp4",
+          "posterUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_7afcfcbba40f4e0889d12a72335e5a24/output/output_0_poster.jpg",
+          "text": null
+        }
+      ]
+    },
+    "source_path": "sources/continuity-v37/cream-stumble.mp4",
+    "sha256": "2b21480214dfc34e0746a42c92a9bba2eceee33ab1f4fc8bd3359b1c484a7d5f",
+    "frame_count": 97,
+    "fps": 24.0
+  },
+  {
+    "character": "tuxedo",
+    "action": "stumble",
+    "args": {
+      "client_token": "yeopjari-v37-connected-stumble-tuxedo-20261113-1",
+      "model": "bytedance/seedance-2.5",
+      "options": {
+        "prompt": "The exact established desktop kitten from the two supplied reference frames. First frame: planted four-legged side view facing RIGHT, matching the end of an existing gallop; last frame: the exact front-facing seated master. Preserve identical face, ears, iris colors, fur markings, head/body proportions, soft illustrated3D fur, animal size and painted floor height throughout. Locked orthographic camera and constant canvas scale; saturated uniform #00FF00 background, no cast shadows, text, props, cuts, zoom or reframing. All body parts remain connected, no extra paws, changing coat or enlarged head. The complete action starts immediately from the side stance; NEVER insert a front-facing sitting pose before the stopping movement. A cute mild STUMBLE while stopping a rightward run: immediately take one short forward running footfall, catch a front paw, lower the chest and gently tumble onto one supported shoulder, briefly roll through the side with the head and torso connected, then place the front paws and push back upright by2.6seconds. Keep this a soft playful trip, no hard impact or somersault through the air. Face the camera and sit into the exact final reference by3.4seconds. End with a calm seated hold in the final reference for at least0.5seconds. Four seconds total. Keep the overall physical root near the original center and floor plane fixed; the app supplies horizontal world travel. Show momentum through coherent paw contact, shoulders, hips and spine, with smooth acceleration and recovery, no sudden root or pose jumps.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/34ce4a4d60864b75b828d732f26b21dc/tuxedo-planted-side-v35.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/83c1feedbe4d49e7928fcd973495a776/tuxedo-front-identity-v29.png",
+        "duration": 4,
+        "resolution": "720p",
+        "aspect_ratio": "1:1",
+        "generate_audio": false,
+        "generation_mode": "frame",
+        "prompt_enhance": false
+      }
+    },
+    "result": {
+      "job_id": "mcp_f095b747c8d346b0855a80a3190b3294",
+      "creditCost": 460,
+      "reused": false
+    },
+    "generation": {
+      "jobId": "mcp_f095b747c8d346b0855a80a3190b3294",
+      "status": "succeeded",
+      "modelName": "bytedance/seedance-2.5",
+      "createdAt": "2026-11-13T12:28:03.577Z",
+      "completedAt": null,
+      "outputList": [
+        {
+          "imageUrl": null,
+          "videoUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_f095b747c8d346b0855a80a3190b3294/output/output_0.mp4",
+          "posterUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_f095b747c8d346b0855a80a3190b3294/output/output_0_poster.jpg",
+          "text": null
+        }
+      ]
+    },
+    "source_path": "sources/continuity-v37/tuxedo-stumble.mp4",
+    "sha256": "78a2687105d9edbbda0f4e27ff7f58a81e29c6c39ea5fe4def4a40f4aba8050f",
+    "frame_count": 97,
+    "fps": 24.0
+  }
+]

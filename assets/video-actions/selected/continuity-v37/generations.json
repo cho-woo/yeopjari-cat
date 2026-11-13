@@ -1,0 +1,86 @@
+[
+  {
+    "character": "cream",
+    "args": {
+      "client_token": "yeopjari-v37-grounded-pose-boundary-cream-20261113-1",
+      "model": "bytedance/seedance-2.5",
+      "options": {
+        "prompt": "The exact established desktop kitten from the identical supplied start and end artwork. Preserve every facial proportion, ear, iris color, fur marking, body size, floor height and canvas scale. Locked camera, solid uniform #00ff00 chroma green, no shadows, props, text, cuts, zoom or translation. One continuous realistic supported resting movement: start seated looking forward with all four paws on the same floor. In the first second gently lower the chest and shoulders into a relaxed low crouch while keeping the hindquarters and feet supported; turn the head a little to the right, with a subtle natural shoulder weight transfer. From 1.0 to 1.6 seconds rise smoothly back into the exact front-facing seated reference. Make a small, calm settling movement and slow blink in the second half, finishing in the exact last frame. The body, head and paws must move together as a connected animal. No floating or sliding feet, abrupt changes of body height, pose holds with a raised paw, no extra limbs, no rapid swats. Keep the neutral transition short and smoothly ease velocity into and out of the supported resting posture, with most settling completed in about 0.22 to 0.30 seconds. This is a ground-contact and whole-body recovery reference for joining already-existing actions.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f91aa82183e14b82a31e69c0185697b5/cream-front-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f91aa82183e14b82a31e69c0185697b5/cream-front-identity-v29.png",
+        "duration": 4,
+        "resolution": "720p",
+        "aspect_ratio": "1:1",
+        "generate_audio": false,
+        "generation_mode": "frame",
+        "prompt_enhance": false
+      }
+    },
+    "result": {
+      "job_id": "mcp_4451e551c1034aac85754b2f1c006f99",
+      "creditCost": 460,
+      "reused": false
+    },
+    "generation": {
+      "jobId": "mcp_4451e551c1034aac85754b2f1c006f99",
+      "status": "succeeded",
+      "modelName": "bytedance/seedance-2.5",
+      "createdAt": "2026-11-13T11:41:28.013Z",
+      "completedAt": null,
+      "outputList": [
+        {
+          "imageUrl": null,
+          "videoUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_4451e551c1034aac85754b2f1c006f99/output/output_0.mp4",
+          "posterUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_4451e551c1034aac85754b2f1c006f99/output/output_0_poster.jpg",
+          "text": null
+        }
+      ]
+    },
+    "source_path": "assets/video-actions/sources/continuity-v37/cream-grounded-settle.mp4",
+    "sha256": "8addbf8d4acc76977d7045d6a1a79a4f10e8333189c1351c2f5d5ef606138601",
+    "frame_count": 97,
+    "fps": 24.0
+  },
+  {
+    "character": "tuxedo",
+    "args": {
+      "client_token": "yeopjari-v37-grounded-pose-boundary-tuxedo-20261113-1",
+      "model": "bytedance/seedance-2.5",
+      "options": {
+        "prompt": "The exact established desktop kitten from the identical supplied start and end artwork. Preserve every facial proportion, ear, iris color, fur marking, body size, floor height and canvas scale. Locked camera, solid uniform #00ff00 chroma green, no shadows, props, text, cuts, zoom or translation. One continuous realistic supported resting movement: start seated looking forward with all four paws on the same floor. In the first second gently lower the chest and shoulders into a relaxed low crouch while keeping the hindquarters and feet supported; turn the head a little to the right, with a subtle natural shoulder weight transfer. From 1.0 to 1.6 seconds rise smoothly back into the exact front-facing seated reference. Make a small, calm settling movement and slow blink in the second half, finishing in the exact last frame. The body, head and paws must move together as a connected animal. No floating or sliding feet, abrupt changes of body height, pose holds with a raised paw, no extra limbs, no rapid swats. Keep the neutral transition short and smoothly ease velocity into and out of the supported resting posture, with most settling completed in about 0.22 to 0.30 seconds. This is a ground-contact and whole-body recovery reference for joining already-existing actions.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/83c1feedbe4d49e7928fcd973495a776/tuxedo-front-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/83c1feedbe4d49e7928fcd973495a776/tuxedo-front-identity-v29.png",
+        "duration": 4,
+        "resolution": "720p",
+        "aspect_ratio": "1:1",
+        "generate_audio": false,
+        "generation_mode": "frame",
+        "prompt_enhance": false
+      }
+    },
+    "result": {
+      "job_id": "mcp_2bf777666b76486881915aab8035304a",
+      "creditCost": 460,
+      "reused": false
+    },
+    "generation": {
+      "jobId": "mcp_2bf777666b76486881915aab8035304a",
+      "status": "succeeded",
+      "modelName": "bytedance/seedance-2.5",
+      "createdAt": "2026-11-13T11:41:29.118Z",
+      "completedAt": null,
+      "outputList": [
+        {
+          "imageUrl": null,
+          "videoUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_2bf777666b76486881915aab8035304a/output/output_0.mp4",
+          "posterUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_2bf777666b76486881915aab8035304a/output/output_0_poster.jpg",
+          "text": null
+        }
+      ]
+    },
+    "source_path": "assets/video-actions/sources/continuity-v37/tuxedo-grounded-settle.mp4",
+    "sha256": "316d0717eacf46e5804b12b1a7386a586636a6811e5cd4ec691fc9e1a3b0be62",
+    "frame_count": 97,
+    "fps": 24.0
+  }
+]

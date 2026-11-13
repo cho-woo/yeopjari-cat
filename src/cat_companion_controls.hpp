@@ -95,6 +95,7 @@ bool Perform(cat::sprite_sequence::Clip clip,std::uint64_t ticks) {
         // Repeating an explicit gesture is still a new complete movie.
         motionStart_=ticks;++motionSerial_;nextDecision_=ticks+duration;
         actionClip_=clip;
+        if(clip==C::Brake||clip==C::Slide||clip==C::Stumble)PrepareGroundArt(ticks);
         if(clip==C::BallPlay) {
             const auto body=cat::appearance::VisualModifiers(state_->nutrition,state_->preferences.character);
             const double growth=cat::GrowthScale(state_->pet.bornUtc,state_->pet.updatedUtc);
@@ -178,6 +179,7 @@ void UpdateControls(const Context& c,std::uint64_t elapsed) {
     }
     if(actionClip_!=C::None&&!waitingForStop_&&c.ticks>=nextDecision_) {
         const bool waking=actionClip_==C::Sleep;
+        if(actionClip_==C::Brake||actionClip_==C::Slide||actionClip_==C::Stumble)groundArtBridge_.Reset(c.ticks);
         if(actionClip_==C::Climb)physics_.EndWallClimb();
         actionClip_=C::None;
         if(waking&&physics_.CurrentPose().grounded)SetMotion(M::Stretch,c.ticks,3200,0);

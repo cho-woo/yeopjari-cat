@@ -13,7 +13,9 @@ constexpr unsigned kCharacters=11;
 constexpr unsigned AuthoredCharacter(unsigned character) { return (character==8||character==10)?0:character; }
 constexpr unsigned kMaxSide=16384;
 constexpr std::uint64_t kMaxImagePixels=32ull*1024*1024;
-constexpr std::uint64_t kMaxResidentPixels=64ull*1024*1024;
+// The full source/recovery library for two resident coats needs ~267 MiB.
+// Keep a bounded combined cache, independently of the 32 MiB per-image cap.
+constexpr std::uint64_t kMaxResidentPixels=80ull*1024*1024;
 constexpr std::uint64_t kMaxImageBytes=32ull*1024*1024;
 struct Rect { int x=0,y=0,width=0,height=0; };
 // Anchors are local to the frame rectangle, in unscaled source pixels.
@@ -50,7 +52,9 @@ constexpr int ResourceId(cat::sprite_sequence::Clip clip,unsigned character) {
     if(clip==cat::sprite_sequence::Clip::Run)return 401+static_cast<int>(character*2);
     if(clip==cat::sprite_sequence::Clip::Knead)return 440+static_cast<int>(character*2);
     if(clip==cat::sprite_sequence::Clip::Reach)return 441+static_cast<int>(character*2);
-    if(clip>=cat::sprite_sequence::Clip::BallPlay&&clip<=cat::sprite_sequence::Clip::CursorPounce)
+    if(clip==cat::sprite_sequence::Clip::TailChase)return 450+static_cast<int>(character*2);
+    if(clip==cat::sprite_sequence::Clip::Roll)return 451+static_cast<int>(character*2);
+    if(clip>=cat::sprite_sequence::Clip::BallPlay&&clip<=cat::sprite_sequence::Clip::Settle)
         return 430+static_cast<int>(character*32+static_cast<unsigned>(clip)-static_cast<unsigned>(cat::sprite_sequence::Clip::BallPlay));
     return 0;
 }

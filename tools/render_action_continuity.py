@@ -48,8 +48,9 @@ int main() {
         if(landing.spriteClip!=Clip::Jump) return 2;
         std::cout<<tick<<",6,"<<ms<<','<<SampleProgram(Clip::Jump,jump->program,0,landing.spriteOptions).frame<<'\n';
         const auto play=cat::animation::Evaluate(cat::animation::Motion::ToyPaw,ms,ms,1);
-        if(play.spriteClip!=Clip::Punch || play.spriteTimed) return 3;
-        std::cout<<tick<<",4,"<<ms<<','<<play.spriteFrame<<'\n';
+        if(play.spriteClip!=Clip::Punch || !play.spriteTimed) return 3;
+        const auto* punch=cat::sprite_assets::Find(Clip::Punch,0,cat::sprite_assets::kCareSprites);
+        std::cout<<tick<<",4,"<<ms<<','<<SampleProgram(Clip::Punch,punch->program,ms).frame<<'\n';
     }
 }
 ''')
