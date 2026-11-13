@@ -6317,6 +6317,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
     if(commandLine && wcsstr(commandLine,L"--render-motion-video"))return NativeVideoMotionCapture(instance);
     if(commandLine && wcsstr(commandLine,L"--render-idle-video"))return NativeCuteIdleCapture(instance);
     if(commandLine && wcsstr(commandLine,L"--render-moving-jump-video"))return NativeMovingJumpCapture(instance);
+    if(commandLine && wcsstr(commandLine,L"--companion-keyboard-self-test"))return NativeManualMotionTest(instance,true);
     if(commandLine && wcsstr(commandLine,L"--render-controls-video"))return NativeControlsCapture(instance);
     if(commandLine && wcsstr(commandLine,L"--render-companion-controls"))return NativeControlsCapture(instance,true);
     if(commandLine && wcsstr(commandLine,L"--render-cursor-play-video")) {

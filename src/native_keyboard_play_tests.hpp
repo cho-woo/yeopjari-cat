@@ -169,11 +169,14 @@ int Continuity() {
 }
 
 int CompanionTarget() {
+    CreateDirectoryW(L"render-self-test",nullptr);
+    const auto savedOutcome=g.companionStore.outcome;
     Host host;
     for(const auto coat:cat::kAvailableCharacters) {
         Clear();host.Reset(cat::Character::Cream,false);
         if(!EnsureCareCoats(cat::Character::Cream,coat))return 794;
         auto& state=g.companionStore.state;state=cat::companion::NewState(g.pet.bornUtc);
+        g.companionStore.outcome=cat::companion::Outcome::Adopted;
         state.enabled=true;state.preferences.character=coat;state.pet.position=.3;
         g.companionModel.Bind(state);g.companionModel.Reset(0,3300,700);
         keyboardPlay.fixture=true;keyboardPlay.companion=true;
@@ -186,12 +189,19 @@ int CompanionTarget() {
             cat::companion::Context c;c.nowUtc=UtcNow();c.ticks=host.now;c.elapsedSeconds=.016;c.primaryVisible=false;
             g.companionModel.Tick(c);const auto view=g.companionModel.View(host.now);
             turns+=view.animation.spriteClip==cat::sprite_sequence::Clip::RunningTurn;airborne=airborne||!view.physical.grounded;
-            if(std::abs(g.physics.CurrentPose().x-primaryX)>.05||EnvironmentBusy()||!keyboardPlay.input.Active())return 795;
+            if(std::abs(g.physics.CurrentPose().x-primaryX)>.05||EnvironmentBusy()||!keyboardPlay.input.Active()) {
+                WriteBytes(L"render-self-test/companion-keyboard-failure.txt","coat="+std::to_string(static_cast<unsigned>(coat))+
+                    " frame="+std::to_string(frame)+" primaryDelta="+std::to_string(g.physics.CurrentPose().x-primaryX)+
+                    " env="+std::to_string(EnvironmentBusy())+" active="+std::to_string(keyboardPlay.input.Active())+
+                    " target="+std::to_string(keyboardPlay.companion)+" serial="+std::to_string(g.motionSerial)+
+                    " owner="+std::to_string(keyboardPlay.serial));return 795;
+            }
         }
         if(!airborne||turns<40)return 796;
         Key(VK_ESCAPE);if(KeyboardPlayActive()||keyboardPlay.hook||keyboardPlay.companion)return 797;
         Clear();state.enabled=false;
     }
+    g.companionStore.outcome=savedOutcome;
     WriteBytes(L"render-self-test/companion-keyboard-report.json","{\"passed\":true,\"coats\":[0,8,10],\"primary_stationary\":true,\"companion_real_jump_and_turn\":true,\"escape_released_owner\":true,\"os_input_injected\":false}");
     return 0;
 }

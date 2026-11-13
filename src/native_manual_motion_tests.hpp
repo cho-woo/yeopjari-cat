@@ -281,12 +281,12 @@ int Run(std::string& proof) {
 }
 } // namespace native_manual_motion_tests
 
-int NativeManualMotionTest(HINSTANCE instance) {
+int NativeManualMotionTest(HINSTANCE instance,bool companionKeyboardOnly=false) {
     g.instance = instance;
     ULONG_PTR token = 0; GdiplusStartupInput startup;
     if (GdiplusStartup(&token,&startup,nullptr) != Ok) return 519;
     std::string proof;
-    const int result = LoadAtlas() ? native_manual_motion_tests::Run(proof) : 520;
+    const int result = LoadAtlas() ? companionKeyboardOnly?native_manual_motion_tests::keyboard_native::CompanionTarget():native_manual_motion_tests::Run(proof) : 520;
     if (result) proof = "{\"schema\":1,\"test\":\"manual-motion-native\",\"status\":\"failed\",\"exit_code\":" + std::to_string(result) + "}\n";
     const bool written = WriteBytes(L"manual-motion-self-test.json",proof);
     ReleaseAtlases(); GdiplusShutdown(token);
