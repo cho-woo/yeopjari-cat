@@ -92,6 +92,16 @@ void FeedCompanion(bool treat) {
     FeedCompanionFood(treat ? cat::feeding::FoodKind::Treat : cat::feeding::FoodKind::Meal);
 }
 void ToggleCompanion();
+bool RequestCompanionPlay(ULONGLONG ticks) {
+    auto context=CompanionContext(ticks,0);
+    // The right-click callback is still marked Interacting while dispatching
+    // its chosen command. The closed menu's own dispatch is not a pause.
+    context.paused=g.hidden||g.menuOpen||g.dragging||g.companionWindow.Dragging()||g.closing||updates.applying;
+    if((g.motion==Motion::Idle||g.motion==Motion::Watch||g.motion==Motion::Walk)&&
+            !EnvironmentBusy()&&!g.manualMotionActive&&!g.waitingForStop&&!g.toyEngaged&&!g.approachingToy&&g.pendingCare<0)
+        context.primaryBusy=false;
+    return g.companionModel.TrySocial(cat::companion::Interaction::Paw,context);
+}
 void ShowCompanionMenu(POINT point) {
     if (g.menuOpen || g.closing || updates.applying || !g.companionStore.available()) return;
     HMENU menu = CreatePopupMenu();
@@ -134,13 +144,7 @@ void ShowCompanionMenu(POINT point) {
     else if (command == kCompanionFish) FeedCompanionFood(cat::feeding::FoodKind::Fish);
     else if (command == kCompanionStatus) ShowCompanionStatus();
     else if (command == kCompanionToggle) ToggleCompanion();
-    else if(command==kCompanionPlay) {
-        auto context=CompanionContext(GetTickCount64(),0);
-        if((g.motion==Motion::Idle||g.motion==Motion::Watch||g.motion==Motion::Walk)&&
-                !EnvironmentBusy()&&!g.manualMotionActive&&!g.waitingForStop&&!g.toyEngaged&&!g.approachingToy&&g.pendingCare<0)
-            context.primaryBusy=false;
-        g.companionModel.TrySocial(cat::companion::Interaction::Paw,context);
-    }
+    else if(command==kCompanionPlay)RequestCompanionPlay(GetTickCount64());
     else if(command==kCompanionKeyboard)ToggleKeyboardPlay(true);
     else if(command>=kCompanionActionFirst&&command<kCompanionActionFirst+22)
         g.companionModel.Perform(static_cast<cat::sprite_sequence::Clip>(command-kCompanionActionFirst),GetTickCount64());

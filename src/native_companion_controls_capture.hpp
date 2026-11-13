@@ -16,7 +16,7 @@ int CompanionReview(std::string& context) {
         state.pet.position=(g.physics.CurrentPose().x-82)/1200.;state.nutrition.bodyCondition=50;
         g.companionModel.Bind(state);g.companionModel.Reset(0,1200,700);
         cat::companion::Context c;c.ticks=host.now;c.nowUtc=UtcNow();c.primary=g.physics.CurrentPose();c.elapsedSeconds=1./60;
-        if(!g.companionModel.TrySocial(cat::companion::Interaction::Paw,c))return 821;
+        if(!RequestCompanionPlay(host.now))return 821;
         pair.actors[0].character=first;pair.actors[1].character=second;
         pair.actors[0].body=cat::appearance::VisualModifiers(g.nutrition,first);
         pair.actors[1].body=cat::appearance::VisualModifiers(state.nutrition,second);
