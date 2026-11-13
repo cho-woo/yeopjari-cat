@@ -358,5 +358,5 @@
   ],
   "tool_sha256": "38aff80a6a8fe818168305d47c6f697ab0d9af7892119f3e5ab903e5c41c86c4",
   "additional_authoring_tool": "tools/pack_video_actions.py",
-  "additional_authoring_tool_sha256": "de86503bba3198abcd5e0ca9856d918477832783df6b3191e484000693f2872d"
+  "additional_authoring_tool_sha256": "95ebdf6699bd36c152e76ffd67a40f802e88da04aeff83ee653cbd1fa1453280"
 }

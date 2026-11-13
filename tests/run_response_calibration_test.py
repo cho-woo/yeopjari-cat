@@ -21,8 +21,12 @@ class RunResponseCalibrationTest(unittest.TestCase):
             steps=[b-a for a,b in zip(knots,knots[1:])]
             ordinary=steps[8:98]
             self.assertLess(max(ordinary)-min(ordinary),1e-12)
-            self.assertLess(min(steps),min(ordinary)*.5)
-            self.assertGreaterEqual(min(steps),max(ordinary)*.099)
+            self.assertLess(min(steps),min(ordinary)*.75)
+            self.assertGreaterEqual(min(steps),max(ordinary)*.499)
+            # Even at the maximum110% normal run pace, every drawing has
+            # more than one60Hz display interval. Shortening an ending must
+            # not silently drop a registered pose in the full native review.
+            self.assertGreater(min(steps)*106/24/1.1,1/60)
             self.assertEqual(identity['source_indices'][coat][:106],list(range(106)))
             for part in ('intro','outro'):
                 section=run['sequence'][part]

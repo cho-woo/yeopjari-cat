@@ -68,7 +68,7 @@ def main(jobs_path):
         threshold=float(np.median(changes)*.4)
         weights=np.ones(count)
         for i in list(range(8))+list(range(count-8,count)):
-            weights[i]=max(.1,min(1.,changes[i]/threshold))
+            weights[i]=max(.5,min(1.,changes[i]/threshold))
         knots=np.concatenate(([0.],np.cumsum(weights)/weights.sum()));knots[-1]=1
         config['distance_knots'][coat]=knots.tolist()
         factor=96/(367*.75)

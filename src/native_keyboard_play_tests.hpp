@@ -264,7 +264,7 @@ int Run() {
             const unsigned source=SpriteFrameFor(pose,*runArt->layout);
             if(source!=previousSource){previousSource=source;heldAt=host.now;}
             const auto& knots=character==cat::Character::Tuxedo?cat::video_actions::kTuxedoRunDistance:cat::video_actions::kCreamRunDistance;
-            if(source+1<knots.size()&&(knots[source+1]-knots[source])*(knots.size()-1)<.5)
+            if(source+1<knots.size()&&(knots[source+1]-knots[source])*(knots.size()-1)<.75)
                 maxCompressedHoldMs=std::max(maxCompressedHoldMs,static_cast<unsigned>(host.now-heldAt));
         }
         const double run=WalkingVelocity(g.physics.CurrentPose());

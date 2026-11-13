@@ -456,16 +456,16 @@ def bake(clip, character, indices):
             'edited_source_ranges':[[0,191]],'attack_exposure_ms':'original_24_fps'} if clip=='fly' else {})}
 
 
-def main(only=None,materials_only=False):
+def main(only=None,materials_only=False,metadata_only=False):
     for reference in IDENTITY.get('master_sources',[]):
         if sha(ROOT/reference['path'])!=reference['sha256']:raise ValueError('Master character design changed')
     for reference in IDENTITY.get('references',[]):
         if sha(DIRECTORY/reference['path'])!=reference['sha256']:raise ValueError('Canonical identity reference changed')
-    selected={clip:resource for clip,resource in RESOURCE.items() if not only or clip in only}
+    selected={} if metadata_only else {clip:resource for clip,resource in RESOURCE.items() if not only or clip in only}
     old_entries={entry['clip']:entry for entry in json.loads((DIRECTORY/'manifest.json').read_text(encoding='utf-8'))['clips']}
     entries = [entry for entry in json.loads((DIRECTORY/'manifest.json').read_text(encoding='utf-8'))['clips']
-        if entry['clip'] not in selected] if only else []
-    evidence = json.loads((DIRECTORY/'registration.json').read_text(encoding='utf-8')) if only or materials_only else {}
+        if entry['clip'] not in selected] if only or metadata_only else []
+    evidence = json.loads((DIRECTORY/'registration.json').read_text(encoding='utf-8')) if only or materials_only or metadata_only else {}
     styles_path = ROOT / 'assets/styled-sprites/manifest.json'
     styles = json.loads(styles_path.read_text(encoding='utf-8'))
     replaced = set(selected.values())
@@ -705,8 +705,9 @@ if __name__ == '__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--only',nargs='+',choices=list(RESOURCE))
     parser.add_argument('--materials-only',action='store_true')
+    parser.add_argument('--metadata-only',action='store_true',help='Regenerate contact/distance metadata and provenance without repainting PNGs')
     parser.add_argument('--png-optimizer',type=Path,help='Optional official oxipng executable; preserves exact RGBA8 pixels')
     args=parser.parse_args()
     PNG_OPTIMIZER=args.png_optimizer.resolve() if args.png_optimizer else None
     if PNG_OPTIMIZER and not PNG_OPTIMIZER.is_file():raise ValueError('PNG optimizer does not exist')
-    main(args.only,args.materials_only)
+    main(args.only,args.materials_only,args.metadata_only)

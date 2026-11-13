@@ -154,7 +154,7 @@
     },
     {
       "path": "identity-v29.json",
-      "sha256": "0cf08b5d59098422bb4eb8da3d495d2c27b274e5adc2316b62f9ac12ce633fe9"
+      "sha256": "fc77972a4a43766a52d6f0b983ee88fbf06fdda3f9ca22ace0dea544061bb7c1"
     },
     {
       "path": "motion-timing.json",
@@ -454,7 +454,7 @@
     },
     {
       "path": "selected/run-v36/selection.json",
-      "sha256": "5fd220b10b610813b69ba9c979caac5589ff235313c86e25c53806ac5fb0ac50"
+      "sha256": "8d9491312c58640523b5239566b59c4eb7687487a38c347302c504b7fe1fcad2"
     },
     {
       "path": "selected/run-v36/tuxedo-acceleration-25.png",
