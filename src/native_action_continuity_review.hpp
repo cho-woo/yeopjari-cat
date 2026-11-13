@@ -4,7 +4,7 @@
 // actor is painted by the shipping renderer; the world root is recorded
 // separately so a changed drawing cannot hide a physical teleport.
 namespace native_action_continuity {
-int Run(std::string& context,bool detailed=false) {
+int Run(std::string& context,bool detailed=false,bool stopsOnly=false) {
     CreateDirectoryW(L"render-self-test",nullptr);
     CreateDirectoryW(L"render-self-test/action-continuity",nullptr);
     Surface image,previous;
@@ -15,7 +15,7 @@ int Run(std::string& context,bool detailed=false) {
     trace<<"coat,motion,frame,elapsed_ms,clip,source,legacy,x,lift,vx,vy,alpha_x,alpha_y,alpha_delta,root_step,serial\n";
     report<<"{\"schema\":1,\"version\":\"" YEOPJARI_VERSION_STRING "\",\"fps\":60,\"cases\":[";
     bool comma=false;
-    for(const auto coat:cat::kAvailableCharacters)for(unsigned motion=0;motion<35;++motion) {
+    for(const auto coat:cat::kAvailableCharacters)for(unsigned motion=stopsOnly?32:0;motion<35;++motion) {
         if(detailed&&motion!=static_cast<unsigned>(Motion::BellyRoll))continue;
         native_manual_motion_tests::Host host;host.Reset(coat,true);
         if(!host.artworkReady)return 931;
@@ -91,6 +91,14 @@ int Run(std::string& context,bool detailed=false) {
                 if(!SaveNativeWalkingReview(*image.image,path.c_str()))return 933;
             }
             const double imageStep=had?std::hypot(cx-lastX,cy-lastY):0;
+            if(motion>=32&&index==144&&imageStep>1) {
+                context="stop entry coat="+std::to_string(static_cast<unsigned>(coat))+" motion="+std::to_string(motion)+
+                    " image_step="+std::to_string(imageStep);
+                WriteBytes(L"render-self-test/action-continuity/entry-failure.txt",context);
+                SaveNativeWalkingReview(*previous.image,L"render-self-test/action-continuity/entry-before.png");
+                SaveNativeWalkingReview(*image.image,L"render-self-test/action-continuity/entry-after.png");
+                return 941;
+            }
             const double rootStep=had?std::hypot(physical.x-last.x,physical.lift-last.lift):0;
             if(had&&(std::abs(physical.x-last.x)>std::max(std::abs(physical.velocityX),std::abs(last.velocityX))/60+2||
                      std::abs(physical.lift-last.lift)>std::max(std::abs(physical.velocityY),std::abs(last.velocityY))/60+2))++teleports;
@@ -120,16 +128,16 @@ int Run(std::string& context,bool detailed=false) {
             return 936;
         }
     }
-    report<<"],\"motion_states\":"<<(detailed?1:32)<<",\"extra_stop_variants\":"<<(detailed?0:3)<<",\"coats\":[0,8,10],\"profile_unchanged\":true,\"os_input_injected\":false}";
+    report<<"],\"motion_states\":"<<(detailed?1:stopsOnly?0:32)<<",\"extra_stop_variants\":"<<(detailed?0:3)<<",\"coats\":[0,8,10],\"profile_unchanged\":true,\"os_input_injected\":false}";
     return WriteBytes(L"render-self-test/action-continuity/trace.csv",trace.str())&&
         WriteBytes(L"render-self-test/action-continuity/report.json",report.str())?0:935;
 }
 }
-int NativeActionContinuityReview(HINSTANCE instance,bool detailed=false) {
+int NativeActionContinuityReview(HINSTANCE instance,bool detailed=false,bool stopsOnly=false) {
     g.instance=instance;ULONG_PTR token=0;GdiplusStartupInput startup;
     if(GdiplusStartup(&token,&startup,nullptr)!=Ok)return 930;
     const HRESULT com=CoInitializeEx(nullptr,COINIT_APARTMENTTHREADED);
-    std::string context;int result=LoadAtlas()?native_action_continuity::Run(context,detailed):931;
+    std::string context;int result=LoadAtlas()?native_action_continuity::Run(context,detailed,stopsOnly):931;
     WriteBytes(L"render-self-test/action-continuity-result.txt","exit="+std::to_string(result)+" "+context);
     ReleaseAtlases();ReleaseCarePresentation();g.styleBlendFrom.Reset();g.styleBlendTo.Reset();
     g.surface.Reset();g.blendFrom.Reset();g.blendTo.Reset();g.toySurface.Reset();

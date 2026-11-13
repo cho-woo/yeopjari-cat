@@ -2962,7 +2962,27 @@ void DrawStyledAnimation(Graphics& graphics, cat::animation::Pose pose, REAL cen
         (pose.spriteElapsedMs<=300||pose.spriteElapsedMs+500>=cat::sprite_sequence::ProgramDuration(authored->layout->program));
     const bool eligible=fixed&&(authored?(calm(authored->layout->clip)||groundTurn||jumpBoundary||pawBoundary):pose.frame>=4&&pose.frame<cat::animation::kSpriteCount)&&
         pose.joints.pawReachX==0&&pose.joints.pawReachY==0&&pose.joints.pawAnchorX==0&&!cat::cursor_rig::Active(pose.cursorReach);
-    if(!eligible) {state.Reset();direct(graphics,pose);return;}
+    if(!eligible) {
+        state.Reset();direct(graphics,pose);
+        // Preserve the exact last gallop drawing for a possible stop next
+        // frame. The gait itself is still displayed directly, with no blend.
+        if(authored&&authored->layout->clip==Clip::Run) {
+            const bool sized=state.previous.image&&state.previous.width==canvasWidth&&state.previous.height==canvasHeight&&
+                state.from.image&&state.target.image;
+            if(!sized&&(!state.previous.Create(canvasWidth,canvasHeight)||!state.from.Create(canvasWidth,canvasHeight)||
+                !state.target.Create(canvasWidth,canvasHeight)))return;
+            Graphics history(state.previous.image.get());history.SetCompositingMode(CompositingModeSourceCopy);
+            history.Clear(Color(0,0,0,0));history.SetCompositingMode(CompositingModeSourceOver);
+            history.SetInterpolationMode(graphics.GetInterpolationMode());history.SetSmoothingMode(graphics.GetSmoothingMode());
+            history.SetPixelOffsetMode(graphics.GetPixelOffsetMode());direct(history,pose);history.Flush(FlushIntentionSync);
+            cat::care_presentation::Tag tag;tag.representation=1+static_cast<unsigned>(Clip::Run);
+            tag.identity=static_cast<unsigned>(character);tag.generation=generation;tag.action=pose.presentationSerial;
+            tag.eligible=tag.authored=true;tag.flip=pose.flip;state.transition.Update(tag,ticks,paused);
+            state.lastRepresentation=tag.representation;state.center=center;state.bottom=bottom;state.scale=scale;
+            state.bodyWidth=body.bodyWidth;state.bodyHeight=body.bodyHeight;state.geometry=true;
+        }
+        return;
+    }
     const bool changed=!state.previous.image||!state.from.image||!state.target.image||
         state.previous.width!=canvasWidth||state.previous.height!=canvasHeight;
     if(changed && (!state.previous.Create(canvasWidth,canvasHeight)||!state.from.Create(canvasWidth,canvasHeight)||
@@ -2989,9 +3009,13 @@ void DrawStyledAnimation(Graphics& graphics, cat::animation::Pose pose, REAL cen
     tag.action=pose.presentationSerial;
     tag.identity=static_cast<unsigned>(character);tag.generation=generation;tag.eligible=true;
     tag.authored=authored!=nullptr;tag.flip=pose.flip;tag.neutralBridge=false;
+    const bool fromRun=state.lastRepresentation==1+static_cast<unsigned>(Clip::Run);
+    const bool stopBoundary=authored&&(authored->layout->clip==Clip::Brake||authored->layout->clip==Clip::Slide||
+        authored->layout->clip==Clip::Stumble);
+    if(fromRun&&!stopBoundary)state.transition.Reset();
     const auto plan=state.transition.Update(tag,ticks,paused);
     if(plan.capture)state.targetOnly=jumpBoundary||state.lastRepresentation==1+static_cast<unsigned>(Clip::Jump)||
-        !authored||state.lastRepresentation>=1000;
+        !authored||state.lastRepresentation>=1000||(fromRun&&stopBoundary);
     state.lastRepresentation=tag.representation;
     if(plan.capture)std::memcpy(state.from.pixels,state.previous.pixels,bytes);
     auto drawing=pose;
@@ -6433,6 +6457,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
     if(commandLine && wcsstr(commandLine,L"--life-host-self-test")){g.instance=instance;return NativeLifeHostTest();}
     if(commandLine && wcsstr(commandLine,L"--render-pose-handoffs"))return NativeActionContinuityReview(instance,true);
     if(commandLine && wcsstr(commandLine,L"--render-action-continuity"))return NativeActionContinuityReview(instance);
+    if(commandLine && wcsstr(commandLine,L"--render-stop-continuity"))return NativeActionContinuityReview(instance,false,true);
     if(commandLine && wcsstr(commandLine,L"--render-boundary-review"))return NativeBoundaryReview(instance);
     if(commandLine && wcsstr(commandLine,L"--keyboard-jitter-diagnostic"))return NativeKeyboardJitterDiagnostic(instance);
     if(commandLine && wcsstr(commandLine,L"--cursor-jitter-diagnostic"))return NativeCursorJitterDiagnostic(instance);
