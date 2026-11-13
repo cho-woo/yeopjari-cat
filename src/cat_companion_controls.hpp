@@ -162,9 +162,11 @@ void UpdateControls(const Context& c,std::uint64_t elapsed) {
         if(age>=5000)physics_.EndWallClimb();
     }
     if(actionClip_!=C::None&&!waitingForStop_&&c.ticks>=nextDecision_) {
+        const bool waking=actionClip_==C::Sleep;
         if(actionClip_==C::Climb)physics_.EndWallClimb();
         actionClip_=C::None;
-        if(physics_.CurrentPose().grounded)BeginQuiet(c.ticks);
+        if(waking&&physics_.CurrentPose().grounded)SetMotion(M::Stretch,c.ticks,3200,0);
+        else if(physics_.CurrentPose().grounded)BeginQuiet(c.ticks);
         else {SetMotion(M::Jump,c.ticks,3000,0,true);landedAt_=0;}
     }
     if(!nextFly_)nextFly_=c.ticks+90000;
@@ -185,6 +187,16 @@ void UpdateControls(const Context& c,std::uint64_t elapsed) {
     input.canApproach=!state_->pet.roamingPaused;input.canAttack=!runningTurn_.Active();
     input.grounded=physical.grounded;input.interest=.8;input.roll=.5;
     input.pawDurationMs=input.punchDurationMs=RegisteredDuration(C::Punch,4458);
+    if(const auto* swat=Registered(C::Punch)) {
+        double best=1e9;
+        for(unsigned frame=0;frame<swat->frameCount;++frame) {
+            if(!cat::video_actions::PunchContact(static_cast<unsigned>(state_->preferences.character),frame))continue;
+            const auto paw=cat::video_actions::PunchPaws(static_cast<unsigned>(state_->preferences.character),frame)[0];
+            if(paw.x<16)continue;
+            const double error=std::abs(paw.y*body.bodyHeight-input.cursorHeight/input.sizeScale);
+            if(error<best){best=error;input.pawStandOff=std::clamp(paw.x*body.bodyWidth,12.,80.);}
+        }
+    }
     input.tiptoeDurationMs=input.bothPawsDurationMs=RegisteredDuration(C::Reach,4500);
     input.pouncePreparationMs=CursorPreparationMs();
     input.settleDurationMs=cat::video_actions::ReachSettleDuration(static_cast<unsigned>(state_->preferences.character));

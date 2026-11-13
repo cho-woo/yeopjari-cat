@@ -918,6 +918,13 @@ void CompanionPointerAndAuthoredActions() {
             CHECK(std::abs(view.physical.x-root)<.05);CHECK(view.physical.grounded);
         }
         CHECK(swats>900);CHECK(turns==0);
+        // An independent low pointer crosses the actual source swat arc;
+        // the higher stress pattern above deliberately may miss the paw.
+        for(unsigned frame=0;frame<1250;++frame) {
+            c.ticks+=16;c.cursorX=root+35+8*std::sin(frame*.016*6*cat::animation::kPi);c.cursorWorldHeight=35;
+            model.Tick(c);
+        }
+        CHECK(model.CursorContacts()>0);
         c.cursorX=1250;c.cursorWorldHeight=95;bool chased=false,launched=false;
         for(unsigned frame=0;frame<750;++frame) {
             c.ticks+=16;model.Tick(c);
@@ -970,6 +977,17 @@ void CompanionKeyboardAndNinePairings() {
             climb=std::max(climb,view.physical.lift);film=film||view.animation.spriteClip==C::Climb;
         }
         CHECK(film&&climb>30);CHECK(model.Physical().grounded);
+        CHECK(model.Perform(C::Sleep,c.ticks));bool woke=false;
+        const auto* sleep=cat::sprite_assets::Find(C::Sleep,static_cast<unsigned>(coat),cat::sprite_assets::kCareSprites);
+        const auto sleepDuration=cat::sprite_sequence::ProgramDuration(sleep->program);
+        for(unsigned frame=0;frame<(sleepDuration+6000)/16;++frame) {
+            c.ticks+=16;model.Tick(c);const auto view=model.View(c.ticks);
+            if(view.motion==cat::animation::Motion::Stretch) {
+                CHECK(view.animation.spriteClip==C::Sleep);
+                CHECK(view.animation.spriteOptions.sleep==cat::sprite_sequence::SleepStage::Waking);woke=true;
+            }
+        }
+        CHECK(woke);
     }
     for(const auto first:cat::kAvailableCharacters)for(const auto second:cat::kAvailableCharacters) {
         State a=NewState(born-366*86400),b=a;a.preferences.character=first;b.preferences.character=second;
