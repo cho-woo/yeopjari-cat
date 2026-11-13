@@ -70,7 +70,7 @@ void CorruptionDoesNotChangeAcceptedHistory() {
     }
     CHECK(notice.SetAvailable({1, 7, 0}, "1.9.0"));
     CHECK(notice.Ready(Quiet()));
-    CHECK(std::wstring(cat::update::kCatUpdateMessage) == L"업데이트해줘");
+    CHECK(std::wstring(cat::update::kCatUpdateMessage) == L"업데이트 해줘");
 }
 void PersistentUntilInstalled() {
     cat::update::Announcement notice;

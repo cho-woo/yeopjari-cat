@@ -21,6 +21,7 @@ struct Plan {
 class Transition {
 public:
     static constexpr std::uint64_t DurationMs=220;
+    bool Active(std::uint64_t ticks)const{return active_&&ticks>=started_&&ticks-started_<DurationMs;}
     void Reset() {valid_=active_=waitingExit_=false;clockValid_=false;}
     void Pause(std::uint64_t milliseconds) {
         if(active_)started_=Add(started_,milliseconds);

@@ -74,7 +74,7 @@ int Run(std::string& context) {
             if(sample!=8||host.Saved()!=saved)return 907;
       }
     }
-    report<<"],\"registered_clips\":20,\"motion_states\":32,\"coats\":3,\"profile_unchanged\":true}\n";
+    report<<"],\"registered_clips\":"<<cat::sprite_sequence::kAuthoredClips.size()<<",\"motion_states\":32,\"coats\":3,\"profile_unchanged\":true}\n";
     return WriteBytes(L"render-self-test/source-audit/report.json",report.str())?0:908;
 }
 }

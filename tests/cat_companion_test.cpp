@@ -1015,6 +1015,25 @@ void CompanionKeyboardAndNinePairings() {
         CHECK(!companion.SocialActive());
     }
 }
+void ManualRequestsWaitForTheCompleteWake() {
+    using C=cat::sprite_sequence::Clip;using M=cat::animation::Motion;
+    for(auto coat:cat::kAvailableCharacters) {
+        State state=NewState(born);state.preferences.character=coat;state.pet.roamingPaused=true;
+        Model model;model.Bind(state);model.Reset(0,2400,700);auto c=Frame(100,1600);
+        CHECK(model.Perform(C::Sleep,c.ticks));Step(model,c,300);
+        const auto x=model.Physical().x;
+        CHECK(model.Perform(C::Walk,c.ticks));
+        auto view=model.View(c.ticks);
+        CHECK(view.motion==M::Stretch&&view.animation.spriteClip==C::Sleep&&
+            view.animation.spriteOptions.sleep==cat::sprite_sequence::SleepStage::Waking);
+        unsigned frames=0;
+        while(model.View(c.ticks).motion==M::Stretch&&frames++<400) {
+            CHECK(std::abs(model.Physical().x-x)<.5);Step(model,c,1);
+        }
+        CHECK(model.View(c.ticks).motion==M::Walk);
+        CHECK(state.pet.bornUtc==born&&state.pet.feedCount==0&&state.pet.snackCount==0);
+    }
+}
 int main() {
     try { SeparateAdoptionAndRestart();IndividualStableTemperaments();StrictBundleParsing();RecoveryAndFaults();IndependentCareAndAge();FishCareKeepsTheExistingMealAndBusyContracts();AcceptedFoodRestartsItsClockAfterLongMenuPauses();SocialContactAndCompetition();RealWindowFollowingAndClosure();SpeciesLimitsAndBraking();ManualCareIsNotInterrupted();NaturalTakeoffAndLandingUsePhysicalMotion();SocialGesturesWaitForPlantedFeet();BrakingPreservesTheCompleteMeal();PairedRunningUsesOneSupportAndBodyMultiplier();HighWindowFollowingRespectsTheRealCeiling();
         HighRefreshGaitFollowsRenderedTravel();AuthoredKneadDoesNotLeakLegacyJointsAcrossActions();
@@ -1025,6 +1044,7 @@ int main() {
         AuthoredSleepKeepsItsIdentityIncludingWindowRestAndWake();
         CompanionPointerAndAuthoredActions();
         CompanionKeyboardAndNinePairings();
+        ManualRequestsWaitForTheCompleteWake();
         std::cout<<"companion checks passed: "<<checks<<'\n';return 0;
     } catch(const std::exception& e) { std::cerr<<e.what()<<'\n';return 1; }
 }

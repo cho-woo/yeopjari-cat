@@ -192,6 +192,20 @@ int Run(std::string& proof) {
     }
     // Explicit movement interrupts safe floor stories, including a long held
     // sleep/box pose, without awarding care or modifying any serialized record.
+    for(const auto character:cat::kAvailableCharacters) {
+        host.Reset(character,true);const auto saved=host.Saved();
+        SetMotion(Motion::Sleep,60000,host.now);host.Rebase();
+        for(unsigned frame=0;frame<300;++frame)host.Frame();
+        const auto x=g.physics.CurrentPose().x;
+        host.Command(kManualWalkCommand);
+        if(!g.manualWakePending||g.motion!=Motion::Stretch||!g.wakingFromSleep||!g.manualMotionActive)return 530;
+        unsigned frames=0;
+        while(g.manualWakePending&&frames++<400) {
+            if(std::abs(g.physics.CurrentPose().x-x)>.5)return 530;
+            host.Frame();
+        }
+        if(g.manualWakePending||g.motion!=Motion::Walk||!g.manualMotionActive||host.Saved()!=saved)return 530;
+    }
     for (const auto prior : {Motion::Sleep,Motion::BoxSit,Motion::Walk}) {
         host.Reset(); SetMotion(prior,30000);
         g.toy = ToyKind::Box; g.toySession.Start(g.toy); g.toyEngaged = true;

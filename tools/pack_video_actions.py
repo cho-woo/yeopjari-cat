@@ -29,6 +29,7 @@ RESOURCE['fly']=436
 RESOURCE['turn']=437
 RESOURCE['cursor-pounce']=438
 RESOURCE.update({'walk':400,'run':401,'eat':118})
+RESOURCE['sleep']=114
 SOURCE_ACTION = {'groom': 'wipe', 'punch': 'punch', 'jump': 'jump', 'knead': 'knead', 'reach': 'reach'}
 SOURCE_ACTION.update({name:name for name in ('ball','toy','brake','slide','stumble','climb')})
 SOURCE_ACTION['fish']='fish'
@@ -36,6 +37,7 @@ SOURCE_ACTION['fly']='fly'
 SOURCE_ACTION['turn']='turn'
 SOURCE_ACTION['cursor-pounce']='cursor-pounce'
 SOURCE_ACTION.update({'walk':'walk','run':'run','eat':'eat'})
+SOURCE_ACTION['sleep']='sleep-entry'
 IDENTITY_PATH=DIRECTORY/'identity-v29.json'
 IDENTITY=json.loads(IDENTITY_PATH.read_text(encoding='utf-8')) if IDENTITY_PATH.exists() else {'clips':{}}
 REACH_KEYS = {
@@ -459,6 +461,10 @@ def main(only=None,materials_only=False):
         elif clip == 'run' and clip in IDENTITY['clips']:
             layout=IDENTITY['clips'][clip];loop=layout.get('loop_frames',len(steps));intro=layout.get('intro_frames',0)
             sequence={'intro':steps[loop:loop+intro],'loop':steps[:loop],'outro':steps[loop+intro:],'finish':'hold','duration_ms':0,'events':[]}
+        elif clip=='sleep' and clip in IDENTITY['clips']:
+            intro=IDENTITY['clips'][clip]['intro_frames']
+            sequence={'intro':steps[:intro],'loop':[steps[intro-1]],'outro':steps[intro:],
+                'finish':'hold','duration_ms':0,'events':[]}
         elif clip in ('jump','cursor-pounce'):
             intro = IDENTITY['clips'][clip].get('intro_frames',18) if clip in IDENTITY['clips'] else indices.index(60)
             landing = IDENTITY['clips'][clip].get('landing_frame',39) if clip in IDENTITY['clips'] else indices.index(81)

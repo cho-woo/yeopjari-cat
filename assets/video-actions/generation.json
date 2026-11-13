@@ -2,7 +2,7 @@
   "schema": 1,
   "created_date": "2026-11-11",
   "provider": "Dropshot",
-  "total_credits": 13200,
+  "total_credits": 14480,
   "jobs": [
     {
       "character": "cream",
@@ -2055,6 +2055,190 @@
       },
       "identity_policy": "identity-v29.json; immutable367px scale; canonical first and actual intended last-facing reference",
       "selection": "selected"
+    },
+    {
+      "character": "cream",
+      "action": "continuity-settle",
+      "model": "minimax/h3",
+      "job_id": "mcp_663107bf1a1e46c1842bdce6d1f02bbd",
+      "credit_cost": 160,
+      "status": "succeeded",
+      "accepted": false,
+      "source_file": "sources/continuity-v35/cream-settle.mp4",
+      "source_sha256": "4c6786c27496f902e5b993d1bf2770713faf7c4008f086f4f4da7cd036bfe496",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_663107bf1a1e46c1842bdce6d1f02bbd/output/output_0.mp4",
+      "options": {
+        "prompt": "Use the supplied immutable kitten master as EXACT character identity. Preserve identical eyes, face, muzzle, ear shape, fur markings, head/body proportions, tail thickness. One kitten only, four limbs, fixed orthographic front camera, flat plain light-grey floor, no zoom or cuts or props. Full body always visible at the supplied scale. Starting in the supplied relaxed seated front pose: a gentle continuous natural settling movement, shift weight slightly through planted forepaws, softly lower shoulders, make a very small breathing cycle, blink once, then return seamlessly to the EXACT supplied seated front pose. No large yaw, no changing coat or eye color, no sudden pose swaps, no freezes or dissolves. Source should show continuous overlapping head/shoulder/paw motion and a smooth recover-to-rest boundary for a desktop pet. 4 seconds, end matches the first reference exactly.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f91aa82183e14b82a31e69c0185697b5/cream-front-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f91aa82183e14b82a31e69c0185697b5/cream-front-identity-v29.png",
+        "generation_mode": "frame",
+        "resolution": "768p",
+        "duration": 4,
+        "aspect_ratio": "1:1"
+      },
+      "identity_policy": "immutable masters, canonical first/last poses; same367px registration",
+      "selection": "retained reference: subtle settling overlap"
+    },
+    {
+      "character": "tuxedo",
+      "action": "continuity-settle",
+      "model": "minimax/h3",
+      "job_id": "mcp_3a168aa18e7f4a0aa4cc7898fe487215",
+      "credit_cost": 160,
+      "status": "succeeded",
+      "accepted": false,
+      "source_file": "sources/continuity-v35/tuxedo-settle.mp4",
+      "source_sha256": "9fb33d699857b677707ee15ac63a114ae883c4f2e01e112e260ca8406605e08a",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_3a168aa18e7f4a0aa4cc7898fe487215/output/output_0.mp4",
+      "options": {
+        "prompt": "Use the supplied immutable kitten master as EXACT character identity. Preserve identical eyes, face, muzzle, ear shape, fur markings, head/body proportions, tail thickness. One kitten only, four limbs, fixed orthographic front camera, flat plain light-grey floor, no zoom or cuts or props. Full body always visible at the supplied scale. Starting in the supplied relaxed seated front pose: a gentle continuous natural settling movement, shift weight slightly through planted forepaws, softly lower shoulders, make a very small breathing cycle, blink once, then return seamlessly to the EXACT supplied seated front pose. No large yaw, no changing coat or eye color, no sudden pose swaps, no freezes or dissolves. Source should show continuous overlapping head/shoulder/paw motion and a smooth recover-to-rest boundary for a desktop pet. 4 seconds, end matches the first reference exactly.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/83c1feedbe4d49e7928fcd973495a776/tuxedo-front-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/83c1feedbe4d49e7928fcd973495a776/tuxedo-front-identity-v29.png",
+        "generation_mode": "frame",
+        "resolution": "768p",
+        "duration": 4,
+        "aspect_ratio": "1:1"
+      },
+      "identity_policy": "immutable masters, canonical first/last poses; same367px registration",
+      "selection": "retained reference: subtle settling overlap"
+    },
+    {
+      "character": "cream",
+      "action": "continuity-front-swat",
+      "model": "minimax/h3",
+      "job_id": "mcp_2a4c9544ddc34413ae4ed54a8c4371a6",
+      "credit_cost": 160,
+      "status": "succeeded",
+      "accepted": false,
+      "source_file": "sources/continuity-v35/cream-front-swat.mp4",
+      "source_sha256": "468c79779aec2b6a3b1fe516094d154c2fbcd114ada022ec4949376562a22a35",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_2a4c9544ddc34413ae4ed54a8c4371a6/output/output_0.mp4",
+      "options": {
+        "prompt": "Exact supplied kitten character, identical face, eyes, coat markings, muzzle, ears, head/body ratio, tail. Green chroma key background and flat invisible floor. Fixed orthographic camera, whole cat visible at reference size and screen location, no cuts, no camera movement, no extra characters or objects. First AND last pose exactly the supplied relaxed front seated reference. One coherent close mouse-pointer play action: 0-0.45s smoothly shift weight forward and rise from the seated pose, turning shoulders only slightly screen-right. 0.45-2.9s track a nearby imaginary tiny target at nose/chest height, raise one forepaw, deliver four playful short quick swats to screen-right at approximately 0.9, 1.5, 2.1, 2.7 seconds, each paw retracts fluidly, opposite paw and hind paws support weight on the floor, ears attentive and tail follows. 2.9-4s smoothly put both forepaws down, tuck hindquarters and turn back into the EXACT starting relaxed front seated pose. Continuous connected motion with complete windup, paw contacts, retractions and soft recovery. Do not freeze with a raised paw. Preserve character identity at every frame; no face morph or size change.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f91aa82183e14b82a31e69c0185697b5/cream-front-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f91aa82183e14b82a31e69c0185697b5/cream-front-identity-v29.png",
+        "generation_mode": "frame",
+        "resolution": "768p",
+        "duration": 4,
+        "aspect_ratio": "1:1"
+      },
+      "identity_policy": "immutable masters, canonical first/last poses; same367px registration",
+      "selection": "retained unused: raised paw remains unplanted between swats; existing safe-exit source is retained"
+    },
+    {
+      "character": "tuxedo",
+      "action": "continuity-front-swat",
+      "model": "minimax/h3",
+      "job_id": "mcp_f2d6cae147a741f2be2d8481a5aece28",
+      "credit_cost": 160,
+      "status": "succeeded",
+      "accepted": false,
+      "source_file": "sources/continuity-v35/tuxedo-front-swat.mp4",
+      "source_sha256": "70c9d6ebddf4f2c6f3ef07a2c1dc0493679aed9a423ccbd7a515c957d6844fc2",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_f2d6cae147a741f2be2d8481a5aece28/output/output_0.mp4",
+      "options": {
+        "prompt": "Exact supplied kitten character, identical face, eyes, coat markings, muzzle, ears, head/body ratio, tail. Green chroma key background and flat invisible floor. Fixed orthographic camera, whole cat visible at reference size and screen location, no cuts, no camera movement, no extra characters or objects. First AND last pose exactly the supplied relaxed front seated reference. One coherent close mouse-pointer play action: 0-0.45s smoothly shift weight forward and rise from the seated pose, turning shoulders only slightly screen-right. 0.45-2.9s track a nearby imaginary tiny target at nose/chest height, raise one forepaw, deliver four playful short quick swats to screen-right at approximately 0.9, 1.5, 2.1, 2.7 seconds, each paw retracts fluidly, opposite paw and hind paws support weight on the floor, ears attentive and tail follows. 2.9-4s smoothly put both forepaws down, tuck hindquarters and turn back into the EXACT starting relaxed front seated pose. Continuous connected motion with complete windup, paw contacts, retractions and soft recovery. Do not freeze with a raised paw. Preserve character identity at every frame; no face morph or size change.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/83c1feedbe4d49e7928fcd973495a776/tuxedo-front-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/83c1feedbe4d49e7928fcd973495a776/tuxedo-front-identity-v29.png",
+        "generation_mode": "frame",
+        "resolution": "768p",
+        "duration": 4,
+        "aspect_ratio": "1:1"
+      },
+      "identity_policy": "immutable masters, canonical first/last poses; same367px registration",
+      "selection": "retained unused: raised paw remains unplanted between swats; existing safe-exit source is retained"
+    },
+    {
+      "character": "cream",
+      "action": "continuity-sleep-entry",
+      "model": "minimax/h3",
+      "job_id": "mcp_b9c49ab172ac474e94beed6b3ec2f94e",
+      "credit_cost": 160,
+      "status": "succeeded",
+      "accepted": true,
+      "source_file": "sources/continuity-v35/cream-sleep-entry.mp4",
+      "source_sha256": "5d75826b555f8fea012f98c8a4572cc1da1928c9cd9240cd14352f58025e1745",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_b9c49ab172ac474e94beed6b3ec2f94e/output/output_0.mp4",
+      "options": {
+        "prompt": "Exact supplied immutable kitten artwork, identical coat, eye colors, head/body proportions, face and ear design throughout. First and last frames are strict pose/identity targets. Solid green chroma-key background, fixed orthographic front camera, same ground line, no cuts, no camera motion, full body including tail always visible. Begin in the exact supplied relaxed FRONT sitting pose. Grow drowsy, gently lower the head and shoulders, fold forepaws close to the body, curl the hindquarters and tail around without sliding. End precisely in the supplied curled sleeping master pose, cheek resting on paws and eyes closed. Complete continuous sit-to-curl transition. Keep the SAME original scale: the curled body becomes lower because of articulation, do NOT enlarge it to its own height. No face redesign, no missing or extra limbs, no frozen intermediate pose. Start with 0.2 second of the reference pose and hold the EXACT end pose for the last 0.5 second.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f91aa82183e14b82a31e69c0185697b5/cream-front-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/fa851e1c196645e18ca31986c5201eec/cream-curled-v35.png",
+        "generation_mode": "frame",
+        "resolution": "768p",
+        "duration": 4,
+        "aspect_ratio": "1:1"
+      },
+      "identity_policy": "immutable masters, canonical first/last poses; same367px registration",
+      "selection": "selected complete canonical sleep boundary"
+    },
+    {
+      "character": "cream",
+      "action": "continuity-wake",
+      "model": "minimax/h3",
+      "job_id": "mcp_bb5e85af5f5942078d9a87d47096515b",
+      "credit_cost": 160,
+      "status": "succeeded",
+      "accepted": true,
+      "source_file": "sources/continuity-v35/cream-wake.mp4",
+      "source_sha256": "7b5523f0d511ae540b5216f819dce8f4d381b3f7983d570877d0072b60f57a15",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_bb5e85af5f5942078d9a87d47096515b/output/output_0.mp4",
+      "options": {
+        "prompt": "Exact supplied immutable kitten artwork, identical coat, eye colors, head/body proportions, face and ear design throughout. First and last frames are strict pose/identity targets. Solid green chroma-key background, fixed orthographic front camera, same ground line, no cuts, no camera motion, full body including tail always visible. Begin in the exact supplied curled sleeping pose. Slowly open the eyes, lift the head, unfold the forepaws, push the chest up with planted paws and naturally sit up. End precisely in the supplied relaxed FRONT seated master pose, both forepaws on the floor. A complete gentle waking transition, not a jump or dissolve. Keep the SAME original scale: the curled body becomes lower because of articulation, do NOT enlarge it to its own height. No face redesign, no missing or extra limbs, no frozen intermediate pose. Start with 0.2 second of the reference pose and hold the EXACT end pose for the last 0.5 second.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/fa851e1c196645e18ca31986c5201eec/cream-curled-v35.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f91aa82183e14b82a31e69c0185697b5/cream-front-identity-v29.png",
+        "generation_mode": "frame",
+        "resolution": "768p",
+        "duration": 4,
+        "aspect_ratio": "1:1"
+      },
+      "identity_policy": "immutable masters, canonical first/last poses; same367px registration",
+      "selection": "selected complete canonical sleep boundary"
+    },
+    {
+      "character": "tuxedo",
+      "action": "continuity-sleep-entry",
+      "model": "minimax/h3",
+      "job_id": "mcp_273e0bed13564c258eee5c61fd9a6695",
+      "credit_cost": 160,
+      "status": "succeeded",
+      "accepted": true,
+      "source_file": "sources/continuity-v35/tuxedo-sleep-entry.mp4",
+      "source_sha256": "34521f6b5f5c8682c2795c6025125c53ae2f78f1601bf2d726d8f770a967a4ce",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_273e0bed13564c258eee5c61fd9a6695/output/output_0.mp4",
+      "options": {
+        "prompt": "Exact supplied immutable kitten artwork, identical coat, eye colors, head/body proportions, face and ear design throughout. First and last frames are strict pose/identity targets. Solid green chroma-key background, fixed orthographic front camera, same ground line, no cuts, no camera motion, full body including tail always visible. Begin in the exact supplied relaxed FRONT sitting pose. Grow drowsy, gently lower the head and shoulders, fold forepaws close to the body, curl the hindquarters and tail around without sliding. End precisely in the supplied curled sleeping master pose, cheek resting on paws and eyes closed. Complete continuous sit-to-curl transition. Keep the SAME original scale: the curled body becomes lower because of articulation, do NOT enlarge it to its own height. No face redesign, no missing or extra limbs, no frozen intermediate pose. Start with 0.2 second of the reference pose and hold the EXACT end pose for the last 0.5 second.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/83c1feedbe4d49e7928fcd973495a776/tuxedo-front-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/42d6d37532d844bcb5939275a0552196/tuxedo-curled-v35.png",
+        "generation_mode": "frame",
+        "resolution": "768p",
+        "duration": 4,
+        "aspect_ratio": "1:1"
+      },
+      "identity_policy": "immutable masters, canonical first/last poses; same367px registration",
+      "selection": "selected complete canonical sleep boundary"
+    },
+    {
+      "character": "tuxedo",
+      "action": "continuity-wake",
+      "model": "minimax/h3",
+      "job_id": "mcp_2b503e53f4394814b8b85806dcf86460",
+      "credit_cost": 160,
+      "status": "succeeded",
+      "accepted": true,
+      "source_file": "sources/continuity-v35/tuxedo-wake.mp4",
+      "source_sha256": "4dbcefa61fbe0806ac4603ab055fad9d5990c352ae350ebf2f91f12be8764034",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_2b503e53f4394814b8b85806dcf86460/output/output_0.mp4",
+      "options": {
+        "prompt": "Exact supplied immutable kitten artwork, identical coat, eye colors, head/body proportions, face and ear design throughout. First and last frames are strict pose/identity targets. Solid green chroma-key background, fixed orthographic front camera, same ground line, no cuts, no camera motion, full body including tail always visible. Begin in the exact supplied curled sleeping pose. Slowly open the eyes, lift the head, unfold the forepaws, push the chest up with planted paws and naturally sit up. End precisely in the supplied relaxed FRONT seated master pose, both forepaws on the floor. A complete gentle waking transition, not a jump or dissolve. Keep the SAME original scale: the curled body becomes lower because of articulation, do NOT enlarge it to its own height. No face redesign, no missing or extra limbs, no frozen intermediate pose. Start with 0.2 second of the reference pose and hold the EXACT end pose for the last 0.5 second.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/42d6d37532d844bcb5939275a0552196/tuxedo-curled-v35.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/83c1feedbe4d49e7928fcd973495a776/tuxedo-front-identity-v29.png",
+        "generation_mode": "frame",
+        "resolution": "768p",
+        "duration": 4,
+        "aspect_ratio": "1:1"
+      },
+      "identity_policy": "immutable masters, canonical first/last poses; same367px registration",
+      "selection": "selected complete canonical sleep boundary"
     }
   ]
 }

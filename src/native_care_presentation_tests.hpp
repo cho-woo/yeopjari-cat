@@ -26,13 +26,25 @@ int NativeCarePresentationRenderTest(std::string& context) {
     };
     CarePresentationRenderer other;
     auto& primary=PrimaryCarePresentation();primary.Reset();
-    context="single-drawing care boundaries: no ghosting or canvas capture allocation";
+    context="registered motion-compensated care boundaries and exact physical contacts";
     for(auto character:cat::kAvailableCharacters) {
         if(!EnsureCareCoats(character))return 330;
-        for(const auto& pose:{idle,groom,neutral,idle,groom}) {
-            const auto actual=draw(pose,&primary,1126,0,false,character);
-            if(actual!=draw(pose,nullptr,1126,0,false,character))return 331;
-            if(primary.previous.image||primary.from.image||primary.target.image)return 332;
+        for(const auto clip:{Clip::Groom,Clip::Eat,Clip::Treat,Clip::Fish,Clip::Knead,Clip::ToyPlay,Clip::FlyHunt}) {
+            primary.Reset();
+            auto action=idle;cat::animation::AttachSprite(action,clip,0);cat::animation::UseAuthoredSprite(action);
+            const auto resting=draw(idle,&primary,1000,0,false,character);
+            if(draw(action,&primary,1016,0,false,character)!=resting)return 331;
+            for(unsigned step=1;step<14;++step) {
+                action.spriteElapsedMs=step*16;
+                const auto pixels=draw(action,&primary,1016+step*16,0,false,character);
+                for(std::size_t p=0;p<pixels.size();p+=4)
+                    if(pixels[p]>pixels[p+3]||pixels[p+1]>pixels[p+3]||pixels[p+2]>pixels[p+3])return 332;
+            }
+            action.spriteElapsedMs=240;
+            if(draw(action,&primary,1256,0,false,character)!=draw(action,nullptr,1256,0,false,character))return 333;
+            const auto beforeExit=draw(action,&primary,1300,0,false,character);
+            if(draw(idle,&primary,1316,0,false,character)!=beforeExit)return 334;
+            if(draw(idle,&primary,1556,0,false,character)!=draw(idle,nullptr,1556,0,false,character))return 335;
         }
     }
     if(!EnsureCareCoats(cat::Character::Cream,cat::Character::Tuxedo))return 330;

@@ -3,8 +3,8 @@
 - 사업자: 가치탐험단 (개인사업자)
 - 회사 도메인: `valuewander.com` — 사용자가 Cloudflare에서 구매
 - 제품 소개 주소: `cat.valuewander.com`
-- 회사 메일: 사용자가 Google Workspace에서 직접 개설 중. 아직 수신 가능한 주소로 공지하지 않음.
-- Microsoft Store 등록을 사용하지 않음. Azure 서명 서비스 신청도 진행하지 않음.
+- 회사 메일: `hello@valuewander.com` — Google Workspace 계정 활성화, MX/SPF/DKIM 설정 및 사용자 송수신 확인 완료.
+- Microsoft Store 등록을 사용하지 않음. 코드 서명 판매처는 비용을 비교 중이며 아직 가입·결제·유료 리소스를 만들지 않음.
 - 소개 페이지 소스: 인접한 `yeopjari-cat-site` 디렉터리. Sites project ID는 해당 체크아웃의 `.openai/hosting.json`에서 유지.
 
 ## 설치 프로그램

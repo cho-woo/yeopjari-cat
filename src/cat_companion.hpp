@@ -893,6 +893,7 @@ private:
     }
     void SetMotion(cat::animation::Motion m,std::uint64_t ticks,std::uint64_t duration,double speed,bool alreadyAirborne=false,
                    cat::sprite_sequence::Clip requestedClip=cat::sprite_sequence::Clip::None) {
+        wakeQueuedClip_=cat::sprite_sequence::Clip::None;
         if(m!=motion_)runningTurn_.Reset();
         using Clip=cat::sprite_sequence::Clip;
         const auto body=cat::appearance::VisualModifiers(state_->nutrition,state_->preferences.character);
@@ -917,6 +918,9 @@ private:
             else if(m==cat::animation::Motion::Knead)requestedClip=Clip::Knead;
         }
         if(requestedClip!=Clip::None)duration=RegisteredDuration(requestedClip,duration);
+        if(m==cat::animation::Motion::Sleep)if(const auto* sleep=Registered(Clip::Sleep))
+            duration=std::max<std::uint64_t>(duration,
+                cat::animation::ReferenceSleepIntroMs(&sleep->program,sleep->frameCount)+1500);
         if(motion_==cat::animation::Motion::Sleep && m==cat::animation::Motion::Stretch) {
             if(const auto* sleep=Registered(Clip::Sleep)) {
                 const auto wake=sleep->program.stepCount?

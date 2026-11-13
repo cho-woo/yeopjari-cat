@@ -8,7 +8,7 @@ namespace cat::update {
 
 // A notice is separate from checking or installing an update. It never opens a
 // dialog, starts a download, changes focus, or changes the pet's saved identity.
-inline constexpr wchar_t kCatUpdateMessage[] = L"업데이트해줘";
+inline constexpr wchar_t kCatUpdateMessage[] = L"업데이트 해줘";
 
 struct NoticeContext {
     std::uint64_t now = 0, notBefore = 0;
