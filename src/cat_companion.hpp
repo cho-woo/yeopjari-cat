@@ -619,7 +619,7 @@ public:
         s.ballVisible=actionClip_==cat::sprite_sequence::Clip::BallPlay;
         if(s.ballVisible)s.ball=ball_.RenderPose();
         const double relativeVelocity=s.physical.velocityX-s.physical.supportVelocityX;
-        const auto displayed=cat::motion::DisplayedMotion(motion_,walkingMotion_,s.physical.grounded,waitingForStop_,relativeVelocity);
+        const auto displayed=runningJump_.active&&jumpPending_&&RegisteredVideoWalk()?motion_:cat::motion::DisplayedMotion(motion_,walkingMotion_,s.physical.grounded,waitingForStop_,relativeVelocity);
         const int displayedFacing=s.physical.grounded && std::abs(relativeVelocity)>2?(relativeVelocity<0?-1:1):facing_;
         s.motion=displayed;
         const auto elapsed=ticks>=motionStart_?ticks-motionStart_:0;
@@ -726,7 +726,10 @@ public:
                 s.animation.jumpControls=jumpPresentation_.Land(s.animation.spriteOptions.contactElapsedMs,landingStrength_,s.physical.lift);
             else {
                 const auto* jump=Registered(cat::sprite_sequence::Clip::Jump);
-                const auto preparation=jump?cat::sprite_sequence::Duration(jump->program,jump->program.intro):cat::jump_animation::kPreparationMs;
+                const auto sourcePreparation=jump?cat::sprite_sequence::Duration(jump->program,jump->program.intro):cat::jump_animation::kPreparationMs;
+                const auto preparation=runningJump_.active?cat::running_jump::Plan::PreparationMs:sourcePreparation;
+                if(runningJump_.active&&s.animation.spriteTimed)
+                    s.animation.spriteElapsedMs=cat::jump_animation::PreparationSourceClock(elapsed,preparation,sourcePreparation);
                 s.animation.jumpControls=jumpPresentation_.Prepare(elapsed,preparation,s.physical.lift);
             }
         } else if(s.physical.grounded)jumpPresentation_.Ground(s.physical.lift);

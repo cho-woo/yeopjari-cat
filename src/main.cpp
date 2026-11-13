@@ -3205,7 +3205,7 @@ void RenderToy() {
 // landing/contact selection, authored transitions and final pose cannot drift.
 cat::animation::Pose PrimaryDisplayedPose(ULONGLONG ticks,const cat::physics::Pose& physical) {
     const auto actionElapsed = ticks >= g.motionStart ? ticks - g.motionStart : 0;
-    const Motion displayed = cat::motion::DisplayedMotion(g.motion,g.walkingMotion,
+    const Motion displayed = g.runningJump.active&&g.jumpPending&&PrimaryVideoGroundArt()?g.motion:cat::motion::DisplayedMotion(g.motion,g.walkingMotion,
         physical.grounded,g.waitingForStop,WalkingVelocity(physical));
     auto pose = cat::animation::Evaluate(displayed, actionElapsed, ticks, g.facing, g.gait);
     if(pose.spriteTimed && (displayed==Motion::Eat || displayed==Motion::Treat || displayed==Motion::Punch))
@@ -3355,7 +3355,13 @@ cat::animation::Pose PrimaryDisplayedPose(ULONGLONG ticks,const cat::physics::Po
         }
         else if(pose.spriteOptions.jump==cat::sprite_sequence::JumpPhase::Landing)
             pose.jumpControls=g.jumpPresentation.Land(pose.spriteOptions.contactElapsedMs,g.landingStrength,physical.lift);
-        else pose.jumpControls=g.jumpPresentation.Prepare(actionElapsed,PrimaryTakeoffMs(displayed==Motion::Pounce),physical.lift);
+        else {
+            const auto sourcePreparation=PrimaryTakeoffMs(displayed==Motion::Pounce);
+            const auto preparation=g.runningJump.active?cat::running_jump::Plan::PreparationMs:sourcePreparation;
+            if(g.runningJump.active&&pose.spriteTimed)
+                pose.spriteElapsedMs=cat::jump_animation::PreparationSourceClock(actionElapsed,preparation,sourcePreparation);
+            pose.jumpControls=g.jumpPresentation.Prepare(actionElapsed,preparation,physical.lift);
+        }
     } else if(physical.grounded)g.jumpPresentation.Ground(physical.lift);
     pose = g.poseTransition.Apply(pose,ticks,g.motionSerial,
         static_cast<unsigned>(g.preferences.character), !cursorAttack,g.motionStart);

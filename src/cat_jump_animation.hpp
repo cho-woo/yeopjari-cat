@@ -24,6 +24,14 @@ inline Controls Blend(Controls a,Controls b,double t) {
 // The immutable texture is the real entrance's final three-quarter drawing.
 constexpr unsigned kSourceFrame=29;
 constexpr std::uint64_t kPreparationMs=300,kContactReleaseMs=440;
+// A travelling hop keeps its short input response and real momentum, but
+// must still reach the authored push-off pose before physics takes over.
+inline std::uint64_t PreparationSourceClock(std::uint64_t elapsed,std::uint64_t physicalDuration,
+                                           std::uint64_t sourceDuration) {
+    if(!sourceDuration)return 0;
+    if(!physicalDuration||elapsed>=physicalDuration)return sourceDuration-1;
+    return std::min(sourceDuration-1,elapsed*sourceDuration/physicalDuration);
+}
 inline Controls Preparation(std::uint64_t elapsed,std::uint64_t duration=kPreparationMs) {
     const double t=duration?std::clamp(static_cast<double>(elapsed)/duration,0.,1.):1.;
     // Load the hindlegs, then push before the physical takeoff. Both ends are

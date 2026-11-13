@@ -21,6 +21,7 @@ int Run() {
         SetMotion(Motion::Idle,8000,host.now);host.Rebase();
         const auto start=host.now;const double origin=g.physics.CurrentPose().x;
         const auto body=cat::appearance::VisualModifiers(g.nutrition,g.preferences.character);
+        CarePresentationRenderer presentation;
         bool flight=false,landed=false,resumed=false;double takeoffX=0,airSpeed=0,airDistance=0,maxDrift=0,peak=0;
         for(unsigned i=0;i<Steps;++i) {
             const auto elapsed=static_cast<ULONGLONG>(i)*1000/SimulationFps;
@@ -50,7 +51,8 @@ int Run() {
                 graphics.DrawString(L"Current artwork | native GDI+ / Box2D | 60 Hz simulation, 30 FPS capture | not desktop footage",-1,
                     &label,PointF(20,38),&ink);
                 DrawPetStyle(graphics,cat::Character::Cream,cat::Outfit::None,pose,body,
-                    static_cast<REAL>(200+displayed.x-origin),static_cast<REAL>(260-displayed.lift),110);
+                    static_cast<REAL>(200+displayed.x-origin),static_cast<REAL>(260-displayed.lift),110,
+                    &presentation,host.now,g.motionSerial,false);
                 graphics.Flush(FlushIntentionSync);
             }
             wchar_t name[160]{};swprintf_s(name,L"render-self-test/moving-jump/frame-%05u.png",written);
@@ -70,7 +72,7 @@ int Run() {
         "\",\"render_source\":\"Windows GDI+ / Box2D\",\"desktop_recording\":false,\"fps\":30,"
         "\"simulation_fps\":60,\"frame_count\":600,\"canvas\":[1280,320],\"display_height_logical_px\":110,"
         "\"scenario\":\"10s walk-forward-jump-walk; 10s run-forward-jump-run\","
-        "\"artwork\":\"Dropshot reference-conditioned jump video frames\",\"new_painted_frames\":0,\"new_video_frames\":62}\n";
+        "\"artwork\":\"Dropshot reference-conditioned jump video frames\",\"new_painted_frames\":0,\"new_video_frames\":97}\n";
     return WriteBytes(L"render-self-test/moving-jump/trace.json",trace.str())&&
         WriteBytes(L"render-self-test/moving-jump/capture.json",metadata)?0:813;
 }

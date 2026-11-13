@@ -444,15 +444,19 @@ void NaturalTakeoffAndLandingUsePhysicalMotion() {
         const auto view=m.View(c.ticks);
         const auto physical=m.Physical();
         const double speed=view.physical.velocityX-view.physical.supportVelocityX;
+        const bool travellingPreparation=view.travellingJump&&view.animation.spriteTimed&&
+            view.animation.spriteClip==cat::sprite_sequence::Clip::Jump&&
+            view.animation.spriteOptions.jump==cat::sprite_sequence::JumpPhase::Crouch;
         if(view.physical.grounded && std::abs(speed)>2) {
-            badSliding=badSliding || !cat::animation::Walking(view.motion) || view.animation.frame<0 || view.animation.frame>3;
+            badSliding=badSliding || (!travellingPreparation&&
+                (!cat::animation::Walking(view.motion) || view.animation.frame<0 || view.animation.frame>3));
             // The authored pivot keeps its original source orientation while
             // the final drawings already face and push in the other direction.
             if(view.animation.spriteClip!=cat::sprite_sequence::Clip::RunningTurn)
                 badFacing=badFacing || view.animation.flip!=(speed<0);
         }
         if(view.motion!=M::Jump && view.motion!=M::Pounce)crouchStarted=0;
-        if(view.physical.grounded && (view.motion==M::Jump || view.motion==M::Pounce) && view.animation.frame==4) {
+        if(view.physical.grounded && !travellingPreparation && (view.motion==M::Jump || view.motion==M::Pounce) && view.animation.frame==4) {
             if(!crouchStarted)crouchStarted=c.ticks;
             CHECK(std::abs(speed)<=2);
             CHECK(view.animation.scaleX==1 && view.animation.scaleY==1 && view.animation.angle==0);

@@ -8,7 +8,11 @@ int Run(std::string& context) {
     CreateDirectoryW(L"render-self-test",nullptr);
     CreateDirectoryW(L"render-self-test/source-audit",nullptr);
     Surface actor;
-    if(!actor.Create(240,200))return 900;
+    // Registered airborne drawings extend above the physical root. Keep the
+    // same full-height review surface as the native jump review; a small
+    // seated-only fixture clipped real flight poses at the top edge.
+    constexpr int width=420,height=420;
+    if(!actor.Create(width,height))return 900;
     std::ostringstream report;report<<"{\"schema\":1,\"version\":\"" YEOPJARI_VERSION_STRING
         "\",\"renderer\":\"shipping Windows GDI+\",\"samples\":[";
     bool comma=false;
@@ -16,10 +20,10 @@ int Run(std::string& context) {
         Graphics graphics(actor.image.get());graphics.Clear(Color(0,0,0,0));
         graphics.SetInterpolationMode(InterpolationModeHighQualityBicubic);
         DrawPetStyle(graphics,character,cat::Outfit::None,pose,
-            cat::appearance::VisualModifiers(g.nutrition,character),120,180,110);
+            cat::appearance::VisualModifiers(g.nutrition,character),210,365,110);
         graphics.Flush(FlushIntentionSync);
         return graphics.GetLastStatus()==Ok&&native_coat_tests::ValidPixels(
-            reinterpret_cast<const std::uint32_t*>(actor.pixels),240,200,true);
+            reinterpret_cast<const std::uint32_t*>(actor.pixels),width,height,true);
     };
     for(const auto character:cat::kAvailableCharacters) {
       for(const auto clip:cat::sprite_sequence::kAuthoredClips) {
@@ -30,6 +34,8 @@ int Run(std::string& context) {
             for(unsigned sample=0;sample<8;++sample) {
                 cat::animation::Pose pose;pose.spriteClip=clip;pose.spriteFrame=(asset->layout->frameCount-1)*sample/7;
                 cat::animation::UseAuthoredSprite(pose);
+                context="registered clip="+std::to_string(static_cast<unsigned>(clip))+" coat="+
+                    std::to_string(static_cast<unsigned>(character))+" sample="+std::to_string(sample)+" frame="+std::to_string(pose.spriteFrame);
                 if(!paint(character,pose))return 902;
                 wchar_t path[180]{};swprintf(path,180,L"render-self-test/source-audit/clip-%u-c%u-s%u.png",
                     static_cast<unsigned>(clip),static_cast<unsigned>(character),sample);

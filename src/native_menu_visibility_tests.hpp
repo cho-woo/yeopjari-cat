@@ -159,7 +159,9 @@ int Run(HINSTANCE instance,std::string& context) {
         else SetMotion(scenario==4?Motion::Eat:Motion::Idle,10000);
         g.timerInterval=0;RefreshAnimationTimer();Render();ShowWindow(g.window,SW_SHOWNOACTIVATE);
         if(scenario==3) {
-            const auto takeoffDeadline=GetTickCount64()+2000;
+            const auto* walk=PrimaryVideoGroundArt();
+            const auto entrance=walk?cat::sprite_sequence::Duration(walk->program,walk->program.intro):0;
+            const auto takeoffDeadline=GetTickCount64()+entrance+PrimaryTakeoffMs()+2000;
             while(g.physics.RenderPose().grounded&&GetTickCount64()<takeoffDeadline)Pump(10);
             Pump(60);
         } else if(scenario==2) {

@@ -91,7 +91,21 @@ void ContactHasOneSmoothCompressionRamp() {
         CHECK(peak>.8*strength&&previous.crouch==0);
     }
 }
+void PreparationClockReachesPushOffForShortAndLongHops() {
+    CHECK(PreparationSourceClock(10,0,0)==0);
+    CHECK(PreparationSourceClock(0,0,958)==957);
+    for(const std::uint64_t duration:{120u,300u,958u}) {
+        std::uint64_t previous=0;
+        for(std::uint64_t elapsed=0;elapsed<=duration+30;++elapsed) {
+            const auto source=PreparationSourceClock(elapsed,duration,958);
+            CHECK(source>=previous&&source<958);previous=source;
+            if(elapsed==0)CHECK(source==0);
+            if(elapsed>=duration)CHECK(source==957);
+        }
+        CHECK(PreparationSourceClock(duration-8,duration,958)>850);
+    }
+}
 }
 int main(){try{OnePaintingHasStableFaceAndPlantedContact();PhysicsControlsPawsInsteadOfNominalFrameClock();
-    NoFoldoversOrAlphaSeams();ContactHasOneSmoothCompressionRamp();std::cout<<"Connected jump: "<<checks<<" checks passed\n";return EXIT_SUCCESS;
+    NoFoldoversOrAlphaSeams();ContactHasOneSmoothCompressionRamp();PreparationClockReachesPushOffForShortAndLongHops();std::cout<<"Connected jump: "<<checks<<" checks passed\n";return EXIT_SUCCESS;
 }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return EXIT_FAILURE;}}
