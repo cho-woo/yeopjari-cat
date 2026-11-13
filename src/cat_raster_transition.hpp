@@ -51,18 +51,33 @@ class RegisteredMorph {
     }
     static Field Match(const Image& a,const Image& b) {
         Field field{};
+        const auto center=[](const Image& image) {
+            double mass=0,x=0,y=0;
+            for(int row=0;row<image.h;++row)for(int col=0;col<image.w;++col) {
+                const double alpha=image.p[row*image.w+col][3];
+                mass+=alpha;x+=col*alpha;y+=row*alpha;
+            }
+            return mass>0?Point{float(x/mass),float(y/mass)}:Point{};
+        };
+        const auto ca=center(a),cb=center(b);
+        // First register coherent whole-body translation. Searching only a
+        // small neighbourhood around zero left distant eyes and heads doubled
+        // when a supported cat crouched, reclined or reached a ledge.
+        const int baseX=std::clamp(int(std::lround(cb.x-ca.x)),-32,32);
+        const int baseY=std::clamp(int(std::lround(cb.y-ca.y)),-32,32);
+        const auto penalty=[&](int x,int y) {return 1.5f*((x-baseX)*(x-baseX)+(y-baseY)*(y-baseY));};
         for(int gy=0;gy<Grid;++gy)for(int gx=0;gx<Grid;++gx) {
             const int x=gx*(a.w-1)/(Grid-1),y=gy*(a.h-1)/(Grid-1);
-            float best=Cost(a,b,x,y,0,0);Point move{};
+            float best=Cost(a,b,x,y,baseX,baseY);Point move{float(baseX),float(baseY)};
             // Penalise gratuitous displacement in a flat patch. The small
             // search radius cannot turn a head or invent another limb.
-            for(int dy=-8;dy<=8;dy+=2)for(int dx=-8;dx<=8;dx+=2) {
-                const float value=Cost(a,b,x,y,dx,dy)+1.5f*(dx*dx+dy*dy);
+            for(int dy=baseY-8;dy<=baseY+8;dy+=2)for(int dx=baseX-8;dx<=baseX+8;dx+=2) {
+                const float value=Cost(a,b,x,y,dx,dy)+penalty(dx,dy);
                 if(value<best){best=value;move={float(dx),float(dy)};}
             }
             const int mx=int(move.x),my=int(move.y);
             for(int dy=my-1;dy<=my+1;++dy)for(int dx=mx-1;dx<=mx+1;++dx) {
-                const float value=Cost(a,b,x,y,dx,dy)+1.5f*(dx*dx+dy*dy);
+                const float value=Cost(a,b,x,y,dx,dy)+penalty(dx,dy);
                 if(value<best){best=value;move={float(dx),float(dy)};}
             }
             field[gy*Grid+gx]=move;

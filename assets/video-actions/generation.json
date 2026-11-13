@@ -2,7 +2,7 @@
   "schema": 1,
   "created_date": "2026-11-11",
   "provider": "Dropshot",
-  "total_credits": 15720,
+  "total_credits": 20320,
   "jobs": [
     {
       "character": "cream",
@@ -2383,6 +2383,256 @@
         "prompt_enhance": false
       },
       "selection": "Complete12-frame acceleration/deceleration boundaries; unchanged106-frame calibrated gallop retained."
+    },
+    {
+      "job_id": "mcp_4451e551c1034aac85754b2f1c006f99",
+      "model": "bytedance/seedance-2.5",
+      "character": "cream",
+      "options": {
+        "prompt": "The exact established desktop kitten from the identical supplied start and end artwork. Preserve every facial proportion, ear, iris color, fur marking, body size, floor height and canvas scale. Locked camera, solid uniform #00ff00 chroma green, no shadows, props, text, cuts, zoom or translation. One continuous realistic supported resting movement: start seated looking forward with all four paws on the same floor. In the first second gently lower the chest and shoulders into a relaxed low crouch while keeping the hindquarters and feet supported; turn the head a little to the right, with a subtle natural shoulder weight transfer. From 1.0 to 1.6 seconds rise smoothly back into the exact front-facing seated reference. Make a small, calm settling movement and slow blink in the second half, finishing in the exact last frame. The body, head and paws must move together as a connected animal. No floating or sliding feet, abrupt changes of body height, pose holds with a raised paw, no extra limbs, no rapid swats. Keep the neutral transition short and smoothly ease velocity into and out of the supported resting posture, with most settling completed in about 0.22 to 0.30 seconds. This is a ground-contact and whole-body recovery reference for joining already-existing actions.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f91aa82183e14b82a31e69c0185697b5/cream-front-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f91aa82183e14b82a31e69c0185697b5/cream-front-identity-v29.png",
+        "duration": 4,
+        "resolution": "720p",
+        "aspect_ratio": "1:1",
+        "generate_audio": false,
+        "generation_mode": "frame",
+        "prompt_enhance": false
+      },
+      "credit_cost": 460,
+      "source": "assets/video-actions/sources/continuity-v37/cream-grounded-settle.mp4",
+      "sha256": "8addbf8d4acc76977d7045d6a1a79a4f10e8333189c1351c2f5d5ef606138601",
+      "review": "Accepted complete source0..72 at24fps for supported crouch and return / ordinary Stretch. Remaining neutral hold retained in original97-frame movie. Shared367px master reference; fixed recorded foot support; no per-pose size normalization."
+    },
+    {
+      "job_id": "mcp_2bf777666b76486881915aab8035304a",
+      "model": "bytedance/seedance-2.5",
+      "character": "tuxedo",
+      "options": {
+        "prompt": "The exact established desktop kitten from the identical supplied start and end artwork. Preserve every facial proportion, ear, iris color, fur marking, body size, floor height and canvas scale. Locked camera, solid uniform #00ff00 chroma green, no shadows, props, text, cuts, zoom or translation. One continuous realistic supported resting movement: start seated looking forward with all four paws on the same floor. In the first second gently lower the chest and shoulders into a relaxed low crouch while keeping the hindquarters and feet supported; turn the head a little to the right, with a subtle natural shoulder weight transfer. From 1.0 to 1.6 seconds rise smoothly back into the exact front-facing seated reference. Make a small, calm settling movement and slow blink in the second half, finishing in the exact last frame. The body, head and paws must move together as a connected animal. No floating or sliding feet, abrupt changes of body height, pose holds with a raised paw, no extra limbs, no rapid swats. Keep the neutral transition short and smoothly ease velocity into and out of the supported resting posture, with most settling completed in about 0.22 to 0.30 seconds. This is a ground-contact and whole-body recovery reference for joining already-existing actions.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/83c1feedbe4d49e7928fcd973495a776/tuxedo-front-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/83c1feedbe4d49e7928fcd973495a776/tuxedo-front-identity-v29.png",
+        "duration": 4,
+        "resolution": "720p",
+        "aspect_ratio": "1:1",
+        "generate_audio": false,
+        "generation_mode": "frame",
+        "prompt_enhance": false
+      },
+      "credit_cost": 460,
+      "source": "assets/video-actions/sources/continuity-v37/tuxedo-grounded-settle.mp4",
+      "sha256": "316d0717eacf46e5804b12b1a7386a586636a6811e5cd4ec691fc9e1a3b0be62",
+      "review": "Accepted complete source0..72 at24fps for supported crouch and return / ordinary Stretch. Remaining neutral hold retained in original97-frame movie. Shared367px master reference; fixed recorded foot support; no per-pose size normalization."
+    },
+    {
+      "job_id": "mcp_61d5ba131b9a47bc94dc3c3162dc8176",
+      "model": "bytedance/seedance-2.5",
+      "character": "cream",
+      "action": "roll",
+      "options": {
+        "prompt": "Animate the exact small established desktop kitten in the supplied identical first and last artwork. Preserve exact face, ears, iris colors, fur markings, white bib and paws where present, head-to-body proportions, illustrated soft 3D fur, size and floor height. The character must remain one connected animal throughout, no redesign or changing species. Uniform flat saturated #00FF00 background, no props, text, cast shadows or other animals. Locked orthographic camera, no cuts, zoom, camera movement or reframing. Entire animal visible with generous constant margin. One complete realistic playful ground roll, four seconds total: start seated facing the camera. From 0.15 to 0.8 seconds gently lower the shoulders and lean onto one side using the front paws for support. From 0.8 to 1.8 roll onto the back, exposing the soft belly, and wiggle the connected paws playfully without crossing or multiplying legs. From 1.8 to 2.7 roll coherently back onto the same supported side, then use forepaws and hindquarters to push up into the exact front-facing seated reference by 3.4 seconds. Settle in that exact seated stance for the final 0.6 seconds. The head and body roll together, the ears and muzzle remain rigidly attached, the body stays on the same floor, no jumping, no flipping in the air. Smooth feline weight transfer through shoulders, hips and paws, no sudden pose or root changes.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f91aa82183e14b82a31e69c0185697b5/cream-front-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f91aa82183e14b82a31e69c0185697b5/cream-front-identity-v29.png",
+        "duration": 4,
+        "resolution": "720p",
+        "aspect_ratio": "1:1",
+        "generate_audio": false,
+        "generation_mode": "frame",
+        "prompt_enhance": false
+      },
+      "credit_cost": 460,
+      "source": "assets/video-actions/sources/continuity-v37/cream-roll.mp4",
+      "sha256": "cee2cb0e9fef7b8b0f26d14353649f38b57193ea8863bc75d41325b85fe0cb17",
+      "review": "Complete reviewed ground action and seated recovery at original 24fps. Exact canonical first and last artwork; no repeated excerpts or pose-height scaling."
+    },
+    {
+      "job_id": "mcp_8398cca2da1f47659d1425e66f698afe",
+      "model": "bytedance/seedance-2.5",
+      "character": "tuxedo",
+      "action": "roll",
+      "options": {
+        "prompt": "Animate the exact small established desktop kitten in the supplied identical first and last artwork. Preserve exact face, ears, iris colors, fur markings, white bib and paws where present, head-to-body proportions, illustrated soft 3D fur, size and floor height. The character must remain one connected animal throughout, no redesign or changing species. Uniform flat saturated #00FF00 background, no props, text, cast shadows or other animals. Locked orthographic camera, no cuts, zoom, camera movement or reframing. Entire animal visible with generous constant margin. One complete realistic playful ground roll, four seconds total: start seated facing the camera. From 0.15 to 0.8 seconds gently lower the shoulders and lean onto one side using the front paws for support. From 0.8 to 1.8 roll onto the back, exposing the soft belly, and wiggle the connected paws playfully without crossing or multiplying legs. From 1.8 to 2.7 roll coherently back onto the same supported side, then use forepaws and hindquarters to push up into the exact front-facing seated reference by 3.4 seconds. Settle in that exact seated stance for the final 0.6 seconds. The head and body roll together, the ears and muzzle remain rigidly attached, the body stays on the same floor, no jumping, no flipping in the air. Smooth feline weight transfer through shoulders, hips and paws, no sudden pose or root changes.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/83c1feedbe4d49e7928fcd973495a776/tuxedo-front-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/83c1feedbe4d49e7928fcd973495a776/tuxedo-front-identity-v29.png",
+        "duration": 4,
+        "resolution": "720p",
+        "aspect_ratio": "1:1",
+        "generate_audio": false,
+        "generation_mode": "frame",
+        "prompt_enhance": false
+      },
+      "credit_cost": 460,
+      "source": "assets/video-actions/sources/continuity-v37/tuxedo-roll.mp4",
+      "sha256": "07f8d1f1ce0118b8ec488a288f827886693a78a67c8c479d47f8c469f36414ba",
+      "review": "Complete reviewed ground action and seated recovery at original 24fps. Exact canonical first and last artwork; no repeated excerpts or pose-height scaling."
+    },
+    {
+      "job_id": "mcp_82ea2ca3e7d74614a8d24c858875ebda",
+      "model": "bytedance/seedance-2.5",
+      "character": "cream",
+      "action": "tail-chase",
+      "options": {
+        "prompt": "Animate the exact small established desktop kitten in the supplied identical first and last artwork. Preserve exact face, ears, iris colors, fur markings, white bib and paws where present, head-to-body proportions, illustrated soft 3D fur, size and floor height. The character must remain one connected animal throughout, no redesign or changing species. Uniform flat saturated #00FF00 background, no props, text, cast shadows or other animals. Locked orthographic camera, no cuts, zoom, camera movement or reframing. Entire animal visible with generous constant margin. One complete realistic playful tail chase, four seconds total: start seated facing the camera. Notice the tail tip beside the hindquarters, look down and rotate the neck and shoulders toward it, stand onto four paws by 0.6 seconds. Follow the tail tip in ONE small continuous grounded circle around the same center from 0.6 to 2.4 seconds, taking short light, irregular feline steps, with the head, shoulders, spine, hips and tail turning together. Show the natural side, back and opposite side views as the body turns, never instantly mirror or change facing. Make one small front-paw bat toward the tail at 2.4 seconds, then bring all paws down, face forward and settle seated into the exact reference by 3.4 seconds. Hold a calm seated finish for the last0.6 seconds. Keep the circle tiny and the overall root near the starting spot, the floor plane fixed, no running off screen, jumping or teleporting.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f91aa82183e14b82a31e69c0185697b5/cream-front-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f91aa82183e14b82a31e69c0185697b5/cream-front-identity-v29.png",
+        "duration": 4,
+        "resolution": "720p",
+        "aspect_ratio": "1:1",
+        "generate_audio": false,
+        "generation_mode": "frame",
+        "prompt_enhance": false
+      },
+      "credit_cost": 460,
+      "source": "assets/video-actions/sources/continuity-v37/cream-tail-chase.mp4",
+      "sha256": "35108a4c52a4cd022e4351914ff757ef71492fa392b502212ca8b901ea419161",
+      "review": "Complete reviewed ground action and seated recovery at original 24fps. Exact canonical first and last artwork; no repeated excerpts or pose-height scaling."
+    },
+    {
+      "job_id": "mcp_84e54c953f324b019b42e13dc30b6c6f",
+      "model": "bytedance/seedance-2.5",
+      "character": "tuxedo",
+      "action": "tail-chase",
+      "options": {
+        "prompt": "Animate the exact small established desktop kitten in the supplied identical first and last artwork. Preserve exact face, ears, iris colors, fur markings, white bib and paws where present, head-to-body proportions, illustrated soft 3D fur, size and floor height. The character must remain one connected animal throughout, no redesign or changing species. Uniform flat saturated #00FF00 background, no props, text, cast shadows or other animals. Locked orthographic camera, no cuts, zoom, camera movement or reframing. Entire animal visible with generous constant margin. One complete realistic playful tail chase, four seconds total: start seated facing the camera. Notice the tail tip beside the hindquarters, look down and rotate the neck and shoulders toward it, stand onto four paws by 0.6 seconds. Follow the tail tip in ONE small continuous grounded circle around the same center from 0.6 to 2.4 seconds, taking short light, irregular feline steps, with the head, shoulders, spine, hips and tail turning together. Show the natural side, back and opposite side views as the body turns, never instantly mirror or change facing. Make one small front-paw bat toward the tail at 2.4 seconds, then bring all paws down, face forward and settle seated into the exact reference by 3.4 seconds. Hold a calm seated finish for the last0.6 seconds. Keep the circle tiny and the overall root near the starting spot, the floor plane fixed, no running off screen, jumping or teleporting.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/83c1feedbe4d49e7928fcd973495a776/tuxedo-front-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/83c1feedbe4d49e7928fcd973495a776/tuxedo-front-identity-v29.png",
+        "duration": 4,
+        "resolution": "720p",
+        "aspect_ratio": "1:1",
+        "generate_audio": false,
+        "generation_mode": "frame",
+        "prompt_enhance": false
+      },
+      "credit_cost": 460,
+      "source": "assets/video-actions/sources/continuity-v37/tuxedo-tail-chase.mp4",
+      "sha256": "5774e89604f0027c4e1806bb210e7bf189033efd599215226dc8b5ae9dc820e5",
+      "review": "Complete reviewed ground action and seated recovery at original 24fps. Exact canonical first and last artwork; no repeated excerpts or pose-height scaling."
+    },
+    {
+      "job_id": "mcp_cb93aa66fb474c9293538fc32f8b1b92",
+      "model": "bytedance/seedance-2.5",
+      "character": "cream",
+      "action": "brake",
+      "options": {
+        "prompt": "The exact established desktop kitten from the two supplied reference frames. First frame: planted four-legged side view facing RIGHT, matching the end of an existing gallop; last frame: the exact front-facing seated master. Preserve identical face, ears, iris colors, fur markings, head/body proportions, soft illustrated3D fur, animal size and painted floor height throughout. Locked orthographic camera and constant canvas scale; saturated uniform #00FF00 background, no cast shadows, text, props, cuts, zoom or reframing. All body parts remain connected, no extra paws, changing coat or enlarged head. The complete action starts immediately from the side stance; NEVER insert a front-facing sitting pose before the stopping movement. A realistic athletic BRAKING STOP from a rightward gallop: immediately take one short forward running footfall, lower the shoulders, plant both front paws ahead and let the hips briefly continue forward, flex elbows and hind legs to absorb momentum, then plant the hind paws and settle on all four feet by1.2seconds. No sliding or falling for this take. Only after the brake has completed, calmly turn toward the camera and sit into the exact final reference by3.3seconds. End with a calm seated hold in the final reference for at least0.5seconds. Four seconds total. Keep the overall physical root near the original center and floor plane fixed; the app supplies horizontal world travel. Show momentum through coherent paw contact, shoulders, hips and spine, with smooth acceleration and recovery, no sudden root or pose jumps.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/a51a2fd8db74428193c60b6470818c44/cream-planted-side-v35.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f91aa82183e14b82a31e69c0185697b5/cream-front-identity-v29.png",
+        "duration": 4,
+        "resolution": "720p",
+        "aspect_ratio": "1:1",
+        "generate_audio": false,
+        "generation_mode": "frame",
+        "prompt_enhance": false
+      },
+      "credit_cost": 460,
+      "source": "assets/video-actions/sources/continuity-v37/cream-brake.mp4",
+      "sha256": "3b8722a224551826c9409ad321766dd837d5fa8419eb25a1edbcbc952132a617",
+      "review": "Accepted full side-planted entry, continuous braking/skid/trip and supported front-facing recovery. Camera and common scale retained. Linear bookend floor calibration only; no per-pose normalization."
+    },
+    {
+      "job_id": "mcp_4ac801d745424c03adc51f7151001901",
+      "model": "bytedance/seedance-2.5",
+      "character": "tuxedo",
+      "action": "brake",
+      "options": {
+        "prompt": "The exact established desktop kitten from the two supplied reference frames. First frame: planted four-legged side view facing RIGHT, matching the end of an existing gallop; last frame: the exact front-facing seated master. Preserve identical face, ears, iris colors, fur markings, head/body proportions, soft illustrated3D fur, animal size and painted floor height throughout. Locked orthographic camera and constant canvas scale; saturated uniform #00FF00 background, no cast shadows, text, props, cuts, zoom or reframing. All body parts remain connected, no extra paws, changing coat or enlarged head. The complete action starts immediately from the side stance; NEVER insert a front-facing sitting pose before the stopping movement. A realistic athletic BRAKING STOP from a rightward gallop: immediately take one short forward running footfall, lower the shoulders, plant both front paws ahead and let the hips briefly continue forward, flex elbows and hind legs to absorb momentum, then plant the hind paws and settle on all four feet by1.2seconds. No sliding or falling for this take. Only after the brake has completed, calmly turn toward the camera and sit into the exact final reference by3.3seconds. End with a calm seated hold in the final reference for at least0.5seconds. Four seconds total. Keep the overall physical root near the original center and floor plane fixed; the app supplies horizontal world travel. Show momentum through coherent paw contact, shoulders, hips and spine, with smooth acceleration and recovery, no sudden root or pose jumps.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/34ce4a4d60864b75b828d732f26b21dc/tuxedo-planted-side-v35.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/83c1feedbe4d49e7928fcd973495a776/tuxedo-front-identity-v29.png",
+        "duration": 4,
+        "resolution": "720p",
+        "aspect_ratio": "1:1",
+        "generate_audio": false,
+        "generation_mode": "frame",
+        "prompt_enhance": false
+      },
+      "credit_cost": 460,
+      "source": "assets/video-actions/sources/continuity-v37/tuxedo-brake.mp4",
+      "sha256": "841685c90883752daf8cc84758a3b2502e51072d7131a7a6a98731c4804e1917",
+      "review": "Accepted full side-planted entry, continuous braking/skid/trip and supported front-facing recovery. Camera and common scale retained. Linear bookend floor calibration only; no per-pose normalization."
+    },
+    {
+      "job_id": "mcp_a404ebabbeaf40ab9d500c6955f607f0",
+      "model": "bytedance/seedance-2.5",
+      "character": "cream",
+      "action": "slide",
+      "options": {
+        "prompt": "The exact established desktop kitten from the two supplied reference frames. First frame: planted four-legged side view facing RIGHT, matching the end of an existing gallop; last frame: the exact front-facing seated master. Preserve identical face, ears, iris colors, fur markings, head/body proportions, soft illustrated3D fur, animal size and painted floor height throughout. Locked orthographic camera and constant canvas scale; saturated uniform #00FF00 background, no cast shadows, text, props, cuts, zoom or reframing. All body parts remain connected, no extra paws, changing coat or enlarged head. The complete action starts immediately from the side stance; NEVER insert a front-facing sitting pose before the stopping movement. A playful low-friction SKIDDING STOP from a rightward run: immediately plant the front paws ahead, spread the hind paws and lower the body, slide softly forward while leaning slightly back and flexing the elbows, then regain stable four-paw contact by1.8seconds. Convey the skid through the paw angles, shifting body weight and flexible back while keeping the center near its original position. Do not fall or roll. After regaining balance, turn toward the camera and sit into the exact final reference by3.3seconds. End with a calm seated hold in the final reference for at least0.5seconds. Four seconds total. Keep the overall physical root near the original center and floor plane fixed; the app supplies horizontal world travel. Show momentum through coherent paw contact, shoulders, hips and spine, with smooth acceleration and recovery, no sudden root or pose jumps.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/a51a2fd8db74428193c60b6470818c44/cream-planted-side-v35.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f91aa82183e14b82a31e69c0185697b5/cream-front-identity-v29.png",
+        "duration": 4,
+        "resolution": "720p",
+        "aspect_ratio": "1:1",
+        "generate_audio": false,
+        "generation_mode": "frame",
+        "prompt_enhance": false
+      },
+      "credit_cost": 460,
+      "source": "assets/video-actions/sources/continuity-v37/cream-slide.mp4",
+      "sha256": "a0bb30d682b2a92afed6f4456f5d175843664714e53236ef16750ee85d7b62d7",
+      "review": "Accepted full side-planted entry, continuous braking/skid/trip and supported front-facing recovery. Camera and common scale retained. Linear bookend floor calibration only; no per-pose normalization."
+    },
+    {
+      "job_id": "mcp_ad60aa442f4241c19d4da96c79e75e92",
+      "model": "bytedance/seedance-2.5",
+      "character": "tuxedo",
+      "action": "slide",
+      "options": {
+        "prompt": "The exact established desktop kitten from the two supplied reference frames. First frame: planted four-legged side view facing RIGHT, matching the end of an existing gallop; last frame: the exact front-facing seated master. Preserve identical face, ears, iris colors, fur markings, head/body proportions, soft illustrated3D fur, animal size and painted floor height throughout. Locked orthographic camera and constant canvas scale; saturated uniform #00FF00 background, no cast shadows, text, props, cuts, zoom or reframing. All body parts remain connected, no extra paws, changing coat or enlarged head. The complete action starts immediately from the side stance; NEVER insert a front-facing sitting pose before the stopping movement. A playful low-friction SKIDDING STOP from a rightward run: immediately plant the front paws ahead, spread the hind paws and lower the body, slide softly forward while leaning slightly back and flexing the elbows, then regain stable four-paw contact by1.8seconds. Convey the skid through the paw angles, shifting body weight and flexible back while keeping the center near its original position. Do not fall or roll. After regaining balance, turn toward the camera and sit into the exact final reference by3.3seconds. End with a calm seated hold in the final reference for at least0.5seconds. Four seconds total. Keep the overall physical root near the original center and floor plane fixed; the app supplies horizontal world travel. Show momentum through coherent paw contact, shoulders, hips and spine, with smooth acceleration and recovery, no sudden root or pose jumps.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/34ce4a4d60864b75b828d732f26b21dc/tuxedo-planted-side-v35.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/83c1feedbe4d49e7928fcd973495a776/tuxedo-front-identity-v29.png",
+        "duration": 4,
+        "resolution": "720p",
+        "aspect_ratio": "1:1",
+        "generate_audio": false,
+        "generation_mode": "frame",
+        "prompt_enhance": false
+      },
+      "credit_cost": 460,
+      "source": "assets/video-actions/sources/continuity-v37/tuxedo-slide.mp4",
+      "sha256": "3f8ec6cc542436b63753ceb69aff765830eb13d7be9593107f6277c8330ab405",
+      "review": "Accepted full side-planted entry, continuous braking/skid/trip and supported front-facing recovery. Camera and common scale retained. Linear bookend floor calibration only; no per-pose normalization."
+    },
+    {
+      "job_id": "mcp_7afcfcbba40f4e0889d12a72335e5a24",
+      "model": "bytedance/seedance-2.5",
+      "character": "cream",
+      "action": "stumble",
+      "options": {
+        "prompt": "The exact established desktop kitten from the two supplied reference frames. First frame: planted four-legged side view facing RIGHT, matching the end of an existing gallop; last frame: the exact front-facing seated master. Preserve identical face, ears, iris colors, fur markings, head/body proportions, soft illustrated3D fur, animal size and painted floor height throughout. Locked orthographic camera and constant canvas scale; saturated uniform #00FF00 background, no cast shadows, text, props, cuts, zoom or reframing. All body parts remain connected, no extra paws, changing coat or enlarged head. The complete action starts immediately from the side stance; NEVER insert a front-facing sitting pose before the stopping movement. A cute mild STUMBLE while stopping a rightward run: immediately take one short forward running footfall, catch a front paw, lower the chest and gently tumble onto one supported shoulder, briefly roll through the side with the head and torso connected, then place the front paws and push back upright by2.6seconds. Keep this a soft playful trip, no hard impact or somersault through the air. Face the camera and sit into the exact final reference by3.4seconds. End with a calm seated hold in the final reference for at least0.5seconds. Four seconds total. Keep the overall physical root near the original center and floor plane fixed; the app supplies horizontal world travel. Show momentum through coherent paw contact, shoulders, hips and spine, with smooth acceleration and recovery, no sudden root or pose jumps.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/a51a2fd8db74428193c60b6470818c44/cream-planted-side-v35.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f91aa82183e14b82a31e69c0185697b5/cream-front-identity-v29.png",
+        "duration": 4,
+        "resolution": "720p",
+        "aspect_ratio": "1:1",
+        "generate_audio": false,
+        "generation_mode": "frame",
+        "prompt_enhance": false
+      },
+      "credit_cost": 460,
+      "source": "assets/video-actions/sources/continuity-v37/cream-stumble.mp4",
+      "sha256": "2b21480214dfc34e0746a42c92a9bba2eceee33ab1f4fc8bd3359b1c484a7d5f",
+      "review": "Accepted full side-planted entry, continuous braking/skid/trip and supported front-facing recovery. Camera and common scale retained. Linear bookend floor calibration only; no per-pose normalization."
+    },
+    {
+      "job_id": "mcp_f095b747c8d346b0855a80a3190b3294",
+      "model": "bytedance/seedance-2.5",
+      "character": "tuxedo",
+      "action": "stumble",
+      "options": {
+        "prompt": "The exact established desktop kitten from the two supplied reference frames. First frame: planted four-legged side view facing RIGHT, matching the end of an existing gallop; last frame: the exact front-facing seated master. Preserve identical face, ears, iris colors, fur markings, head/body proportions, soft illustrated3D fur, animal size and painted floor height throughout. Locked orthographic camera and constant canvas scale; saturated uniform #00FF00 background, no cast shadows, text, props, cuts, zoom or reframing. All body parts remain connected, no extra paws, changing coat or enlarged head. The complete action starts immediately from the side stance; NEVER insert a front-facing sitting pose before the stopping movement. A cute mild STUMBLE while stopping a rightward run: immediately take one short forward running footfall, catch a front paw, lower the chest and gently tumble onto one supported shoulder, briefly roll through the side with the head and torso connected, then place the front paws and push back upright by2.6seconds. Keep this a soft playful trip, no hard impact or somersault through the air. Face the camera and sit into the exact final reference by3.4seconds. End with a calm seated hold in the final reference for at least0.5seconds. Four seconds total. Keep the overall physical root near the original center and floor plane fixed; the app supplies horizontal world travel. Show momentum through coherent paw contact, shoulders, hips and spine, with smooth acceleration and recovery, no sudden root or pose jumps.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/34ce4a4d60864b75b828d732f26b21dc/tuxedo-planted-side-v35.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/83c1feedbe4d49e7928fcd973495a776/tuxedo-front-identity-v29.png",
+        "duration": 4,
+        "resolution": "720p",
+        "aspect_ratio": "1:1",
+        "generate_audio": false,
+        "generation_mode": "frame",
+        "prompt_enhance": false
+      },
+      "credit_cost": 460,
+      "source": "assets/video-actions/sources/continuity-v37/tuxedo-stumble.mp4",
+      "sha256": "78a2687105d9edbbda0f4e27ff7f58a81e29c6c39ea5fe4def4a40f4aba8050f",
+      "review": "Accepted full side-planted entry, continuous braking/skid/trip and supported front-facing recovery. Camera and common scale retained. Linear bookend floor calibration only; no per-pose normalization."
     }
   ]
 }

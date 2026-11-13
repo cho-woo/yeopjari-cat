@@ -88,6 +88,9 @@ int Run() {
             if(g.stopClip==cat::sprite_sequence::Clip::None&&g.groundArtBridge.Neutral()&&
                     !g.waitingForStop&&std::abs(WalkingVelocity(g.physics.RenderPose()))<=.5)break;
         } // Finish the complete source recovery and standing outro.
+        // Recovery now claims its completion frame to begin the true quiet
+        // clock. A new owner can be accepted from the following host frame.
+        host.Frame(50);
         // A direct command interrupts an owned random run. Its preference and
         // ownership survive the scheduler noticing the new serial next frame.
         while(!g.randomZoomies.Due()) {

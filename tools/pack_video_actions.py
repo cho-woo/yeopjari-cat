@@ -32,6 +32,8 @@ RESOURCE['turn']=437
 RESOURCE['cursor-pounce']=438
 RESOURCE.update({'walk':400,'run':401,'eat':118})
 RESOURCE['sleep']=114
+RESOURCE['settle']=439
+RESOURCE.update({'tail-chase':450,'roll':451})
 SOURCE_ACTION = {'groom': 'wipe', 'punch': 'punch', 'jump': 'jump', 'knead': 'knead', 'reach': 'reach'}
 SOURCE_ACTION.update({name:name for name in ('ball','toy','brake','slide','stumble','climb')})
 SOURCE_ACTION['fish']='fish'
@@ -40,6 +42,8 @@ SOURCE_ACTION['turn']='turn'
 SOURCE_ACTION['cursor-pounce']='cursor-pounce'
 SOURCE_ACTION.update({'walk':'walk','run':'run','eat':'eat'})
 SOURCE_ACTION['sleep']='sleep-entry'
+SOURCE_ACTION['settle']='grounded-settle'
+SOURCE_ACTION.update({'tail-chase':'tail-chase','roll':'roll'})
 IDENTITY_PATH=DIRECTORY/'identity-v29.json'
 IDENTITY=json.loads(IDENTITY_PATH.read_text(encoding='utf-8')) if IDENTITY_PATH.exists() else {'clips':{}}
 REACH_KEYS = {
@@ -186,27 +190,66 @@ def eye_material(source, rect, clip):
     # Find the pupil/eye outline first. Orange forehead and tail stripes can
     # match iris hue, but cannot become an eye just because they are amber.
     candidate = (alpha > 180) & (np.maximum.reduce((red,green,blue))<90)
-    candidate &= (yy > height * .10) & (yy < height * .68)
-    candidate &= xx > width * (.55 if clip in ('jump','ball','brake','slide','stumble','climb') else .12)
+    rotated=clip in ('roll','tail-chase','brake','slide','stumble')
+    candidate &= (yy > height * .05) & (yy < height * (.95 if rotated else .68))
+    candidate &= xx > width * (.05 if rotated else .55 if clip in ('jump','ball','climb') else .12)
+    hsv = np.asarray(Image.fromarray(rgba).convert('RGB').convert('HSV'))
+    amber = (hsv[:, :, 0] >= 5) & (hsv[:, :, 0] <= 43) & (hsv[:, :, 1] > 110) & (hsv[:, :, 2] > 35) & (hsv[:, :, 2] < 225)
     count, labels, stats, centers = cv2.connectedComponentsWithStats(candidate.astype(np.uint8), 8)
     regions = []
     for index in range(1, count):
         left, top, w, h, area = stats[index]
         if area >= 24 and w >= 6 and h >= 8 and .4 < w / h < 1.8 and area / (w * h) > .3:
-            regions.append((area, left, top, w, h))
+            region=((xx-(left+w/2))/(w/2+3))**2+((yy-(top+h/2))/(h/2+3))**2<=1
+            if not rotated or np.count_nonzero(region&amber)>=3:regions.append((area, left, top, w, h))
     regions = sorted(sorted(regions, reverse=True)[:2], key=lambda region: region[1])
-    hsv = np.asarray(Image.fromarray(rgba).convert('RGB').convert('HSV'))
-    amber = (hsv[:, :, 0] >= 5) & (hsv[:, :, 0] <= 43) & (hsv[:, :, 1] > 110) & (hsv[:, :, 2] > 35) & (hsv[:, :, 2] < 225)
     mask = np.zeros((height, width), np.uint8)
     eyes = []
     for ordinal, (_, left, top, w, h) in enumerate(regions):
         region = ((xx - (left + w / 2)) / (w / 2 + 3)) ** 2 + ((yy - (top + h / 2)) / (h / 2 + 3)) ** 2 <= 1
         pigment = ordinal + 1
+        if len(regions)==1 and rotated:
+            # A left-facing profile exposes the blue anatomical left eye.
+            # Locate the small pink nose next to the pupil, excluding ear/pad
+            # regions; do not label every single visible eye gold.
+            pink=(alpha>180)&(red>110)&(red>green+22)&(blue>=green-3)
+            n,_,stats2,centers2=cv2.connectedComponentsWithStats(pink.astype(np.uint8),8)
+            cx,cy=left+w/2,top+h/2
+            noses=[tuple(centers2[i]) for i in range(1,n) if 2<=stats2[i,cv2.CC_STAT_AREA]<=32 and
+                   1<=stats2[i,cv2.CC_STAT_WIDTH]<=9 and 1<=stats2[i,cv2.CC_STAT_HEIGHT]<=8 and
+                   cy-2<=centers2[i][1]<=cy+25 and abs(centers2[i][0]-cx)<=26]
+            if noses:
+                nose=min(noses,key=lambda point:(point[0]-cx)**2+(point[1]-cy)**2)
+                if nose[0]<cx:pigment=2
         mask[region & amber] = pigment
         eyes.append({'rect': [x + int(left), y + int(top), int(w), int(h)],
-            'anatomical_side': 'right' if ordinal == 0 else 'left',
-            'material': 'gold' if ordinal == 0 else 'blue', 'pixels': int(np.count_nonzero(region & amber))})
+            'anatomical_side': 'right' if pigment==1 else 'left',
+            'material': 'gold' if pigment==1 else 'blue', 'pixels': int(np.count_nonzero(region & amber))})
     return eyes, mask
+
+
+class EyeIdentityTracker:
+    """Keep anatomical eye IDs when a rolling head crosses the screen x axis."""
+    def __init__(self):self.previous={};self.last_seen=-100
+    def apply(self,eyes,mask,frame,index):
+        if not eyes:return eyes,mask
+        from itertools import permutations
+        x,y,_,_=frame['rect'];ax,ay=frame['anchor']
+        points=[(e['rect'][0]+e['rect'][2]/2-x-ax,e['rect'][1]+e['rect'][3]/2-y-ay) for e in eyes]
+        ids=[1 if e['material']=='gold' else 2 for e in eyes]
+        if self.previous and index-self.last_seen<=12:
+            choices=list(permutations((1,2),len(eyes)))
+            def cost(choice):
+                return sum((points[i][0]-self.previous[label][0])**2+(points[i][1]-self.previous[label][1])**2
+                           if label in self.previous else 1000 for i,label in enumerate(choice))
+            ids=list(min(choices,key=cost))
+        result=np.zeros_like(mask)
+        for eye,point,label in zip(eyes,points,ids):
+            old=1 if eye['material']=='gold' else 2;result[mask==old]=label
+            eye['material']='gold' if label==1 else 'blue';eye['anatomical_side']='right' if label==1 else 'left'
+            self.previous[label]=point
+        self.last_seen=index
+        return eyes,result
 
 
 def snow_material(source, eyes, props=None, strict_skin=False):
@@ -215,15 +258,42 @@ def snow_material(source, eyes, props=None, strict_skin=False):
     red, green, blue = rgb.transpose(2, 0, 1)
     luma = rgb @ np.array([.2126, .7152, .0722])
     value = np.interp(luma, [0, 25, 60, 120, 180, 255], [0, 20, 70, 210, 235, 255])
+    # Remove orange coat pigment rather than turning it into dark grey tabby
+    # stripes. Smooth material weights retain illumination and fine texture;
+    # actual nose/ear/pad pigment is restored below.
+    smooth=lambda v:np.clip(v,0,1)**2*(3-2*np.clip(v,0,1))
+    fur=smooth((red-blue-12)/30)*smooth((red-green-4)/15)*smooth((red-80)/40)
+    white=np.maximum(value,225+.07*(luma-140))
+    value=value*(1-fur)+white*fur
     result = np.stack((value + 1, value, value - 1), axis=2).clip(0, 255)
     # Orange fur and pink skin overlap at low resolution. Require the pink
     # blue-channel component so forehead/tail fur cannot become pink islands.
     pink = (red > 100) & (red - green > 8) & (green - blue < 18) & (blue > red * .52)
     if strict_skin:
-        # Warm cream fur can satisfy the broad legacy pink threshold. The
-        # run's nose/ear/pad pigment has blue at least as strong as green.
-        pink &= blue >= green-2
+        # Skin has a strong red/green separation. Requiring blue>=green
+        # erased the peach inner ears and pads along with orange fur.
+        hsv_skin=np.asarray(source.convert('RGB').convert('HSV')).astype(float)
+        hue=np.minimum(hsv_skin[:,:,0],256-hsv_skin[:,:,0])
+        pink=(hue<18)&(hsv_skin[:,:,1]>40)&(red-green>42)
+        if np.any(eyes):
+            centers=[];widths=[]
+            for label in (1,2):
+                ey,ex=np.where(eyes==label)
+                if len(ex):centers.append((float(ex.mean()),float(ey.mean())));widths.append(float(ex.max()-ex.min()+1))
+            cx,cy=np.mean(centers,axis=0);cy-=7
+            span=np.hypot(*(np.asarray(centers[0])-centers[-1])) if len(centers)==2 else max(widths)*1.5
+            # Profile views foreshorten the distance between the eyes, not
+            # the skull. Keep the canonical head envelope so inner ears do
+            # not lose their skin pigment when only one eye is visible.
+            rx,ry=max(38,span*1.15+4),max(46,span*1.4+4)
+            yy,xx=np.indices(eyes.shape)
+            head=((xx-cx)/rx)**2+((yy-cy)/ry)**2<=1
+            # Peach tail stripes overlap ear pigment. Only the connected
+            # head region or genuinely pink pads may retain that material.
+            pink &= head|(blue>=green)
     weight = np.clip((red - green - 8) / 20, 0, 1) * np.clip((18 - (green - blue)) / 12, 0, 1) * pink
+    if strict_skin:
+        weight=np.clip((red-green-42)/10,0,1)*np.clip((18-hue)/4,0,1)*pink
     result = result * (1 - weight[:, :, None]) + rgb * weight[:, :, None]
     skin = (weight >= .999) & (eyes == 0)
     result[skin] = rgb[skin]
@@ -330,7 +400,7 @@ def bake(clip, character, indices):
         if ground_root is not None:
             # Gallop suspension is part of the original pose. Registering
             # every airborne toe to the floor would erase the small flight.
-            anchor_y=max(anchor_y,ground_root)
+            anchor_y=float(ground_root) if settings.get('ground_root_mode')=='fixed' else max(anchor_y,ground_root)
         if clip in ('ball','brake','slide','stumble','climb'):
             anchor_x,_,_=head_root(image)
         horizontal_root=source_registration.get('fixed_horizontal_root',settings.get('fixed_horizontal_root',{}).get(character))
@@ -447,7 +517,8 @@ def bake(clip, character, indices):
         'selected_frame_indices': indices, 'scale': factor, 'neutral_root': [center, bottom],
         'selected_source_files':selected_files,'source_files':source_records,
         'source_roots':source_roots,'ground_registration':
-            'source_floor_with_penetration_guard' if settings.get('fixed_ground_root') else 'painted_sole',
+        'fixed_recorded_cat_floor' if settings.get('ground_root_mode')=='fixed' else
+        'source_floor_with_penetration_guard' if settings.get('fixed_ground_root') else 'painted_sole',
         **({
             'fixed_horizontal_root':settings['fixed_horizontal_root'][character],
             } if settings.get('fixed_horizontal_root') else {}),
@@ -545,9 +616,11 @@ def main(only=None,materials_only=False,metadata_only=False):
             snow = Image.new('RGBA', source.size)
             mask = Image.new('L', source.size)
             annotations = []
+            tracker=EyeIdentityTracker()
             for index, record in enumerate(records):
                 x, y, width, height = record['rect']
                 eyes, local_mask = eye_material(source, record['rect'], clip)
+                if clip in ('roll','stumble'):eyes,local_mask=tracker.apply(eyes,local_mask,record,index)
                 local = source.crop((x, y, x + width, y + height))
                 # Fur material must not recolor the feather, food or plate.
                 # Registered prop regions stay below the muzzle and outside

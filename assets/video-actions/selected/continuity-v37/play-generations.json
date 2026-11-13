@@ -1,0 +1,174 @@
+[
+  {
+    "character": "cream",
+    "action": "roll",
+    "args": {
+      "client_token": "yeopjari-v37-roll-cream-20261113-1",
+      "model": "bytedance/seedance-2.5",
+      "options": {
+        "prompt": "Animate the exact small established desktop kitten in the supplied identical first and last artwork. Preserve exact face, ears, iris colors, fur markings, white bib and paws where present, head-to-body proportions, illustrated soft 3D fur, size and floor height. The character must remain one connected animal throughout, no redesign or changing species. Uniform flat saturated #00FF00 background, no props, text, cast shadows or other animals. Locked orthographic camera, no cuts, zoom, camera movement or reframing. Entire animal visible with generous constant margin. One complete realistic playful ground roll, four seconds total: start seated facing the camera. From 0.15 to 0.8 seconds gently lower the shoulders and lean onto one side using the front paws for support. From 0.8 to 1.8 roll onto the back, exposing the soft belly, and wiggle the connected paws playfully without crossing or multiplying legs. From 1.8 to 2.7 roll coherently back onto the same supported side, then use forepaws and hindquarters to push up into the exact front-facing seated reference by 3.4 seconds. Settle in that exact seated stance for the final 0.6 seconds. The head and body roll together, the ears and muzzle remain rigidly attached, the body stays on the same floor, no jumping, no flipping in the air. Smooth feline weight transfer through shoulders, hips and paws, no sudden pose or root changes.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f91aa82183e14b82a31e69c0185697b5/cream-front-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f91aa82183e14b82a31e69c0185697b5/cream-front-identity-v29.png",
+        "duration": 4,
+        "resolution": "720p",
+        "aspect_ratio": "1:1",
+        "generate_audio": false,
+        "generation_mode": "frame",
+        "prompt_enhance": false
+      }
+    },
+    "result": {
+      "job_id": "mcp_61d5ba131b9a47bc94dc3c3162dc8176",
+      "creditCost": 460,
+      "reused": false
+    },
+    "generation": {
+      "jobId": "mcp_61d5ba131b9a47bc94dc3c3162dc8176",
+      "status": "succeeded",
+      "modelName": "bytedance/seedance-2.5",
+      "createdAt": "2026-11-13T12:15:41.197Z",
+      "completedAt": null,
+      "outputList": [
+        {
+          "imageUrl": null,
+          "videoUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_61d5ba131b9a47bc94dc3c3162dc8176/output/output_0.mp4",
+          "posterUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_61d5ba131b9a47bc94dc3c3162dc8176/output/output_0_poster.jpg",
+          "text": null
+        }
+      ]
+    },
+    "source_path": "sources/continuity-v37/cream-roll.mp4",
+    "sha256": "cee2cb0e9fef7b8b0f26d14353649f38b57193ea8863bc75d41325b85fe0cb17",
+    "frame_count": 97,
+    "fps": 24.0
+  },
+  {
+    "character": "tuxedo",
+    "action": "roll",
+    "args": {
+      "client_token": "yeopjari-v37-roll-tuxedo-20261113-1",
+      "model": "bytedance/seedance-2.5",
+      "options": {
+        "prompt": "Animate the exact small established desktop kitten in the supplied identical first and last artwork. Preserve exact face, ears, iris colors, fur markings, white bib and paws where present, head-to-body proportions, illustrated soft 3D fur, size and floor height. The character must remain one connected animal throughout, no redesign or changing species. Uniform flat saturated #00FF00 background, no props, text, cast shadows or other animals. Locked orthographic camera, no cuts, zoom, camera movement or reframing. Entire animal visible with generous constant margin. One complete realistic playful ground roll, four seconds total: start seated facing the camera. From 0.15 to 0.8 seconds gently lower the shoulders and lean onto one side using the front paws for support. From 0.8 to 1.8 roll onto the back, exposing the soft belly, and wiggle the connected paws playfully without crossing or multiplying legs. From 1.8 to 2.7 roll coherently back onto the same supported side, then use forepaws and hindquarters to push up into the exact front-facing seated reference by 3.4 seconds. Settle in that exact seated stance for the final 0.6 seconds. The head and body roll together, the ears and muzzle remain rigidly attached, the body stays on the same floor, no jumping, no flipping in the air. Smooth feline weight transfer through shoulders, hips and paws, no sudden pose or root changes.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/83c1feedbe4d49e7928fcd973495a776/tuxedo-front-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/83c1feedbe4d49e7928fcd973495a776/tuxedo-front-identity-v29.png",
+        "duration": 4,
+        "resolution": "720p",
+        "aspect_ratio": "1:1",
+        "generate_audio": false,
+        "generation_mode": "frame",
+        "prompt_enhance": false
+      }
+    },
+    "result": {
+      "job_id": "mcp_8398cca2da1f47659d1425e66f698afe",
+      "creditCost": 460,
+      "reused": false
+    },
+    "generation": {
+      "jobId": "mcp_8398cca2da1f47659d1425e66f698afe",
+      "status": "succeeded",
+      "modelName": "bytedance/seedance-2.5",
+      "createdAt": "2026-11-13T12:15:42.758Z",
+      "completedAt": null,
+      "outputList": [
+        {
+          "imageUrl": null,
+          "videoUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_8398cca2da1f47659d1425e66f698afe/output/output_0.mp4",
+          "posterUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_8398cca2da1f47659d1425e66f698afe/output/output_0_poster.jpg",
+          "text": null
+        }
+      ]
+    },
+    "source_path": "sources/continuity-v37/tuxedo-roll.mp4",
+    "sha256": "07f8d1f1ce0118b8ec488a288f827886693a78a67c8c479d47f8c469f36414ba",
+    "frame_count": 97,
+    "fps": 24.0
+  },
+  {
+    "character": "cream",
+    "action": "tail-chase",
+    "args": {
+      "client_token": "yeopjari-v37-tail-chase-cream-20261113-1",
+      "model": "bytedance/seedance-2.5",
+      "options": {
+        "prompt": "Animate the exact small established desktop kitten in the supplied identical first and last artwork. Preserve exact face, ears, iris colors, fur markings, white bib and paws where present, head-to-body proportions, illustrated soft 3D fur, size and floor height. The character must remain one connected animal throughout, no redesign or changing species. Uniform flat saturated #00FF00 background, no props, text, cast shadows or other animals. Locked orthographic camera, no cuts, zoom, camera movement or reframing. Entire animal visible with generous constant margin. One complete realistic playful tail chase, four seconds total: start seated facing the camera. Notice the tail tip beside the hindquarters, look down and rotate the neck and shoulders toward it, stand onto four paws by 0.6 seconds. Follow the tail tip in ONE small continuous grounded circle around the same center from 0.6 to 2.4 seconds, taking short light, irregular feline steps, with the head, shoulders, spine, hips and tail turning together. Show the natural side, back and opposite side views as the body turns, never instantly mirror or change facing. Make one small front-paw bat toward the tail at 2.4 seconds, then bring all paws down, face forward and settle seated into the exact reference by 3.4 seconds. Hold a calm seated finish for the last0.6 seconds. Keep the circle tiny and the overall root near the starting spot, the floor plane fixed, no running off screen, jumping or teleporting.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f91aa82183e14b82a31e69c0185697b5/cream-front-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f91aa82183e14b82a31e69c0185697b5/cream-front-identity-v29.png",
+        "duration": 4,
+        "resolution": "720p",
+        "aspect_ratio": "1:1",
+        "generate_audio": false,
+        "generation_mode": "frame",
+        "prompt_enhance": false
+      }
+    },
+    "result": {
+      "job_id": "mcp_82ea2ca3e7d74614a8d24c858875ebda",
+      "creditCost": 460,
+      "reused": false
+    },
+    "generation": {
+      "jobId": "mcp_82ea2ca3e7d74614a8d24c858875ebda",
+      "status": "succeeded",
+      "modelName": "bytedance/seedance-2.5",
+      "createdAt": "2026-11-13T12:15:44.168Z",
+      "completedAt": null,
+      "outputList": [
+        {
+          "imageUrl": null,
+          "videoUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_82ea2ca3e7d74614a8d24c858875ebda/output/output_0.mp4",
+          "posterUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_82ea2ca3e7d74614a8d24c858875ebda/output/output_0_poster.jpg",
+          "text": null
+        }
+      ]
+    },
+    "source_path": "sources/continuity-v37/cream-tail-chase.mp4",
+    "sha256": "35108a4c52a4cd022e4351914ff757ef71492fa392b502212ca8b901ea419161",
+    "frame_count": 97,
+    "fps": 24.0
+  },
+  {
+    "character": "tuxedo",
+    "action": "tail-chase",
+    "args": {
+      "client_token": "yeopjari-v37-tail-chase-tuxedo-20261113-1",
+      "model": "bytedance/seedance-2.5",
+      "options": {
+        "prompt": "Animate the exact small established desktop kitten in the supplied identical first and last artwork. Preserve exact face, ears, iris colors, fur markings, white bib and paws where present, head-to-body proportions, illustrated soft 3D fur, size and floor height. The character must remain one connected animal throughout, no redesign or changing species. Uniform flat saturated #00FF00 background, no props, text, cast shadows or other animals. Locked orthographic camera, no cuts, zoom, camera movement or reframing. Entire animal visible with generous constant margin. One complete realistic playful tail chase, four seconds total: start seated facing the camera. Notice the tail tip beside the hindquarters, look down and rotate the neck and shoulders toward it, stand onto four paws by 0.6 seconds. Follow the tail tip in ONE small continuous grounded circle around the same center from 0.6 to 2.4 seconds, taking short light, irregular feline steps, with the head, shoulders, spine, hips and tail turning together. Show the natural side, back and opposite side views as the body turns, never instantly mirror or change facing. Make one small front-paw bat toward the tail at 2.4 seconds, then bring all paws down, face forward and settle seated into the exact reference by 3.4 seconds. Hold a calm seated finish for the last0.6 seconds. Keep the circle tiny and the overall root near the starting spot, the floor plane fixed, no running off screen, jumping or teleporting.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/83c1feedbe4d49e7928fcd973495a776/tuxedo-front-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/83c1feedbe4d49e7928fcd973495a776/tuxedo-front-identity-v29.png",
+        "duration": 4,
+        "resolution": "720p",
+        "aspect_ratio": "1:1",
+        "generate_audio": false,
+        "generation_mode": "frame",
+        "prompt_enhance": false
+      }
+    },
+    "result": {
+      "job_id": "mcp_84e54c953f324b019b42e13dc30b6c6f",
+      "creditCost": 460,
+      "reused": false
+    },
+    "generation": {
+      "jobId": "mcp_84e54c953f324b019b42e13dc30b6c6f",
+      "status": "succeeded",
+      "modelName": "bytedance/seedance-2.5",
+      "createdAt": "2026-11-13T12:15:45.339Z",
+      "completedAt": null,
+      "outputList": [
+        {
+          "imageUrl": null,
+          "videoUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_84e54c953f324b019b42e13dc30b6c6f/output/output_0.mp4",
+          "posterUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_84e54c953f324b019b42e13dc30b6c6f/output/output_0_poster.jpg",
+          "text": null
+        }
+      ]
+    },
+    "source_path": "sources/continuity-v37/tuxedo-tail-chase.mp4",
+    "sha256": "5774e89604f0027c4e1806bb210e7bf189033efd599215226dc8b5ae9dc820e5",
+    "frame_count": 97,
+    "fps": 24.0
+  }
+]

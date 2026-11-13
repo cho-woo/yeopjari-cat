@@ -10,18 +10,18 @@ namespace cat::sprite_sequence {
 
 // The first eight ordinals are stable asset identifiers. None is not a sheet.
 enum class Clip { Groom, Sleep, Box, Fish, Punch, Eat, Jump, Treat, None, Walk, Run, Knead, Reach,
-    BallPlay, ToyPlay, Brake, Slide, Stumble, Climb, FlyHunt, RunningTurn, CursorPounce };
+    BallPlay, ToyPlay, Brake, Slide, Stumble, Climb, FlyHunt, RunningTurn, CursorPounce, Settle, TailChase, Roll };
 constexpr std::array<Clip,8> kClips{{Clip::Groom,Clip::Sleep,Clip::Box,Clip::Fish,
                                    Clip::Punch,Clip::Eat,Clip::Jump,Clip::Treat}};
-constexpr std::array<Clip,21> kAuthoredClips{{Clip::Groom,Clip::Sleep,Clip::Box,Clip::Fish,
+constexpr std::array<Clip,24> kAuthoredClips{{Clip::Groom,Clip::Sleep,Clip::Box,Clip::Fish,
     Clip::Punch,Clip::Eat,Clip::Jump,Clip::Treat,Clip::Walk,Clip::Run,Clip::Knead,Clip::Reach,
-    Clip::BallPlay,Clip::ToyPlay,Clip::Brake,Clip::Slide,Clip::Stumble,Clip::Climb,Clip::FlyHunt,Clip::RunningTurn,Clip::CursorPounce}};
+    Clip::BallPlay,Clip::ToyPlay,Clip::Brake,Clip::Slide,Clip::Stumble,Clip::Climb,Clip::FlyHunt,Clip::RunningTurn,Clip::CursorPounce,Clip::Settle,Clip::TailChase,Clip::Roll}};
 constexpr unsigned kMaxAuthoredFrames=256,kMaxProgramSteps=512,kMaxProgramCues=64;
 constexpr std::uint32_t kMaxStepMs=60000,kMaxProgramMs=86400000;
 constexpr bool KnownClip(Clip clip) {
     return static_cast<unsigned>(clip)<8 || clip==Clip::Walk || clip==Clip::Run ||
         clip==Clip::Knead || clip==Clip::Reach ||
-        (clip>=Clip::BallPlay&&clip<=Clip::CursorPounce);
+        (clip>=Clip::BallPlay&&clip<=Clip::Roll);
 }
 struct Grid { unsigned columns=0,rows=0,count=0; };
 constexpr Grid GridFor(Clip clip,unsigned sheetFrames=0) {
@@ -36,7 +36,7 @@ constexpr Grid GridFor(Clip clip,unsigned sheetFrames=0) {
     case Clip::Jump:grid={4,4,16};break;
     case Clip::Treat:grid={6,4,24};break;
     case Clip::Walk:case Clip::Run:case Clip::Knead:case Clip::Reach:grid={8,1,8};break;
-    case Clip::BallPlay:case Clip::ToyPlay:case Clip::Brake:case Clip::Slide:case Clip::Stumble:case Clip::Climb:case Clip::FlyHunt:case Clip::RunningTurn:case Clip::CursorPounce:
+    case Clip::BallPlay:case Clip::ToyPlay:case Clip::Brake:case Clip::Slide:case Clip::Stumble:case Clip::Climb:case Clip::FlyHunt:case Clip::RunningTurn:case Clip::CursorPounce:case Clip::Settle:case Clip::TailChase:case Clip::Roll:
         grid={8,1,8};break;
     case Clip::None:break;
     }
@@ -481,6 +481,10 @@ inline Frame SampleSleep(std::uint64_t elapsed,const Options& options={}) {
 inline Frame Sample(Clip clip,std::uint64_t elapsed,const Options& options={}) {
     if(GridFor(clip,options.sheetFrames).count==0)return {0,0,0,false,true,true,true};
     switch(clip) {
+    case Clip::Settle:case Clip::TailChase:case Clip::Roll:
+        // New video-only actions have no legacy strip. Their registered
+        // playlist is selected by the runtime asset sampler.
+        return {0,0,0,false,true,true,true};
     case Clip::Groom: {
         const auto duration=GroomDuration(options.durationMs);
         switch(options.variant%3) {

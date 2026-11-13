@@ -53,6 +53,9 @@ LAYOUT.update({'knead':(11,'Knead',8,1),'reach':(12,'Reach',8,1)})
 LAYOUT.update({name:(13+index,enum,8,1) for index,(name,enum) in enumerate(
     [('ball','BallPlay'),('toy','ToyPlay'),('brake','Brake'),('slide','Slide'),('stumble','Stumble'),('climb','Climb'),('fly','FlyHunt'),('turn','RunningTurn')])})
 LAYOUT['cursor-pounce']=(21,'CursorPounce',8,1)
+LAYOUT['settle']=(22,'Settle',8,1)
+LAYOUT['tail-chase']=(23,'TailChase',8,1)
+LAYOUT['roll']=(24,'Roll',8,1)
 MAX_FRAMES=256
 MAX_STEPS=512
 MAX_CUES=64
@@ -281,7 +284,9 @@ def load_entries(manifest_path):
             frames.append({'rect':[x,y,fw,fh],'anchor':fixed_anchor})
         filename=f'c{character}-{name}.png'
         # 301..314 remain reserved by the retired-audio compatibility checks.
-        if clip_index>=13:
+        if name in ('tail-chase','roll'):
+            resource=450+character*2+(name=='roll')
+        elif clip_index>=13:
             resource=430+character*32+clip_index-13
         elif name in ('knead','reach'):
             resource=440+character*2+(name=='reach')
@@ -442,11 +447,11 @@ def video_action_entries(root,originals):
             'Video action manifest drift')
     replacements=load_entries(manifest)
     sources={entry['clip']:entry['source'] for entry in json.loads(manifest.read_text(encoding='utf-8'))['clips']}
-    require({entry['clip'] for entry in replacements}=={'jump','groom','punch','knead','reach','ball','toy','brake','slide','stumble','climb','fish','fly','turn','walk','run','eat','cursor-pounce','sleep'} and
+    require({entry['clip'] for entry in replacements}=={'jump','groom','punch','knead','reach','ball','toy','brake','slide','stumble','climb','fish','fly','turn','walk','run','eat','cursor-pounce','sleep','settle','tail-chase','roll'} and
             all(entry['character']==0 for entry in replacements), 'Incomplete video action family')
     for entry in replacements:
         entry['asset_path']=(Path('assets/video-actions')/sources[entry['clip']]).as_posix()
-        if entry['clip'] in ('walk','run','eat'):entry['nominal_fps']=24
+        if entry['clip'] in ('walk','run','eat','settle','tail-chase','roll'):entry['nominal_fps']=24
     replaced={(entry['clip'],entry['character']) for entry in replacements}
     result=[entry for entry in originals if (entry['clip'],entry['character']) not in replaced]+replacements
     result.sort(key=lambda entry:(entry['character'],LAYOUT[entry['clip']][0]))

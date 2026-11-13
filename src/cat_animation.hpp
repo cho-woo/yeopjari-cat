@@ -68,6 +68,7 @@ struct Pose {
     double walkPhase=0,walkStride=24,walkDuty=.68,walkLift=3.2;
     cat::gait::Feet walkFeet{};
     bool walkFeetValid=false;
+    std::uint64_t presentationSerial=0; // Whole-action boundary, independent of source-frame clocks.
 };
 
 // Authored artwork is an optional presentation layer. Canonical frame IDs,
@@ -572,17 +573,20 @@ inline Pose Evaluate(Motion motion, std::uint64_t elapsed, std::uint64_t ticks, 
     using Clip=cat::sprite_sequence::Clip;
     switch(motion) {
     case Motion::Groom:AttachSprite(p,Clip::Groom,elapsed);break;
+    case Motion::Scratch:AttachSprite(p,Clip::Groom,elapsed);break;
+    case Motion::TailChase:AttachSprite(p,Clip::TailChase,elapsed);break;
+    case Motion::BellyRoll:AttachSprite(p,Clip::Roll,elapsed);break;
     case Motion::Knead:AttachSprite(p,Clip::Knead,elapsed);break;
     case Motion::Sleep:AttachSprite(p,Clip::Sleep,elapsed);break;
+    case Motion::Stretch:AttachSprite(p,Clip::Settle,elapsed);break;
     case Motion::Eat:AttachSprite(p,Clip::Eat,elapsed);break;
     case Motion::Treat:AttachSprite(p,Clip::Treat,elapsed);break;
     case Motion::Punch:AttachSprite(p,Clip::Punch,elapsed);break;
     case Motion::ToyPaw:
-        // Keep the same complete authored actor for ball/lure play. The
-        // fixed contact window is shared with the existing toy controller;
-        // only the drawing changes, never its root or the physical impulse.
-        p.spriteClip=Clip::Punch;p.spriteTimed=false;
-        p.spriteFrame=cat::sprite_sequence::SampleToyPaw(elapsed).frame;
+        // The compact legacy toy strip's indices are not indices in a full
+        // Dropshot film. Bare paw play uses the complete recorded clock;
+        // ball, lure and pointer owners replace this with their contact pose.
+        AttachSprite(p,Clip::Punch,elapsed);
         break;
     case Motion::Jump:AttachSprite(p,Clip::Jump,elapsed);break;
     default:break;

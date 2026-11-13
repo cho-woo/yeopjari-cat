@@ -57,6 +57,23 @@ int NativeCarePresentationRenderTest(std::string& context) {
         if(CareSpriteFor(pose,cat::Character::Cream))cat::animation::UseAuthoredSprite(pose);
         if(draw(pose,&primary,7016)!=draw(pose,nullptr,7016))return 339;
     }
+    // Every supported legacy drawing must join through the same shipping
+    // path. These used to bypass it even though their source art was valid.
+    for(auto character:cat::kAvailableCharacters) {
+        if(!EnsureCareCoats(character))return 330;
+        for(const auto motion:{Motion::Stretch,Motion::TailChase,Motion::Scratch,Motion::Hang,Motion::BellyRoll,
+                              Motion::Loaf,Motion::Pride,Motion::LookDown,Motion::SleepTalk}) {
+            primary.Reset();auto rest=idle;rest.presentationSerial=1;
+            const auto resting=draw(rest,&primary,18000,0,false,character);
+            auto action=cat::animation::Evaluate(motion,motion==Motion::BellyRoll?400:0,18016,1);
+            action.presentationSerial=2;
+            if(draw(action,&primary,18016,0,false,character)!=resting)return 341;
+            for(unsigned frame=1;frame<=15;++frame) {
+                action=cat::animation::Evaluate(motion,(motion==Motion::BellyRoll?400:0)+frame*16,18016+frame*16,1);
+                action.presentationSerial=2;draw(action,&primary,18016+frame*16,0,false,character);
+            }
+        }
+    }
     primary.Reset();draw(idle,&primary,8000);draw(groom,&primary,8016);
     if(draw(groom,&primary,8126,2)!=draw(groom,&other,8126,2))return 340;
     ResetPrimaryCarePresentation();other.Reset();CompanionCarePresentation().Reset();
