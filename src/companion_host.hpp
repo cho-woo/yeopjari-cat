@@ -112,12 +112,12 @@ void ShowCompanionMenu(POINT point) {
     AppendMenuW(menu, MF_STRING | (cat::feeding::CanOfferFish(prefs.character) ? MF_ENABLED : MF_GRAYED),
         kCompanionFish, L"이 고양이에게 생선 주기");
     HMENU actions=CreatePopupMenu();
-    const std::array<std::pair<cat::sprite_sequence::Clip,const wchar_t*>,12> actionNames{{
+    const std::array<std::pair<cat::sprite_sequence::Clip,const wchar_t*>,11> actionNames{{
         {cat::sprite_sequence::Clip::Walk,L"걷기"},{cat::sprite_sequence::Clip::Run,L"달리기"},
         {cat::sprite_sequence::Clip::Jump,L"점프하기"},{cat::sprite_sequence::Clip::Climb,L"오른쪽 가장자리 오르기"},
         {cat::sprite_sequence::Clip::FlyHunt,L"파리 사냥하기"},{cat::sprite_sequence::Clip::Punch,L"냥냥펀치"},
         {cat::sprite_sequence::Clip::BallPlay,L"공놀이"},{cat::sprite_sequence::Clip::ToyPlay,L"낚싯대 놀이"},
-        {cat::sprite_sequence::Clip::Box,L"상자 놀이"},{cat::sprite_sequence::Clip::Groom,L"그루밍"},
+        {cat::sprite_sequence::Clip::Groom,L"그루밍"},
         {cat::sprite_sequence::Clip::Knead,L"꾹꾹이"},{cat::sprite_sequence::Clip::Sleep,L"낮잠"}}};
     for(const auto& action:actionNames)AppendMenuW(actions,MF_STRING,
         kCompanionActionFirst+static_cast<unsigned>(action.first),action.second);

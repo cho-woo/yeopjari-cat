@@ -19,8 +19,10 @@ int Run(std::string& context) {
         for(unsigned i=0;i<12;++i)g.physics.Update(1./60);
         host.Command(kManualRunCommand);g.nextDecision=host.now+32000;
         const auto saved=host.Saved();const auto* sprite=LoadedCareSprite(Clip::RunningTurn,character);
-        if(!sprite||sprite->layout->frameCount!=110||cat::sprite_sequence::ProgramDuration(sprite->layout->program)!=
-                cat::running_turn::Turn::BrakeMs+cat::running_turn::Turn::PivotMs+cat::running_turn::Turn::LaunchMs)return 882;
+        const auto timing=cat::video_actions::TurnTiming(static_cast<unsigned>(character));
+        const auto count=character==cat::Character::Tuxedo?cat::video_actions::kTuxedoTurnSource.size():cat::video_actions::kCreamTurnSource.size();
+        if(!sprite||sprite->layout->frameCount!=count||cat::sprite_sequence::ProgramDuration(sprite->layout->program)!=
+                timing[0]+timing[1]+timing[2])return 882;
         std::vector<bool> seen(sprite->layout->frameCount,false);unsigned distinct=0,turns=0,sample=0;bool previousTurning=false;
         double maxStep=0;const auto start=host.now;bool rested=false;
         for(unsigned tick=0;tick<3200;++tick) {
