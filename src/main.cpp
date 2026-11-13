@@ -2899,8 +2899,9 @@ struct CarePresentationRenderer {
     cat::raster_transition::RegisteredMorph morph;
     Surface previous,from,target;
     double center=0,bottom=0,scale=0,bodyWidth=0,bodyHeight=0;
-    bool geometry=false;
-    void Reset() {transition.Reset();morph.Reset();geometry=false;}
+    bool geometry=false,targetOnly=false;
+    unsigned lastRepresentation=0;
+    void Reset() {transition.Reset();morph.Reset();geometry=false;targetOnly=false;lastRepresentation=0;}
 };
 CarePresentationRenderer& PrimaryCarePresentation() {static CarePresentationRenderer state;return state;}
 CarePresentationRenderer& CompanionCarePresentation() {static CarePresentationRenderer state;return state;}
@@ -2942,9 +2943,16 @@ void DrawStyledAnimation(Graphics& graphics, cat::animation::Pose pose, REAL cen
     const bool fixed=pose.groundContact&&!pose.jointWalk&&!pose.walkingRig&&!pose.originalWalk&&
         !pose.bellyRig&&!pose.centerPivot&&pose.x==0&&pose.lift==0&&pose.angle==0&&
         pose.scaleX==1&&pose.scaleY==1&&pose.blendFrame<0;
-    // Only quiet, supported boundaries are registered. Contacts, locomotion,
-    // flips and flight keep their exact source drawing and physical clock.
-    const bool eligible=fixed&&(authored?calm(authored->layout->clip):pose.frame==4||pose.frame==cat::animation::kReferenceSleepFrame)&&
+    // A stopped source turn may join anticipation or the already-completed
+    // landing recovery. Flight, impact, planted paw contacts and moving gait
+    // keep their exact source drawing and physical clock.
+    const bool groundTurn=authored&&authored->layout->clip==Clip::Walk&&!pose.spriteTimed;
+    const bool jumpBoundary=authored&&authored->layout->clip==Clip::Jump&&pose.spriteOptions.grounded&&
+        (pose.spriteOptions.jump==cat::sprite_sequence::JumpPhase::Crouch||
+         (pose.spriteOptions.jump==cat::sprite_sequence::JumpPhase::Landing&&
+          pose.spriteOptions.contactElapsedMs+cat::care_presentation::Transition::DurationMs>=
+              cat::sprite_sequence::Duration(authored->layout->program,authored->layout->program.outro)));
+    const bool eligible=fixed&&(authored?(calm(authored->layout->clip)||groundTurn||jumpBoundary):pose.frame==4||pose.frame==cat::animation::kReferenceSleepFrame)&&
         pose.joints.pawReachX==0&&pose.joints.pawReachY==0&&pose.joints.pawAnchorX==0&&!cat::cursor_rig::Active(pose.cursorReach);
     if(!eligible) {state.Reset();direct(graphics,pose);return;}
     const bool changed=!state.previous.image||!state.from.image||!state.target.image||
@@ -2974,6 +2982,8 @@ void DrawStyledAnimation(Graphics& graphics, cat::animation::Pose pose, REAL cen
     tag.identity=static_cast<unsigned>(character);tag.generation=generation;tag.eligible=true;
     tag.authored=authored!=nullptr;tag.flip=pose.flip;tag.neutralBridge=false;
     const auto plan=state.transition.Update(tag,ticks,paused);
+    if(plan.capture)state.targetOnly=jumpBoundary||state.lastRepresentation==1+static_cast<unsigned>(Clip::Jump);
+    state.lastRepresentation=tag.representation;
     if(plan.capture)std::memcpy(state.from.pixels,state.previous.pixels,bytes);
     auto drawing=pose;
     if(plan.bridge) {
@@ -2990,7 +3000,10 @@ void DrawStyledAnimation(Graphics& graphics, cat::animation::Pose pose, REAL cen
     }
     if(plan.capture||(translated&&plan.blend))state.morph.Prepare(state.from.pixels,state.target.pixels,canvasWidth,canvasHeight);
     if(plan.blend) {
-        if(!state.morph.Render(state.from.pixels,state.target.pixels,state.previous.pixels,canvasWidth,canvasHeight,plan.weight))
+        const bool rendered=state.targetOnly?
+            state.morph.RenderTarget(state.from.pixels,state.target.pixels,state.previous.pixels,canvasWidth,canvasHeight,plan.weight):
+            state.morph.Render(state.from.pixels,state.target.pixels,state.previous.pixels,canvasWidth,canvasHeight,plan.weight);
+        if(!rendered)
             std::memcpy(state.previous.pixels,state.target.pixels,bytes);
     }
     else std::memcpy(state.previous.pixels,state.target.pixels,bytes);
@@ -3336,7 +3349,10 @@ cat::animation::Pose PrimaryDisplayedPose(ULONGLONG ticks,const cat::physics::Po
     if(!cursorAttack && pose.spriteClip==cat::sprite_sequence::Clip::Jump && PrimaryVideoGroundArt()) {
         pose.jumpRig=true;
         const double growth=cat::GrowthScale(g.pet.bornUtc,UtcNow());
-        if(!physical.grounded)pose.jumpControls=g.jumpPresentation.Flight(physical.velocityY,physical.lift,growth);
+        if(!physical.grounded) {
+            pose.jumpControls=g.jumpPresentation.Flight(physical.velocityY,physical.lift,growth);
+            pose.spriteOptions.flightProgress=g.jumpPresentation.SourceFlightProgress();
+        }
         else if(pose.spriteOptions.jump==cat::sprite_sequence::JumpPhase::Landing)
             pose.jumpControls=g.jumpPresentation.Land(pose.spriteOptions.contactElapsedMs,g.landingStrength,physical.lift);
         else pose.jumpControls=g.jumpPresentation.Prepare(actionElapsed,PrimaryTakeoffMs(displayed==Motion::Pounce),physical.lift);
@@ -4421,7 +4437,10 @@ void FinishManualMotion(ULONGLONG ticks) {
         const auto requested=g.manualWakeMotion;g.manualWakePending=false;
         StartManualMotion(requested,ticks);return;
     }
-    if (g.wallPhase==App::WallPhase::None && !g.runningTurn.Active() && !KeyboardPlayActive() && g.manualMotionActive && ticks >= g.nextDecision && !g.waitingForStop &&
+    const auto* jump=LoadedCareSprite(cat::sprite_sequence::Clip::Jump,g.preferences.character);
+    const bool jumpRecovered=g.motion==Motion::Jump&&g.jumpLaunched&&g.landedAt&&ticks>=g.landedAt&&
+        jump&&ticks-g.landedAt>=cat::sprite_sequence::Duration(jump->layout->program,jump->layout->program.outro);
+    if (g.wallPhase==App::WallPhase::None && !g.runningTurn.Active() && !KeyboardPlayActive() && g.manualMotionActive && (ticks >= g.nextDecision||jumpRecovered) && !g.waitingForStop &&
             g.physics.CurrentPose().grounded && !g.jumpPending)
         BeginAutonomousRest(ticks);
 }
@@ -6367,6 +6386,7 @@ int SelfTest(HINSTANCE instance) {
 }
 
 int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
+    if(commandLine && wcsstr(commandLine,L"--render-jump-review"))return NativeManualMotionTest(instance,false,true);
     if(commandLine && wcsstr(commandLine,L"--render-update-notice"))return NativeBoundaryReview(instance,true);
     if(commandLine && wcsstr(commandLine,L"--render-boundary-review"))return NativeBoundaryReview(instance);
     if(commandLine && wcsstr(commandLine,L"--keyboard-jitter-diagnostic"))return NativeKeyboardJitterDiagnostic(instance);

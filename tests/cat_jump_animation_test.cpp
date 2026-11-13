@@ -32,10 +32,12 @@ void PhysicsControlsPawsInsteadOfNominalFrameClock() {
         Driver driver;driver.Prepare(300,300,support);
         constexpr double gravity=900.;const double launch=std::sqrt(2*gravity*height),duration=2*launch/gravity;
         auto previous=driver.Flight(launch,support);CHECK(previous.fore==0&&previous.hind==0);
+        CHECK(driver.SourceFlightProgress()==0);
         double maximum=0;
         for(double t=1./120;t<duration;t+=1./120) {
             const double vy=launch-gravity*t,root=support+launch*t-.5*gravity*t*t;
             const auto c=driver.Flight(vy,root);
+            CHECK(std::abs(driver.SourceFlightProgress()-t/duration)<1e-9);
             CHECK(Finite(c)&&c.crouch==0);
             CHECK(c.fore>=0&&c.fore<=.84&&c.hind>=0&&c.hind<=.70);
             CHECK(std::abs(c.fore-previous.fore)<.20);

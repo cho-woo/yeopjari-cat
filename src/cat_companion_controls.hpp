@@ -156,7 +156,10 @@ void UpdateControls(const Context& c,std::uint64_t elapsed) {
         }
         return;
     }
-    if(explicitTravel_&&c.ticks>=nextDecision_&&physical.grounded&&!runningTurn_.Active()&&!wallApproaching_) {
+    const auto* jumpArt=Registered(C::Jump);
+    const bool explicitJumpRecovered=motion_==M::Jump&&!jumpPending_&&landedAt_&&c.ticks>=landedAt_&&jumpArt&&
+        c.ticks-landedAt_>=cat::sprite_sequence::Duration(jumpArt->program,jumpArt->program.outro);
+    if(explicitTravel_&&(c.ticks>=nextDecision_||explicitJumpRecovered)&&physical.grounded&&!runningTurn_.Active()&&!wallApproaching_) {
         explicitTravel_=false;BeginQuiet(c.ticks);
     }
     if(wallApproaching_&&physical.grounded&&physical.x>=maxX_-1.9&&

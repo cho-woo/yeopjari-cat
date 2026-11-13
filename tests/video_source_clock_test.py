@@ -10,11 +10,10 @@ class SourceClockTest(unittest.TestCase):
     def test_unretimed_actions_follow_the_original_video_clock(self):
         manifest = json.loads((DIRECTORY / "manifest.json").read_text(encoding="utf-8"))
         registration = json.loads((DIRECTORY / "registration.json").read_text(encoding="utf-8"))
-        # Jump follows real ballistic takeoff/landing. Walk retains its separately
+        # Jump's complete source strip is retained; actual flight is sampled by
+        # its measured impulse. Walk retains its separately
         # reviewed entrance/exit edit and a contact-distance driven loop.
         for entry in manifest["clips"]:
-            if entry["clip"] == "jump":
-                continue
             sequence = entry["sequence"]
             steps = sum((sequence[part] for part in ("intro", "loop", "outro")), [])
             for coat in ("cream", "tuxedo"):

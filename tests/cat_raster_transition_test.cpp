@@ -18,6 +18,8 @@ int main() {
     assert(morph.Prepare(a.data(),b.data(),W,H));
     assert(morph.Render(a.data(),b.data(),out.data(),W,H,0)&&out==a);
     assert(morph.Render(a.data(),b.data(),out.data(),W,H,1)&&out==b);
+    assert(morph.RenderTarget(a.data(),b.data(),out.data(),W,H,0)&&out==a);
+    assert(morph.RenderTarget(a.data(),b.data(),out.data(),W,H,1)&&out==b);
     cat::raster_transition::RegisteredMorph::Translate(a.data(),out.data(),W,H,6,0);assert(out==b);
     for(unsigned i=1;i<20;++i) {
         assert(morph.Render(a.data(),b.data(),out.data(),W,H,i/20.));
@@ -25,6 +27,8 @@ int main() {
             assert(out[p]<=out[p+3]&&out[p+1]<=out[p+3]&&out[p+2]<=out[p+3]);
         }
         assert(out[(50*W+45)*4+3]==255); // Opaque torso stays opaque.
+        assert(morph.RenderTarget(a.data(),b.data(),out.data(),W,H,i/20.));
+        assert(out[(50*W+45)*4+3]==255);
     }
     assert(!morph.Render(a.data(),b.data(),out.data(),W-1,H,.5));
     morph.Reset();assert(!morph.Render(a.data(),b.data(),out.data(),W,H,.5));

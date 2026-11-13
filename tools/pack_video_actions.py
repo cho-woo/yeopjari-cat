@@ -10,6 +10,7 @@ from __future__ import annotations
 import hashlib
 import argparse
 import json
+import subprocess
 from io import BytesIO
 from pathlib import Path
 
@@ -22,6 +23,7 @@ DIRECTORY = ROOT / 'assets/video-actions'
 CELL = 320
 ROOT_POINT = (160, 240)
 REFERENCE_HEIGHT = 96
+PNG_OPTIMIZER = None
 RESOURCE = {'groom': 113, 'punch': 117, 'jump': 119, 'knead': 440, 'reach': 441}
 RESOURCE.update({'ball':430,'toy':431,'brake':432,'slide':433,'stumble':434,'climb':435})
 RESOURCE['fish']=116
@@ -65,6 +67,15 @@ def save_atlas(image, path):
         stream=BytesIO();image.save(stream,format='PNG',optimize=optimize)
         candidates.append(stream.getvalue())
     path.write_bytes(min(candidates,key=len))
+    if PNG_OPTIMIZER:
+        # Optional authoring compression only. Preserve every RGBA byte,
+        # including transparent pixels, and the runtime's RGBA8 PNG format.
+        before=hashlib.sha256(image.tobytes()).digest()
+        subprocess.run([str(PNG_OPTIMIZER),'--nx','-o','3','--threads','2','--quiet',str(path)],check=True)
+        encoded=path.read_bytes()
+        with Image.open(path) as checked:
+            if encoded[24:26]!=bytes([8,6]) or checked.mode!='RGBA' or hashlib.sha256(checked.tobytes()).digest()!=before:
+                raise ValueError('Lossless optimizer changed registered pixels: '+str(path))
 
 
 def write_json(path, value):
@@ -336,7 +347,12 @@ def bake(clip, character, indices):
             else:px,py=anchor_x,anchor_y-8
             props.append([(px-anchor_x)*factor*110/REFERENCE_HEIGHT,(anchor_y-py)*factor*110/REFERENCE_HEIGHT])
             prop_visible.append(bool(candidates))
-        if clip == 'jump' and (18<=ordinal<39 if clip in IDENTITY['clips'] else 60<=source_index<=80):
+        if settings.get('root_keys'):
+            keys=np.asarray(settings['root_keys'][character],dtype=float)
+            anchor_x=float(np.interp(source_index,keys[:,0],keys[:,1]))
+            anchor_y=float(np.interp(source_index,keys[:,0],keys[:,2]))
+        elif clip == 'jump' and (settings.get('intro_frames',18)<=ordinal<settings.get('landing_frame',39)
+                                 if clip in IDENTITY['clips'] else 60<=source_index<=80):
             moving_x, _, _ = head_root(image)
             anchor_x += moving_x - center
         source_roots.append([anchor_x,anchor_y])
@@ -348,6 +364,10 @@ def bake(clip, character, indices):
             green=rgba[:,:,1].astype(float);other=np.maximum(rgba[:,:,0],rgba[:,:,2])
             fringe=(rgba[:,:,3]>0)&(green>other*1.1+5)
             rgba[:,:,1][fringe]=other[fringe]
+            if settings.get('edge_despill_px'):
+                distance=cv2.distanceTransform((rgba[:,:,3]>180).astype(np.uint8),cv2.DIST_L2,5)
+                edge=(rgba[:,:,3]>0)&(distance<=settings['edge_despill_px'])&(green>other+2)
+                rgba[:,:,1][edge]=other[edge]
             image=Image.fromarray(rgba,'RGBA')
         shift = (round(ROOT_POINT[0] - anchor_x * factor), round(ROOT_POINT[1] - anchor_y * factor))
         bounds = image.getbbox()
@@ -663,5 +683,8 @@ if __name__ == '__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--only',nargs='+',choices=list(RESOURCE))
     parser.add_argument('--materials-only',action='store_true')
+    parser.add_argument('--png-optimizer',type=Path,help='Optional official oxipng executable; preserves exact RGBA8 pixels')
     args=parser.parse_args()
+    PNG_OPTIMIZER=args.png_optimizer.resolve() if args.png_optimizer else None
+    if PNG_OPTIMIZER and not PNG_OPTIMIZER.is_file():raise ValueError('PNG optimizer does not exist')
     main(args.only,args.materials_only)

@@ -128,5 +128,19 @@ public:
         }
         return true;
     }
+    bool RenderTarget(const unsigned char* from,const unsigned char* to,unsigned char* output,int w,int h,double fraction) const {
+        if(!ready_||w!=width_||h!=height_||!from||!to||!output)return false;
+        const float t=float(std::clamp(fraction,0.,1.));
+        // A moving head must remain one drawing. Register the current target
+        // toward the prior supported pose, without superimposing two faces.
+        if(t==0){std::copy(from,from+std::size_t(w)*h*4,output);return true;}
+        std::fill(output,output+std::size_t(w)*h*4,0);
+        for(int y=top_;y<bottom_;++y)for(int x=left_;x<right_;++x) {
+            const auto motion=Flow(backward_,float(x),float(y));
+            const auto pixel=Pixel(to,w,h,x-motion.x*(1-t),y-motion.y*(1-t));
+            for(int c=0;c<4;++c)output[(y*w+x)*4+c]=static_cast<unsigned char>(std::clamp(std::lround(pixel[c]),0L,255L));
+        }
+        return true;
+    }
 };
 } // namespace cat::raster_transition

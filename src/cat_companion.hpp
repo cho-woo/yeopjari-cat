@@ -718,7 +718,10 @@ public:
         if(Registered(s.animation.spriteClip))cat::animation::UseAuthoredSprite(s.animation);
         if(s.animation.spriteClip==cat::sprite_sequence::Clip::Jump && RegisteredVideoWalk()) {
             s.animation.jumpRig=true;
-            if(!s.physical.grounded)s.animation.jumpControls=jumpPresentation_.Flight(s.physical.velocityY,s.physical.lift,s.growthScale);
+            if(!s.physical.grounded) {
+                s.animation.jumpControls=jumpPresentation_.Flight(s.physical.velocityY,s.physical.lift,s.growthScale);
+                s.animation.spriteOptions.flightProgress=jumpPresentation_.SourceFlightProgress();
+            }
             else if(s.animation.spriteOptions.jump==cat::sprite_sequence::JumpPhase::Landing)
                 s.animation.jumpControls=jumpPresentation_.Land(s.animation.spriteOptions.contactElapsedMs,landingStrength_,s.physical.lift);
             else {

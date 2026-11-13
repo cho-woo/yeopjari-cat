@@ -2,7 +2,7 @@
   "schema": 1,
   "created_date": "2026-11-11",
   "provider": "Dropshot",
-  "total_credits": 14480,
+  "total_credits": 15720,
   "jobs": [
     {
       "character": "cream",
@@ -2239,6 +2239,102 @@
       },
       "identity_policy": "immutable masters, canonical first/last poses; same367px registration",
       "selection": "selected complete canonical sleep boundary"
+    },
+    {
+      "character": "cream",
+      "action": "jump-recovery-v35",
+      "model": "minimax/h3",
+      "job_id": "mcp_3a9ea114d0bb4f99b287914d47c877d7",
+      "credit_cost": 160,
+      "status": "succeeded",
+      "accepted": false,
+      "source_file": "sources/jump-v35/cream-jump-recovery.mp4",
+      "source_sha256": "3c3d63f4a1d625331ac0fa386b41de4a748108af0082dd55ae7328db3fb1a9a2",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_3a9ea114d0bb4f99b287914d47c877d7/output/output_0.mp4",
+      "options": {
+        "generation_mode": "frame",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f5a17e175ec54a5a9cd9d6a1cd69979f/cream-side-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/a51a2fd8db74428193c60b6470818c44/cream-planted-side-v35.png",
+        "duration": 4,
+        "resolution": "768p",
+        "aspect_ratio": "1:1",
+        "prompt": "One single small natural cat jump, followed by a COMPLETE four-paw landing and quiet standing recovery. This is the exact cream-orange and white kitten with dark brown eyes from the first image. Preserve the identical face, ears, muzzle, head size, fur markings, short body and tail in every frame; no redesign. Preserve a static orthographic three-quarter view facing screen RIGHT throughout. Fixed camera, fixed lens, fixed apparent body size, no cuts, no zoom, no pan. Pure flat chroma green background RGB 0 255 0, no props, no text, no motion blur. Floor at the existing toe line. Timeline: 0.0-0.5 seconds gently place the raised forepaw down and naturally load the hind legs, lowering the shoulders and hips a little. 0.5-1.1 seconds push from the hind legs into ONE compact vertical jump, tuck both front paws naturally in midair, tail balances. 1.1-1.45 seconds extend both forelegs downward BEFORE ground contact. 1.45-2.2 seconds land front paws first, immediately followed by hind paws, elbows and hind knees flex to absorb weight, then smoothly rise. Both front paws must remain firmly on the floor after contact, never hold a forepaw in the air and never freeze between poses. 2.2-4.0 seconds finish the small body rebound naturally and stand calmly with all four paws grounded, exactly matching the final reference and facing RIGHT. Do NOT sit, do NOT swipe or punch after landing, do NOT jump twice. Animate every stage continuously, including the full recovery; no pose teleporting. Retain the kitten's original character identity and equal scale from the references."
+      },
+      "identity_policy": "immutable master-derived canonical planted side reference, same367px global scale",
+      "selection": "retained unused: repeats a second jump instead of a complete quiet recovery"
+    },
+    {
+      "character": "tuxedo",
+      "action": "jump-recovery-v35",
+      "model": "minimax/h3",
+      "job_id": "mcp_9df004d1b3294c6a8640e14e38e05eb2",
+      "credit_cost": 160,
+      "status": "succeeded",
+      "accepted": false,
+      "source_file": "sources/jump-v35/tuxedo-jump-recovery.mp4",
+      "source_sha256": "08fd2347ff8bbd7b180c92e3fc2a58c217005e45173504d07db3775473ec2bac",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_9df004d1b3294c6a8640e14e38e05eb2/output/output_0.mp4",
+      "options": {
+        "generation_mode": "frame",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/de550c28744345e49f7eaa5169c60231/tuxedo-side-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/34ce4a4d60864b75b828d732f26b21dc/tuxedo-planted-side-v35.png",
+        "duration": 4,
+        "resolution": "768p",
+        "aspect_ratio": "1:1",
+        "prompt": "One single small natural cat jump, followed by a COMPLETE four-paw landing and quiet standing recovery. This is the exact charcoal tuxedo kitten with white face stripe, white chest and paws, olive-brown eyes from the first image. Preserve the identical face, ears, muzzle, head size, fur markings, short body and tail in every frame; no redesign. Preserve a static orthographic three-quarter view facing screen RIGHT throughout. Fixed camera, fixed lens, fixed apparent body size, no cuts, no zoom, no pan. Pure flat chroma green background RGB 0 255 0, no props, no text, no motion blur. Floor at the existing toe line. Timeline: 0.0-0.5 seconds gently place the raised forepaw down and naturally load the hind legs, lowering the shoulders and hips a little. 0.5-1.1 seconds push from the hind legs into ONE compact vertical jump, tuck both front paws naturally in midair, tail balances. 1.1-1.45 seconds extend both forelegs downward BEFORE ground contact. 1.45-2.2 seconds land front paws first, immediately followed by hind paws, elbows and hind knees flex to absorb weight, then smoothly rise. Both front paws must remain firmly on the floor after contact, never hold a forepaw in the air and never freeze between poses. 2.2-4.0 seconds finish the small body rebound naturally and stand calmly with all four paws grounded, exactly matching the final reference and facing RIGHT. Do NOT sit, do NOT swipe or punch after landing, do NOT jump twice. Animate every stage continuously, including the full recovery; no pose teleporting. Retain the kitten's original character identity and equal scale from the references."
+      },
+      "identity_policy": "immutable master-derived canonical planted side reference, same367px global scale",
+      "selection": "retained unused: repeats a second jump instead of a complete quiet recovery"
+    },
+    {
+      "character": "cream",
+      "action": "jump-recovery-v35",
+      "model": "bytedance/seedance-2.5",
+      "job_id": "mcp_ed56fe4dd6f8444b8f8ee6322d0c560d",
+      "credit_cost": 460,
+      "status": "succeeded",
+      "accepted": true,
+      "source_file": "sources/jump-v35/cream-jump-seedance.mp4",
+      "source_sha256": "0d9d0cf4091254a5936b5f304271ee4876accbd3c9d329c84091644e33ad9d9d",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_ed56fe4dd6f8444b8f8ee6322d0c560d/output/output_0.mp4",
+      "options": {
+        "generation_mode": "frame",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/a51a2fd8db74428193c60b6470818c44/cream-planted-side-v35.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/a51a2fd8db74428193c60b6470818c44/cream-planted-side-v35.png",
+        "duration": 4,
+        "resolution": "720p",
+        "aspect_ratio": "1:1",
+        "generate_audio": false,
+        "prompt_enhance": false,
+        "prompt": "A single continuous animation of this exact cream-orange and white kitten, brown eyes. Preserve the character exactly: same head silhouette, ears, eyes, muzzle, fur pattern, proportions and size as the reference. The kitten stays facing screen RIGHT in the same fixed three-quarter camera angle. Static orthographic camera. Flat solid chroma green background, no shadows, no floor drawing, no objects or text. ONE small jump only: first 0.5 seconds bend the four legs and lower the body, at 0.5 seconds push off with the hind legs, rise and tuck the front paws, at 1.2 seconds descend and extend both front legs toward the ground, at 1.5 seconds land both front paws then the hind paws, soften the impact with bent elbows and hind knees, by 2.2 seconds smoothly straighten to the original calm four-paw standing pose. From 2.2 to 4.0 seconds simply stand quietly, all four paws stay planted on the original toe line, slight breathing only. The jump happens ONCE in the first half. Never jump again. No raised forepaw after landing, no swat, no sitting, no spinning, no camera motion, no changing character design. The full landing and four-foot recovery must be visible without freezing or cutting."
+      },
+      "identity_policy": "immutable master-derived canonical planted side reference, same367px global scale",
+      "selection": "complete one-jump takeoff, contact and planted recovery"
+    },
+    {
+      "character": "tuxedo",
+      "action": "jump-recovery-v35",
+      "model": "bytedance/seedance-2.5",
+      "job_id": "mcp_2a940198d1d041e589876e645abce0d2",
+      "credit_cost": 460,
+      "status": "succeeded",
+      "accepted": true,
+      "source_file": "sources/jump-v35/tuxedo-jump-seedance.mp4",
+      "source_sha256": "5d898c82f1f65f938ca4002c79a17e1254730b09573268382d8ec505152cf0b3",
+      "video_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_2a940198d1d041e589876e645abce0d2/output/output_0.mp4",
+      "options": {
+        "generation_mode": "frame",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/34ce4a4d60864b75b828d732f26b21dc/tuxedo-planted-side-v35.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/34ce4a4d60864b75b828d732f26b21dc/tuxedo-planted-side-v35.png",
+        "duration": 4,
+        "resolution": "720p",
+        "aspect_ratio": "1:1",
+        "generate_audio": false,
+        "prompt_enhance": false,
+        "prompt": "A single continuous animation of this exact charcoal tuxedo kitten, olive brown eyes, white face stripe, white chest and white paws. Preserve the character exactly: same head silhouette, ears, eyes, muzzle, fur pattern, proportions and size as the reference. The kitten stays facing screen RIGHT in the same fixed three-quarter camera angle. Static orthographic camera. Flat solid chroma green background, no shadows, no floor drawing, no objects or text. ONE small jump only: first 0.5 seconds bend the four legs and lower the body, at 0.5 seconds push off with the hind legs, rise and tuck the front paws, at 1.2 seconds descend and extend both front legs toward the ground, at 1.5 seconds land both front paws then the hind paws, soften the impact with bent elbows and hind knees, by 2.2 seconds smoothly straighten to the original calm four-paw standing pose. From 2.2 to 4.0 seconds simply stand quietly, all four paws stay planted on the original toe line, slight breathing only. The jump happens ONCE in the first half. Never jump again. No raised forepaw after landing, no swat, no sitting, no spinning, no camera motion, no changing character design. The full landing and four-foot recovery must be visible without freezing or cutting."
+      },
+      "identity_policy": "immutable master-derived canonical planted side reference, same367px global scale",
+      "selection": "complete one-jump takeoff, contact and planted recovery"
     }
   ]
 }

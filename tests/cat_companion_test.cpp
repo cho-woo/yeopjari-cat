@@ -859,6 +859,31 @@ void CompanionJumpReturnOwnsTheCompletedRecoveryBoundary() {
     }
 }
 
+void ExplicitCompanionJumpReturnsWhenTheRecoveryFinishes() {
+    using Clip=cat::sprite_sequence::Clip;
+    const auto* jump=cat::sprite_assets::Find(Clip::Jump,0,cat::sprite_assets::kCareSprites);
+    CHECK(jump);
+    const auto recovery=cat::sprite_sequence::Duration(jump->program,jump->program.outro);
+    for(const auto character:{cat::Character::Cream,cat::Character::Tuxedo,cat::Character::OddEye})for(bool paused:{false,true}) {
+        State state=NewState(born);state.preferences.character=character;state.pet.position=.2;state.pet.roamingPaused=paused;
+        Model model;model.Bind(state);model.Reset(0,2400,700);
+        auto c=Frame(100,1700);CHECK(model.Perform(Clip::Jump,c.ticks));
+        std::uint64_t landed=0,returned=0;double previousProgress=-1;
+        for(unsigned frame=0;frame<550;++frame) {
+            Step(model,c,1);const auto physical=model.Physical();const auto view=model.View(c.ticks);
+            if(!physical.grounded&&view.animation.spriteClip==Clip::Jump) {
+                const auto progress=view.animation.spriteOptions.flightProgress;
+                CHECK(progress>=0&&progress<=1&&progress>=previousProgress);previousProgress=progress;
+            }
+            if(physical.landed&&!landed)landed=c.ticks;
+            if(landed&&c.ticks-landed<recovery)CHECK(view.animation.spriteClip==Clip::Jump);
+            if(landed&&c.ticks-landed>=recovery&&view.animation.spriteClip==Clip::Walk){returned=c.ticks;break;}
+        }
+        CHECK(landed&&returned&&returned-landed>=recovery&&returned-landed<=recovery+34);
+        CHECK(previousProgress>.9&&state.pet.roamingPaused==paused&&state.pet.feedCount==0&&state.pet.snackCount==0);
+    }
+}
+
 void AuthoredSleepKeepsItsIdentityIncludingWindowRestAndWake() {
     using Clip=cat::sprite_sequence::Clip;
     const auto* sleep=cat::sprite_assets::Find(Clip::Sleep,0,cat::sprite_assets::kCareSprites);
@@ -1041,6 +1066,7 @@ int main() {
         OptionalWalkReviewKeepsBothCoatsOnTheRegisteredStride();
         ContactRecoveryFinishesBeforeAcceptedFishStarts();
         CompanionJumpReturnOwnsTheCompletedRecoveryBoundary();
+        ExplicitCompanionJumpReturnsWhenTheRecoveryFinishes();
         AuthoredSleepKeepsItsIdentityIncludingWindowRestAndWake();
         CompanionPointerAndAuthoredActions();
         CompanionKeyboardAndNinePairings();
