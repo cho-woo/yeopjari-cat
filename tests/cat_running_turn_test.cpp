@@ -16,7 +16,8 @@ int main(){try{
         while(turn.Active()&&elapsed<(Turn::PivotMs+Turn::LaunchMs)/1000.+1){
             releases+=turn.Advance(1./fps,true,0,0);elapsed+=1./fps;
             if(turn.Active()&&turn.Released()){
-                const auto motor=turn.Motor(180);check(motor*(-direction)>=prior-1e-8);check(std::abs(motor)<=180);prior=motor*(-direction);
+                const auto motor=turn.Motor(-direction*180);check(motor*(-direction)>=prior-1e-8);check(std::abs(motor)<=180);prior=motor*(-direction);
+                check(turn.Motor(direction*180)==0); // A stale direction cannot force a wrong-way launch.
             } else if(turn.Active())check(turn.Motor(180)==0);
         }
         check(!turn.Active()&&releases==1);check(std::abs(elapsed-(Turn::PivotMs+Turn::LaunchMs)/1000.)<2./fps);

@@ -81,10 +81,16 @@ struct Host {
         const auto* source=LoadedCareSprite(cat::sprite_sequence::Clip::Punch,g.preferences.character);
         return source?cat::sprite_sequence::ProgramDuration(source->layout->program):850;
     }
-    ULONGLONG FirstPawContactMs() const { return g.preferences.character==cat::Character::Tuxedo?667:500; }
+    ULONGLONG FirstPawContactMs() const {
+        const auto* source=LoadedCareSprite(cat::sprite_sequence::Clip::Punch,g.preferences.character);
+        const auto frame=cat::video_actions::PunchFirstContactFrame(static_cast<unsigned>(g.preferences.character));
+        ULONGLONG elapsed=0;
+        if(source)for(unsigned i=0;i<frame;++i)elapsed+=source->layout->program.steps[i].durationMs;
+        return elapsed;
+    }
     cat::deform::Point PawTarget() const {
         const auto points=cat::video_actions::PunchPaws(static_cast<unsigned>(g.preferences.character),
-            g.preferences.character==cat::Character::Tuxedo?18:14);
+            cat::video_actions::PunchFirstContactFrame(static_cast<unsigned>(g.preferences.character)));
         const auto body=cat::appearance::VisualModifiers(g.nutrition,g.preferences.character);
         return {g.direction*points[0].x*body.bodyWidth,points[0].y*body.bodyHeight};
     }
@@ -97,7 +103,7 @@ struct Host {
     bool StartPaw(double height) {
         const double target = PawX();
         for (int frame = 0; frame < 120; ++frame) {
-            Frame(target,height);
+            Frame(target,std::min(height,12.));
             if (cursorInteraction.session.Action() == Action::Paw)
                 return g.motion == Motion::ToyPaw && !g.waitingForStop && contacts == 0;
         }
@@ -246,6 +252,52 @@ int StationaryHover() {
     WriteBytes(L"render-self-test/pointer-hover-report.json",report.str()+"],\"passed\":true}\n");return 0;
 }
 
+int NearPointerAndEscape() {
+    Host host;std::ostringstream out;out<<"{\"schema\":1,\"test\":\"near-pointer-ownership-and-escape\",\"runs\":[";bool comma=false;
+    for(const auto character:cat::kAvailableCharacters)for(const double amplitude:{48.,90.})
+        for(const double height:{25.,65.,110.})for(const double hz:{1.5,3.}) {
+        host.Reset(character);if(!EnsureCareCoats(character))return 269;
+        unsigned swats=0,turns=0,mirrors=0;bool previous=false;
+        for(unsigned i=0;i<1250;++i) {
+            host.Frame(400+amplitude*std::sin(i*.016*hz*2*cat::animation::kPi),height);
+            const auto pose=PrimaryDisplayedPose(host.now,g.physics.RenderPose());
+            turns+=g.runningTurn.Active();if(i)mirrors+=previous!=pose.flip;previous=pose.flip;
+            swats+=pose.spriteClip==cat::sprite_sequence::Clip::Punch;
+            if(std::abs(g.physics.CurrentPose().x-400)>.05||host.launches)return 270;
+        }
+        if(comma)out<<',';comma=true;
+        out<<"{\"character\":"<<static_cast<unsigned>(character)<<",\"amplitude\":"<<amplitude<<",\"height\":"<<height<<",\"hz\":"<<hz<<",\"swat_frames\":"<<swats<<",\"turn_frames\":"<<turns<<",\"unplanted_mirrors\":"<<mirrors<<'}';
+        if(turns||mirrors||swats<900)return 271;
+    }
+    // Depart during different strokes. The independent target must trigger
+    // pursuit after a genuinely displayed source plant, not a midair cut.
+    for(const auto character:cat::kAvailableCharacters)for(const ULONGLONG offset:{300ULL,1250ULL,2100ULL,3000ULL}) {
+        host.Reset(character);if(!EnsureCareCoats(character))return 269;
+        for(unsigned i=0;i<160&&cursorInteraction.session.Action()!=Action::Paw;++i)host.Frame(400+35*std::sin(host.now*.016),40);
+        if(cursorInteraction.session.Action()!=Action::Paw)return 273;
+        const auto began=g.motionStart;
+        while(host.now-began<offset)host.Frame(400+35*std::sin(host.now*.016),40);
+        const auto left=host.now;bool chased=false,planted=false;
+        for(unsigned i=0;i<130;++i) {
+            const auto old=PrimaryDisplayedPose(host.now,g.physics.RenderPose());
+            const auto* art=LoadedCareSprite(cat::sprite_sequence::Clip::Punch,character);
+            const auto oldFrame=SpriteFrameFor(old,*art->layout);
+            host.Frame(1000,65);
+            if(cursorInteraction.session.Action()==Action::Chase) {
+                chased=true;
+                const auto exits=cat::video_actions::PunchExitMs(static_cast<unsigned>(character));
+                const auto end=static_cast<ULONGLONG>(std::lround((oldFrame+1)*1000./24));
+                for(const auto deadline:exits)if(deadline==end)planted=true;
+                break;
+            }
+        }
+        out<<",{\"character\":"<<static_cast<unsigned>(character)<<",\"depart_after_ms\":"<<offset<<",\"pursuit_ms\":"<<host.now-left<<",\"source_plant_visible\":"<<planted<<'}';
+        if(!chased||!planted||host.now-left>1700)return 272;
+    }
+    out<<"],\"passed\":true}\n";CreateDirectoryW(L"render-self-test",nullptr);
+    WriteBytes(L"render-self-test/near-pointer-report.json",out.str());return 0;
+}
+
 int Run() {
     Host host;
     // Acquiring a nearby pointer interrupts the old brain follow-up. Cursor
@@ -312,7 +364,7 @@ int Run() {
         if (host.Frame(g.physics.CurrentPose().x+toe.x*body.bodyWidth,toe.y*body.bodyHeight) &&
                 UpdateCursorContact(host.now,g.physics.CurrentPose())) return 243;
     }
-    if (host.contacts != 2 || !g.lifeInteractionUntil) return 247;
+    if (host.contacts != cat::video_actions::PunchContactCount(static_cast<unsigned>(g.preferences.character)) || !g.lifeInteractionUntil) return 247;
     // An elapsed cue with a distant pointer cannot manufacture a contact.
     host.Reset(); if (!host.StartPaw(host.PawHeight())) return 246;
     cursorInteraction.cursorX += 200;
@@ -401,7 +453,8 @@ int Run() {
                 (reason == 4 && (g.motion != Motion::Eat || g.motionSerial != serial))) return 261;
     }
     if(const int result=MovingPursuit())return result;
-    return StationaryHover();
+    if(const int result=StationaryHover())return result;
+    return NearPointerAndEscape();
 }
 } // namespace native_cursor_tests
 

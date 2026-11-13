@@ -1,5 +1,56 @@
 #pragma once
 
+int NativeKeyboardJitterDiagnostic(HINSTANCE instance) {
+    g.instance=instance;ULONG_PTR token=0;GdiplusStartupInput startup;
+    if(GdiplusStartup(&token,&startup,nullptr)!=Ok)return 697;
+    int result=0;
+    if(!LoadAtlas())result=698;
+    else {
+        CreateDirectoryW(L"render-self-test",nullptr);
+        std::ostringstream trace,report;trace<<"character,ms,direction,running,motion,serial,clip,source,flip,x,vx,turn,turn_ms,bridge,phase\n";
+        report<<"{\"version\":\"" YEOPJARI_VERSION_STRING "\",\"runs\":[";bool comma=false;
+        for(const auto character:cat::kAvailableCharacters) {
+            using namespace native_manual_motion_tests;
+            Host host;if(!keyboard_native::Start(host,character)){result=699;break;}
+            unsigned interrupted=0,clockResets=0,turnFrames=0;
+            bool wasTurn=false;ULONGLONG oldTurn=0,serial=g.motionSerial;Motion oldMotion=g.motion;
+            const auto key=[](unsigned k,bool down=true){keyboard_native::Key(k,down);};
+            for(unsigned i=0;i<1250;++i) {
+                if(i==0)key(VK_RIGHT);
+                if(i==188)key(VK_SHIFT);
+                if(i==313){key(VK_RIGHT,false);key(VK_LEFT);}
+                if(i==397)key(VK_SHIFT,false);
+                if(i==414)key(VK_SHIFT);
+                if(i==450)key(VK_LEFT,false);
+                if(i==470)key(VK_RIGHT);
+                if(i>=590&&i<650&&i%10==0)key(VK_SHIFT,(i/10)%2==0);
+                if(i==650){key(VK_RIGHT,false);key(VK_SHIFT,false);}
+                if(i==670||i==682)key(VK_RIGHT);
+                if(i==674||i==686)key(VK_RIGHT,false);
+                if(i==700)key(VK_LEFT);
+                if(i==850)key(VK_SHIFT);
+                if(i==1000){key(VK_LEFT,false);key(VK_RIGHT);}
+                if(i==1030){key(VK_SPACE);key(VK_SPACE,false);}
+                keyboard_native::Step(host);
+                const auto physical=g.physics.RenderPose();const auto pose=PrimaryDisplayedPose(host.now,physical);
+                const auto* art=CareSpriteFor(pose,character);
+                const auto source=art?SpriteFrameFor(pose,*art->layout):pose.frame;
+                if(wasTurn&&!g.runningTurn.Active()&&oldTurn+32<cat::sprite_sequence::ProgramDuration(LoadedCareSprite(cat::sprite_sequence::Clip::RunningTurn,character)->layout->program))++interrupted;
+                if(serial!=g.motionSerial&&cat::animation::Walking(oldMotion)&&cat::animation::Walking(g.motion))++clockResets;
+                turnFrames+=g.runningTurn.Active();
+                trace<<static_cast<unsigned>(character)<<','<<i*16<<','<<keyboardPlay.input.Direction()<<','<<keyboardPlay.input.Running()<<','<<static_cast<unsigned>(g.motion)<<','<<g.motionSerial<<','<<static_cast<unsigned>(pose.spriteClip)<<','<<source<<','<<pose.flip<<','<<physical.x<<','<<physical.velocityX<<','<<static_cast<unsigned>(g.runningTurn.CurrentPhase())<<','<<g.runningTurn.SpriteMs()<<','<<static_cast<unsigned>(g.groundArtBridge.CurrentPhase())<<','<<g.gait.AuthoredPhase()<<'\n';
+                wasTurn=g.runningTurn.Active();oldTurn=g.runningTurn.SpriteMs();serial=g.motionSerial;oldMotion=g.motion;
+            }
+            if(comma)report<<',';comma=true;
+            report<<"{\"character\":"<<static_cast<unsigned>(character)<<",\"interrupted_turns\":"<<interrupted<<",\"travel_clock_resets\":"<<clockResets<<",\"turn_frames\":"<<turnFrames<<'}';
+            keyboard_native::Clear();
+        }
+        report<<"]}\n";WriteBytes(L"render-self-test/keyboard-jitter-report.json",report.str());WriteBytes(L"render-self-test/keyboard-jitter-trace.csv",trace.str());
+    }
+    ReleaseAtlases();ReleaseCarePresentation();g.styleBlendFrom.Reset();g.styleBlendTo.Reset();
+    g.initialized=false;g.window=nullptr;cursorInteraction={};GdiplusShutdown(token);return result;
+}
+
 // Read-only production-path probe. Samples are memory-only: no OS pointer,
 // visible window, profile loading/saving or change to the running pet.
 int NativeCursorJitterDiagnostic(HINSTANCE instance) {

@@ -4,6 +4,7 @@
 constexpr UINT kCompanionToggle = 2400, kCompanionFeed = 2401, kCompanionTreat = 2402;
 constexpr UINT kCompanionStatus = 2403, kCompanionPause = 2404;
 constexpr UINT kCompanionFish = 2405;
+constexpr UINT kCompanionPlay=2406,kCompanionKeyboard=2407,kCompanionActionFirst=2450;
 constexpr UINT kCompanionCharacterFirst = 2600;
 // Retired wardrobe commands 2620..2632 stay unused; persisted preferences remain readable.
 
@@ -23,6 +24,10 @@ cat::companion::Context CompanionContext(ULONGLONG ticks, double elapsed) {
     c.paused = g.hidden || g.menuOpen || g.dragging || g.companionWindow.Interacting() || g.closing || updates.applying;
     c.primaryVisible = !g.hidden;
     c.primary = g.physics.CurrentPose(); c.primaryMotion = g.motion;
+    POINT cursor{};
+    c.cursorEnabled=g.cursorPlay&&!KeyboardPlayActive();
+    c.cursorAvailable=GetCursorPos(&cursor)&&MonitorFromPoint(cursor,MONITOR_DEFAULTTONULL)==g.monitor;
+    c.cursorX=(cursor.x-g.work.left)/g.dpiScale;c.cursorWorldHeight=(g.work.bottom-cursor.y)/g.dpiScale;
     c.primaryBusy = g.dragging || g.perch.transitioning || g.waitingForStop ||
         g.toyEngaged || g.approachingToy || g.approachingUser || g.memorySequenceCount || g.lifeSequenceCount ||
         g.lifeCrossing.Active() || g.physics.Hanging() || EnvironmentBusy() || !c.primary.grounded ||
@@ -58,6 +63,8 @@ void PaintCompanion(HDC, unsigned char* pixels, int width, int height,
         static_cast<REAL>(110 * dpi * s.growthScale),
         s.presentationTicks?&CompanionCarePresentation():nullptr,
         s.presentationTicks,s.presentationGeneration,s.presentationPaused);
+    if(s.ballVisible)DrawToyBall(graphics,static_cast<REAL>(width/2.+(s.ball.x-s.physical.x)*dpi),
+        static_cast<REAL>(height-1-bottomInset),static_cast<REAL>(dpi),s.ball);
     graphics.Flush(FlushIntentionSync);
 }
 void ShowCompanionStatus() {
@@ -94,6 +101,19 @@ void ShowCompanionMenu(POINT point) {
     AppendMenuW(menu, MF_STRING, kCompanionTreat, L"이 동물에게 간식 주기");
     AppendMenuW(menu, MF_STRING | (cat::feeding::CanOfferFish(prefs.character) ? MF_ENABLED : MF_GRAYED),
         kCompanionFish, L"이 고양이에게 생선 주기");
+    HMENU actions=CreatePopupMenu();
+    const std::array<std::pair<cat::sprite_sequence::Clip,const wchar_t*>,12> actionNames{{
+        {cat::sprite_sequence::Clip::Walk,L"걷기"},{cat::sprite_sequence::Clip::Run,L"달리기"},
+        {cat::sprite_sequence::Clip::Jump,L"점프하기"},{cat::sprite_sequence::Clip::Climb,L"오른쪽 가장자리 오르기"},
+        {cat::sprite_sequence::Clip::FlyHunt,L"파리 사냥하기"},{cat::sprite_sequence::Clip::Punch,L"냥냥펀치"},
+        {cat::sprite_sequence::Clip::BallPlay,L"공놀이"},{cat::sprite_sequence::Clip::ToyPlay,L"낚싯대 놀이"},
+        {cat::sprite_sequence::Clip::Box,L"상자 놀이"},{cat::sprite_sequence::Clip::Groom,L"그루밍"},
+        {cat::sprite_sequence::Clip::Knead,L"꾹꾹이"},{cat::sprite_sequence::Clip::Sleep,L"낮잠"}}};
+    for(const auto& action:actionNames)AppendMenuW(actions,MF_STRING,
+        kCompanionActionFirst+static_cast<unsigned>(action.first),action.second);
+    AppendMenuW(actions,MF_STRING,kCompanionPlay,L"첫 번째 고양이와 장난치기");
+    AppendMenuW(actions,MF_STRING,kCompanionKeyboard,L"키보드로 이 고양이 조종하기…");
+    AppendMenuW(menu,MF_POPUP,reinterpret_cast<UINT_PTR>(actions),L"이 고양이 행동시키기");
     HMENU characters = CreatePopupMenu();
     for (const auto character:cat::kAvailableCharacters) {
         AppendMenuW(characters, MF_STRING | (character==prefs.character ? MF_CHECKED : 0),
@@ -114,6 +134,16 @@ void ShowCompanionMenu(POINT point) {
     else if (command == kCompanionFish) FeedCompanionFood(cat::feeding::FoodKind::Fish);
     else if (command == kCompanionStatus) ShowCompanionStatus();
     else if (command == kCompanionToggle) ToggleCompanion();
+    else if(command==kCompanionPlay) {
+        auto context=CompanionContext(GetTickCount64(),0);
+        if((g.motion==Motion::Idle||g.motion==Motion::Watch||g.motion==Motion::Walk)&&
+                !EnvironmentBusy()&&!g.manualMotionActive&&!g.waitingForStop&&!g.toyEngaged&&!g.approachingToy&&g.pendingCare<0)
+            context.primaryBusy=false;
+        g.companionModel.TrySocial(cat::companion::Interaction::Paw,context);
+    }
+    else if(command==kCompanionKeyboard)ToggleKeyboardPlay(true);
+    else if(command>=kCompanionActionFirst&&command<kCompanionActionFirst+22)
+        g.companionModel.Perform(static_cast<cat::sprite_sequence::Clip>(command-kCompanionActionFirst),GetTickCount64());
     else if (command == UpdateCheckCommand) StartUpdateCheck(true);
     else if (command == kCompanionPause) {
         auto& paused = g.companionStore.state.pet.roamingPaused;
@@ -175,6 +205,25 @@ void ToggleCompanion() {
         if (!EnsureCompanionWindow()) Balloon(L"두 번째 동물", L"표시 창을 만들지 못했어요. 기록은 저장되어 있어요.", true);
     } else if (g.companionWindow.Handle()) ShowWindow(g.companionWindow.Handle(),SW_HIDE);
 }
+void ReactToCompanion(cat::companion::Interaction event,const cat::companion::Context& context,ULONGLONG ticks) {
+    using E=cat::companion::Interaction;
+    const bool nextPaw=event==E::Paw&&g.companionReaction&&g.motion==Motion::Punch&&
+        ticks>=g.nextDecision&&!g.waitingForStop;
+    if(context.paused||context.primaryBusy||(!nextPaw&&g.motion!=Motion::Idle&&g.motion!=Motion::Watch&&g.motion!=Motion::Walk))return;
+    if(event==E::Sniff||event==E::Paw)g.direction=g.companionModel.Physical().x<context.primary.x?-1:1;
+    bool reacted=false;
+    if(event==E::Sniff){SetMotion(Motion::Sniff,2200,ticks);reacted=true;}
+    else if(event==E::Paw) {
+        g.facing=g.direction;g.groundDrive.Reset(g.facing);
+        const auto* swat=LoadedCareSprite(cat::sprite_sequence::Clip::Punch,g.preferences.character);
+        SetMotion(Motion::Punch,swat?cat::sprite_sequence::ProgramDuration(swat->layout->program):4458,ticks);reacted=true;
+    } else if(event==E::SharedSleep){SetMotion(Motion::Sleep,30000,ticks);reacted=true;}
+    else if(event==E::RunTogether&&!g.pet.roamingPaused) {
+        g.direction=g.companionModel.Physical().velocityX<0?-1:1;g.speed=105*g.dpiScale;
+        SetMotion(Motion::Zoomies,5500,ticks);reacted=true;
+    }
+    if(reacted)g.companionReaction=true;
+}
 void TickCompanion(ULONGLONG ticks, double elapsed) {
     if (!g.companionStore.available() || !EnsureCompanionWindow()) return;
     auto context = CompanionContext(ticks,elapsed);
@@ -189,21 +238,7 @@ void TickCompanion(ULONGLONG ticks, double elapsed) {
         }
         g.companionModel.Tick(context);
         const auto event = g.companionModel.TakeEvent();
-        using E = cat::companion::Interaction;
-        if (!context.paused && !context.primaryBusy &&
-            (g.motion==Motion::Idle || g.motion==Motion::Watch || g.motion==Motion::Walk)) {
-            if (event==E::Sniff || event==E::Paw)
-                g.direction=g.companionModel.Physical().x<context.primary.x ? -1 : 1;
-            bool reacted=false;
-            if (event==E::Sniff) {SetMotion(Motion::Sniff,2200);reacted=true;}
-            else if (event==E::Paw) {SetMotion(Motion::ToyPaw,1500);reacted=true;}
-            else if (event==E::SharedSleep) {SetMotion(Motion::Sleep,30000);reacted=true;}
-            else if (event==E::RunTogether && !g.pet.roamingPaused) {
-                g.direction = g.companionModel.Physical().velocityX < 0 ? -1 : 1;
-                g.speed = 105*g.dpiScale; SetMotion(Motion::Zoomies,5500);reacted=true;
-            }
-            if(reacted)g.companionReaction=true;
-        }
+        ReactToCompanion(event,context,ticks);
     }
     RECT support{};
     const auto hwnd = reinterpret_cast<HWND>(g.companionModel.SupportId());

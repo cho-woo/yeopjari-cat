@@ -123,8 +123,7 @@ int Simulate(Row& row,std::string& context) {
     row.startX=g.physics.RenderPose().x;row.body=cat::appearance::VisualModifiers(g.nutrition,row.character);
     row.sourceHash=BaseSourceHash(row.character);row.frames.reserve(Count);
     const auto geometry=cat::cursor::Bounded(CursorAttackGeometry());
-    const auto lowPaw=cat::video_actions::PunchPaws(static_cast<unsigned>(row.character),row.character==cat::Character::Tuxedo?18:14)[0];
-    const double lowDx=lowPaw.x*row.body.bodyWidth,lowHeight=lowPaw.y*row.body.bodyHeight;
+    const double lowDx=35,lowHeight=40;
     double pointerX=row.startX+lowDx,pointerHeight=lowHeight,previousX=row.startX;
     Stage previousStage=Stage::Low;
     Action previousAction=Action::None;
@@ -156,6 +155,7 @@ int Simulate(Row& row,std::string& context) {
             pointerX=800+300*std::sin(seconds*.55);
             pointerHeight=110+35*std::sin(seconds*.9);
         }
+        if(stage==Stage::Low)pointerX=row.startX+35+6*std::sin(elapsed*.001*2*cat::animation::kPi*3);
         if(stage==Stage::BothPaws) {
             const double seconds=(elapsed-20000)*.001;
             pointerX=static_cast<unsigned>(seconds/5.5)%2?100:1100;

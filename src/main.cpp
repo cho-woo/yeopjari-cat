@@ -36,6 +36,7 @@
 #include "cat_behavior.hpp"
 #include "cat_random_zoomies.hpp"
 #include "cat_keyboard_play.hpp"
+#include "cat_gait_transition.hpp"
 #include "cat_memory.hpp"
 #include "cat_memory_motion.hpp"
 #include "cat_memory_storage.hpp"
@@ -422,11 +423,13 @@ struct KeyboardPlayHost {
     std::array<bool,256> waitForRelease{};
     HWND foreground=nullptr;
     HWND fixtureForeground=nullptr;
-    bool requested=false,fixture=false,ownsMotion=false;
+    bool requested=false,fixture=false,ownsMotion=false,companion=false;
     std::uint64_t serial=0;
     ULONGLONG requestedAt=0;
     int direction=0;
     bool running=false,jumping=false,returning=false;
+    bool queuedJump=false;
+    cat::gait_transition::Transition gaitTransition;
 } keyboardPlay;
 bool KeyboardPlayActive(){return keyboardPlay.requested||keyboardPlay.input.Active();}
 
@@ -451,6 +454,7 @@ bool WorkInterferenceEnabled();
 bool EnvironmentBusy();
 bool KeyboardPlayActive();
 void StopKeyboardPlay(bool announce=false,bool settle=true);
+void ToggleKeyboardPlay(bool companion=false);
 bool ApplyCursorAttackPose(cat::animation::Pose& pose, ULONGLONG ticks, const cat::physics::Pose& physical);
 bool CursorTravellingPounce();
 bool CursorChasing();
@@ -1802,10 +1806,12 @@ void UpdatePrimaryGroundArt(ULONGLONG ticks) {
     if(g.stopClip!=cat::sprite_sequence::Clip::None&&ticks<g.stopUntil) {
         g.groundArtBridge.ContinueLocomotion(ticks);g.waitingForStop=true;return;
     }
-    if(g.motion!=Motion::Zoomies)g.runningTurn.Reset();
-    if(g.motion==Motion::Zoomies&&physical.grounded&&LoadedCareSprite(cat::sprite_sequence::Clip::RunningTurn,g.preferences.character)) {
-        if(travel&&g.direction!=g.facing&&(g.groundArtBridge.Side()||std::abs(WalkingVelocity(physical))>2))
-            g.runningTurn.Begin(g.facing,g.direction);
+    const bool turnOwner=walking&&(g.motion==Motion::Zoomies||KeyboardPlayActive());
+    if(!turnOwner)g.runningTurn.Reset();
+    if(turnOwner&&physical.grounded&&LoadedCareSprite(cat::sprite_sequence::Clip::RunningTurn,g.preferences.character)) {
+        if(travel&&g.direction!=g.facing&&!keyboardPlay.gaitTransition.Active()&&
+                (g.groundArtBridge.Side()||g.groundArtBridge.Braking()||std::abs(WalkingVelocity(physical))>2))
+            g.runningTurn.Begin(g.facing,g.direction,cat::video_actions::TurnTiming(static_cast<unsigned>(g.preferences.character)));
         if(g.runningTurn.Active()) {
             g.groundArtBridge.ContinueLocomotion(ticks);g.waitingForStop=false;return;
         }
@@ -1816,8 +1822,8 @@ void UpdatePrimaryGroundArt(ULONGLONG ticks) {
         g.facing=g.direction;g.groundDrive.Reset(g.direction);
     }
     const bool reversing=travel && g.direction!=g.facing;
-    g.groundArtBridge.Update(ticks,travel && !reversing,
-        physical.grounded,WalkingVelocity(physical),!EnvironmentBusy()||CursorChasing(),meal||jumpPreparation,jumpPreparation);
+    g.groundArtBridge.Update(ticks,travel && (!reversing||(KeyboardPlayActive()&&g.groundArtBridge.Starting())),
+        physical.grounded,WalkingVelocity(physical),!EnvironmentBusy()||CursorChasing(),meal||jumpPreparation,jumpPreparation,KeyboardPlayActive());
     if(!travel && (g.groundArtBridge.Stopping() || g.groundArtBridge.StartingForSideAction()))g.waitingForStop=true;
 }
 void ConfigurePrimaryAuthoredStride() {
@@ -2752,7 +2758,7 @@ const CareSpriteAtlas* CareSpriteFor(const cat::animation::Pose& pose,cat::Chara
     if(clip==Clip::None || (clip!=Clip::Jump && clip!=Clip::CursorPounce && clip!=Clip::Climb && !pose.groundContact))return nullptr;
     if(const auto* sprite=LoadedCareSprite(clip,character)) {
         const auto index=SpriteFrameFor(pose,*sprite->layout);
-        if(index<sprite->layout->frameCount && (sprite->frames[index] || sprite->image))return sprite;
+        if(index<sprite->layout->frameCount && (CareFrame(*sprite,character,index) || sprite->image))return sprite;
     }
     return nullptr;
 }
@@ -3271,6 +3277,12 @@ cat::animation::Pose PrimaryDisplayedPose(ULONGLONG ticks,const cat::physics::Po
         cat::animation::AttachSprite(pose,ActionClip::RunningTurn,g.runningTurn.SpriteMs());
         pose.flip=g.runningTurn.From()<0;
     }
+    if(KeyboardPlayActive()&&keyboardPlay.gaitTransition.Active()&&physical.grounded&&!g.runningTurn.Active()) {
+        cat::sprite_sequence::Options options;
+        options.stage=keyboardPlay.gaitTransition.ToRun()?cat::sprite_sequence::Stage::Entering:cat::sprite_sequence::Stage::Exiting;
+        cat::animation::AttachSprite(pose,ActionClip::Run,keyboardPlay.gaitTransition.Elapsed(ticks),options);
+        pose.flip=g.facing<0;
+    }
     const auto* authored=CareSpriteFor(pose,g.preferences.character);
     g.authoredBoxVisible=authored && authored->layout->clip==cat::sprite_sequence::Clip::Box;
     if(authored)cat::animation::UseAuthoredSprite(pose);
@@ -3666,6 +3678,9 @@ void UpdateCursorReactionSample(ULONGLONG ticks, ULONGLONG elapsedMs, POINT curs
     const auto physical = g.physics.CurrentPose();
     input.grounded = physical.grounded;
     input.catVelocityX=WalkingVelocity(physical);
+    input.catFacing=g.facing;
+    input.pawEndsPlanted=true;
+    input.pawExitMs=cat::video_actions::PunchExitMs(static_cast<unsigned>(g.preferences.character));
     input.sizeScale = cat::GrowthScale(g.pet.bornUtc, UtcNow());
     input.movementScale = cat::appearance::VisualModifiers(g.nutrition,g.preferences.character).speed *
         cat::species::ProfileFor(g.preferences.character).movementSpeedMultiplier;
@@ -3692,12 +3707,12 @@ void UpdateCursorReactionSample(ULONGLONG ticks, ULONGLONG elapsedMs, POINT curs
         input.landingRecoveryMs=cat::sprite_sequence::Duration(jump->layout->program,jump->layout->program.outro);
     const bool protectedCare=g.motion==Motion::Eat||g.motion==Motion::Treat||g.motion==Motion::Groom||g.motion==Motion::Sleep||
         (g.motion==Motion::Stretch&&g.wakingFromSleep)||PrimaryAuthoredCareHolding(ticks);
-    input.canContinue = !KeyboardPlayActive() && !protectedCare && !g.manualMotionActive && g.physicsReady && (physical.grounded || interaction.session.InFlight()) &&
+    input.canContinue = !g.companionReaction && !g.companionModel.SocialActive() && !KeyboardPlayActive() && !protectedCare && !g.manualMotionActive && g.physicsReady && (physical.grounded || interaction.session.InFlight()) &&
         !g.hidden && !g.menuOpen && !g.dragging && !g.closing && !updates.applying &&
         !g.perch.transitioning && !g.lifeSequenceCount && !g.lifeCrossing.Active() && !g.physics.Hanging() &&
         !g.approachingToy && !g.toyEngaged && !g.approachingUser &&
         !g.memorySequenceCount && g.pendingCare < 0;
-    input.canStart = input.canContinue && !g.waitingForStop && !g.companionModel.Busy() &&
+    input.canStart = input.canContinue && !g.waitingForStop &&
         (g.motion == Motion::Idle || g.motion == Motion::Watch || g.motion == Motion::Walk ||
          g.motion == Motion::Stalk || (g.motion == Motion::Loaf && ticks>=g.nextDecision));
     input.available = available;
@@ -3757,7 +3772,8 @@ void UpdateCursorReactionSample(ULONGLONG ticks, ULONGLONG elapsedMs, POINT curs
             // absorbs momentum. A seated stop would hide the actual landing.
             g.waitingForStop=false;
         }
-        if(output.action==Action::Chase&&(previousAction==Action::Rest||previousAction==Action::Pounce))
+        if(output.action==Action::Chase&&(previousAction==Action::Rest||previousAction==Action::Pounce||
+                previousAction==Action::Paw||previousAction==Action::Punch))
             g.groundArtBridge.ContinueLocomotion(ticks);
         interaction.session.AdoptMotion(g.motionStart, g.waitingForStop, g.motionSerial);
         interaction.contacts.Reset();
@@ -3851,19 +3867,22 @@ bool ApplyCursorAttackPose(cat::animation::Pose& pose, ULONGLONG ticks, const ca
     if(action==cat::environment::CursorAction::Rest&&
             interaction.session.OwnsSerial(g.motionSerial)&&g.motion==interaction.motion&&physical.grounded&&
             CursorPlaybackAllowed()&&!g.waitingForStop) {
-        if(const auto* reach=LoadedCareSprite(cat::sprite_sequence::Clip::Reach,g.preferences.character)) {
+        const bool swat=interaction.lastAttack==cat::environment::CursorAction::Paw||
+            interaction.lastAttack==cat::environment::CursorAction::Punch;
+        if(const auto* reach=LoadedCareSprite(swat?cat::sprite_sequence::Clip::Punch:cat::sprite_sequence::Clip::Reach,g.preferences.character)) {
             pose={};pose.flip=g.direction<0;
             const auto elapsed=ticks>=g.motionStart?ticks-g.motionStart:0;
             const auto coat=static_cast<unsigned>(g.preferences.character);
-            const bool alreadySettled=interaction.lastAttack==cat::environment::CursorAction::Tiptoe||
+            const bool alreadySettled=swat||interaction.lastAttack==cat::environment::CursorAction::Tiptoe||
                 interaction.lastAttack==cat::environment::CursorAction::BothPaws;
             const auto start=cat::video_actions::ReachSettleStart(coat);
             const auto settleElapsed=interaction.lastAttack==cat::environment::CursorAction::Pounce&&
                 interaction.hopFlightLaunched&&interaction.hopLandedAt?
                 (ticks-interaction.hopLandedAt>recovery?ticks-interaction.hopLandedAt-recovery:0):elapsed;
-            cat::animation::AttachSprite(pose,cat::sprite_sequence::Clip::Reach,
+            cat::animation::AttachSprite(pose,swat?cat::sprite_sequence::Clip::Punch:cat::sprite_sequence::Clip::Reach,
                 alreadySettled?cat::sprite_sequence::ProgramDuration(reach->layout->program):start+settleElapsed);
-            pose.spritePaws=cat::video_actions::ReachPaws(coat,SpriteFrameFor(pose,*reach->layout));pose.spritePawsValid=true;
+            pose.spritePaws=swat?cat::video_actions::PunchPaws(coat,SpriteFrameFor(pose,*reach->layout)):
+                cat::video_actions::ReachPaws(coat,SpriteFrameFor(pose,*reach->layout));pose.spritePawsValid=true;
             return true;
         }
     }
@@ -3995,9 +4014,12 @@ bool UpdateCursorContact(ULONGLONG ticks, const cat::physics::Pose& physical) {
             if(!extending)contactIndex=0;
         }
         const auto body=cat::appearance::VisualModifiers(g.nutrition,g.preferences.character);
-        for(const auto& paw:cat::cursor::PawPositions(pose,CursorAttackGeometry()))
+        const auto paws=cat::cursor::PawPositions(pose,CursorAttackGeometry());
+        for(unsigned pawIndex=0;pawIndex<(interaction.session.InFlight()?2u:1u);++pawIndex) {
+            const auto& paw=paws[pawIndex];
             contact=interaction.contacts.Observe(contactIndex,true,displayed.x+paw.x*growth*body.bodyWidth,paw.y*growth*body.bodyHeight,
                 interaction.cursorX,interaction.cursorWorldHeight-displayed.lift,7*growth)||contact;
+        }
     }
     if (contact) {Remember(cat::memory::Event::Play);++interaction.awardedContacts;
         if(interaction.session.InFlight())interaction.landingContact=true;
@@ -4091,11 +4113,14 @@ bool ManualMotionAvailable() {
 }
 
 void StopKeyboardPlay(bool announce,bool settle) {
+    if(keyboardPlay.companion)g.companionModel.EndKeyboard(GetTickCount64());
+    keyboardPlay.companion=false;
     const bool owned=keyboardPlay.ownsMotion&&keyboardPlay.serial==g.motionSerial&&g.manualMotionActive;
     const bool wasActive=KeyboardPlayActive();
     keyboardPlay.input.Stop();keyboardPlay.requested=false;keyboardPlay.ownsMotion=false;
     keyboardPlay.waitForRelease.fill(false);
     keyboardPlay.direction=0;keyboardPlay.running=false;keyboardPlay.jumping=false;
+    keyboardPlay.queuedJump=false;keyboardPlay.gaitTransition.Reset();
     keyboardPlay.returning=false;
     keyboardPlay.foreground=nullptr;
     if(keyboardPlay.hook){UnhookWindowsHookEx(keyboardPlay.hook);keyboardPlay.hook=nullptr;}
@@ -4122,7 +4147,7 @@ cat::keyboard_play::Edges ApplyKeyboardPlayInput(unsigned key,bool down,bool sys
 }
 LRESULT CALLBACK KeyboardPlayHook(int code,WPARAM message,LPARAM data) {
     if(code==HC_ACTION&&keyboardPlay.input.Active()) {
-        if(!g.initialized||!g.physicsReady||g.hidden||g.menuOpen||g.dragging||g.closing||updates.applying||
+        if(!g.initialized||!g.physicsReady||g.hidden||g.menuOpen||g.dragging||g.companionWindow.Interacting()||g.closing||updates.applying||
                 !g.manualMotionActive||keyboardPlay.serial!=g.motionSerial) {
             StopKeyboardPlay(false,false);
             return CallNextHookEx(nullptr,code,message,data);
@@ -4151,12 +4176,16 @@ LRESULT CALLBACK KeyboardPlayHook(int code,WPARAM message,LPARAM data) {
     return CallNextHookEx(nullptr,code,message,data);
 }
 bool BeginKeyboardCapture(ULONGLONG ticks) {
+    if(keyboardPlay.companion&&!g.companionModel.BeginKeyboard(ticks))return false;
     keyboardPlay.waitForRelease.fill(false);
     if(!keyboardPlay.fixture) {
         for(unsigned key:std::array<unsigned,8>{{VK_LEFT,VK_RIGHT,'A','D',VK_SHIFT,VK_LSHIFT,VK_RSHIFT,VK_SPACE}})
             keyboardPlay.waitForRelease[key]=(GetAsyncKeyState(static_cast<int>(key))&0x8000)!=0;
         keyboardPlay.hook=SetWindowsHookExW(WH_KEYBOARD_LL,KeyboardPlayHook,g.instance,0);
-        if(!keyboardPlay.hook){keyboardPlay.requested=false;Speak(L"키보드 놀이를 켜지 못했어요",2400);return false;}
+        if(!keyboardPlay.hook){
+            if(keyboardPlay.companion)g.companionModel.EndKeyboard(ticks);
+            keyboardPlay.requested=false;Speak(L"키보드 놀이를 켜지 못했어요",2400);return false;
+        }
     }
     keyboardPlay.input.Start();keyboardPlay.requested=false;
     const HWND foreground=keyboardPlay.fixture?keyboardPlay.fixtureForeground:GetForegroundWindow();
@@ -4166,14 +4195,16 @@ bool BeginKeyboardCapture(ULONGLONG ticks) {
     SetMotion(Motion::Idle,3600000,ticks);g.speed=0;g.manualMotionActive=true;
     keyboardPlay.ownsMotion=true;keyboardPlay.serial=g.motionSerial;
     keyboardPlay.direction=0;keyboardPlay.running=false;keyboardPlay.jumping=false;
+    keyboardPlay.queuedJump=false;keyboardPlay.gaitTransition.Reset();
     keyboardPlay.returning=false;
     Speak(L"← → 걷기 · Shift 달리기\nSpace 점프 · Esc 끝",6500);
     return true;
 }
-void ToggleKeyboardPlay() {
+void ToggleKeyboardPlay(bool companion) {
     if(KeyboardPlayActive()){StopKeyboardPlay(true,true);return;}
     if(!g.initialized||g.hidden||g.dragging||g.menuOpen||g.closing||updates.applying||!g.physicsReady)return;
     keyboardPlay.requested=true;keyboardPlay.requestedAt=GetTickCount64();
+    keyboardPlay.companion=companion;
     const HWND foreground=keyboardPlay.fixture?keyboardPlay.fixtureForeground:GetForegroundWindow();
     keyboardPlay.foreground=foreground==g.window?nullptr:foreground;
     // Waking uses the existing authored curl -> stretch -> neutral path. Food,
@@ -4193,7 +4224,7 @@ void UpdateKeyboardPlay(ULONGLONG ticks,double elapsed) {
     cat::keyboard_play::Safety safety;
     safety.initialized=g.initialized;safety.groundReady=g.physicsReady&&!g.perch.active&&
         !g.perch.transitioning&&!g.perch.preparing&&!g.physics.Hanging()&&!g.lifeCrossing.Active();
-    safety.hidden=g.hidden;safety.menu=g.menuOpen;safety.drag=g.dragging;
+    safety.hidden=g.hidden;safety.menu=g.menuOpen;safety.drag=g.dragging||g.companionWindow.Interacting();
     safety.closing=g.closing;safety.updating=updates.applying;
     safety.foregroundChanged=keyboardPlay.foreground&&foreground!=keyboardPlay.foreground;
     safety.owned=!keyboardPlay.ownsMotion||(keyboardPlay.serial==g.motionSerial&&g.manualMotionActive);
@@ -4206,7 +4237,15 @@ void UpdateKeyboardPlay(ULONGLONG ticks,double elapsed) {
         return;
     }
     const bool jumpRequest=keyboardPlay.input.TakeJump();
+    if(keyboardPlay.companion) {
+        if(!g.companionStore.enabled()){StopKeyboardPlay(false,true);return;}
+        g.companionModel.KeyboardDrive(keyboardPlay.input.Direction(),keyboardPlay.input.Running(),jumpRequest);
+        return;
+    }
+    keyboardPlay.queuedJump=keyboardPlay.queuedJump||jumpRequest;
     const auto physical=g.physics.CurrentPose();
+    if(keyboardPlay.gaitTransition.Finish(ticks))
+        g.gait.SetAuthoredPhase(cat::video_actions::GaitArrivalPhase(static_cast<unsigned>(g.preferences.character),keyboardPlay.gaitTransition.ToRun()));
     if(keyboardPlay.jumping) {
         if(g.jumpPending||!physical.grounded||!g.landedAt||ticks<g.landedAt)return;
         ULONGLONG settleMs=650;
@@ -4223,19 +4262,43 @@ void UpdateKeyboardPlay(ULONGLONG ticks,double elapsed) {
         if(g.waitingForStop||!g.groundArtBridge.Neutral())return;
         keyboardPlay.returning=false;
     }
-    if(jumpRequest&&physical.grounded&&!g.jumpPending) {
-        SetMotion(Motion::Jump,5000,ticks);g.speed=0;g.manualMotionActive=true;
+    const int direction=keyboardPlay.input.Direction();
+    const bool running=keyboardPlay.input.Running();
+    if(direction)g.direction=direction;
+    if(g.runningTurn.Active()||keyboardPlay.gaitTransition.Active()) {
+        const double speed=keyboardPlay.gaitTransition.Active()?keyboardPlay.gaitTransition.Speed(ticks):
+            running?RegisteredRunSpeed():RegisteredWalkSpeed();
+        g.speed=direction&&direction==g.facing?speed*g.dpiScale:0;
+        keyboardPlay.direction=direction;keyboardPlay.running=running;
+        return;
+    }
+    if(keyboardPlay.queuedJump&&physical.grounded&&!g.jumpPending) {
+        keyboardPlay.queuedJump=false;
+        SetMotion(Motion::Jump,5000,ticks,true);g.speed=0;g.manualMotionActive=true;
         keyboardPlay.serial=g.motionSerial;keyboardPlay.jumping=true;keyboardPlay.direction=0;
         return;
     }
-    const int direction=keyboardPlay.input.Direction();
-    const bool running=keyboardPlay.input.Running();
     const Motion desired=direction?(running?Motion::Zoomies:Motion::Walk):Motion::Idle;
-    if(direction)g.direction=direction;
     if(g.motion!=desired) {
-        SetMotion(desired,3600000,ticks);g.manualMotionActive=true;keyboardPlay.serial=g.motionSerial;
+        if(cat::animation::Walking(g.motion)&&cat::animation::Walking(desired)) {
+            // Speed intent is not a new action owner. Keep the stance, stride,
+            // entrance and serial instead of replaying their first drawing.
+            if(direction==g.facing) {
+                const bool actualRun=g.gait.AuthoredMode()==cat::authored_locomotion::Mode::Run;
+                if(running!=actualRun&&g.groundArtBridge.Side()&&std::abs(WalkingVelocity(physical))>4)
+                    if(const auto* run=LoadedCareSprite(cat::sprite_sequence::Clip::Run,g.preferences.character)) {
+                        const auto range=running?run->layout->program.intro:run->layout->program.outro;
+                        keyboardPlay.gaitTransition.Begin(running,ticks,cat::sprite_sequence::Duration(run->layout->program,range),
+                            std::abs(WalkingVelocity(physical)),running?RegisteredRunSpeed():RegisteredWalkSpeed());
+                    }
+                g.motion=desired;g.walkingMotion=desired;
+            }
+        } else {
+            SetMotion(desired,3600000,ticks,true);g.manualMotionActive=true;keyboardPlay.serial=g.motionSerial;
+        }
     }
     g.speed=(direction?(running?RegisteredRunSpeed():RegisteredWalkSpeed()):0)*g.dpiScale;
+    if(keyboardPlay.gaitTransition.Active())g.speed=keyboardPlay.gaitTransition.Speed(ticks)*g.dpiScale;
     keyboardPlay.direction=direction;keyboardPlay.running=running;
 }
 
@@ -4968,7 +5031,8 @@ bool AdvanceWallMotion(ULONGLONG ticks,double elapsed) {
     g.centerX=g.work.left+rendered.x*g.dpiScale;
     ConfigurePrimaryAuthoredStride();
     g.gait.Advance(Motion::Walk,(rendered.relativeTravelX-before.relativeTravelX)/growth,elapsed,rendered.grounded);
-    if(g.groundArtBridge.ConsumeLoopReady())g.gait.SetAuthoredPhase(0);
+    if(g.groundArtBridge.ConsumeLoopReady())g.gait.SetAuthoredPhase(cat::video_actions::WalkBoundaryPhase(
+        static_cast<unsigned>(g.preferences.character),g.groundArtBridge.LoopFromReversedExit()));
     return true;
 }
 
@@ -4984,7 +5048,8 @@ void AdvancePrimaryMotion(ULONGLONG ticks, double elapsed) {
         g.direction=g.facing=g.runningTurn.To();g.groundDrive.Reset(g.facing);
     }
     if(wasTurning&&!g.runningTurn.Active()) {
-        g.groundArtBridge.ContinueLocomotion(ticks);g.gait.SetAuthoredPhase(0);
+        g.groundArtBridge.ContinueLocomotion(ticks);g.gait.SetAuthoredPhase(cat::video_actions::TurnArrivalPhase(
+            static_cast<unsigned>(g.preferences.character),g.gait.AuthoredMode()==cat::authored_locomotion::Mode::Run));
     }
     if(g.wallBounds&&g.physics.CurrentPose().grounded) {
         const auto bounds=MovementBoundsLogical();
@@ -5074,7 +5139,7 @@ void AdvancePrimaryMotion(ULONGLONG ticks, double elapsed) {
             if(!KeyboardPlayActive()&&!g.toyEngaged)g.direction = targetSpeed < 0 ? 1 : -1;
             if(g.motion==Motion::Zoomies&&!KeyboardPlayActive()&&!g.runningTurn.Active()&&
                     LoadedCareSprite(cat::sprite_sequence::Clip::RunningTurn,g.preferences.character)) {
-                g.runningTurn.Begin(g.facing,g.direction);g.groundArtBridge.ContinueLocomotion(ticks);g.waitingForStop=false;
+                g.runningTurn.Begin(g.facing,g.direction,cat::video_actions::TurnTiming(static_cast<unsigned>(g.preferences.character)));g.groundArtBridge.ContinueLocomotion(ticks);g.waitingForStop=false;
             }
             targetSpeed = 0;
             const bool scheduledRun=g.randomZoomies.Active() && g.motion==Motion::Zoomies &&
@@ -5096,6 +5161,7 @@ void AdvancePrimaryMotion(ULONGLONG ticks, double elapsed) {
         targetSpeed=std::clamp(targetSpeed,-RegisteredWalkSpeed()*body.speed,
             RegisteredWalkSpeed()*body.speed);
     const auto motorPose=g.physics.CurrentPose();
+    if(KeyboardPlayActive()&&g.direction!=g.facing&&!g.runningTurn.Active())targetSpeed=0;
     targetSpeed=g.runningTurn.Motor(targetSpeed);
     targetSpeed=g.groundDrive.Update(targetSpeed,WalkingVelocity(motorPose),
         WalkingVelocity(g.physics.RenderPose()),motorPose.grounded,elapsed);
@@ -5139,7 +5205,8 @@ void AdvancePrimaryMotion(ULONGLONG ticks, double elapsed) {
         rendered.grounded,g.waitingForStop,WalkingVelocity(rendered));
     ConfigurePrimaryAuthoredStride();
     g.gait.Advance(gaitMotion, (rendered.relativeTravelX-previousRendered.relativeTravelX) / growth, elapsed, rendered.grounded);
-    if(g.groundArtBridge.ConsumeLoopReady())g.gait.SetAuthoredPhase(0);
+    if(g.groundArtBridge.ConsumeLoopReady())g.gait.SetAuthoredPhase(cat::video_actions::WalkBoundaryPhase(
+        static_cast<unsigned>(g.preferences.character),g.groundArtBridge.LoopFromReversedExit()));
     if (physical.landed) {
         g.landedAt = ticks;
         g.landingStrength = std::clamp(physical.landingSpeed / 230.0, .35, 1.0);
@@ -5215,6 +5282,7 @@ void FreezePrimaryMotion(ULONGLONG ticks, ULONGLONG clockDelta) {
     PauseCursorReaction(clockDelta);
     g.poseTransition.Pause(clockDelta);
     g.groundArtBridge.Freeze(clockDelta);
+    keyboardPlay.gaitTransition.Pause(clockDelta);
     PausePrimaryCarePresentation(clockDelta);
 }
 
@@ -6188,6 +6256,7 @@ int NativeMenuContractTest() {
 #include "native_cute_idle_capture.hpp"
 #include "native_cursor_play_capture.hpp"
 #include "native_cursor_jitter_diagnostic.hpp"
+#include "native_controls_capture.hpp"
 #include "native_groom_review.hpp"
 #include "native_ball_play_capture.hpp"
 #include "native_fish_review.hpp"
@@ -6234,6 +6303,7 @@ int SelfTest(HINSTANCE instance) {
 }
 
 int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
+    if(commandLine && wcsstr(commandLine,L"--keyboard-jitter-diagnostic"))return NativeKeyboardJitterDiagnostic(instance);
     if(commandLine && wcsstr(commandLine,L"--cursor-jitter-diagnostic"))return NativeCursorJitterDiagnostic(instance);
     if(commandLine && wcsstr(commandLine,L"--cursor-host-self-test"))return NativeCursorHostTest(instance);
     if(commandLine && wcsstr(commandLine,L"--render-source-audit"))return NativeSourceAudit(instance);
@@ -6247,7 +6317,11 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
     if(commandLine && wcsstr(commandLine,L"--render-motion-video"))return NativeVideoMotionCapture(instance);
     if(commandLine && wcsstr(commandLine,L"--render-idle-video"))return NativeCuteIdleCapture(instance);
     if(commandLine && wcsstr(commandLine,L"--render-moving-jump-video"))return NativeMovingJumpCapture(instance);
-    if(commandLine && wcsstr(commandLine,L"--render-cursor-play-video"))return NativeCursorPlayCapture(instance);
+    if(commandLine && wcsstr(commandLine,L"--render-controls-video"))return NativeControlsCapture(instance);
+    if(commandLine && wcsstr(commandLine,L"--render-companion-controls"))return NativeControlsCapture(instance,true);
+    if(commandLine && wcsstr(commandLine,L"--render-cursor-play-video")) {
+        return NativeCursorPlayCapture(instance);
+    }
     if(commandLine && wcsstr(commandLine,L"--render-groom-review"))return NativeGroomReview(instance);
     if(commandLine && wcsstr(commandLine,L"--render-ball-play"))return NativeBallPlayCapture(instance);
     if(commandLine && wcsstr(commandLine,L"--render-mesh-walk-review")) {
@@ -6264,7 +6338,9 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
         const int fly=NativeFlyReview(instance);
         if(fly)return fly;
         const int identity=NativeIdentityTurnReview(instance);
-        return identity?identity:NativeSourceAudit(instance);
+        if(identity)return identity;
+        const int source=NativeSourceAudit(instance);
+        return source?source:NativeControlsCapture(instance);
     }
     if (const auto helperResult = cat::update::HandleUpdateHelperCommandLine()) return *helperResult;
     if (commandLine && wcsstr(commandLine, L"--self-test")) return SelfTest(instance);

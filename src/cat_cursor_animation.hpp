@@ -1,13 +1,13 @@
 #pragma once
 #include "cat_animation.hpp"
+#include "video_action_contacts.generated.hpp"
 
 namespace cat::cursor {
-// Annotated visible extension windows in the retained v32 Dropshot swats.
+// Annotated visible extension windows in the retained Dropshot swats.
 // Drawing indices refer to the actual registered atlas. A cue never creates
 // a hit without paw proximity.
 inline unsigned SourceSwatContact(unsigned character,unsigned frame) {
-    if(character==8)return frame>=16&&frame<=18?1:frame>=48&&frame<=50?2:0;
-    return frame>=12&&frame<=15?1:frame>=30&&frame<=33?2:0;
+    return cat::video_actions::PunchContact(character,frame);
 }
 enum class AttackKind { Gentle, Strong, Tiptoe, BothPaws };
 struct Geometry {
