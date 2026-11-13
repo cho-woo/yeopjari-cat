@@ -14,6 +14,20 @@ ROOT = Path(__file__).resolve().parents[1]
 
 @unittest.skipUnless(cv2 is not None, 'Authoring pixel dependencies unavailable')
 class BallMaskTest(unittest.TestCase):
+    def test_profile_eye_spacing_does_not_erase_inner_ears_or_color_the_tail(self):
+        sys.path.insert(0,str(ROOT/'tools'))
+        from pack_video_actions import snow_material
+        from PIL import Image
+        original=np.full((100,100,4),255,dtype=np.uint8)
+        skin=np.array([235,165,152,255],dtype=np.uint8)
+        original[15,35]=skin;original[75,4]=skin
+        iris=np.zeros((100,100),np.uint8);iris[40:52,60:72]=1
+        painted,proof=snow_material(Image.fromarray(original,'RGBA'),iris,strict_skin=True)
+        result=np.asarray(painted)
+        np.testing.assert_array_equal(result[15,35],skin)
+        self.assertLessEqual(int(result[75,4,:3].max())-int(result[75,4,:3].min()),2)
+        self.assertTrue(proof['alpha_exact'] and proof['skin_rgb_exact'])
+
     def test_snow_run_distinguishes_warm_fur_from_actual_pink_skin(self):
         sys.path.insert(0,str(ROOT/'tools'))
         from pack_video_actions import snow_material

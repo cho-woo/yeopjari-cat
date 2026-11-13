@@ -282,7 +282,10 @@ def snow_material(source, eyes, props=None, strict_skin=False):
                 if len(ex):centers.append((float(ex.mean()),float(ey.mean())));widths.append(float(ex.max()-ex.min()+1))
             cx,cy=np.mean(centers,axis=0);cy-=7
             span=np.hypot(*(np.asarray(centers[0])-centers[-1])) if len(centers)==2 else max(widths)*1.5
-            rx,ry=max(18,span*1.15+4),max(23,span*1.4+4)
+            # Profile views foreshorten the distance between the eyes, not
+            # the skull. Keep the canonical head envelope so inner ears do
+            # not lose their skin pigment when only one eye is visible.
+            rx,ry=max(38,span*1.15+4),max(46,span*1.4+4)
             yy,xx=np.indices(eyes.shape)
             head=((xx-cx)/rx)**2+((yy-cy)/ry)**2<=1
             # Peach tail stripes overlap ear pigment. Only the connected
