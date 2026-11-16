@@ -56,6 +56,7 @@ std::function<void()> observeFrame;
 ULONGLONG pointerStarted=0;
 ULONGLONG pointerSampled=0;
 POINT pointerPoint{};bool pointerObserved=false;
+std::array<bool,2> pointerDrained{};
 std::wstring label=L"Starting real-time audit";
 
 LRESULT CALLBACK BackdropProc(HWND window,UINT message,WPARAM wParam,LPARAM lParam) {
@@ -79,7 +80,7 @@ LRESULT CALLBACK ActorProc(HWND window,UINT message,WPARAM wParam,LPARAM lParam)
     if(message==WM_NCHITTEST)return HTTRANSPARENT;
     return DefWindowProcW(window,message,wParam,lParam);
 }
-bool Pointer(POINT& point,bool){
+bool Pointer(POINT& point,bool companion){
     if(!pointerObserved||pointerSampled!=g.lastTick){
         const double age=(g.lastTick>=pointerStarted?g.lastTick-pointerStarted:0)/1000.;
         const auto section=unsigned(age/10)%6;
@@ -93,7 +94,7 @@ bool Pointer(POINT& point,bool){
         pointerPoint={LONG(g.work.left+std::clamp(x,96.,center*2-96)*g.dpiScale),LONG(g.work.bottom-height*g.dpiScale)};
         pointerSampled=g.lastTick;pointerObserved=true;
     }
-    point=pointerPoint;return true;
+    point=pointerPoint;return !pointerDrained[companion?1:0];
 }
 void StartAction(unsigned selected,ULONGLONG ticks) {
     using C=cat::sprite_sequence::Clip;using A=cat::companion::LiveMotionAuditAccess;
@@ -115,7 +116,7 @@ void StartAction(unsigned selected,ULONGLONG ticks) {
         PlaceToy(selected==40?ToyKind::Ball:ToyKind::FishingRod);
         g.companionModel.Perform(selected==40?C::BallPlay:C::ToyPlay,ticks);return;}
     if(selected==42){g.cursorPlay=true;g.pet.roamingPaused=false;g.companionStore.state.pet.roamingPaused=false;
-        pointerStarted=ticks;pointerObserved=false;liveAuditPointer=Pointer;return;}
+        pointerStarted=ticks;pointerObserved=false;pointerDrained={};liveAuditPointer=Pointer;return;}
     if(selected==43){keyboardPlay.fixture=true;keyboardPlay.fixtureForeground=backdrop;
         BeginKeyboardCapture(ticks);g.companionModel.BeginKeyboard(ticks);return;}
     if(selected==44){StartWallClimb(ticks);g.companionModel.Perform(C::Climb,ticks);return;}
@@ -152,10 +153,10 @@ void DriveAction(unsigned selected,ULONGLONG ticks,ULONGLONG begin,bool& stoppin
             // before ending the pointer test, then cancel the queued prop
             // while its complete source is still only a preload request.
             if(!stopping){RequestPrimaryFurniture(cat::furniture::Kind::Box);g.companionModel.RequestFurniture(cat::furniture::Kind::Box);}
-            if(!cursorInteraction.session.Active()&&g.furniture.State()==cat::furniture::Phase::Queued){g.furniture.Cancel();ReleaseFurnitureMovie(false);}
+            if(!cursorInteraction.session.Active()&&g.furniture.State()==cat::furniture::Phase::Queued){pointerDrained[0]=true;g.furniture.Cancel();ReleaseFurnitureMovie(false);}
             if(g.companionModel.CursorAction()==cat::environment::CursorAction::None&&
-                g.companionModel.furniture.State()==cat::furniture::Phase::Queued){g.companionModel.furniture.Cancel();ReleaseFurnitureMovie(true);}
-            if(!cursorInteraction.session.Active()&&g.companionModel.CursorAction()==cat::environment::CursorAction::None){g.cursorPlay=false;liveAuditPointer=nullptr;}
+                g.companionModel.furniture.State()==cat::furniture::Phase::Queued){pointerDrained[1]=true;g.companionModel.furniture.Cancel();ReleaseFurnitureMovie(true);}
+            if(pointerDrained[0]&&pointerDrained[1]){g.cursorPlay=false;liveAuditPointer=nullptr;}
         }
         if(selected==43&&!stopping){StopKeyboardPlay(false,true);keyboardPlay.fixture=false;g.companionModel.EndKeyboard(ticks);}
         stopping=true;

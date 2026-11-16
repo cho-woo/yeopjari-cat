@@ -97,6 +97,10 @@ nap may satisfy the quiet endpoint after an already completed wall command, and
 physical continuity uses the actual high-resolution physics clock rather than
 the coarse GetTickCount64 sample grid. Interrupted superseded package runs are
 retained as intermediate evidence, never counted as final verification.
+The shared-pointer fixture also latches each actor's completed drain separately:
+otherwise the first cat to finish could start chasing again while the second
+cat completed its recovery, preventing the test from ending. This affects only
+the opt-in audit callback after its full 60-second input sequence.
 
 The runner records process exits, exact source/CI/executable provenance, selected
 source coverage, finite physics, physical continuity, capture drops and epoch
