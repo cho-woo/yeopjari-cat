@@ -29,6 +29,7 @@ struct CursorInput {
     std::uint64_t pouncePreparationMs = 240;
     bool repeatNearby=false,canApproach=true;
     bool pursuePointer=false;
+    bool finishAfterRecovery=false; // A queued command drains this complete pointer action.
     bool canAttack=true;
     double catVelocityX=0;
     int catFacing=1;
@@ -407,10 +408,11 @@ private:
         const double distance=std::abs(input.cursorX-input.catX);
         switch(action_) {
         case CursorAction::Watch:
-            if(elapsed>=static_cast<std::uint64_t>(180+140*(1-episodeInterest_)))PursuitAttempt(input);
+            if(input.finishAfterRecovery)Cancel(input.nowMs,300);
+            else if(elapsed>=static_cast<std::uint64_t>(180+140*(1-episodeInterest_)))PursuitAttempt(input);
             break;
         case CursorAction::Chase: {
-            if(!input.canApproach){PursuitRest(input);break;}
+            if(input.finishAfterRecovery||!input.canApproach){PursuitRest(input);break;}
             const double ahead=(input.cursorX-input.catX)*(input.catVelocityX<0?-1:1);
             const double speed=std::abs(input.catVelocityX);
             // Commit while still running, early enough to show the complete
@@ -468,6 +470,10 @@ private:
             }
             break;
         case CursorAction::Rest:
+            if(input.finishAfterRecovery) {
+                if(input.grounded&&elapsed>=pursuitRecoveryMs_)Cancel(input.nowMs,300);
+                break;
+            }
             if(input.grounded&&(elapsed>=nearbyRestMs_||
                     (elapsed>=pursuitRecoveryMs_&&std::hypot(pointerVx_,pointerVy_)>24*scale)))PursuitAttempt(input);
             break;

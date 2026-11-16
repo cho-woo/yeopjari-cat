@@ -257,6 +257,7 @@ void UpdateControls(const Context& c,std::uint64_t elapsed) {
     const auto body=cat::appearance::VisualModifiers(state_->nutrition,state_->preferences.character);
     input.movementScale=body.speed*cat::species::ProfileFor(state_->preferences.character).movementSpeedMultiplier;
     input.repeatNearby=input.pursuePointer=input.pawEndsPlanted=true;
+    input.finishAfterRecovery=furniture.Requested();
     input.pawExitMs=cat::video_actions::PunchExitMs(static_cast<unsigned>(state_->preferences.character));
     input.canApproach=!state_->pet.roamingPaused;input.canAttack=!runningTurn_.Active();
     input.grounded=physical.grounded;input.interest=.8;input.roll=.5;
@@ -284,7 +285,7 @@ void UpdateControls(const Context& c,std::uint64_t elapsed) {
     input.canContinue=actionClip_==C::None&&!wallApproaching_&&interaction_==Interaction::None&&
         (physical.grounded||cursor_.InFlight())&&motion_!=M::Eat&&motion_!=M::Treat&&motion_!=M::Groom&&
         motion_!=M::Sleep&&!wakingFromSleep_&&!AuthoredCareHolding(c.ticks);
-    input.canStart=input.canContinue&&!waitingForStop_&&!randomZoomies_.Active()&&
+    input.canStart=!furniture.Requested()&&input.canContinue&&!waitingForStop_&&!randomZoomies_.Active()&&
         (motion_==M::Idle||motion_==M::Watch||motion_==M::Walk||motion_==M::Stalk);
     const auto previous=cursor_.Action();
     const auto output=cursor_.Step(input,elapsed,{motion_==cursorMotion_,waitingForStop_,motionStart_,motionSerial_});
@@ -312,6 +313,7 @@ void UpdateControls(const Context& c,std::uint64_t elapsed) {
         cursor_.AdoptMotion(motionStart_,waitingForStop_,motionSerial_);cursorContact_.Reset();
     }
     if(cursor_.Active())direction_=output.direction;
+    if(previous!=A::None&&output.action==A::None&&furniture.Requested())BeginQuiet(c.ticks);
 }
 void ApplyControlsPose(cat::animation::Pose& pose,std::uint64_t ticks,const cat::physics::Pose& physical) const {
     using C=cat::sprite_sequence::Clip;using A=cat::environment::CursorAction;

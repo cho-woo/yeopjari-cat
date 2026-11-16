@@ -3848,7 +3848,7 @@ void UpdateCursorReactionSample(ULONGLONG ticks, ULONGLONG elapsedMs, POINT curs
     input.pouncePreparationMs=CursorTakeoffMs();
     input.enabled = g.cursorPlay;
     input.repeatNearby=true;
-    input.pursuePointer=true;
+    input.pursuePointer=true;input.finishAfterRecovery=g.furniture.Requested();
     input.canAttack=!g.runningTurn.Active();
     input.canApproach=!g.pet.roamingPaused;
     const auto physical = g.physics.CurrentPose();
@@ -3888,7 +3888,7 @@ void UpdateCursorReactionSample(ULONGLONG ticks, ULONGLONG elapsedMs, POINT curs
         !g.perch.transitioning && !g.lifeSequenceCount && !g.lifeCrossing.Active() && !g.physics.Hanging() &&
         !g.approachingToy && !g.toyEngaged && !g.approachingUser &&
         !g.memorySequenceCount && g.pendingCare < 0;
-    input.canStart = input.canContinue && !g.waitingForStop &&
+    input.canStart = !g.furniture.Requested() && input.canContinue && !g.waitingForStop &&
         (g.motion == Motion::Idle || g.motion == Motion::Watch || g.motion == Motion::Walk ||
          g.motion == Motion::Stalk || (g.motion == Motion::Loaf && ticks>=g.nextDecision));
     input.available = available;
@@ -3959,6 +3959,8 @@ void UpdateCursorReactionSample(ULONGLONG ticks, ULONGLONG elapsedMs, POINT curs
         }
     }
     if (interaction.session.Active()) g.direction = output.direction;
+    if(wasActive&&output.action==cat::environment::CursorAction::None&&g.furniture.Requested())
+        BeginAutonomousRest(ticks);
 }
 
 void UpdateCursorReaction(ULONGLONG ticks, ULONGLONG elapsedMs) {

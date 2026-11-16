@@ -10,17 +10,17 @@ int Run(unsigned coat,bool companion,unsigned kind,unsigned scenario,bool film) 
     g.furniture.Cancel();ReleaseFurnitureMovie(false);ReleaseFurnitureMovie(true);
     PrimaryCarePresentation().Reset();CompanionCarePresentation().Reset();
     native_ball_play_capture::Configure(host,character,scenario?850:350);
-    g.work={0,0,960,720};g.centerX=scenario?850:350;ResetMovement();
+    g.work={0,0,960,720};g.centerX=(scenario==1||scenario==2)?850:350;ResetMovement();
     for(unsigned i=0;i<12;++i)g.physics.Update(1./60);
     BeginAutonomousRest(host.now);g.bubbleUntil=0;
     if(scenario==2){g.pet.bornUtc=UtcNow()-30*86400;g.dpiScale=1.5;g.work={-1440,-300,0,780};g.centerX=-1440+850*1.5;ResetMovement();}
     cat::companion::State state=cat::companion::NewState(UtcNow()-366*86400);
-    state.preferences.character=character;state.pet.position=scenario?(850.-96)/768:(350.-96)/768;
+    state.preferences.character=character;state.pet.position=(scenario==1||scenario==2)?(850.-96)/768:(350.-96)/768;
     if(scenario==2)state.pet.bornUtc=UtcNow()-30*86400;
     cat::companion::Model model;model.Bind(state);model.Reset(96,864,700);
     const auto saved=host.Saved();
-    if(companion){if(!model.RequestFurniture(action))return 971;}
-    else RunCommand(kFurnitureFirst+kind-1,host.now);
+    if(companion&&scenario!=3){if(!model.RequestFurniture(action))return 971;}
+    else if(scenario!=3)RunCommand(kFurnitureFirst+kind-1,host.now);
     const auto begin=GetTickCount64();
     while(!PrepareFurnitureMovie(companion,action,coat)) {
         if(FurnitureMovieFailed(companion)||GetTickCount64()-begin>30000)return 972;
@@ -38,6 +38,8 @@ int Run(unsigned coat,bool companion,unsigned kind,unsigned scenario,bool film) 
     trace<<"frame,ms,phase,source_frame,root_x,root_lift,vx,scene_ms,drawn,paused\n";
     std::vector<bool> seen(decoded,false);bool played=false,complete=false;unsigned completedAt=0,playFrames=0,warps=0;
     double root=0,lastX=0,maxMovieDrift=0,maxStep=0;unsigned missing=0;
+    bool requested=scenario!=3,drained=false,early=false;std::uint64_t earliest=0;
+    if(scenario==3)g.cursorPlay=true;
     for(unsigned i=0;i<2400;++i) {
         const auto step=(i+1)*1000/60-i*1000/60;host.now+=step;const double dt=step/1000.;
         const bool paused=scenario==2&&i>=300&&i<330;
@@ -46,17 +48,31 @@ int Run(unsigned coat,bool companion,unsigned kind,unsigned scenario,bool film) 
         if(companion) {
             cat::companion::Context context;context.ticks=host.now;context.elapsedSeconds=dt;
             context.supportsFurniture=true;context.nowUtc=UtcNow();context.primaryVisible=false;context.furnitureReady=true;context.paused=paused;
+            if(scenario==3){context.cursorEnabled=context.cursorAvailable=true;
+                context.cursorX=model.Physical().x+25;context.cursorWorldHeight=model.Physical().lift+12;}
             model.Tick(context);snapshot=model.View(host.now);pose=snapshot.animation;body=snapshot.physical;
             visual=snapshot.body;growth=snapshot.growthScale;
         } else {
             if(paused)FreezePrimaryMotion(host.now,16);
-            UpdatePrimaryFurniture(host.now,paused?0:dt);
+            if(requested)UpdatePrimaryFurniture(host.now,paused?0:dt);
+            if(scenario==3&&!paused) {
+                const auto at=g.physics.CurrentPose();
+                POINT mouse{LONG(g.work.left+(at.x+25)*g.dpiScale),LONG(g.work.bottom-(at.lift+12)*g.dpiScale)};
+                UpdateCursorReactionSample(host.now,step,mouse,true);
+            }
             if(!paused) {
                 if(!g.furniture.Owned())DispatchAutonomousMotion(host.now);
                 AdvancePrimaryMotion(host.now,dt);
             }
             body=g.physics.RenderPose();pose=PrimaryDisplayedPose(host.now,body);
             visual=cat::appearance::VisualModifiers(g.nutrition,character);growth=cat::GrowthScale(g.pet.bornUtc,UtcNow());
+        }
+        if(scenario==3&&!requested&&pose.spriteTimed&&pose.spriteElapsedMs>=200&&
+                (pose.spriteClip==cat::sprite_sequence::Clip::Punch||pose.spriteClip==cat::sprite_sequence::Clip::Reach)) {
+            const auto* clip=CareSpriteFor(pose,character);if(!clip)return 976;
+            earliest=i*1000/60+cat::sprite_sequence::ProgramDuration(clip->layout->program)-pose.spriteElapsedMs;
+            if(companion)model.RequestFurniture(action);else RunCommand(kFurnitureFirst+kind-1,host.now);
+            requested=drained=true;
         }
         const auto& session=companion?model.furniture:g.furniture;
         const bool playing=pose.furnitureScene!=cat::furniture::Kind::None;
@@ -68,7 +84,7 @@ int Run(unsigned coat,bool companion,unsigned kind,unsigned scenario,bool film) 
             const auto* data=player.Movie();
             while(source+1<data->frames.size()&&data->frames[source+1].time100ns<=time)++source;
             seen[source]=true;++playFrames;
-            if(!played){played=true;root=body.x;}
+            if(!played){played=true;root=body.x;if(scenario==3&&i*1000/60+32<earliest)early=true;}
             maxMovieDrift=std::max(maxMovieDrift,std::abs(body.x-root));
         }
         if(i) {const auto step=std::abs(body.x-lastX);maxStep=std::max(maxStep,step);if(step>std::abs(body.velocityX)*dt+3)++warps;}
@@ -97,10 +113,10 @@ int Run(unsigned coat,bool companion,unsigned kind,unsigned scenario,bool film) 
     }
     for(bool observed:seen)if(!observed)++missing;
     const bool unchanged=host.Saved()==saved;
-    const bool passed=played&&complete&&missing==0&&warps==0&&maxMovieDrift<.05&&unchanged;
+    const bool passed=played&&complete&&missing==0&&warps==0&&maxMovieDrift<.05&&unchanged&&(scenario!=3||(drained&&!early));
     std::ostringstream report;report<<"{\"passed\":"<<passed<<",\"version\":\"" YEOPJARI_VERSION_STRING "\",\"coat\":"<<coat<<",\"companion\":"<<companion
         <<",\"kind\":"<<kind<<",\"scenario\":"<<scenario<<",\"source_frames\":"<<decoded<<",\"unseen_source_frames\":"<<missing
-        <<",\"movie_bytes\":"<<bytes<<",\"complete\":"<<complete<<",\"play_frames\":"<<playFrames<<",\"warps\":"<<warps<<",\"max_step\":"<<maxStep
+        <<",\"drain_request_in_paw\":"<<drained<<",\"started_before_paw_end\":"<<early<<",\"movie_bytes\":"<<bytes<<",\"complete\":"<<complete<<",\"play_frames\":"<<playFrames<<",\"warps\":"<<warps<<",\"max_step\":"<<maxStep
         <<",\"movie_root_drift\":"<<maxMovieDrift<<",\"profile_unchanged\":"<<unchanged<<",\"desktop_recording\":false,\"shipping_renderer\":true}";
     WriteBytes((stem+L"/trace.csv").c_str(),trace.str());WriteBytes((stem+L"/report.json").c_str(),report.str());
     ReleaseFurnitureMovie(companion);return passed?0:975;
