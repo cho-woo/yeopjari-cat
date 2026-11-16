@@ -127,6 +127,7 @@ enum Command {
     OutfitScarfCommand = 1034, OutfitCrownCommand = 1035
 };
 using Motion = cat::animation::Motion;
+bool (*liveAuditPointer)(POINT&,bool)=nullptr; // Opt-in fixture sample; null in ordinary startup.
 constexpr cat::update::Version kVersion{YEOPJARI_VERSION_MAJOR, YEOPJARI_VERSION_MINOR, YEOPJARI_VERSION_PATCH};
 
 struct UpdateState {
@@ -3977,7 +3978,8 @@ void UpdateCursorReactionSample(ULONGLONG ticks, ULONGLONG elapsedMs, POINT curs
 
 void UpdateCursorReaction(ULONGLONG ticks, ULONGLONG elapsedMs) {
     POINT cursor{};
-    const bool available = GetCursorPos(&cursor) && MonitorFromPoint(cursor, MONITOR_DEFAULTTONULL) == g.monitor;
+    const bool available = liveAuditPointer?liveAuditPointer(cursor,false):
+        GetCursorPos(&cursor) && MonitorFromPoint(cursor, MONITOR_DEFAULTTONULL) == g.monitor;
     UpdateCursorReactionSample(ticks, elapsedMs, cursor, available);
 }
 
@@ -5567,7 +5569,12 @@ void AdvanceRandomZoomies(ULONGLONG ticks,double elapsed) {
 
 #include "furniture_host.hpp"
 
+// Optional diagnostics only; ordinary startup leaves this null.
+std::array<double,6>* liveAuditTimings=nullptr;
 void Tick() {
+    double auditMark=liveAuditTimings?MotionClock():0;
+    const auto auditStep=[&](unsigned stage) {if(liveAuditTimings){const auto current=MotionClock();
+        (*liveAuditTimings)[stage]=(current-auditMark)*1000;auditMark=current;}};
     PollUpdates();
     if (g.closing) return;
     const auto ticks = GetTickCount64();
@@ -5599,8 +5606,11 @@ void Tick() {
         KeepOnWorkArea(); SyncNutrition(UtcNow()); UpdateTrayTip(); g.nextMaintenance = ticks + 1500;
         if (!g.hidden) SetWindowPos(g.window, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
     }
+    auditStep(0);
     UpdatePrimaryFurniture(ticks,suspended?0:elapsed);
+    auditStep(1);
     TickCompanion(ticks, elapsed);
+    auditStep(2);
     if (ticks >= g.nextSave) { SavePet(); g.nextSave = ticks + 60000; }
     RefreshAnimationTimer();
     if (!g.furniture.Owned() && !g.manualMotionActive) ObserveLife(ticks);
@@ -5617,12 +5627,15 @@ void Tick() {
         if(elapsed>0&&!g.furniture.Owned())UpdateCursorReaction(ticks, clockDelta);
         if(elapsed>0&&!g.furniture.Owned()) { FinishManualMotion(ticks); AdvanceRandomZoomies(ticks,elapsed); DispatchAutonomousMotion(ticks); }
         if (g.perch.transitioning) { UpdatePerchTransition(ticks, elapsed); Render(); return; }
+        auditStep(3);
         AdvancePrimaryMotion(ticks, elapsed);
+        auditStep(4);
         MaybeAnnounceUpdate(ticks);
         if (!g.furniture.Owned() && !g.manualMotionActive && !g.waitingForStop && !EnvironmentBusy()) {
             MaybeAskForFood(ticks);
         }
         Render();
+        auditStep(5);
     }
 }
 LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -6521,6 +6534,7 @@ int NativeMenuContractTest() {
 #include "native_source_audit.hpp"
 #include "native_boundary_review.hpp"
 #include "native_menu_visibility_tests.hpp"
+#include "native_live_motion_audit.hpp"
 
 int SelfTest(HINSTANCE instance) {
     const auto start = cat::ToUnix({2026, 10, 31, 0, 0, 0});
@@ -6561,6 +6575,15 @@ int SelfTest(HINSTANCE instance) {
 }
 
 int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
+    if(commandLine&&wcsstr(commandLine,L"--movie-cancel-audit"))return native_live_motion_audit::QueueProbe(instance);
+    if(commandLine&&wcsstr(commandLine,L"--live-motion-audit")) {
+        int count=0;auto args=CommandLineToArgvW(GetCommandLineW(),&count);
+        if(!args||count<7){if(args)LocalFree(args);return 974;}
+        const unsigned coat=wcstoul(args[2],nullptr,10),first=wcstoul(args[3],nullptr,10),last=wcstoul(args[4],nullptr,10),repeat=wcstoul(args[5],nullptr,10);
+        const std::wstring encoder=args[6];LocalFree(args);
+        if(!cat::CharacterAvailable(static_cast<cat::Character>(coat))||first>last||last>45||repeat<1||repeat>3)return 974;
+        return native_live_motion_audit::Run(instance,coat,first,last,repeat,encoder);
+    }
     if(commandLine && wcsstr(commandLine,L"--render-jump-review"))return NativeManualMotionTest(instance,false,true);
     if(commandLine && wcsstr(commandLine,L"--render-update-notice"))return NativeBoundaryReview(instance,true);
     if(commandLine && wcsstr(commandLine,L"--life-host-self-test")){g.instance=instance;return NativeLifeHostTest();}

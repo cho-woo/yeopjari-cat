@@ -284,6 +284,7 @@ struct Snapshot {
 // returned to the existing main loop, never writes through a primary pointer.
 class Model {
     friend struct BallReviewAccess;
+    friend struct LiveMotionAuditAccess;
 public:
     // A review build may use a newly authored Walk through the same renderer.
     // The caller owns this immutable registration for the model's lifetime.

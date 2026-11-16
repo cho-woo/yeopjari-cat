@@ -28,7 +28,8 @@ cat::companion::Context CompanionContext(ULONGLONG ticks, double elapsed) {
     c.primary = g.physics.CurrentPose(); c.primaryMotion = g.motion;
     POINT cursor{};
     c.cursorEnabled=g.cursorPlay&&!KeyboardPlayActive();
-    c.cursorAvailable=GetCursorPos(&cursor)&&MonitorFromPoint(cursor,MONITOR_DEFAULTTONULL)==g.monitor;
+    c.cursorAvailable=liveAuditPointer?liveAuditPointer(cursor,true):
+        GetCursorPos(&cursor)&&MonitorFromPoint(cursor,MONITOR_DEFAULTTONULL)==g.monitor;
     c.cursorX=(cursor.x-g.work.left)/g.dpiScale;c.cursorWorldHeight=(g.work.bottom-cursor.y)/g.dpiScale;
     c.primaryBusy = g.furniture.Owned() || g.dragging || g.perch.transitioning || g.waitingForStop ||
         g.toyEngaged || g.approachingToy || g.approachingUser || g.memorySequenceCount || g.lifeSequenceCount ||
