@@ -25,9 +25,16 @@ def encode(frames,path):
 
 def matte(rgb):
     im=foreground(rgb);a=np.array(im);r,g,b=rgb.transpose(2,0,1).astype(float)
-    magenta=(r>20)&(b>30)&(g<np.minimum(r,b)*.78)&(b>r*.65)
+    # Include the guide's dark red-purple rim as well as its bright body.
+    # A blue/red ratio of .65 left a narrow crescent attached to a toe.
+    magenta=(r>4)&(b>4)&(g<np.minimum(r,b)*.90)&(b>r*.38)
     n,labels,stats,_=cv2.connectedComponentsWithStats(magenta.astype('uint8'),8)
-    seeds=np.isin(labels,[i for i in range(1,n) if stats[i,cv2.CC_STAT_AREA]>20]).astype('uint8')
+    # Select only the separate guide prop. Ear interiors and paw pads share
+    # pink pigments and must never be included in a global colour cut.
+    eligible=[i for i in range(1,n) if stats[i,cv2.CC_STAT_AREA]>50 and
+        stats[i,cv2.CC_STAT_LEFT]+stats[i,cv2.CC_STAT_WIDTH]/2>310 and
+        (stats[i,cv2.CC_STAT_TOP]+stats[i,cv2.CC_STAT_HEIGHT]/2>280 or stats[i,cv2.CC_STAT_LEFT]>350)]
+    seeds=(labels==max(eligible,key=lambda i:stats[i,cv2.CC_STAT_AREA])).astype('uint8') if eligible else np.zeros(labels.shape,'uint8')
     guide=cv2.dilate(cv2.morphologyEx(seeds,cv2.MORPH_CLOSE,np.ones((5,5),np.uint8)),
         cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3)))>0
     a[guide]=0

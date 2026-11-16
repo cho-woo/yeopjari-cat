@@ -1344,7 +1344,7 @@
       ],
       "anatomical_side": "left",
       "material": "blue",
-      "pixels": 117
+      "pixels": 116
     }
   ],
   [
@@ -1392,7 +1392,7 @@
       ],
       "anatomical_side": "left",
       "material": "blue",
-      "pixels": 101
+      "pixels": 99
     }
   ],
   [
@@ -1412,11 +1412,11 @@
         322,
         289,
         26,
-        22
+        21
       ],
       "anatomical_side": "left",
       "material": "blue",
-      "pixels": 83
+      "pixels": 81
     }
   ],
   [
