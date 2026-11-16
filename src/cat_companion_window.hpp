@@ -45,7 +45,7 @@ public:
         if(!hwnd_) return false;
         if(hidden || !s.enabled) { ShowWindow(hwnd_,SW_HIDE); return true; }
         dpi_=std::isfinite(dpi)?std::clamp(dpi,.5,4.0):1;
-        const int width=static_cast<int>(std::ceil(280*dpi_)),height=static_cast<int>(std::ceil(235*dpi_));
+        const int width=static_cast<int>(std::ceil((s.furnitureWide?640:280)*dpi_)),height=static_cast<int>(std::ceil((s.furnitureWide?440:235)*dpi_));
         if((width!=width_ || height!=height_) && !Resize(width,height)) return false;
         bottomSafetyInset=std::clamp(bottomSafetyInset,0,height_-1);
         std::memset(pixels_,0,static_cast<std::size_t>(width_)*height_*4);

@@ -1,0 +1,272 @@
+[
+  {
+    "kind": "tower",
+    "coat": "cream",
+    "args": {
+      "client_token": "yeopjari-v39-tower-cream-20261116-a",
+      "model": "minimax/h3-lite",
+      "options": {
+        "prompt": "Animate ONLY the exact established cream ginger kitten with brown eyes and the exact adorable furniture in the supplied identical FIRST and LAST frames. Preserve the precise face, ears, eyes, markings, head/body proportions, materials and apparent size throughout. Locked front-three-quarter camera, no zoom/pan/cuts. Uniform pure #00FF00 background, no floor line, no cast shadow, no text, no other objects or animals. Keep the furniture's geometry, colors and floor position perfectly stable, including behind the kitten. Natural feline anatomy, visible grounded weight transfer, overlapping tail and ear follow-through, subtle breathing, charming gentle timing. The kitten notices the tower with a tiny ear perk and curious head tilt, walks the short distance to it, crouches and makes one small weighty hop onto the lower lavender perch with all paws supported, then another gentle hop onto the upper blue perch. Its toes touch the actual perch surfaces, hind legs push visibly, body compresses on landing and tail balances. It pauses adorably on top with a slow blink and a small head tilt, then carefully steps/hops down via the lower perch, lands softly on the floor with all four feet, and walks back to its exact starting position and original RIGHT-facing planted stance. Complete the climb, descent and return smoothly within the full8seconds, keeping the last0.5second calmly planted as the supplied final reference. No falling through furniture, no flying, no teleporting, no instantaneous pose reset. The animal must end exactly where it started, fully outside the furniture with all four paws on the original floor. Match both supplied reference poses instead of cutting or morphing into them. The cat moves; the camera and furniture stay fixed.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/9cd54f1253774e5a85c63608cae65ea0/cream-tower-planted-v39.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/9cd54f1253774e5a85c63608cae65ea0/cream-tower-planted-v39.png",
+        "duration": 8,
+        "resolution": "480p",
+        "aspect_ratio": "1:1",
+        "generation_mode": "frame"
+      }
+    },
+    "result": {
+      "job_id": "mcp_e04554f3da6d4d16bb93ab3d57ae3129",
+      "creditCost": 104,
+      "reused": false
+    },
+    "generation": {
+      "jobId": "mcp_e04554f3da6d4d16bb93ab3d57ae3129",
+      "status": "succeeded",
+      "modelName": "minimax/h3-lite",
+      "createdAt": "2026-11-16T02:44:17.574Z",
+      "completedAt": null,
+      "outputList": [
+        {
+          "imageUrl": null,
+          "videoUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_e04554f3da6d4d16bb93ab3d57ae3129/output/output_0.mp4",
+          "posterUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_e04554f3da6d4d16bb93ab3d57ae3129/output/output_0_poster.jpg",
+          "text": null
+        }
+      ]
+    },
+    "source": {
+      "path": "assets/furniture-v39/sources/cream-tower.mp4",
+      "sha256": "f52fd03c336c268818793f78d5d098e3332ade9d1a8bb71ed142e33799762149",
+      "frames": 192,
+      "fps": 24.0,
+      "width": 480,
+      "height": 480
+    }
+  },
+  {
+    "kind": "tower",
+    "coat": "tuxedo",
+    "args": {
+      "client_token": "yeopjari-v39-tower-tuxedo-20261116-a",
+      "model": "minimax/h3-lite",
+      "options": {
+        "prompt": "Animate ONLY the exact established charcoal tuxedo kitten with its exact white markings and golden eyes and the exact adorable furniture in the supplied identical FIRST and LAST frames. Preserve the precise face, ears, eyes, markings, head/body proportions, materials and apparent size throughout. Locked front-three-quarter camera, no zoom/pan/cuts. Uniform pure #00FF00 background, no floor line, no cast shadow, no text, no other objects or animals. Keep the furniture's geometry, colors and floor position perfectly stable, including behind the kitten. Natural feline anatomy, visible grounded weight transfer, overlapping tail and ear follow-through, subtle breathing, charming gentle timing. The kitten notices the tower with a tiny ear perk and curious head tilt, walks the short distance to it, crouches and makes one small weighty hop onto the lower lavender perch with all paws supported, then another gentle hop onto the upper blue perch. Its toes touch the actual perch surfaces, hind legs push visibly, body compresses on landing and tail balances. It pauses adorably on top with a slow blink and a small head tilt, then carefully steps/hops down via the lower perch, lands softly on the floor with all four feet, and walks back to its exact starting position and original RIGHT-facing planted stance. Complete the climb, descent and return smoothly within the full8seconds, keeping the last0.5second calmly planted as the supplied final reference. No falling through furniture, no flying, no teleporting, no instantaneous pose reset. The animal must end exactly where it started, fully outside the furniture with all four paws on the original floor. Match both supplied reference poses instead of cutting or morphing into them. The cat moves; the camera and furniture stay fixed.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/8de27783309a4941898a44823b8a5b56/tuxedo-tower-planted-v39.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/8de27783309a4941898a44823b8a5b56/tuxedo-tower-planted-v39.png",
+        "duration": 8,
+        "resolution": "480p",
+        "aspect_ratio": "1:1",
+        "generation_mode": "frame"
+      }
+    },
+    "result": {
+      "job_id": "mcp_7285c27acc3e4b5b9f9b15034d3c2da1",
+      "creditCost": 104,
+      "reused": false
+    },
+    "generation": {
+      "jobId": "mcp_7285c27acc3e4b5b9f9b15034d3c2da1",
+      "status": "succeeded",
+      "modelName": "minimax/h3-lite",
+      "createdAt": "2026-11-16T02:44:18.935Z",
+      "completedAt": null,
+      "outputList": [
+        {
+          "imageUrl": null,
+          "videoUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_7285c27acc3e4b5b9f9b15034d3c2da1/output/output_0.mp4",
+          "posterUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_7285c27acc3e4b5b9f9b15034d3c2da1/output/output_0_poster.jpg",
+          "text": null
+        }
+      ]
+    },
+    "source": {
+      "path": "assets/furniture-v39/sources/tuxedo-tower.mp4",
+      "sha256": "37bd5719a65e7a929da41385b3ac8cc8ddb9a0642e712b452d4723aaaa5fc73c",
+      "frames": 192,
+      "fps": 24.0,
+      "width": 480,
+      "height": 480
+    }
+  },
+  {
+    "kind": "scratch",
+    "coat": "cream",
+    "args": {
+      "client_token": "yeopjari-v39-scratch-cream-20261116-a",
+      "model": "minimax/h3-lite",
+      "options": {
+        "prompt": "Animate ONLY the exact established cream ginger kitten with brown eyes and the exact adorable furniture in the supplied identical FIRST and LAST frames. Preserve the precise face, ears, eyes, markings, head/body proportions, materials and apparent size throughout. Locked front-three-quarter camera, no zoom/pan/cuts. Uniform pure #00FF00 background, no floor line, no cast shadow, no text, no other objects or animals. Keep the furniture's geometry, colors and floor position perfectly stable, including behind the kitten. Natural feline anatomy, visible grounded weight transfer, overlapping tail and ear follow-through, subtle breathing, charming gentle timing. The kitten notices the cute cactus scratcher, makes two tiny curious steps toward it, sniffs the sisal, shifts its weight onto grounded hind feet and places both forepaws on the actual grey rope surface. It gives several irresistibly cute alternating left/right downward scratches with connected elbows, tiny toe flexes and a happy focused face, gently swaying its rump and tail for balance. The paws stay in contact with the rope during each pull. It then makes one satisfying long cat stretch against the post, puts both forepaws back on the floor, and takes the little steps back to its exact starting position and original RIGHT-facing four-paw planted stance. Keep the last0.5second quietly planted. Exactly one complete interaction across6seconds, no paws scratching empty air, no sliding base, no abrupt restart. The animal must end exactly where it started, fully outside the furniture with all four paws on the original floor. Match both supplied reference poses instead of cutting or morphing into them. The cat moves; the camera and furniture stay fixed.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/2e076e1dc82947faa9bbddd13482af15/cream-scratch-planted-v39.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/2e076e1dc82947faa9bbddd13482af15/cream-scratch-planted-v39.png",
+        "duration": 6,
+        "resolution": "480p",
+        "aspect_ratio": "1:1",
+        "generation_mode": "frame"
+      }
+    },
+    "result": {
+      "job_id": "mcp_a181f63269714252a729db0c1e451d6c",
+      "creditCost": 78,
+      "reused": false
+    },
+    "generation": {
+      "jobId": "mcp_a181f63269714252a729db0c1e451d6c",
+      "status": "succeeded",
+      "modelName": "minimax/h3-lite",
+      "createdAt": "2026-11-16T02:44:20.075Z",
+      "completedAt": null,
+      "outputList": [
+        {
+          "imageUrl": null,
+          "videoUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_a181f63269714252a729db0c1e451d6c/output/output_0.mp4",
+          "posterUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_a181f63269714252a729db0c1e451d6c/output/output_0_poster.jpg",
+          "text": null
+        }
+      ]
+    },
+    "source": {
+      "path": "assets/furniture-v39/sources/cream-scratch.mp4",
+      "sha256": "643a4e579ff9b5cc9a0914ba6a1a12ffa06c3871f655647f46cdc3804f034672",
+      "frames": 158,
+      "fps": 24.0,
+      "width": 480,
+      "height": 480
+    }
+  },
+  {
+    "kind": "scratch",
+    "coat": "tuxedo",
+    "args": {
+      "client_token": "yeopjari-v39-scratch-tuxedo-20261116-a",
+      "model": "minimax/h3-lite",
+      "options": {
+        "prompt": "Animate ONLY the exact established charcoal tuxedo kitten with its exact white markings and golden eyes and the exact adorable furniture in the supplied identical FIRST and LAST frames. Preserve the precise face, ears, eyes, markings, head/body proportions, materials and apparent size throughout. Locked front-three-quarter camera, no zoom/pan/cuts. Uniform pure #00FF00 background, no floor line, no cast shadow, no text, no other objects or animals. Keep the furniture's geometry, colors and floor position perfectly stable, including behind the kitten. Natural feline anatomy, visible grounded weight transfer, overlapping tail and ear follow-through, subtle breathing, charming gentle timing. The kitten notices the cute cactus scratcher, makes two tiny curious steps toward it, sniffs the sisal, shifts its weight onto grounded hind feet and places both forepaws on the actual grey rope surface. It gives several irresistibly cute alternating left/right downward scratches with connected elbows, tiny toe flexes and a happy focused face, gently swaying its rump and tail for balance. The paws stay in contact with the rope during each pull. It then makes one satisfying long cat stretch against the post, puts both forepaws back on the floor, and takes the little steps back to its exact starting position and original RIGHT-facing four-paw planted stance. Keep the last0.5second quietly planted. Exactly one complete interaction across6seconds, no paws scratching empty air, no sliding base, no abrupt restart. The animal must end exactly where it started, fully outside the furniture with all four paws on the original floor. Match both supplied reference poses instead of cutting or morphing into them. The cat moves; the camera and furniture stay fixed.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/bddb2e7bc7a14cb987b48eedbeb0f988/tuxedo-scratch-planted-v39.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/bddb2e7bc7a14cb987b48eedbeb0f988/tuxedo-scratch-planted-v39.png",
+        "duration": 6,
+        "resolution": "480p",
+        "aspect_ratio": "1:1",
+        "generation_mode": "frame"
+      }
+    },
+    "result": {
+      "job_id": "mcp_d2a0a3454b9d43c78bcf28e086d548ad",
+      "creditCost": 78,
+      "reused": false
+    },
+    "generation": {
+      "jobId": "mcp_d2a0a3454b9d43c78bcf28e086d548ad",
+      "status": "succeeded",
+      "modelName": "minimax/h3-lite",
+      "createdAt": "2026-11-16T02:44:22.229Z",
+      "completedAt": null,
+      "outputList": [
+        {
+          "imageUrl": null,
+          "videoUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_d2a0a3454b9d43c78bcf28e086d548ad/output/output_0.mp4",
+          "posterUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_d2a0a3454b9d43c78bcf28e086d548ad/output/output_0_poster.jpg",
+          "text": null
+        }
+      ]
+    },
+    "source": {
+      "path": "assets/furniture-v39/sources/tuxedo-scratch.mp4",
+      "sha256": "cc44ac144d504fbd39cce3f8b000a4dcd7582fb0902229e4ca6225a4cae1538a",
+      "frames": 158,
+      "fps": 24.0,
+      "width": 480,
+      "height": 480
+    }
+  },
+  {
+    "kind": "box",
+    "coat": "cream",
+    "args": {
+      "client_token": "yeopjari-v39-box-cream-20261116-a",
+      "model": "minimax/h3-lite",
+      "options": {
+        "prompt": "Animate ONLY the exact established cream ginger kitten with brown eyes and the exact adorable furniture in the supplied identical FIRST and LAST frames. Preserve the precise face, ears, eyes, markings, head/body proportions, materials and apparent size throughout. Locked front-three-quarter camera, no zoom/pan/cuts. Uniform pure #00FF00 background, no floor line, no cast shadow, no text, no other objects or animals. Keep the furniture's geometry, colors and floor position perfectly stable, including behind the kitten. Natural feline anatomy, visible grounded weight transfer, overlapping tail and ear follow-through, subtle breathing, charming gentle timing. The kitten gazes at the tiny cat-ear box, sniffs the edge and playfully wiggles its bottom twice while crouching. Its hind paws visibly push from the floor into one short soft bunny hop, front paws reach over the low rim, and the fluffy whole body plops snugly inside with a gentle squash and tiny box wobble. The box walls naturally occlude the body. Only the cute head/ears and a little tail peek out; it gives an adorable slow blink and curious head tilt, looking very pleased. Then it places forepaws on the rim, softly hops back OUT onto the floor and takes little connected steps to its exact starting position and original RIGHT-facing four-paw planted stance. Full entrance, cuddle, exit and return within8seconds, last0.5second quietly planted. No dissolving into the box, no passing through walls, no detached limbs, no teleporting back at the end. The animal must end exactly where it started, fully outside the furniture with all four paws on the original floor. Match both supplied reference poses instead of cutting or morphing into them. The cat moves; the camera and furniture stay fixed.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/4bdcab296c8646b7998dbb7b7462c310/cream-box-planted-v39.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/4bdcab296c8646b7998dbb7b7462c310/cream-box-planted-v39.png",
+        "duration": 8,
+        "resolution": "480p",
+        "aspect_ratio": "1:1",
+        "generation_mode": "frame"
+      }
+    },
+    "result": {
+      "job_id": "mcp_17d0abf79e084dfbaf26a8da542630e2",
+      "creditCost": 104,
+      "reused": false
+    },
+    "generation": {
+      "jobId": "mcp_17d0abf79e084dfbaf26a8da542630e2",
+      "status": "succeeded",
+      "modelName": "minimax/h3-lite",
+      "createdAt": "2026-11-16T02:44:23.642Z",
+      "completedAt": null,
+      "outputList": [
+        {
+          "imageUrl": null,
+          "videoUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_17d0abf79e084dfbaf26a8da542630e2/output/output_0.mp4",
+          "posterUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_17d0abf79e084dfbaf26a8da542630e2/output/output_0_poster.jpg",
+          "text": null
+        }
+      ]
+    },
+    "source": {
+      "path": "assets/furniture-v39/sources/cream-box.mp4",
+      "sha256": "66c52a8b4d1caa539c21be4232a2f1cb05a4cff3cd4ecdaa060e968af5f0c5bc",
+      "frames": 192,
+      "fps": 24.0,
+      "width": 480,
+      "height": 480
+    }
+  },
+  {
+    "kind": "box",
+    "coat": "tuxedo",
+    "args": {
+      "client_token": "yeopjari-v39-box-tuxedo-20261116-a",
+      "model": "minimax/h3-lite",
+      "options": {
+        "prompt": "Animate ONLY the exact established charcoal tuxedo kitten with its exact white markings and golden eyes and the exact adorable furniture in the supplied identical FIRST and LAST frames. Preserve the precise face, ears, eyes, markings, head/body proportions, materials and apparent size throughout. Locked front-three-quarter camera, no zoom/pan/cuts. Uniform pure #00FF00 background, no floor line, no cast shadow, no text, no other objects or animals. Keep the furniture's geometry, colors and floor position perfectly stable, including behind the kitten. Natural feline anatomy, visible grounded weight transfer, overlapping tail and ear follow-through, subtle breathing, charming gentle timing. The kitten gazes at the tiny cat-ear box, sniffs the edge and playfully wiggles its bottom twice while crouching. Its hind paws visibly push from the floor into one short soft bunny hop, front paws reach over the low rim, and the fluffy whole body plops snugly inside with a gentle squash and tiny box wobble. The box walls naturally occlude the body. Only the cute head/ears and a little tail peek out; it gives an adorable slow blink and curious head tilt, looking very pleased. Then it places forepaws on the rim, softly hops back OUT onto the floor and takes little connected steps to its exact starting position and original RIGHT-facing four-paw planted stance. Full entrance, cuddle, exit and return within8seconds, last0.5second quietly planted. No dissolving into the box, no passing through walls, no detached limbs, no teleporting back at the end. The animal must end exactly where it started, fully outside the furniture with all four paws on the original floor. Match both supplied reference poses instead of cutting or morphing into them. The cat moves; the camera and furniture stay fixed.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/45eac6ade7c045739dccaadaf22b6037/tuxedo-box-planted-v39.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/45eac6ade7c045739dccaadaf22b6037/tuxedo-box-planted-v39.png",
+        "duration": 8,
+        "resolution": "480p",
+        "aspect_ratio": "1:1",
+        "generation_mode": "frame"
+      }
+    },
+    "result": {
+      "job_id": "mcp_431a416090d140dc8615fa15c2bc5e04",
+      "creditCost": 104,
+      "reused": false
+    },
+    "generation": {
+      "jobId": "mcp_431a416090d140dc8615fa15c2bc5e04",
+      "status": "succeeded",
+      "modelName": "minimax/h3-lite",
+      "createdAt": "2026-11-16T02:44:24.845Z",
+      "completedAt": null,
+      "outputList": [
+        {
+          "imageUrl": null,
+          "videoUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_431a416090d140dc8615fa15c2bc5e04/output/output_0.mp4",
+          "posterUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_431a416090d140dc8615fa15c2bc5e04/output/output_0_poster.jpg",
+          "text": null
+        }
+      ]
+    },
+    "source": {
+      "path": "assets/furniture-v39/sources/tuxedo-box.mp4",
+      "sha256": "cd8e4cdbd4df612f8bf3667ee0d82686515c31a1e99ed9ebac2df8278acbd322",
+      "frames": 192,
+      "fps": 24.0,
+      "width": 480,
+      "height": 480
+    }
+  }
+]

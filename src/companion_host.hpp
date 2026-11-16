@@ -6,6 +6,7 @@ constexpr UINT kCompanionStatus = 2403, kCompanionPause = 2404;
 constexpr UINT kCompanionFish = 2405;
 constexpr UINT kCompanionPlay=2406,kCompanionKeyboard=2407,kCompanionActionFirst=2450;
 constexpr UINT kCompanionCharacterFirst = 2600;
+constexpr UINT kCompanionFurnitureFirst=2750;
 // Retired wardrobe commands 2620..2632 stay unused; persisted preferences remain readable.
 
 cat::companion::Platform CompanionPlatform(HWND hwnd, RECT* actual = nullptr) {
@@ -19,6 +20,7 @@ cat::companion::Platform CompanionPlatform(HWND hwnd, RECT* actual = nullptr) {
 }
 cat::companion::Context CompanionContext(ULONGLONG ticks, double elapsed) {
     cat::companion::Context c;
+    c.supportsFurniture=true;
     c.nowUtc = UtcNow(); c.ticks = ticks; c.elapsedSeconds = elapsed;
     SYSTEMTIME local{}; GetLocalTime(&local); c.localHour = local.wHour;
     c.paused = g.hidden || g.menuOpen || g.dragging || g.companionWindow.Interacting() || g.closing || updates.applying;
@@ -28,7 +30,7 @@ cat::companion::Context CompanionContext(ULONGLONG ticks, double elapsed) {
     c.cursorEnabled=g.cursorPlay&&!KeyboardPlayActive();
     c.cursorAvailable=GetCursorPos(&cursor)&&MonitorFromPoint(cursor,MONITOR_DEFAULTTONULL)==g.monitor;
     c.cursorX=(cursor.x-g.work.left)/g.dpiScale;c.cursorWorldHeight=(g.work.bottom-cursor.y)/g.dpiScale;
-    c.primaryBusy = g.dragging || g.perch.transitioning || g.waitingForStop ||
+    c.primaryBusy = g.furniture.Owned() || g.dragging || g.perch.transitioning || g.waitingForStop ||
         g.toyEngaged || g.approachingToy || g.approachingUser || g.memorySequenceCount || g.lifeSequenceCount ||
         g.lifeCrossing.Active() || g.physics.Hanging() || EnvironmentBusy() || !c.primary.grounded ||
         // Joining an existing sleep/run story does not replace the primary's
@@ -109,6 +111,9 @@ void ShowCompanionMenu(POINT point) {
     AppendMenuW(menu, MF_STRING | (cat::feeding::CanOfferFish(prefs.character) ? MF_ENABLED : MF_GRAYED),
         kCompanionFish, L"이 고양이에게 생선 주기");
     HMENU actions=CreatePopupMenu();
+    AppendMenuW(actions,MF_STRING,kCompanionFurnitureFirst,L"버섯 캣타워 오르내리기");
+    AppendMenuW(actions,MF_STRING,kCompanionFurnitureFirst+1,L"선인장 스크래처 긁기");
+    AppendMenuW(actions,MF_STRING,kCompanionFurnitureFirst+2,L"고양이 귀 박스에 쏙!");
     const std::array<std::pair<cat::sprite_sequence::Clip,const wchar_t*>,11> actionNames{{
         {cat::sprite_sequence::Clip::Walk,L"걷기"},{cat::sprite_sequence::Clip::Run,L"달리기"},
         {cat::sprite_sequence::Clip::Jump,L"점프하기"},{cat::sprite_sequence::Clip::Climb,L"오른쪽 가장자리 오르기"},
@@ -142,6 +147,8 @@ void ShowCompanionMenu(POINT point) {
     else if (command == kCompanionStatus) ShowCompanionStatus();
     else if (command == kCompanionToggle) ToggleCompanion();
     else if(command==kCompanionPlay)RequestCompanionPlay(GetTickCount64());
+    else if(command>=kCompanionFurnitureFirst&&command<kCompanionFurnitureFirst+3)
+        g.companionModel.RequestFurniture(static_cast<cat::furniture::Kind>(command-kCompanionFurnitureFirst+1));
     else if(command==kCompanionKeyboard)ToggleKeyboardPlay(true);
     else if(command>=kCompanionActionFirst&&command<kCompanionActionFirst+22)
         g.companionModel.Perform(static_cast<cat::sprite_sequence::Clip>(command-kCompanionActionFirst),GetTickCount64());
@@ -151,7 +158,7 @@ void ShowCompanionMenu(POINT point) {
         const bool old = paused; paused = !paused;
         if (!SaveCompanion()) paused = old;
     } else if (command >= kCompanionCharacterFirst && command < kCompanionCharacterFirst+cat::kCharacterCount) {
-        if(!cat::CharacterAvailable(static_cast<cat::Character>(command-kCompanionCharacterFirst)))return;
+        if(g.companionModel.furniture.Owned()||!cat::CharacterAvailable(static_cast<cat::Character>(command-kCompanionCharacterFirst)))return;
         auto& p = g.companionStore.state.preferences; const auto old = p;
         const auto character=static_cast<cat::Character>(command-kCompanionCharacterFirst);
         if(!EnsureCareCoats(g.preferences.character,character))return;
@@ -240,6 +247,11 @@ void TickCompanion(ULONGLONG ticks, double elapsed) {
             event.seasonalEnabled = true;
             cat::life::UnlockSeasonal(g.companionStore.state.life,event);
         }
+        const auto& scene=g.companionModel.furniture;
+        if(scene.Requested()) {
+            context.furnitureReady=PrepareFurnitureMovie(true,scene.Action(),static_cast<unsigned>(g.companionStore.state.preferences.character));
+            context.furnitureFailed=FurnitureMovieFailed(true);
+        } else ReleaseFurnitureMovie(true);
         g.companionModel.Tick(context);
         const auto event = g.companionModel.TakeEvent();
         ReactToCompanion(event,context,ticks);

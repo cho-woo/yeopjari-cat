@@ -12,6 +12,7 @@
 #include "cat_sprite_sequence.hpp"
 #include "cat_authored_locomotion.hpp"
 #include "cat_jump_animation.hpp"
+#include "cat_furniture.hpp"
 
 namespace cat::animation {
 
@@ -37,6 +38,8 @@ constexpr double kOriginalWalkMaxFramesPerSecond = 12.0;
 
 // Offsets are logical pixels; the native renderer applies monitor DPI and real-age growth.
 struct Pose {
+    cat::furniture::Kind furnitureScene=cat::furniture::Kind::None;
+    std::uint64_t furnitureElapsedMs=0;
     bool fishMeal=false; // Transient accepted feeding presentation; never serialized.
     cat::sprite_sequence::Clip spriteClip=cat::sprite_sequence::Clip::None;
     unsigned spriteFrame=0;
@@ -87,6 +90,13 @@ inline void UseAuthoredSprite(Pose& pose) {
     pose.centerPivot=pose.bellyRig=false;pose.blendFrame=-1;pose.blend=0;
     pose.joints={};pose.face={};
     pose.idleActing=false;pose.cursorReach={};
+}
+
+inline void AttachFurniture(Pose& pose,const cat::furniture::Session& session) {
+    if(!session.Playing())return;
+    pose={};pose.furnitureScene=session.Action();
+    pose.furnitureElapsedMs=session.Milliseconds();
+    pose.presentationSerial=0x100000000ULL+session.Serial();
 }
 
 inline std::uint64_t ReferenceSleepIntroMs(const cat::sprite_sequence::Program* program=nullptr,unsigned sheetFrames=0) {
