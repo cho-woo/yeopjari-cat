@@ -142,7 +142,7 @@ void EndKeyboard(std::uint64_t ticks) {
 // the primary's movement, feeding history or memory.
 bool Perform(cat::sprite_sequence::Clip clip,std::uint64_t ticks) {
     using C=cat::sprite_sequence::Clip;using M=cat::animation::Motion;
-    if(!Bound()||!ready_||!state_->enabled||!physics_.CurrentPose().grounded||Feeding(ticks)||
+    if(furniture.Owned()||!Bound()||!ready_||!state_->enabled||!physics_.CurrentPose().grounded||Feeding(ticks)||
             runningTurn_.Active()||physics_.WallClimbing()||!Registered(clip))return false;
     if(ballPlaying_)return clip==C::BallPlay;
     if(clip==C::BallPlay&&physics_.CurrentPose().onPlatform)return false;

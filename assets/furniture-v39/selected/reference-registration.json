@@ -1,0 +1,158 @@
+[
+  {
+    "kind": "tower",
+    "coat": "cream",
+    "path": "assets/furniture-v39/references/cream-tower-planted.png",
+    "sha256": "7538acf898db0b9ea8f74914476d70fb043d17cf7a775880dc0e26a6882676ce",
+    "canonical_source": "assets/video-actions/references/v37-cream-planted-side.png",
+    "canonical_source_sha256": "8740fe763cf29cb71999d3c33f0f1b36491c159b4412569162218b652f9a4973",
+    "master_design_changed": false,
+    "scene_canvas": [
+      1024,
+      1024
+    ],
+    "cat_root": [
+      300,
+      880
+    ],
+    "common_reference_height": 367,
+    "prop_bounds": [
+      520,
+      470,
+      426,
+      410
+    ],
+    "bytes": 297598,
+    "cdn_url": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/9cd54f1253774e5a85c63608cae65ea0/cream-tower-planted-v39.png"
+  },
+  {
+    "kind": "tower",
+    "coat": "tuxedo",
+    "path": "assets/furniture-v39/references/tuxedo-tower-planted.png",
+    "sha256": "9e446b760de21455511dd48eaac550f03dd691e859f5c44d245b1b47a93ba3d6",
+    "canonical_source": "assets/video-actions/references/v37-tuxedo-planted-side.png",
+    "canonical_source_sha256": "60ae54c67d60ceaacb68f09a2f3074d3ebe7da2f32c74ad4db059c55e34f6203",
+    "master_design_changed": false,
+    "scene_canvas": [
+      1024,
+      1024
+    ],
+    "cat_root": [
+      300,
+      880
+    ],
+    "common_reference_height": 367,
+    "prop_bounds": [
+      520,
+      470,
+      426,
+      410
+    ],
+    "bytes": 291853,
+    "cdn_url": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/8de27783309a4941898a44823b8a5b56/tuxedo-tower-planted-v39.png"
+  },
+  {
+    "kind": "scratch",
+    "coat": "cream",
+    "path": "assets/furniture-v39/references/cream-scratch-planted.png",
+    "sha256": "4d5e844e668cc26c8a761166d0395828224d394c3ed62b97739790693f3accde",
+    "canonical_source": "assets/video-actions/references/v37-cream-planted-side.png",
+    "canonical_source_sha256": "8740fe763cf29cb71999d3c33f0f1b36491c159b4412569162218b652f9a4973",
+    "master_design_changed": false,
+    "scene_canvas": [
+      1024,
+      1024
+    ],
+    "cat_root": [
+      300,
+      880
+    ],
+    "common_reference_height": 367,
+    "prop_bounds": [
+      490,
+      540,
+      260,
+      340
+    ],
+    "bytes": 261011,
+    "cdn_url": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/2e076e1dc82947faa9bbddd13482af15/cream-scratch-planted-v39.png"
+  },
+  {
+    "kind": "scratch",
+    "coat": "tuxedo",
+    "path": "assets/furniture-v39/references/tuxedo-scratch-planted.png",
+    "sha256": "5c3a062ea34ed980a6828213a6095f59e70f8867b9e83d82df53f358dfe1885d",
+    "canonical_source": "assets/video-actions/references/v37-tuxedo-planted-side.png",
+    "canonical_source_sha256": "60ae54c67d60ceaacb68f09a2f3074d3ebe7da2f32c74ad4db059c55e34f6203",
+    "master_design_changed": false,
+    "scene_canvas": [
+      1024,
+      1024
+    ],
+    "cat_root": [
+      300,
+      880
+    ],
+    "common_reference_height": 367,
+    "prop_bounds": [
+      490,
+      540,
+      260,
+      340
+    ],
+    "bytes": 254005,
+    "cdn_url": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/bddb2e7bc7a14cb987b48eedbeb0f988/tuxedo-scratch-planted-v39.png"
+  },
+  {
+    "kind": "box",
+    "coat": "cream",
+    "path": "assets/furniture-v39/references/cream-box-planted.png",
+    "sha256": "6f9146de691004c3172933857c03c70691ef4d1b3b82737e019b03d8161ccd06",
+    "canonical_source": "assets/video-actions/references/v37-cream-planted-side.png",
+    "canonical_source_sha256": "8740fe763cf29cb71999d3c33f0f1b36491c159b4412569162218b652f9a4973",
+    "master_design_changed": false,
+    "scene_canvas": [
+      1024,
+      1024
+    ],
+    "cat_root": [
+      300,
+      880
+    ],
+    "common_reference_height": 367,
+    "prop_bounds": [
+      490,
+      645,
+      257,
+      235
+    ],
+    "bytes": 180662,
+    "cdn_url": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/4bdcab296c8646b7998dbb7b7462c310/cream-box-planted-v39.png"
+  },
+  {
+    "kind": "box",
+    "coat": "tuxedo",
+    "path": "assets/furniture-v39/references/tuxedo-box-planted.png",
+    "sha256": "fbb39af189ddbce9cc33f417748b8028cb9d26323a676d51bcb8c5fc5810db91",
+    "canonical_source": "assets/video-actions/references/v37-tuxedo-planted-side.png",
+    "canonical_source_sha256": "60ae54c67d60ceaacb68f09a2f3074d3ebe7da2f32c74ad4db059c55e34f6203",
+    "master_design_changed": false,
+    "scene_canvas": [
+      1024,
+      1024
+    ],
+    "cat_root": [
+      300,
+      880
+    ],
+    "common_reference_height": 367,
+    "prop_bounds": [
+      490,
+      645,
+      257,
+      235
+    ],
+    "bytes": 176185,
+    "cdn_url": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/45eac6ade7c045739dccaadaf22b6037/tuxedo-box-planted-v39.png"
+  }
+]

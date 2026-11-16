@@ -78,14 +78,14 @@ bool MenuCommands(bool enabled) {
         wchar_t label[80]{}; GetMenuStringW(menu,i,label,80,MF_BYPOSITION);
         if (std::wstring(label) == L"행동시키기") actions = GetSubMenu(menu,i);
     }
-    bool valid = actions && GetMenuItemCount(actions) == 5;
-    const UINT ids[]{kManualWalkCommand,kManualRunCommand,kManualJumpCommand,kWallClimbCommand,kFlyHuntCommand};
-    const wchar_t* labels[]{L"걷기",L"달리기",L"점프하기",L"오른쪽 가장자리 오르기",L"파리 사냥하기"};
-    for (unsigned i = 0; valid && i < 5; ++i) {
+    bool valid = actions && GetMenuItemCount(actions) == 8;
+    const UINT ids[]{kFurnitureFirst,kFurnitureFirst+1,kFurnitureFirst+2,kManualWalkCommand,kManualRunCommand,kManualJumpCommand,kWallClimbCommand,kFlyHuntCommand};
+    const wchar_t* labels[]{L"버섯 캣타워 오르내리기",L"선인장 스크래처 긁기",L"고양이 귀 박스에 쏙!",L"걷기",L"달리기",L"점프하기",L"오른쪽 가장자리 오르기",L"파리 사냥하기"};
+    for (unsigned i = 0; valid && i < 8; ++i) {
         wchar_t label[80]{}; GetMenuStringW(actions,i,label,80,MF_BYPOSITION);
         const auto state = GetMenuState(actions,ids[i],MF_BYCOMMAND);
         valid = GetMenuItemID(actions,i) == ids[i] && std::wstring(label) == labels[i] &&
-            state != static_cast<UINT>(-1) && (((state & (MF_GRAYED|MF_DISABLED)) == 0) == enabled);
+            state != static_cast<UINT>(-1) && (((state & (MF_GRAYED|MF_DISABLED)) == 0) == (i<3?true:enabled));
     }
     DestroyMenu(menu); return valid;
 }

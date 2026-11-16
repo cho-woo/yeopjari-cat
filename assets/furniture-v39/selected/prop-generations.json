@@ -1,0 +1,98 @@
+[
+  {
+    "kind": "tower",
+    "args": {
+      "client_token": "yeopjari-v39-prop-tower-20261116-a",
+      "model": "google/nano-banana-2.1",
+      "options": {
+        "prompt": "A single irresistibly adorable tiny desktop kitten cat tower, NO cat or animal. Premium soft 3D toy render matching a plush chibi pet: a squat lavender mushroom cottage base with rounded cat-ear details, two broad staggered mushroom-cap perches connected by two short cool-grey sisal columns. Perches in pale lilac and soft sky-blue with puffy rounded edges and tiny embossed paw/star details; one small dangling white pompom. The bottom, middle and upper step form a clear climbable route from left to right. Safe, sturdy, cozy, miniature, simple silhouette, tactile materials. Front three-quarter camera, no perspective distortion. Complete object isolated on uniform pure #00FF00 background, NO cast shadow, NO floor, NO text, NO warm orange or brown materials. Object fits entirely in image with generous green margins. Toy-like cuteness, soft studio light, no background scene.",
+        "aspect_ratio": "1:1",
+        "resolution": "1K"
+      }
+    },
+    "result": {
+      "job_id": "mcp_ed5fc71ff16b46e49828787e526dd4c4",
+      "creditCost": 16.8,
+      "reused": false
+    },
+    "generation": {
+      "jobId": "mcp_ed5fc71ff16b46e49828787e526dd4c4",
+      "status": "succeeded",
+      "modelName": "google/nano-banana-2.1",
+      "createdAt": "2026-11-16T02:38:19.863Z",
+      "completedAt": null,
+      "outputList": [
+        {
+          "imageUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_ed5fc71ff16b46e49828787e526dd4c4/output/output_0.png",
+          "videoUrl": null,
+          "posterUrl": null,
+          "text": null
+        }
+      ]
+    }
+  },
+  {
+    "kind": "scratch",
+    "args": {
+      "client_token": "yeopjari-v39-prop-scratch-20261116-a",
+      "model": "google/nano-banana-2.1",
+      "options": {
+        "prompt": "A single irresistibly adorable small kitten scratching post, NO cat or animal. Premium soft 3D toy render matching a plush chibi desktop pet: a pudgy rounded mint-blue cactus-shaped post wrapped in clearly visible cool-grey sisal rope, with two tiny cactus arms and a rounded lavender cloud-shaped weighted base. Tiny white flower and lavender paw motif, all soft rounded safe edges, clear vertical scratching surface in front, very cozy miniature pet furniture. Front three-quarter camera, complete object isolated on uniform pure #00FF00 background, NO cast shadow, NO floor, NO text. Cool mint, lilac, white and grey palette only, NO warm orange/brown materials. Generous green margins. Tactile rope, fluffy soft details, simple cute silhouette.",
+        "aspect_ratio": "1:1",
+        "resolution": "1K"
+      }
+    },
+    "result": {
+      "job_id": "mcp_93a8c181ae204fb3ae6365b1cf0d0708",
+      "creditCost": 16.8,
+      "reused": false
+    },
+    "generation": {
+      "jobId": "mcp_93a8c181ae204fb3ae6365b1cf0d0708",
+      "status": "succeeded",
+      "modelName": "google/nano-banana-2.1",
+      "createdAt": "2026-11-16T02:38:21.039Z",
+      "completedAt": null,
+      "outputList": [
+        {
+          "imageUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_93a8c181ae204fb3ae6365b1cf0d0708/output/output_0.png",
+          "videoUrl": null,
+          "posterUrl": null,
+          "text": null
+        }
+      ]
+    }
+  },
+  {
+    "kind": "box",
+    "args": {
+      "client_token": "yeopjari-v39-prop-box-20261116-a",
+      "model": "google/nano-banana-2.1",
+      "options": {
+        "prompt": "A single irresistibly adorable open cardboard kitten box, NO cat or animal. Premium soft 3D toy render matching a plush chibi desktop pet: pastel lavender-blue corrugated cardboard box with rounded corners, two charming little cat-ear silhouettes on the back rim, soft cloud-shaped scalloped front lip, a tiny pale mint ribbon and embossed white paw motif. Deep clearly open top wide enough for a kitten to snuggle fully inside and peek over the front edge. Low front rim for a cute little hop in, wide stable base, real cardboard edge thickness, tiny simple folded flaps. Front three-quarter camera, complete object isolated on uniform pure #00FF00 background, NO cast shadow, NO floor, NO text. Cool lilac, periwinkle and mint palette, NO warm orange/brown materials. Generous green margins, beautifully rounded cozy miniature object.",
+        "aspect_ratio": "1:1",
+        "resolution": "1K"
+      }
+    },
+    "result": {
+      "job_id": "mcp_b2d809b4c7064c91bea4d38e7323c7f8",
+      "creditCost": 16.8,
+      "reused": false
+    },
+    "generation": {
+      "jobId": "mcp_b2d809b4c7064c91bea4d38e7323c7f8",
+      "status": "succeeded",
+      "modelName": "google/nano-banana-2.1",
+      "createdAt": "2026-11-16T02:38:22.252Z",
+      "completedAt": null,
+      "outputList": [
+        {
+          "imageUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_b2d809b4c7064c91bea4d38e7323c7f8/output/output_0.png",
+          "videoUrl": null,
+          "posterUrl": null,
+          "text": null
+        }
+      ]
+    }
+  }
+]

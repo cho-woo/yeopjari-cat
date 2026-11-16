@@ -1,0 +1,3471 @@
+[
+  [
+    {
+      "rect": [
+        141,
+        311,
+        26,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 62
+    },
+    {
+      "rect": [
+        186,
+        304,
+        17,
+        21
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 24
+    }
+  ],
+  [
+    {
+      "rect": [
+        141,
+        311,
+        26,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 61
+    },
+    {
+      "rect": [
+        186,
+        304,
+        17,
+        21
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 24
+    }
+  ],
+  [
+    {
+      "rect": [
+        141,
+        311,
+        26,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 60
+    },
+    {
+      "rect": [
+        186,
+        304,
+        17,
+        21
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 23
+    }
+  ],
+  [
+    {
+      "rect": [
+        141,
+        311,
+        26,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 60
+    },
+    {
+      "rect": [
+        186,
+        304,
+        17,
+        21
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 23
+    }
+  ],
+  [
+    {
+      "rect": [
+        141,
+        313,
+        26,
+        21
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 65
+    },
+    {
+      "rect": [
+        187,
+        306,
+        17,
+        19
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 24
+    }
+  ],
+  [
+    {
+      "rect": [
+        143,
+        318,
+        25,
+        15
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 50
+    },
+    {
+      "rect": [
+        188,
+        311,
+        17,
+        16
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 8
+    }
+  ],
+  [
+    {
+      "rect": [
+        190,
+        316,
+        17,
+        12
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 12
+    }
+  ],
+  [],
+  [],
+  [
+    {
+      "rect": [
+        197,
+        322,
+        14,
+        9
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 8
+    }
+  ],
+  [
+    {
+      "rect": [
+        157,
+        322,
+        25,
+        15
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 49
+    },
+    {
+      "rect": [
+        200,
+        318,
+        13,
+        15
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 7
+    }
+  ],
+  [
+    {
+      "rect": [
+        162,
+        318,
+        24,
+        21
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 39
+    },
+    {
+      "rect": [
+        203,
+        315,
+        13,
+        20
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 6
+    }
+  ],
+  [
+    {
+      "rect": [
+        166,
+        318,
+        23,
+        22
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 48
+    },
+    {
+      "rect": [
+        206,
+        315,
+        13,
+        22
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 7
+    }
+  ],
+  [
+    {
+      "rect": [
+        170,
+        319,
+        24,
+        22
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 56
+    },
+    {
+      "rect": [
+        210,
+        317,
+        13,
+        22
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 10
+    }
+  ],
+  [
+    {
+      "rect": [
+        173,
+        320,
+        24,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 60
+    },
+    {
+      "rect": [
+        213,
+        318,
+        12,
+        22
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 5
+    }
+  ],
+  [
+    {
+      "rect": [
+        176,
+        321,
+        23,
+        24
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 50
+    },
+    {
+      "rect": [
+        215,
+        318,
+        13,
+        22
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 15
+    }
+  ],
+  [
+    {
+      "rect": [
+        178,
+        320,
+        23,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 47
+    },
+    {
+      "rect": [
+        217,
+        317,
+        12,
+        23
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 11
+    }
+  ],
+  [
+    {
+      "rect": [
+        180,
+        319,
+        23,
+        22
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 44
+    }
+  ],
+  [
+    {
+      "rect": [
+        181,
+        317,
+        23,
+        22
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 55
+    },
+    {
+      "rect": [
+        219,
+        312,
+        12,
+        23
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 11
+    }
+  ],
+  [
+    {
+      "rect": [
+        182,
+        315,
+        23,
+        22
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 57
+    },
+    {
+      "rect": [
+        220,
+        310,
+        11,
+        22
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 15
+    }
+  ],
+  [
+    {
+      "rect": [
+        182,
+        314,
+        24,
+        21
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 51
+    },
+    {
+      "rect": [
+        220,
+        308,
+        12,
+        22
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 9
+    }
+  ],
+  [
+    {
+      "rect": [
+        183,
+        313,
+        23,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 45
+    },
+    {
+      "rect": [
+        221,
+        307,
+        12,
+        23
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 5
+    }
+  ],
+  [
+    {
+      "rect": [
+        184,
+        314,
+        24,
+        21
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 47
+    }
+  ],
+  [
+    {
+      "rect": [
+        185,
+        315,
+        24,
+        22
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 49
+    },
+    {
+      "rect": [
+        224,
+        308,
+        12,
+        21
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 8
+    }
+  ],
+  [
+    {
+      "rect": [
+        187,
+        316,
+        24,
+        22
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 47
+    },
+    {
+      "rect": [
+        226,
+        309,
+        11,
+        21
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 12
+    }
+  ],
+  [
+    {
+      "rect": [
+        188,
+        317,
+        24,
+        21
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 43
+    },
+    {
+      "rect": [
+        227,
+        309,
+        12,
+        21
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 7
+    }
+  ],
+  [
+    {
+      "rect": [
+        189,
+        318,
+        24,
+        22
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 53
+    },
+    {
+      "rect": [
+        227,
+        309,
+        12,
+        21
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 4
+    }
+  ],
+  [
+    {
+      "rect": [
+        189,
+        317,
+        24,
+        22
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 45
+    },
+    {
+      "rect": [
+        228,
+        308,
+        11,
+        20
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 7
+    }
+  ],
+  [
+    {
+      "rect": [
+        189,
+        315,
+        24,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 58
+    },
+    {
+      "rect": [
+        227,
+        304,
+        12,
+        21
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 12
+    }
+  ],
+  [
+    {
+      "rect": [
+        188,
+        313,
+        24,
+        22
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 44
+    },
+    {
+      "rect": [
+        225,
+        301,
+        13,
+        21
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 12
+    }
+  ],
+  [
+    {
+      "rect": [
+        187,
+        311,
+        24,
+        22
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 45
+    },
+    {
+      "rect": [
+        224,
+        298,
+        14,
+        21
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 20
+    }
+  ],
+  [
+    {
+      "rect": [
+        187,
+        310,
+        24,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 42
+    },
+    {
+      "rect": [
+        224,
+        296,
+        13,
+        21
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 22
+    }
+  ],
+  [
+    {
+      "rect": [
+        187,
+        310,
+        24,
+        22
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 50
+    },
+    {
+      "rect": [
+        224,
+        295,
+        13,
+        22
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 20
+    }
+  ],
+  [
+    {
+      "rect": [
+        187,
+        310,
+        24,
+        22
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 46
+    },
+    {
+      "rect": [
+        224,
+        295,
+        14,
+        22
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 17
+    }
+  ],
+  [
+    {
+      "rect": [
+        188,
+        310,
+        24,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 43
+    },
+    {
+      "rect": [
+        225,
+        295,
+        14,
+        22
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 18
+    }
+  ],
+  [
+    {
+      "rect": [
+        189,
+        311,
+        24,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 43
+    },
+    {
+      "rect": [
+        226,
+        296,
+        14,
+        22
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 12
+    }
+  ],
+  [
+    {
+      "rect": [
+        190,
+        312,
+        24,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 35
+    },
+    {
+      "rect": [
+        227,
+        297,
+        14,
+        21
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 8
+    }
+  ],
+  [
+    {
+      "rect": [
+        190,
+        314,
+        24,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 47
+    },
+    {
+      "rect": [
+        227,
+        299,
+        14,
+        20
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 5
+    }
+  ],
+  [
+    {
+      "rect": [
+        190,
+        315,
+        24,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 40
+    },
+    {
+      "rect": [
+        227,
+        300,
+        14,
+        20
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 11
+    }
+  ],
+  [
+    {
+      "rect": [
+        190,
+        314,
+        24,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 43
+    },
+    {
+      "rect": [
+        227,
+        299,
+        13,
+        20
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 10
+    }
+  ],
+  [
+    {
+      "rect": [
+        189,
+        310,
+        24,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 32
+    },
+    {
+      "rect": [
+        226,
+        294,
+        14,
+        20
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 6
+    }
+  ],
+  [
+    {
+      "rect": [
+        188,
+        302,
+        24,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 39
+    },
+    {
+      "rect": [
+        224,
+        285,
+        14,
+        21
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 7
+    }
+  ],
+  [
+    {
+      "rect": [
+        187,
+        295,
+        25,
+        22
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 40
+    },
+    {
+      "rect": [
+        223,
+        278,
+        14,
+        20
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 4
+    }
+  ],
+  [
+    {
+      "rect": [
+        187,
+        290,
+        24,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 33
+    },
+    {
+      "rect": [
+        223,
+        272,
+        14,
+        21
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 7
+    }
+  ],
+  [
+    {
+      "rect": [
+        188,
+        289,
+        25,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 49
+    },
+    {
+      "rect": [
+        224,
+        271,
+        14,
+        20
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 11
+    }
+  ],
+  [
+    {
+      "rect": [
+        190,
+        289,
+        24,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 43
+    },
+    {
+      "rect": [
+        226,
+        271,
+        14,
+        21
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 17
+    }
+  ],
+  [
+    {
+      "rect": [
+        192,
+        290,
+        24,
+        24
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 43
+    },
+    {
+      "rect": [
+        228,
+        272,
+        14,
+        21
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 14
+    }
+  ],
+  [
+    {
+      "rect": [
+        194,
+        292,
+        24,
+        24
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 36
+    },
+    {
+      "rect": [
+        230,
+        273,
+        14,
+        21
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 13
+    }
+  ],
+  [
+    {
+      "rect": [
+        195,
+        292,
+        24,
+        24
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 33
+    },
+    {
+      "rect": [
+        231,
+        273,
+        14,
+        21
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 13
+    }
+  ],
+  [
+    {
+      "rect": [
+        196,
+        292,
+        24,
+        24
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 29
+    },
+    {
+      "rect": [
+        232,
+        273,
+        14,
+        21
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 3
+    }
+  ],
+  [
+    {
+      "rect": [
+        196,
+        292,
+        24,
+        24
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 32
+    },
+    {
+      "rect": [
+        232,
+        272,
+        14,
+        21
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 11
+    }
+  ],
+  [
+    {
+      "rect": [
+        196,
+        291,
+        24,
+        24
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 39
+    },
+    {
+      "rect": [
+        232,
+        272,
+        13,
+        21
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 9
+    }
+  ],
+  [
+    {
+      "rect": [
+        196,
+        291,
+        24,
+        24
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 43
+    },
+    {
+      "rect": [
+        231,
+        271,
+        13,
+        21
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 10
+    }
+  ],
+  [
+    {
+      "rect": [
+        195,
+        291,
+        24,
+        24
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 37
+    },
+    {
+      "rect": [
+        230,
+        274,
+        13,
+        17
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 3
+    }
+  ],
+  [
+    {
+      "rect": [
+        194,
+        290,
+        24,
+        24
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 36
+    },
+    {
+      "rect": [
+        228,
+        273,
+        13,
+        17
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 12
+    }
+  ],
+  [
+    {
+      "rect": [
+        192,
+        289,
+        24,
+        24
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 42
+    },
+    {
+      "rect": [
+        226,
+        272,
+        14,
+        17
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 6
+    }
+  ],
+  [
+    {
+      "rect": [
+        191,
+        288,
+        24,
+        24
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 33
+    },
+    {
+      "rect": [
+        225,
+        271,
+        14,
+        16
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 17
+    }
+  ],
+  [
+    {
+      "rect": [
+        191,
+        288,
+        24,
+        24
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 26
+    },
+    {
+      "rect": [
+        225,
+        270,
+        14,
+        17
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 11
+    }
+  ],
+  [
+    {
+      "rect": [
+        192,
+        288,
+        24,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 25
+    },
+    {
+      "rect": [
+        226,
+        271,
+        14,
+        16
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 14
+    }
+  ],
+  [
+    {
+      "rect": [
+        193,
+        288,
+        24,
+        24
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 30
+    },
+    {
+      "rect": [
+        228,
+        272,
+        14,
+        16
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 24
+    }
+  ],
+  [
+    {
+      "rect": [
+        195,
+        289,
+        24,
+        24
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 35
+    },
+    {
+      "rect": [
+        231,
+        273,
+        14,
+        16
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 28
+    }
+  ],
+  [
+    {
+      "rect": [
+        196,
+        290,
+        25,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 24
+    },
+    {
+      "rect": [
+        232,
+        274,
+        15,
+        16
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 19
+    }
+  ],
+  [
+    {
+      "rect": [
+        197,
+        290,
+        24,
+        24
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 30
+    },
+    {
+      "rect": [
+        233,
+        274,
+        14,
+        17
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 23
+    }
+  ],
+  [
+    {
+      "rect": [
+        197,
+        291,
+        24,
+        24
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 30
+    },
+    {
+      "rect": [
+        232,
+        274,
+        14,
+        17
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 23
+    }
+  ],
+  [
+    {
+      "rect": [
+        196,
+        291,
+        24,
+        25
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 34
+    },
+    {
+      "rect": [
+        230,
+        273,
+        14,
+        17
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 15
+    }
+  ],
+  [
+    {
+      "rect": [
+        195,
+        291,
+        23,
+        24
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 22
+    },
+    {
+      "rect": [
+        228,
+        272,
+        14,
+        17
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 10
+    }
+  ],
+  [
+    {
+      "rect": [
+        193,
+        290,
+        24,
+        25
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 31
+    },
+    {
+      "rect": [
+        226,
+        270,
+        14,
+        17
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 19
+    }
+  ],
+  [
+    {
+      "rect": [
+        192,
+        289,
+        23,
+        24
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 29
+    },
+    {
+      "rect": [
+        224,
+        269,
+        14,
+        17
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 20
+    }
+  ],
+  [
+    {
+      "rect": [
+        190,
+        288,
+        23,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 32
+    },
+    {
+      "rect": [
+        221,
+        268,
+        14,
+        16
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 19
+    }
+  ],
+  [
+    {
+      "rect": [
+        188,
+        288,
+        24,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 28
+    },
+    {
+      "rect": [
+        220,
+        267,
+        14,
+        17
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 14
+    }
+  ],
+  [
+    {
+      "rect": [
+        188,
+        288,
+        24,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 26
+    },
+    {
+      "rect": [
+        220,
+        268,
+        15,
+        16
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 17
+    }
+  ],
+  [
+    {
+      "rect": [
+        190,
+        288,
+        24,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 27
+    },
+    {
+      "rect": [
+        223,
+        269,
+        14,
+        16
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 19
+    }
+  ],
+  [
+    {
+      "rect": [
+        192,
+        289,
+        25,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 32
+    },
+    {
+      "rect": [
+        226,
+        270,
+        15,
+        16
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 17
+    }
+  ],
+  [
+    {
+      "rect": [
+        196,
+        290,
+        24,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 21
+    },
+    {
+      "rect": [
+        231,
+        272,
+        14,
+        16
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 5
+    }
+  ],
+  [
+    {
+      "rect": [
+        198,
+        291,
+        24,
+        24
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 31
+    },
+    {
+      "rect": [
+        233,
+        273,
+        15,
+        17
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 14
+    }
+  ],
+  [
+    {
+      "rect": [
+        200,
+        292,
+        24,
+        24
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 21
+    },
+    {
+      "rect": [
+        234,
+        274,
+        15,
+        17
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 13
+    }
+  ],
+  [
+    {
+      "rect": [
+        200,
+        293,
+        24,
+        24
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 30
+    },
+    {
+      "rect": [
+        234,
+        274,
+        14,
+        17
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 13
+    }
+  ],
+  [
+    {
+      "rect": [
+        200,
+        293,
+        23,
+        24
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 28
+    },
+    {
+      "rect": [
+        233,
+        273,
+        13,
+        18
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 5
+    }
+  ],
+  [
+    {
+      "rect": [
+        198,
+        292,
+        23,
+        24
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 21
+    },
+    {
+      "rect": [
+        231,
+        272,
+        13,
+        17
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 6
+    }
+  ],
+  [
+    {
+      "rect": [
+        195,
+        290,
+        24,
+        24
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 29
+    }
+  ],
+  [
+    {
+      "rect": [
+        193,
+        289,
+        23,
+        24
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 39
+    },
+    {
+      "rect": [
+        225,
+        268,
+        14,
+        17
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 12
+    }
+  ],
+  [
+    {
+      "rect": [
+        191,
+        288,
+        24,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 22
+    }
+  ],
+  [
+    {
+      "rect": [
+        190,
+        287,
+        24,
+        24
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 29
+    }
+  ],
+  [
+    {
+      "rect": [
+        191,
+        287,
+        24,
+        24
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 18
+    }
+  ],
+  [
+    {
+      "rect": [
+        192,
+        288,
+        25,
+        24
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 29
+    },
+    {
+      "rect": [
+        226,
+        270,
+        15,
+        16
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 4
+    }
+  ],
+  [
+    {
+      "rect": [
+        195,
+        289,
+        24,
+        24
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 22
+    },
+    {
+      "rect": [
+        230,
+        272,
+        14,
+        16
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 4
+    }
+  ],
+  [
+    {
+      "rect": [
+        197,
+        291,
+        25,
+        24
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 21
+    },
+    {
+      "rect": [
+        232,
+        273,
+        15,
+        17
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 7
+    }
+  ],
+  [
+    {
+      "rect": [
+        198,
+        293,
+        25,
+        24
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 18
+    },
+    {
+      "rect": [
+        233,
+        274,
+        15,
+        17
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 8
+    }
+  ],
+  [
+    {
+      "rect": [
+        198,
+        293,
+        24,
+        25
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 23
+    },
+    {
+      "rect": [
+        232,
+        273,
+        14,
+        17
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 13
+    }
+  ],
+  [
+    {
+      "rect": [
+        197,
+        293,
+        23,
+        25
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 15
+    }
+  ],
+  [
+    {
+      "rect": [
+        195,
+        293,
+        23,
+        24
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 17
+    },
+    {
+      "rect": [
+        226,
+        269,
+        14,
+        18
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 9
+    }
+  ],
+  [
+    {
+      "rect": [
+        192,
+        292,
+        24,
+        24
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 8
+    }
+  ],
+  [
+    {
+      "rect": [
+        190,
+        290,
+        24,
+        25
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 9
+    },
+    {
+      "rect": [
+        220,
+        266,
+        15,
+        17
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 4
+    }
+  ],
+  [
+    {
+      "rect": [
+        188,
+        290,
+        24,
+        24
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 17
+    }
+  ],
+  [
+    {
+      "rect": [
+        188,
+        289,
+        24,
+        24
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 17
+    }
+  ],
+  [
+    {
+      "rect": [
+        189,
+        289,
+        24,
+        24
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 13
+    },
+    {
+      "rect": [
+        220,
+        266,
+        16,
+        17
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 5
+    }
+  ],
+  [
+    {
+      "rect": [
+        191,
+        289,
+        24,
+        25
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 21
+    },
+    {
+      "rect": [
+        223,
+        268,
+        16,
+        16
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 6
+    }
+  ],
+  [
+    {
+      "rect": [
+        194,
+        290,
+        24,
+        25
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 13
+    }
+  ],
+  [
+    {
+      "rect": [
+        197,
+        292,
+        24,
+        24
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 7
+    },
+    {
+      "rect": [
+        230,
+        271,
+        15,
+        17
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 7
+    }
+  ],
+  [
+    {
+      "rect": [
+        198,
+        293,
+        24,
+        24
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 13
+    },
+    {
+      "rect": [
+        231,
+        271,
+        15,
+        17
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 11
+    }
+  ],
+  [
+    {
+      "rect": [
+        198,
+        293,
+        24,
+        24
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 19
+    },
+    {
+      "rect": [
+        230,
+        270,
+        15,
+        18
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 6
+    }
+  ],
+  [
+    {
+      "rect": [
+        197,
+        292,
+        23,
+        25
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 10
+    },
+    {
+      "rect": [
+        228,
+        269,
+        14,
+        18
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 5
+    }
+  ],
+  [
+    {
+      "rect": [
+        195,
+        292,
+        23,
+        24
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 15
+    },
+    {
+      "rect": [
+        225,
+        268,
+        14,
+        17
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 9
+    }
+  ],
+  [
+    {
+      "rect": [
+        192,
+        291,
+        24,
+        24
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 20
+    }
+  ],
+  [
+    {
+      "rect": [
+        191,
+        290,
+        23,
+        24
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 21
+    }
+  ],
+  [
+    {
+      "rect": [
+        190,
+        289,
+        23,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 31
+    },
+    {
+      "rect": [
+        220,
+        266,
+        15,
+        16
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 3
+    }
+  ],
+  [
+    {
+      "rect": [
+        190,
+        288,
+        24,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 32
+    },
+    {
+      "rect": [
+        221,
+        266,
+        15,
+        16
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 6
+    }
+  ],
+  [
+    {
+      "rect": [
+        191,
+        287,
+        24,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 30
+    },
+    {
+      "rect": [
+        224,
+        267,
+        15,
+        16
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 8
+    }
+  ],
+  [
+    {
+      "rect": [
+        194,
+        286,
+        24,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 48
+    },
+    {
+      "rect": [
+        228,
+        268,
+        15,
+        16
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 14
+    }
+  ],
+  [
+    {
+      "rect": [
+        197,
+        286,
+        24,
+        24
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 48
+    },
+    {
+      "rect": [
+        232,
+        269,
+        14,
+        16
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 21
+    }
+  ],
+  [
+    {
+      "rect": [
+        199,
+        287,
+        24,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 46
+    },
+    {
+      "rect": [
+        234,
+        271,
+        15,
+        16
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 21
+    }
+  ],
+  [
+    {
+      "rect": [
+        201,
+        289,
+        24,
+        22
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 41
+    },
+    {
+      "rect": [
+        237,
+        272,
+        14,
+        16
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 16
+    }
+  ],
+  [
+    {
+      "rect": [
+        202,
+        289,
+        24,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 44
+    },
+    {
+      "rect": [
+        237,
+        272,
+        14,
+        17
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 17
+    }
+  ],
+  [
+    {
+      "rect": [
+        200,
+        289,
+        24,
+        22
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 43
+    },
+    {
+      "rect": [
+        235,
+        271,
+        13,
+        17
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 20
+    }
+  ],
+  [
+    {
+      "rect": [
+        195,
+        288,
+        24,
+        22
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 43
+    },
+    {
+      "rect": [
+        230,
+        267,
+        13,
+        21
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 15
+    }
+  ],
+  [
+    {
+      "rect": [
+        189,
+        287,
+        24,
+        22
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 38
+    },
+    {
+      "rect": [
+        224,
+        267,
+        14,
+        21
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 16
+    }
+  ],
+  [
+    {
+      "rect": [
+        184,
+        286,
+        23,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 56
+    },
+    {
+      "rect": [
+        219,
+        268,
+        13,
+        21
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 25
+    }
+  ],
+  [
+    {
+      "rect": [
+        179,
+        287,
+        24,
+        22
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 48
+    },
+    {
+      "rect": [
+        216,
+        271,
+        12,
+        21
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 23
+    }
+  ],
+  [
+    {
+      "rect": [
+        178,
+        288,
+        24,
+        21
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 60
+    },
+    {
+      "rect": [
+        215,
+        274,
+        13,
+        21
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 34
+    }
+  ],
+  [
+    {
+      "rect": [
+        179,
+        291,
+        24,
+        22
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 66
+    },
+    {
+      "rect": [
+        218,
+        279,
+        13,
+        21
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 15
+    }
+  ],
+  [
+    {
+      "rect": [
+        182,
+        298,
+        24,
+        21
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 47
+    },
+    {
+      "rect": [
+        222,
+        289,
+        14,
+        20
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 3
+    }
+  ],
+  [
+    {
+      "rect": [
+        185,
+        307,
+        24,
+        21
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 52
+    },
+    {
+      "rect": [
+        227,
+        299,
+        13,
+        22
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 10
+    }
+  ],
+  [
+    {
+      "rect": [
+        188,
+        315,
+        24,
+        22
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 58
+    },
+    {
+      "rect": [
+        229,
+        310,
+        12,
+        20
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 12
+    }
+  ],
+  [
+    {
+      "rect": [
+        189,
+        321,
+        25,
+        22
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 67
+    }
+  ],
+  [
+    {
+      "rect": [
+        189,
+        324,
+        25,
+        21
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 54
+    }
+  ],
+  [
+    {
+      "rect": [
+        188,
+        324,
+        24,
+        22
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 57
+    },
+    {
+      "rect": [
+        229,
+        324,
+        9,
+        20
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 4
+    }
+  ],
+  [
+    {
+      "rect": [
+        186,
+        322,
+        24,
+        22
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 59
+    },
+    {
+      "rect": [
+        227,
+        318,
+        10,
+        23
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 9
+    }
+  ],
+  [
+    {
+      "rect": [
+        183,
+        319,
+        25,
+        21
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 46
+    },
+    {
+      "rect": [
+        225,
+        315,
+        12,
+        23
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 5
+    }
+  ],
+  [
+    {
+      "rect": [
+        180,
+        316,
+        25,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 51
+    },
+    {
+      "rect": [
+        222,
+        312,
+        14,
+        23
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 5
+    }
+  ],
+  [
+    {
+      "rect": [
+        177,
+        314,
+        25,
+        22
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 51
+    }
+  ],
+  [
+    {
+      "rect": [
+        175,
+        313,
+        25,
+        21
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 45
+    },
+    {
+      "rect": [
+        218,
+        309,
+        15,
+        23
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 3
+    }
+  ],
+  [
+    {
+      "rect": [
+        173,
+        314,
+        25,
+        21
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 47
+    }
+  ],
+  [
+    {
+      "rect": [
+        172,
+        317,
+        25,
+        19
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 54
+    },
+    {
+      "rect": [
+        215,
+        312,
+        15,
+        21
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 5
+    }
+  ],
+  [
+    {
+      "rect": [
+        170,
+        323,
+        25,
+        15
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 34
+    },
+    {
+      "rect": [
+        213,
+        318,
+        16,
+        16
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 11
+    }
+  ],
+  [
+    {
+      "rect": [
+        211,
+        325,
+        15,
+        11
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 7
+    }
+  ],
+  [],
+  [],
+  [
+    {
+      "rect": [
+        200,
+        327,
+        16,
+        12
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 18
+    }
+  ],
+  [
+    {
+      "rect": [
+        152,
+        327,
+        26,
+        15
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 49
+    },
+    {
+      "rect": [
+        196,
+        321,
+        17,
+        16
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 8
+    }
+  ],
+  [
+    {
+      "rect": [
+        149,
+        321,
+        25,
+        19
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 59
+    },
+    {
+      "rect": [
+        193,
+        315,
+        16,
+        19
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 22
+    }
+  ],
+  [
+    {
+      "rect": [
+        146,
+        316,
+        26,
+        21
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 64
+    },
+    {
+      "rect": [
+        190,
+        311,
+        17,
+        19
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 30
+    }
+  ],
+  [
+    {
+      "rect": [
+        143,
+        313,
+        26,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 57
+    },
+    {
+      "rect": [
+        188,
+        307,
+        17,
+        20
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 9
+    }
+  ],
+  [
+    {
+      "rect": [
+        142,
+        311,
+        26,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 64
+    },
+    {
+      "rect": [
+        187,
+        305,
+        17,
+        20
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 21
+    }
+  ],
+  [
+    {
+      "rect": [
+        141,
+        310,
+        26,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 69
+    },
+    {
+      "rect": [
+        186,
+        304,
+        18,
+        21
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 20
+    }
+  ],
+  [
+    {
+      "rect": [
+        141,
+        310,
+        26,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 69
+    },
+    {
+      "rect": [
+        186,
+        304,
+        18,
+        21
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 30
+    }
+  ],
+  [
+    {
+      "rect": [
+        141,
+        311,
+        26,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 60
+    },
+    {
+      "rect": [
+        186,
+        304,
+        18,
+        20
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 18
+    }
+  ],
+  [
+    {
+      "rect": [
+        141,
+        311,
+        26,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 60
+    },
+    {
+      "rect": [
+        186,
+        304,
+        18,
+        20
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 19
+    }
+  ],
+  [
+    {
+      "rect": [
+        141,
+        311,
+        26,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 60
+    },
+    {
+      "rect": [
+        186,
+        304,
+        18,
+        20
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 15
+    }
+  ],
+  [
+    {
+      "rect": [
+        141,
+        311,
+        26,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 59
+    },
+    {
+      "rect": [
+        186,
+        304,
+        18,
+        21
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 17
+    }
+  ],
+  [
+    {
+      "rect": [
+        141,
+        311,
+        26,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 59
+    },
+    {
+      "rect": [
+        186,
+        304,
+        18,
+        21
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 12
+    }
+  ],
+  [
+    {
+      "rect": [
+        141,
+        311,
+        26,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 59
+    },
+    {
+      "rect": [
+        186,
+        304,
+        18,
+        21
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 12
+    }
+  ],
+  [
+    {
+      "rect": [
+        141,
+        311,
+        26,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 59
+    },
+    {
+      "rect": [
+        186,
+        304,
+        18,
+        21
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 12
+    }
+  ],
+  [
+    {
+      "rect": [
+        141,
+        311,
+        26,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 59
+    },
+    {
+      "rect": [
+        186,
+        304,
+        18,
+        21
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 12
+    }
+  ],
+  [
+    {
+      "rect": [
+        141,
+        311,
+        26,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 60
+    },
+    {
+      "rect": [
+        186,
+        304,
+        18,
+        21
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 12
+    }
+  ],
+  [
+    {
+      "rect": [
+        141,
+        311,
+        26,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 61
+    },
+    {
+      "rect": [
+        186,
+        304,
+        18,
+        21
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 12
+    }
+  ],
+  [
+    {
+      "rect": [
+        141,
+        311,
+        26,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 61
+    },
+    {
+      "rect": [
+        186,
+        304,
+        18,
+        21
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 12
+    }
+  ],
+  [
+    {
+      "rect": [
+        141,
+        311,
+        26,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 62
+    },
+    {
+      "rect": [
+        186,
+        304,
+        18,
+        21
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 12
+    }
+  ],
+  [
+    {
+      "rect": [
+        141,
+        311,
+        26,
+        23
+      ],
+      "anatomical_side": "right",
+      "material": "gold",
+      "pixels": 59
+    },
+    {
+      "rect": [
+        186,
+        304,
+        18,
+        21
+      ],
+      "anatomical_side": "left",
+      "material": "blue",
+      "pixels": 14
+    }
+  ]
+]

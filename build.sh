@@ -44,7 +44,7 @@ cd "$DESKCAT_ROOT/src"
 "$DESKCAT_COMPILER" -std=c++17 -O2 -static -municode -mwindows -Wl,-s -Wall -Wextra \
   -I"$DESKCAT_BOX2D/include" main.cpp cat_physics.cpp "$DESKCAT_ROOT/build/resources.o" \
   "$DESKCAT_BOX2D_BUILD/libbox2d.a" \
-  -lgdiplus -lgdi32 -luser32 -lshell32 -lole32 -lcomdlg32 -lshlwapi -lwinhttp -lbcrypt -lversion -lwinmm -ldwmapi \
+  -lmfuuid -lgdiplus -lgdi32 -luser32 -lshell32 -lole32 -lcomdlg32 -lshlwapi -lwinhttp -lbcrypt -lversion -lwinmm -ldwmapi \
   -o "$DESKCAT_ROOT/release/YeopjariCat.exe"
 python3 "$DESKCAT_ROOT/tools/verify_resources.py" "$DESKCAT_ROOT/release/YeopjariCat.exe"
 printf '%s\n' "Built: $DESKCAT_ROOT/release/YeopjariCat.exe"

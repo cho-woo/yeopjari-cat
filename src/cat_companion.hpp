@@ -252,11 +252,13 @@ struct Context {
     cat::physics::Pose primary;
     cat::animation::Motion primaryMotion = cat::animation::Motion::Idle;
     Platform primaryPlatform, supportPlatform;
+    bool furnitureReady=false,furnitureFailed=false;
     bool cursorEnabled=false,cursorAvailable=false;
     double cursorX=0,cursorWorldHeight=0;
 };
 struct Snapshot {
     bool enabled = false;
+    bool furnitureWide=false;
     bool travellingJump = false;
     cat::physics::Pose physical;
     cat::animation::Pose animation;
@@ -304,12 +306,15 @@ public:
         storyActive_=quietActive_=false;
         presentationTicks_=0;presentationPaused_=false;++presentationGeneration_;
         presentationIdentity_=state.preferences.character;
-        ResetControls();
+        ResetControls();furniture.Cancel();
     }
     bool Bound() const { return state_ && brain_; }
+    cat::furniture::Session furniture;
+    cat::furniture::RandomSchedule furnitureRandom;
+    bool RequestFurniture(cat::furniture::Kind kind) {return Bound()&&ready_&&state_->enabled&&furniture.Request(kind);}
     bool Busy() const {
         if(!Bound() || !ready_ || !state_->enabled) return false;
-        return ballPlaying_ || cursor_.Active() || actionClip_!=cat::sprite_sequence::Clip::None || wallApproaching_ || randomZoomies_.Active() || !physics_.CurrentPose().grounded || StationaryLanding(lastTicks_,physics_.CurrentPose()) ||
+        return furniture.Owned() || ballPlaying_ || cursor_.Active() || actionClip_!=cat::sprite_sequence::Clip::None || wallApproaching_ || randomZoomies_.Active() || !physics_.CurrentPose().grounded || StationaryLanding(lastTicks_,physics_.CurrentPose()) ||
             waitingForStop_ || jumpPending_ || interaction_!=Interaction::None ||
             motion_==cat::animation::Motion::Eat || motion_==cat::animation::Motion::Treat ||
             motion_==cat::animation::Motion::TailRaise || motion_==cat::animation::Motion::ToyPaw;
@@ -383,13 +388,14 @@ public:
             brain_->Interrupt(c.ticks); BeginQuiet(c.ticks);
         }
         lastTicks_=c.ticks;
-        UpdateControls(c,wallDelta);
+        UpdateFurniture(c);
+        if(!furniture.Owned())UpdateControls(c,wallDelta);
         if(!landingRecovery && interaction_!=Interaction::None && c.ticks >= socialUntil_) FinishSocial(c);
         if(interaction_!=Interaction::None && (!c.primaryVisible || Busy(c,interaction_) || state_->pet.roamingPaused)) {
             FinishSocial(c);
         }
-        AdvanceRandomZoomies(c,before,landingRecovery);
-        if(!ballPlaying_ && !keyboardActive_ && !cursor_.Active() && actionClip_==cat::sprite_sequence::Clip::None && !wallApproaching_ && !runningTurn_.Active() && !randomZoomies_.Active() && !landingRecovery && before.grounded && !waitingForStop_ && !jumpPending_ && interaction_==Interaction::None &&
+        if(!furniture.Owned())AdvanceRandomZoomies(c,before,landingRecovery);
+        if(!furniture.Owned() && !ballPlaying_ && !keyboardActive_ && !cursor_.Active() && actionClip_==cat::sprite_sequence::Clip::None && !wallApproaching_ && !runningTurn_.Active() && !randomZoomies_.Active() && !landingRecovery && before.grounded && !waitingForStop_ && !jumpPending_ && interaction_==Interaction::None &&
                 c.ticks>=nextDecision_ && !AuthoredCareHolding(c.ticks)) {
             const bool continuation=storyActive_ && !quietActive_ && brain_->HasContinuation();
             if(!quietActive_ && !continuation) BeginQuiet(c.ticks);
@@ -413,6 +419,7 @@ public:
         else if(!landingRecovery && cat::animation::Walking(motion_) && (!state_->pet.roamingPaused||keyboardActive_||explicitTravel_)) velocity=direction_*speed_;
         if(cursor_.Active())velocity=cursor_.Velocity();
         if(ballPlaying_)velocity=ballDrive_;
+        if(furniture.Owned())velocity=furniture.Velocity(before.x,speed_);
         if(cursor_.Action()==cat::environment::CursorAction::Pounce&&jumpPending_&&cursorTakeoffVelocity_)velocity=cursorTakeoffVelocity_;
         if(wallApproaching_)velocity=direction_*speed_;
         if(!keyboardActive_&&!cursor_.Active()&&!runningJump_.active&&interaction_==Interaction::None&&motion_==cat::animation::Motion::Zoomies)
@@ -427,7 +434,7 @@ public:
             if(careUntil_>start) careUntil_+=motionStart_-start;
             velocity=0;
         }
-        if(!ballPlaying_ && !wallApproaching_ && !runningJump_.active && before.grounded && !before.onPlatform && cat::motion::BrakeBeforeEdge(
+        if(!furniture.Owned() && !ballPlaying_ && !wallApproaching_ && !runningJump_.active && before.grounded && !before.onPlatform && cat::motion::BrakeBeforeEdge(
                 before.x,before.velocityX-before.supportVelocityX,velocity,minX_,maxX_)) {
             direction_=velocity<0?1:-1; velocity=0;
             if(motion_==cat::animation::Motion::Zoomies&&Registered(cat::sprite_sequence::Clip::RunningTurn)) {
@@ -521,7 +528,7 @@ public:
     }
 
     bool TrySocial(Interaction kind,const Context& c) {
-        if(!Bound() || !ready_ || !state_->enabled || ballPlaying_ || cursor_.Active() || actionClip_!=cat::sprite_sequence::Clip::None || wallApproaching_ || randomZoomies_.Active() || c.ticks<careUntil_ || c.paused || !c.primaryVisible || Busy(c,kind) || state_->pet.roamingPaused) return false;
+        if(furniture.Owned() || !Bound() || !ready_ || !state_->enabled || ballPlaying_ || cursor_.Active() || actionClip_!=cat::sprite_sequence::Clip::None || wallApproaching_ || randomZoomies_.Active() || c.ticks<careUntil_ || c.paused || !c.primaryVisible || Busy(c,kind) || state_->pet.roamingPaused) return false;
         const auto own=physics_.CurrentPose();
         if(!own.grounded || !std::isfinite(c.primary.x) || !std::isfinite(c.primary.lift)) return false;
         if(kind==Interaction::WindowFollow) {
@@ -559,6 +566,7 @@ public:
         return FeedFood(now,ticks,treat?cat::feeding::FoodKind::Treat:cat::feeding::FoodKind::Meal,random01);
     }
     cat::nutrition::FeedResult FeedFood(std::int64_t now,std::uint64_t ticks,cat::feeding::FoodKind kind,double random01=.9) {
+        if(furniture.Owned())return cat::nutrition::FeedResult::TooSoon;
         if(!cat::feeding::IsValid(kind) || (kind==cat::feeding::FoodKind::Fish &&
             (!Bound() || !cat::feeding::CanOfferFish(state_->preferences.character)))) return cat::nutrition::FeedResult::TooSoon;
         if(!Bound() || !ready_ || !state_->enabled || !physics_.CurrentPose().grounded) return cat::nutrition::FeedResult::TooSoon;
@@ -579,7 +587,7 @@ public:
         return result;
     }
     bool Pet(std::int64_t now,std::uint64_t ticks) {
-        if(!Bound() || !ready_ || !state_->enabled || Feeding(ticks) || !physics_.CurrentPose().grounded) return false;
+        if(furniture.Owned() || !Bound() || !ready_ || !state_->enabled || Feeding(ticks) || !physics_.CurrentPose().grounded) return false;
         Advance(now); brain_->Pet(ticks); interaction_=Interaction::None;storyActive_=true;quietActive_=false;
         ResetControls();
         SetMotion(cat::animation::Motion::TailRaise,ticks,3400,0);
@@ -588,14 +596,14 @@ public:
         return cat::memory::Record(state_->memory,cat::memory::Event::Pet,state_->pet.updatedUtc);
     }
     bool Play(std::int64_t now,std::uint64_t ticks) {
-        if(!Bound() || !ready_ || !state_->enabled || Feeding(ticks) || !physics_.CurrentPose().grounded) return false;
+        if(furniture.Owned() || !Bound() || !ready_ || !state_->enabled || Feeding(ticks) || !physics_.CurrentPose().grounded) return false;
         Advance(now); brain_->Interrupt(ticks); interaction_=Interaction::None;storyActive_=true;quietActive_=false;
         SetMotion(cat::animation::Motion::ToyPaw,ticks,RegisteredDuration(cat::sprite_sequence::Clip::Punch,3000),0);
         careUntil_=nextDecision_;
         return cat::memory::Record(state_->memory,cat::memory::Event::Play,state_->pet.updatedUtc);
     }
     void DragTo(double x) {
-        if(!ready_) return;
+        if(furniture.Owned()||!ready_) return;
         physics_.Reset(std::clamp(x,minX_,maxX_),minX_,maxX_); supportId_=0; support_={}; gait_.Reset(); groundDrive_.Reset(facing_); poseTransition_.Reset(); jumpPresentation_.Reset(); groundArtBridge_.Reset();runningTurn_.Reset();
         runningJump_={};
         physics_.SetCeiling(maxLift_);
@@ -742,10 +750,13 @@ public:
             }
         } else if(s.physical.grounded)jumpPresentation_.Ground(s.physical.lift);
         s.animation.presentationSerial=motionSerial_;
+        s.furnitureWide=furniture.Owned();
+        cat::animation::AttachFurniture(s.animation,furniture);
         return s;
     }
 private:
     #include "cat_companion_controls.hpp"
+    #include "cat_companion_furniture.hpp"
     State* state_=nullptr;
     void PrepareCompletedJumpReturn(std::uint64_t ticks,const cat::physics::Pose& physical) {
         using Clip=cat::sprite_sequence::Clip;using Motion=cat::animation::Motion;
@@ -789,7 +800,7 @@ private:
                 facing_=direction_;groundDrive_.Reset(direction_);
             }
             groundArtBridge_.Update(ticks,travel && (direction_==facing_||(keyboardActive_&&groundArtBridge_.Starting()&&keyboardDirection_)),
-                visible.grounded,visible.velocityX-visible.supportVelocityX,true,sideMeal||ballSide||sideStop||jumpPreparation,jumpPreparation,keyboardActive_);
+                visible.grounded,visible.velocityX-visible.supportVelocityX,true,sideMeal||ballSide||sideStop||jumpPreparation||furniture.Owned(),jumpPreparation,keyboardActive_);
             // Reversing an existing walk gates its motor without restarting
             // the whole action clock on every short work-area crossing.
             if(!travel && (groundArtBridge_.Stopping() || groundArtBridge_.StartingForSideAction()))waitingForStop_=true;
