@@ -45,7 +45,7 @@ int Run(unsigned coat,bool companion,unsigned kind,unsigned scenario,bool film) 
         double growth=1;cat::companion::Snapshot snapshot;
         if(companion) {
             cat::companion::Context context;context.ticks=host.now;context.elapsedSeconds=dt;
-            context.nowUtc=UtcNow();context.primaryVisible=false;context.furnitureReady=true;context.paused=paused;
+            context.supportsFurniture=true;context.nowUtc=UtcNow();context.primaryVisible=false;context.furnitureReady=true;context.paused=paused;
             model.Tick(context);snapshot=model.View(host.now);pose=snapshot.animation;body=snapshot.physical;
             visual=snapshot.body;growth=snapshot.growthScale;
         } else {

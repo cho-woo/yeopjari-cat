@@ -20,6 +20,7 @@ cat::companion::Platform CompanionPlatform(HWND hwnd, RECT* actual = nullptr) {
 }
 cat::companion::Context CompanionContext(ULONGLONG ticks, double elapsed) {
     cat::companion::Context c;
+    c.supportsFurniture=true;
     c.nowUtc = UtcNow(); c.ticks = ticks; c.elapsedSeconds = elapsed;
     SYSTEMTIME local{}; GetLocalTime(&local); c.localHour = local.wHour;
     c.paused = g.hidden || g.menuOpen || g.dragging || g.companionWindow.Interacting() || g.closing || updates.applying;

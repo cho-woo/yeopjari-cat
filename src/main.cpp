@@ -289,6 +289,7 @@ using ToyKind = cat::toy::Kind;
 struct App {
     cat::furniture::Session furniture;
     cat::furniture::RandomSchedule furnitureRandom;
+    std::mt19937 furnitureRandomSource{std::random_device{}()};
     HINSTANCE instance = nullptr;
     HWND window = nullptr;
     HANDLE instanceMutex = nullptr;

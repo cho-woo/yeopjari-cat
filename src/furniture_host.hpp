@@ -15,13 +15,13 @@ void UpdatePrimaryFurniture(ULONGLONG ticks,double seconds) {
         !g.randomZoomies.Active()&&std::abs(WalkingVelocity(body))<=.5&&
         ticks>=g.motionStart+1000;
     if(!g.furniture.Requested()&&g.furnitureRandom.Advance(seconds,
-            available&&!g.pet.roamingPaused&&!g.companionModel.Busy(),g.random()))
-        g.furniture.Request(static_cast<cat::furniture::Kind>(1+g.random()%3));
+            available&&!g.pet.roamingPaused&&!g.companionModel.Busy(),g.furnitureRandomSource()))
+        g.furniture.Request(static_cast<cat::furniture::Kind>(1+g.furnitureRandomSource()%3));
     if(!g.furniture.Requested()){ReleaseFurnitureMovie(false);return;}
     const bool ready=PrepareFurnitureMovie(false,g.furniture.Action(),static_cast<unsigned>(g.preferences.character));
     if(FurnitureMovieFailed(false)) {
         const bool owned=g.furniture.Owned();g.furniture.Cancel();ReleaseFurnitureMovie(false);
-        g.furnitureRandom.Completed(g.random());if(owned)BeginAutonomousRest(ticks);
+        g.furnitureRandom.Completed(g.furnitureRandomSource());if(owned)BeginAutonomousRest(ticks);
         return;
     }
     if(seconds<=0)return;
@@ -46,7 +46,7 @@ void UpdatePrimaryFurniture(ULONGLONG ticks,double seconds) {
         SetMotion(Motion::Watch,120000,ticks);g.speed=0;
     }
     if(completed) {
-        g.furnitureRandom.Completed(g.random());ReleaseFurnitureMovie(false);
+        g.furnitureRandom.Completed(g.furnitureRandomSource());ReleaseFurnitureMovie(false);
         BeginAutonomousRest(ticks);
     }
 }

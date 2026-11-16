@@ -252,7 +252,7 @@ struct Context {
     cat::physics::Pose primary;
     cat::animation::Motion primaryMotion = cat::animation::Motion::Idle;
     Platform primaryPlatform, supportPlatform;
-    bool furnitureReady=false,furnitureFailed=false;
+    bool supportsFurniture=false,furnitureReady=false,furnitureFailed=false;
     bool cursorEnabled=false,cursorAvailable=false;
     double cursorX=0,cursorWorldHeight=0;
 };
@@ -306,7 +306,8 @@ public:
         storyActive_=quietActive_=false;
         presentationTicks_=0;presentationPaused_=false;++presentationGeneration_;
         presentationIdentity_=state.preferences.character;
-        ResetControls();furniture.Cancel();
+        ResetControls();furniture.Cancel();furnitureRandom={};
+        furnitureRng_=static_cast<std::uint64_t>(state.pet.bornUtc)^0xe2bf15c89037a641ULL;
     }
     bool Bound() const { return state_ && brain_; }
     cat::furniture::Session furniture;
