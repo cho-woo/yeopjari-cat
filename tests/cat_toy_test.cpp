@@ -182,6 +182,22 @@ void DistinctActivitiesAndInterruptions() {
     CHECK(!session.Advance(.25,true,true));
 }
 
+void BallRecoveryOwnsTheWholeCycle() {
+    using namespace cat::toy;
+    Session session;session.Start(Kind::Ball);session.ballPounceEnabled=true;
+    CHECK(session.BallPounce());session.Set(Phase::Interact);session.authoredPhaseMs=5167;
+    for(int tick=0;tick<310;++tick)CHECK(!session.Advance(1./60,true,true));
+    CHECK(session.Advance(1./60,true,true)&&session.phase==Phase::Rest&&session.rounds==0);
+    // The host freezes this clock through the real walking outro. A delayed
+    // presentation or pause cannot eat the quiet interval between stories.
+    CHECK(!session.Advance(.2,false,true)&&session.elapsedMs==0);
+    for(int tick=0;tick<53;++tick)CHECK(!session.Advance(1./60,true,true));
+    CHECK(session.phase==Phase::Rest);
+    CHECK(session.Advance(1./60,true,true)&&session.phase==Phase::Approach&&session.rounds==1);
+    CHECK(!session.BallPounce());session.rounds=2;CHECK(session.BallPounce());
+    CHECK(session.BallStrength()>1.5);session.Cancel();CHECK(!session.ballPounceEnabled);
+}
+
 void ContainerPathsAndFeather() {
     using namespace cat::toy;
     Session session; session.Start(Kind::Box,1); session.Set(Phase::Approach);
@@ -337,7 +353,7 @@ void AuthoredBoxExitHoldsBeforeTravel() {
     for(Kind kind:{Kind::PaperBag,Kind::Cushion,Kind::Ball}) {
         session.Start(kind);session.boxExitMs=1250;session.Set(Phase::Rest);
         session.elapsedMs=session.PhaseDuration();
-        CHECK(session.Advance(.001,true,true) && session.phase==Phase::Exit);
+        CHECK(session.Advance(.001,true,true) && session.phase==(kind==Kind::Ball?Phase::Approach:Phase::Exit));
     }
     session.Start(Kind::Box);session.boxExitMs=1250;session.Set(Phase::BoxExit);
     session.Cancel();
@@ -384,7 +400,7 @@ void AutomaticWatchdog() {
 int main() {
     try {
         ReachableTargets(); ContactAndContinuousRoll(); EdgesRemainReachable(); FrameRateAndPause();
-        RealContactGate(); DistinctActivitiesAndInterruptions(); ContainerPathsAndFeather();
+        RealContactGate(); DistinctActivitiesAndInterruptions(); BallRecoveryOwnsTheWholeCycle();ContainerPathsAndFeather();
         AuthoredBoxVisitCompletesBeforeSleep(); AuthoredBoxExitHoldsBeforeTravel();
         LongAuthoredBoxProgramsKeepTheirCompleteDuration();
         AutomaticTimingAndArbitration(); AutomaticCompletionAndTeardown(); AutomaticWatchdog();

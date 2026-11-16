@@ -4,6 +4,8 @@ struct BallReviewAccess {
     static const cat::toy::PhysicsBall& Ball(const Model& m){return m.ball_;}
     static std::uint64_t Contact(const Model& m){return m.ballKickSerial_;}
     static unsigned Phase(const Model& m){return static_cast<unsigned>(m.ballSession_.phase);}
+    static const cat::toy::Session& Session(const Model& m){return m.ballSession_;}
+    static unsigned Bridge(const Model& m){return static_cast<unsigned>(m.groundArtBridge_.CurrentPhase());}
     static void Seed(Model& m,double x,double vx=0){m.ball_.Reset(x,0,vx);}
     static cat::physics::Controller& Physics(Model& m){return m.physics_;}
 };
@@ -78,10 +80,17 @@ int Run(std::string& context,unsigned coat,bool companion,bool film,unsigned sce
     Surface scene,actor,prior;
     if(!scene.Create(960,300)||!actor.Create(280,235)||!prior.Create(960,300))return 952;
     CarePresentationRenderer presentation;
+    for(unsigned attempt=0;attempt<1000;++attempt) {
+        const bool prepared=PrepareBallMovie(companion,coat);
+        const bool local=presentation.ballMovie.Prepare(g.instance,coat);
+        if(prepared&&local)break;
+        if(attempt==999)return 958;
+        Sleep(10);
+    }
     std::ostringstream trace;trace.imbue(std::locale::classic());
-    trace<<"frame,ms,actor,coat,phase,clip,source,serial,root_x,root_lift,vx,ball_visible,ball_x,ball_lift,ball_vx,ball_vy,paw_x,paw_height,contact,contact_distance,cat_step,ball_step,alpha_delta\n";
+    trace<<"frame,ms,actor,coat,phase,clip,source,serial,root_x,root_lift,vx,ball_visible,ball_x,ball_lift,ball_vx,ball_vy,paw_x,paw_height,contact,contact_distance,cat_step,ball_step,alpha_delta,pounce,action_ms,bridge\n";
     unsigned hits=0,visibleFrames=0,missFrames=0,warps=0,sourceChanges=0,invalidContacts=0,airHits=0,strokes=0,recoveries=0;
-    bool priorStroke=false,strokeConsumed=false;unsigned previousBallSource=0;
+    bool priorStroke=false,priorPounce=false,strokeConsumed=false;unsigned previousBallSource=0,priorContactStroke=0;
     double lastCat=0,lastBall=0,maxCatStep=0,maxBallStep=0,maxGap=0;
     std::uint64_t previousConsumed=companion?cat::companion::BallReviewAccess::Contact(model):g.ballKickSerial;bool had=false;unsigned lastSource=0;
     for(unsigned index=0;index<3600;++index) {
@@ -95,7 +104,7 @@ int Run(std::string& context,unsigned coat,bool companion,bool film,unsigned sce
         cat::companion::Snapshot snapshot;
         if(companion) {
             cat::companion::Context c;c.ticks=now;c.nowUtc=UtcNow();c.elapsedSeconds=dt;c.primaryVisible=false;
-            c.cursorEnabled=c.cursorAvailable=false;model.Tick(c);snapshot=model.View(now);
+            c.cursorEnabled=c.cursorAvailable=false;c.supportsBallMovie=c.ballMovieReady=true;model.Tick(c);snapshot=model.View(now);
             pose=snapshot.animation;body=snapshot.physical;visual=snapshot.body;growth=snapshot.growthScale;
             visible=snapshot.ballVisible;ball=cat::companion::BallReviewAccess::Ball(model).RenderPose();
             const auto consumed=cat::companion::BallReviewAccess::Contact(model);
@@ -107,20 +116,24 @@ int Run(std::string& context,unsigned coat,bool companion,bool film,unsigned sce
             const auto consumed=g.ballKickSerial;contact=consumed>previousConsumed;previousConsumed=consumed;
             phase=static_cast<unsigned>(g.toySession.phase);serial=g.motionSerial;
         }
-        const auto* art=CareSpriteFor(pose,character);const unsigned source=art?SpriteFrameFor(pose,*art->layout):0;
-        cat::deform::Point paw{};bool pawValid=art&&pose.spriteClip==Clip::BallPlay;
-        if(pawValid) {paw=cat::video_actions::BallPaws(coat,source)[1];paw.x=body.x+(pose.flip?-1:1)*paw.x*growth*visual.bodyWidth;paw.y=body.lift+paw.y*growth*visual.bodyHeight;}
+        const auto* art=CareSpriteFor(pose,character);const unsigned source=pose.ballPounce?cat::ball_movie::Frame(pose.spriteElapsedMs):art?SpriteFrameFor(pose,*art->layout):0;
+        const auto& session=companion?cat::companion::BallReviewAccess::Session(model):g.toySession;
+        cat::deform::Point paw{};bool pawValid=pose.ballPounce||(art&&pose.spriteClip==Clip::BallPlay);
+        if(pawValid) {paw=cat::toy::PlayPaw(session,coat,source);paw.x=body.x+(pose.flip?-1:1)*paw.x*growth*visual.bodyWidth;paw.y=body.lift+paw.y*growth*visual.bodyHeight;}
         const double distance=pawValid?std::hypot(ball.x-paw.x,ball.lift+12-paw.y):0;
-        if(pawValid&&!priorStroke){++strokes;strokeConsumed=false;}
-        if(!pawValid&&priorStroke&&previousBallSource>=95)++recoveries;
-        if(pawValid)previousBallSource=source;priorStroke=pawValid;
+        if(pawValid&&!priorStroke)++strokes;
+        const auto contactStroke=cat::toy::PlayContactStroke(session,coat);
+        if(pawValid&&(!priorStroke||contactStroke!=priorContactStroke))strokeConsumed=false;
+        priorContactStroke=contactStroke;
+        if(!pawValid&&priorStroke&&previousBallSource>=(priorPounce?123u:96u))++recoveries;
+        if(pawValid){previousBallSource=source;priorPounce=pose.ballPounce;}priorStroke=pawValid;
         if(contact){strokeConsumed=true;++hits;maxGap=std::max(maxGap,distance);
             if(!pawValid||distance>cat::toy::PhysicsBall::Radius+4*growth+.25)++invalidContacts;
             if(!body.grounded||body.onPlatform)++airHits;
         }
         if(visible)++visibleFrames;
-        if(pawValid&&visible&&source*1000/24>=cat::video_actions::BallContactStartMs(coat)&&
-            source*1000/24<cat::video_actions::BallContactEndMs(coat)&&distance>40*growth&&!strokeConsumed)++missFrames;
+        if(pawValid&&visible&&source*1000/24>=cat::toy::PlayContactStart(session,coat)&&
+            source*1000/24<cat::toy::PlayContactEnd(session,coat)&&distance>40*growth&&!strokeConsumed)++missFrames;
         const double catStep=had?std::abs(body.x-lastCat):0,ballStep=had?std::abs(ball.x-lastBall):0;
         maxCatStep=std::max(maxCatStep,catStep);maxBallStep=std::max(maxBallStep,ballStep);
         if(had&&(catStep>std::abs(body.velocityX)*dt+3||ballStep>std::abs(ball.velocity)*dt+4))++warps;
@@ -148,7 +161,7 @@ int Run(std::string& context,unsigned coat,bool companion,bool film,unsigned sce
             delta/=960*300*4*255.;std::memcpy(prior.pixels,scene.pixels,960*300*4);
             if((film&&index%2==0)||(!film&&(contact||index%600==0))) {wchar_t name[100]{};swprintf(name,100,L"/frame-%05u.png",index/2);if(!SaveNativeWalkingReview(*scene.image, (stem+name).c_str()))return 953;}
         }
-        trace<<index<<','<<elapsed<<','<<(companion?1:0)<<','<<coat<<','<<phase<<','<<static_cast<unsigned>(pose.spriteClip)<<','<<source<<','<<serial<<','<<body.x<<','<<body.lift<<','<<body.velocityX<<','<<visible<<','<<ball.x<<','<<ball.lift<<','<<ball.velocity<<','<<ball.verticalVelocity<<','<<paw.x<<','<<paw.y<<','<<contact<<','<<distance<<','<<catStep<<','<<ballStep<<','<<delta<<'\n';
+        trace<<index<<','<<elapsed<<','<<(companion?1:0)<<','<<coat<<','<<phase<<','<<static_cast<unsigned>(pose.spriteClip)<<','<<source<<','<<serial<<','<<body.x<<','<<body.lift<<','<<body.velocityX<<','<<visible<<','<<ball.x<<','<<ball.lift<<','<<ball.velocity<<','<<ball.verticalVelocity<<','<<paw.x<<','<<paw.y<<','<<contact<<','<<distance<<','<<catStep<<','<<ballStep<<','<<delta<<','<<pose.ballPounce<<','<<session.elapsedMs<<','<<(companion?cat::companion::BallReviewAccess::Bridge(model):static_cast<unsigned>(g.groundArtBridge.CurrentPhase()))<<'\n';
         had=true;lastCat=body.x;lastBall=ball.x;
     }
     const bool unchanged=host.Saved()==saved;

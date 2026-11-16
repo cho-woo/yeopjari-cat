@@ -63,9 +63,40 @@ void ReversalBrakesBeforeChangingTheApproachSide() {
     ball.x=830;ball.velocity=0;
     const auto edge=ChaseBall(850,0,ball,42,-1,96,864,40);
     CHECK(edge.direction==1&&edge.target==788&&edge.velocity<0); // Take the reachable side, not a clipped dead end.
+    ball.x=823.7;
+    for(double speed:{-20.,-2.,0.,2.}) {
+        const auto makeRoom=ChaseBall(849,speed,ball,52,1,96,864,40);
+        CHECK(!makeRoom.braking&&makeRoom.direction==1&&makeRoom.velocity<0);
+    }
     for(const double x:{60.,96.,400.,960.,996.}) {
         ball.x=x;ball.velocity=0;const auto plan=ChaseBall(400,0,ball,44,1,96,960,81.6);
         CHECK(std::isfinite(plan.velocity)&&plan.target>=96&&plan.target<=960&&std::abs(plan.velocity)<=81.6);
+    }
+}
+void AuthoredPounceCatchesBeforeItsFinalSweep() {
+    for(unsigned coat:{0u,8u,10u})for(int direction:{-1,1}) {
+        Session session;session.Start(Kind::Ball,direction);session.ballPounceEnabled=true;session.Set(Phase::Interact);
+        const auto toe=PlayPaw(session,coat,PlayStandOffFrame(session,coat));
+        const double root=450,initial=root+direction*PawStandOff(toe.x,toe.y,1);
+        PhysicsBall ball(initial);BallContactTracker tracker;unsigned hits=0;double catchX=initial;
+        for(unsigned step=1;step<=311;++step) {
+            const auto now=step*1000ULL/60;session.elapsedMs=static_cast<double>(now);
+            ball.Advance(1./60,96,1184);
+            const auto paw=PlayPaw(session,coat,cat::ball_movie::Frame(now));const auto visible=ball.RenderPose();
+            const auto stroke=PlayContactStroke(session,coat);
+            const auto hit=tracker.Observe(20+stroke,now,now,root+direction*paw.x,paw.y,visible,1,direction,true,
+                PlayContactStart(session,coat),PlayContactEnd(session,coat));
+            if(!hit.contact)continue;
+            const auto before=ball.CurrentPose();
+            ball.Strike(hit.nx,hit.ny,hit.pawVx,hit.pawVy,hit.closingSpeed,PlayContactStrength(session,coat));
+            CHECK(ball.CurrentPose().x==before.x&&ball.CurrentPose().lift==before.lift);
+            CHECK(!tracker.Observe(20+stroke,now,now,root+direction*paw.x,paw.y,visible,1,direction,true,
+                PlayContactStart(session,coat),PlayContactEnd(session,coat)).contact);
+            if(!stroke){CHECK(std::abs(ball.velocity)<10);catchX=ball.x;}
+            else {CHECK(std::abs(ball.x-catchX)<15);CHECK(std::abs(ball.velocity)>20);}
+            ++hits;
+        }
+        CHECK(hits==2);
     }
 }
 void RealPawsImpulseTheRollingBallAndRepeatWithoutTeleporting() {
@@ -110,5 +141,5 @@ void RealPawsImpulseTheRollingBallAndRepeatWithoutTeleporting() {
 }
 }
 int main(){try{ContactNeedsTheActualCircleAndAVisibleStroke();SweptContactRejectsEmptyAirAndRetraction();ReversalBrakesBeforeChangingTheApproachSide();
-    RealPawsImpulseTheRollingBallAndRepeatWithoutTeleporting();std::cout<<"Ball play: "<<checks<<" checks passed\n";return 0;
+    AuthoredPounceCatchesBeforeItsFinalSweep();RealPawsImpulseTheRollingBallAndRepeatWithoutTeleporting();std::cout<<"Ball play: "<<checks<<" checks passed\n";return 0;
 }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

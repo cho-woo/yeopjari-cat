@@ -38,6 +38,7 @@ constexpr double kOriginalWalkMaxFramesPerSecond = 12.0;
 
 // Offsets are logical pixels; the native renderer applies monitor DPI and real-age growth.
 struct Pose {
+    bool ballPounce=false;
     cat::furniture::Kind furnitureScene=cat::furniture::Kind::None;
     std::uint64_t furnitureElapsedMs=0;
     bool fishMeal=false; // Transient accepted feeding presentation; never serialized.

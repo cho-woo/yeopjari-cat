@@ -32,11 +32,11 @@ void ApplyBallPhase(std::uint64_t ticks) {
     }
     if(ballSession_.phase==P::Interact) {
         ballSession_.authoredPhaseMs=RegisteredDuration(C::BallPlay,4042);
+        if(ballSession_.BallPounce())ballSession_.authoredPhaseMs=cat::ball_movie::Find(static_cast<unsigned>(state_->preferences.character))->durationMs;
         SetMotion(M::ToyPaw,ticks,static_cast<std::uint64_t>(ballSession_.PhaseDuration())+100,0);
         motionStart_=ticks;++motionSerial_;actionClip_=C::BallPlay;ballContact_=false;ballTracker_.Reset();
     } else {
         const bool walking=ballSession_.phase==P::Approach;
-        if(walking&&ballSession_.rounds)groundArtBridge_.ContinueLocomotion(ticks);
         SetMotion(walking?M::Walk:M::Watch,ticks,30000,0);
     }
 }
@@ -48,6 +48,8 @@ void StartBallPlay(std::uint64_t ticks) {
 }
 void AdvanceBallPlay(const Context& c) {
     if(!ballVisible_)return;
+    ballSession_.ballPounceEnabled=c.supportsBallMovie;
+    ballSession_.ballPounceUnavailable|=c.ballMovieFailed;
     ball_.Advance(c.elapsedSeconds,minX_,maxX_,state_->pet.roamingPaused);
     if(!ballPlaying_) {
         if(c.ticks>=ballRetireAfter_&&ball_.grounded&&std::abs(ball_.velocity)<.5&&std::abs(ball_.verticalVelocity)<.5)ballVisible_=false;
@@ -58,7 +60,7 @@ void AdvanceBallPlay(const Context& c) {
     const double growth=cat::GrowthScale(state_->pet.bornUtc,state_->pet.updatedUtc);
     const auto body=cat::appearance::VisualModifiers(state_->nutrition,state_->preferences.character);
     const auto coat=static_cast<unsigned>(state_->preferences.character);
-    const auto paw=cat::video_actions::BallPaws(coat,cat::video_actions::BallStandOffFrame(coat))[1];
+    const auto paw=cat::toy::PlayPaw(ballSession_,coat,cat::toy::PlayStandOffFrame(ballSession_,coat));
     const auto* walk=Registered(cat::sprite_sequence::Clip::Walk);
     const auto chase=cat::toy::ChaseBall(physical.x,physical.velocityX-physical.supportVelocityX,ball_.CurrentPose(),
         cat::toy::PawStandOff(paw.x*growth*body.bodyWidth,paw.y*growth*body.bodyHeight,growth),
@@ -66,7 +68,8 @@ void AdvanceBallPlay(const Context& c) {
     ballSession_.entryDirection=chase.direction;
     const bool available=!waitingForStop_&&!runningTurn_.Active();
     const bool arrived=chase.arrived&&facing_==chase.direction&&!runningTurn_.Active();
-    if(available&&ballSession_.Advance(c.elapsedSeconds,true,arrived))ApplyBallPhase(c.ticks);
+    const bool sourceReady=!(ballSession_.phase==cat::toy::Phase::Inspect&&ballSession_.BallPounce())||c.ballMovieReady;
+    if(available&&ballSession_.Advance(c.elapsedSeconds,sourceReady,arrived))ApplyBallPhase(c.ticks);
     if(ballPlaying_&&ballSession_.phase==cat::toy::Phase::Approach) {
         ballDrive_=chase.velocity;direction_=ballDrive_?(ballDrive_<0?-1:1):chase.direction;
     }
@@ -77,15 +80,15 @@ void UpdateBallContact(const Context& c) {
     const auto age=static_cast<std::uint64_t>(ballSession_.elapsedMs);
     const auto* art=Registered(cat::sprite_sequence::Clip::BallPlay);
     cat::sprite_sequence::Options options;options.sheetFrames=art->frameCount;
-    const auto frame=cat::sprite_sequence::SampleProgram(art->clip,art->program,age,options).frame;
-    const auto paw=cat::video_actions::BallPaws(coat,frame)[1];
+    const auto frame=ballSession_.BallPounce()?cat::ball_movie::Frame(age):cat::sprite_sequence::SampleProgram(art->clip,art->program,age,options).frame;
+    const auto paw=cat::toy::PlayPaw(ballSession_,coat,frame);
     const double growth=cat::GrowthScale(state_->pet.bornUtc,state_->pet.updatedUtc);
     const auto body=cat::appearance::VisualModifiers(state_->nutrition,state_->preferences.character);
-    const auto hit=ballTracker_.Observe(motionSerial_,c.ticks,age,
+    const auto hit=ballTracker_.Observe(motionSerial_*2+cat::toy::PlayContactStroke(ballSession_,coat),c.ticks,age,
         physical.x+(facing_<0?-1:1)*paw.x*growth*body.bodyWidth,physical.lift+paw.y*growth*body.bodyHeight,
         ball_.RenderPose(),growth,facing_,physical.grounded&&!physical.onPlatform&&!waitingForStop_&&!state_->pet.roamingPaused,
-        cat::video_actions::BallContactStartMs(coat),cat::video_actions::BallContactEndMs(coat));
-    if(hit.contact){ballContact_=true;++ballKickSerial_;ball_.Strike(hit.nx,hit.ny,hit.pawVx,hit.pawVy,hit.closingSpeed);}
+        cat::toy::PlayContactStart(ballSession_,coat),cat::toy::PlayContactEnd(ballSession_,coat));
+    if(hit.contact){ballContact_=true;++ballKickSerial_;ball_.Strike(hit.nx,hit.ny,hit.pawVx,hit.pawVy,hit.closingSpeed,cat::toy::PlayContactStrength(ballSession_,coat));}
 }
 
 void ResetControls() {
@@ -325,6 +328,11 @@ void ApplyControlsPose(cat::animation::Pose& pose,std::uint64_t ticks,const cat:
     }
     if(actionClip_!=C::None&&!waitingForStop_) {
         cat::animation::AttachSprite(pose,actionClip_,actionClip_==C::BallPlay?static_cast<std::uint64_t>(ballSession_.elapsedMs):age);pose.flip=actionClip_==C::Climb?false:facing_<0;
+        if(actionClip_==C::BallPlay&&ballSession_.BallPounce()) {
+            pose.ballPounce=true;pose.spriteFrame=cat::ball_movie::Frame(pose.spriteElapsedMs);pose.spriteTimed=false;
+            const auto paw=cat::toy::PlayPaw(ballSession_,static_cast<unsigned>(state_->preferences.character),pose.spriteFrame);
+            pose.spritePaws={paw,paw};pose.spritePawsValid=true;
+        }
         pose.groundContact=physical.grounded;cat::animation::UseAuthoredSprite(pose);return;
     }
     if(interaction_==Interaction::Paw&&motion_==cat::animation::Motion::Punch&&!waitingForStop_) {

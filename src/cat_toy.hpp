@@ -133,11 +133,17 @@ struct Session {
     double boxExitMs = 0; // Optional stationary authored outro before ordinary exit travel.
     double authoredPhaseMs = 0; // Loaded source program owns its complete phase.
     unsigned rounds = 0, revision = 0;
+    bool ballPounceEnabled=false,ballPounceUnavailable=false;
     int entryDirection = 1;
+
+    bool BallPounce() const { return kind==Kind::Ball&&ballPounceEnabled&&!ballPounceUnavailable&&(rounds%3!=1); }
+    double BallStrength() const { return rounds%3==1?.72:rounds%3==2?1.8:1.25; }
+    bool BallSidePose() const { return kind==Kind::Ball&&!BallPounce()&&
+        (phase==Phase::Inspect||phase==Phase::Interact); }
 
     void Start(Kind selected, int direction = 1) {
         kind = selected; entryDirection = direction < 0 ? -1 : 1;
-        rounds = 0; elapsedMs = activeMs = boxVisitMs = boxExitMs = authoredPhaseMs = 0;
+        rounds = 0; ballPounceEnabled=ballPounceUnavailable=false; elapsedMs = activeMs = boxVisitMs = boxExitMs = authoredPhaseMs = 0;
         phase = selected == Kind::None ? Phase::None : Phase::Discover;
         ++revision;
     }
@@ -147,6 +153,8 @@ struct Session {
         if(std::isfinite(authoredPhaseMs)&&authoredPhaseMs>0)
             return std::clamp(std::max(Duration(kind,phase),authoredPhaseMs),1.0,
                 static_cast<double>(cat::sprite_sequence::kMaxProgramMs));
+        if(kind==Kind::Ball&&phase==Phase::Inspect)return BallPounce()?600:300;
+        if(kind==Kind::Ball&&phase==Phase::Rest)return 900+(rounds%3)*350;
         if (kind==Kind::Box && phase==Phase::BoxExit && std::isfinite(boxExitMs) && boxExitMs>0)
             return std::clamp(boxExitMs,1.0,static_cast<double>(cat::sprite_sequence::kMaxProgramMs));
         return kind==Kind::Box && phase==Phase::Interact && std::isfinite(boxVisitMs) && boxVisitMs>0 ?
@@ -166,13 +174,20 @@ struct Session {
         case Phase::Inspect: Set(IsContainer(kind) ? Phase::Enter : Phase::Interact); break;
         case Phase::Enter: Set(Phase::Interact); break;
         case Phase::Interact:
-            if (kind == Kind::Ball || kind == Kind::FishingRod) {
+            if (kind == Kind::Ball) {
+                // Every stroke owns its entire source recovery. Then the real
+                // walking outro seats the cat before a quiet interval starts.
+                Set(Phase::Rest);
+            } else if (kind == Kind::FishingRod) {
                 ++rounds;
                 Set(rounds < 4 ? Phase::Approach : Phase::Wait);
             } else if (kind == Kind::Box || kind == Kind::Cushion) Set(Phase::Sleep);
             else Set(Phase::Rest);
             break;
-        case Phase::Rest: case Phase::Sleep:
+        case Phase::Rest:
+            if(kind==Kind::Ball){++rounds;Set(rounds<4?Phase::Approach:Phase::Wait);break;}
+            [[fallthrough]];
+        case Phase::Sleep:
             Set(kind==Kind::Box && std::isfinite(boxExitMs) && boxExitMs>0 ? Phase::BoxExit : Phase::Exit);
             break;
         case Phase::BoxExit: Set(Phase::Exit); break;

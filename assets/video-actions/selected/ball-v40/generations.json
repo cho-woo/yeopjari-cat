@@ -1,0 +1,82 @@
+[
+  {
+    "character": "cream",
+    "args": {
+      "client_token": "yeopjari-v40-seated-pounce-cream-20261116-a",
+      "model": "minimax/h3-lite",
+      "options": {
+        "prompt": "A seamless complete playful kitten action, exactly the SAME kitten as both supplied frames. Keep its exact face, ears, eye colors, fur markings, head/body proportions and constant size. Locked camera, whole body stays visible on pure uniform #00FF00 chroma background, no shadow, no text, no props, NO ball visible. The app will add a small physical ball. Maintain the same floor and body center throughout. Start in the exact seated front-facing reference. 0.0-0.6s notice an imaginary small ball on the floor just to its RIGHT, focused ears and head tilt. 0.6-1.4s smoothly rise into a low playful crouch, slight adorable hindquarter wiggle, gaze fixed low right. 1.4-2.3s one lively low pounce toward the right: hind feet push, body dips forward, BOTH front paws reach slightly right and DOWN toward the floor to catch the imaginary ball, weight lands visibly in the toes with soft elbow compression. Short in-place movement, no travel off center. 2.3-3.1s one decisive low forward sweep of the nearest front paw, not a high wave; playful alert follow through. 3.1-4.5s smoothly pull paws back, lift chest, turn face gently forward, lower hips and settle fully into the EXACT original seated reference at the original scale and floor. 4.5-5.0s seated breathing and blink, all paws supported, identical to last frame. Connected feline anatomy, organic acceleration and deceleration, no cuts, no frozen paw, no teleport, no camera motion, no extra limbs. Preserve the complete preparation, pounce, paw contact, recovery and seated ending in one continuous take.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f91aa82183e14b82a31e69c0185697b5/cream-front-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f91aa82183e14b82a31e69c0185697b5/cream-front-identity-v29.png",
+        "duration": 5,
+        "resolution": "480p",
+        "aspect_ratio": "1:1",
+        "generation_mode": "frame"
+      }
+    },
+    "result": {
+      "job_id": "mcp_c62b3434bbd540cbb09b73373f78920c",
+      "creditCost": 65,
+      "reused": false
+    },
+    "generation": {
+      "jobId": "mcp_c62b3434bbd540cbb09b73373f78920c",
+      "status": "succeeded",
+      "modelName": "minimax/h3-lite",
+      "createdAt": "2026-11-16T05:22:18.456Z",
+      "completedAt": null,
+      "outputList": [
+        {
+          "imageUrl": null,
+          "videoUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_c62b3434bbd540cbb09b73373f78920c/output/output_0.mp4",
+          "posterUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_c62b3434bbd540cbb09b73373f78920c/output/output_0_poster.jpg",
+          "text": null
+        }
+      ]
+    },
+    "source_path": "sources/ball-v40/cream-seated-pounce.mp4",
+    "sha256": "243e6e262f33946054d4953374021246f6c8f4b82ea3d71528fc52eb25af88d0",
+    "frame_count": 124,
+    "fps": 24.0
+  },
+  {
+    "character": "tuxedo",
+    "args": {
+      "client_token": "yeopjari-v40-seated-pounce-tuxedo-20261116-a",
+      "model": "minimax/h3-lite",
+      "options": {
+        "prompt": "A seamless complete playful kitten action, exactly the SAME kitten as both supplied frames. Keep its exact face, ears, eye colors, fur markings, head/body proportions and constant size. Locked camera, whole body stays visible on pure uniform #00FF00 chroma background, no shadow, no text, no props, NO ball visible. The app will add a small physical ball. Maintain the same floor and body center throughout. Start in the exact seated front-facing reference. 0.0-0.6s notice an imaginary small ball on the floor just to its RIGHT, focused ears and head tilt. 0.6-1.4s smoothly rise into a low playful crouch, slight adorable hindquarter wiggle, gaze fixed low right. 1.4-2.3s one lively low pounce toward the right: hind feet push, body dips forward, BOTH front paws reach slightly right and DOWN toward the floor to catch the imaginary ball, weight lands visibly in the toes with soft elbow compression. Short in-place movement, no travel off center. 2.3-3.1s one decisive low forward sweep of the nearest front paw, not a high wave; playful alert follow through. 3.1-4.5s smoothly pull paws back, lift chest, turn face gently forward, lower hips and settle fully into the EXACT original seated reference at the original scale and floor. 4.5-5.0s seated breathing and blink, all paws supported, identical to last frame. Connected feline anatomy, organic acceleration and deceleration, no cuts, no frozen paw, no teleport, no camera motion, no extra limbs. Preserve the complete preparation, pounce, paw contact, recovery and seated ending in one continuous take.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/83c1feedbe4d49e7928fcd973495a776/tuxedo-front-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/83c1feedbe4d49e7928fcd973495a776/tuxedo-front-identity-v29.png",
+        "duration": 5,
+        "resolution": "480p",
+        "aspect_ratio": "1:1",
+        "generation_mode": "frame"
+      }
+    },
+    "result": {
+      "job_id": "mcp_879c54e5eac2423eadb6bbd0baef146a",
+      "creditCost": 65,
+      "reused": false
+    },
+    "generation": {
+      "jobId": "mcp_879c54e5eac2423eadb6bbd0baef146a",
+      "status": "succeeded",
+      "modelName": "minimax/h3-lite",
+      "createdAt": "2026-11-16T05:22:19.633Z",
+      "completedAt": null,
+      "outputList": [
+        {
+          "imageUrl": null,
+          "videoUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_879c54e5eac2423eadb6bbd0baef146a/output/output_0.mp4",
+          "posterUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_879c54e5eac2423eadb6bbd0baef146a/output/output_0_poster.jpg",
+          "text": null
+        }
+      ]
+    },
+    "source_path": "sources/ball-v40/tuxedo-seated-pounce.mp4",
+    "sha256": "f902ccaeb09a71fde84b710a9aaade45dba6c58c6dc6d6f01e22be5a612f330d",
+    "frame_count": 124,
+    "fps": 24.0
+  }
+]
