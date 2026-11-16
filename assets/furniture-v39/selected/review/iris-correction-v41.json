@@ -1,0 +1,42 @@
+{
+  "schema": 1,
+  "reason": "Nearest-position rolling-head tracker reassigned upright furniture eye identities while the head travelled; small blue iris rim was additionally lost to H264 chroma quantization.",
+  "correction": "Use upright source geometry for gold/blue identity. Preserve saturation/value only inside annotated blue iris mask, and encode Snow movies with chroma-qp-offset=-6. Existing Dropshot sources, selected frames, timing, alpha and scene registration retained. Cream and Tux runtime records unchanged.",
+  "generation": "No new AI generation and no credit purchase. Material rebake of retained source movies.",
+  "checks": "furniture_iris_identity_test.py verifies actual RGBA and decoded packed-movie endpoint pigments, source hashes, frame count, FPS and paired eye assignment. All endpoint encoded blue pigment checks passed.",
+  "assets": [
+    {
+      "kind": "tower",
+      "source": "assets/furniture-v39/sources/cream-tower.mp4",
+      "source_sha256": "f52fd03c336c268818793f78d5d098e3332ade9d1a8bb71ed142e33799762149",
+      "before_runtime_sha256": "f618dfc2a3bf1af7a134c56e0ba1c47505622efa4fcbac90bd57dbb309b6e298",
+      "after_runtime_sha256": "a7f885b992726e8e06e43acbf14833a4d078ba72b76b0bd6803463536d42eb9a",
+      "frames": 192,
+      "fps": 24.0,
+      "all_source_frames_retained": true,
+      "registration_unchanged": true
+    },
+    {
+      "kind": "scratch",
+      "source": "assets/furniture-v39/sources/cream-scratch.mp4",
+      "source_sha256": "643a4e579ff9b5cc9a0914ba6a1a12ffa06c3871f655647f46cdc3804f034672",
+      "before_runtime_sha256": "174f8a01849703de348e747c4c97e5536c1f66a16380d78527d3025274363cde",
+      "after_runtime_sha256": "625c4b73867a38edd0584dd722a248b4b5068a1cad6d4ba7c7b224f75d01f43c",
+      "frames": 158,
+      "fps": 24.0,
+      "all_source_frames_retained": true,
+      "registration_unchanged": true
+    },
+    {
+      "kind": "box",
+      "source": "assets/furniture-v39/sources/cream-box.mp4",
+      "source_sha256": "66c52a8b4d1caa539c21be4232a2f1cb05a4cff3cd4ecdaa060e968af5f0c5bc",
+      "before_runtime_sha256": "900e3704cbc32586099de202f070b789d94bb6029a6467af770be970f18d5d78",
+      "after_runtime_sha256": "cc3f11e0d96a79dbf676829068cabbfe32e293e8c6fe15cc8e58f4a363110233",
+      "frames": 192,
+      "fps": 24.0,
+      "all_source_frames_retained": true,
+      "registration_unchanged": true
+    }
+  ]
+}
