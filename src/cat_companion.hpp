@@ -401,7 +401,10 @@ public:
         if(!furniture.Owned() && !ballPlaying_ && !keyboardActive_ && !cursor_.Active() && actionClip_==cat::sprite_sequence::Clip::None && !wallApproaching_ && !runningTurn_.Active() && !randomZoomies_.Active() && !landingRecovery && before.grounded && !waitingForStop_ && !jumpPending_ && interaction_==Interaction::None &&
                 c.ticks>=nextDecision_ && !AuthoredCareHolding(c.ticks)) {
             const bool continuation=storyActive_ && !quietActive_ && brain_->HasContinuation();
-            if(!quietActive_ && !continuation) BeginQuiet(c.ticks);
+            if(furniture.Requested()&&!before.onPlatform) {
+                if(!quietActive_) {brain_->Interrupt(c.ticks);BeginQuiet(c.ticks);}
+            }
+            else if(!quietActive_ && !continuation) BeginQuiet(c.ticks);
             else {
                 bool social=false;
                 if(!continuation && c.primaryVisible && !c.primaryBusy && !state_->pet.roamingPaused &&
@@ -534,7 +537,7 @@ public:
     }
 
     bool TrySocial(Interaction kind,const Context& c) {
-        if(furniture.Owned() || !Bound() || !ready_ || !state_->enabled || ballPlaying_ || cursor_.Active() || actionClip_!=cat::sprite_sequence::Clip::None || wallApproaching_ || randomZoomies_.Active() || c.ticks<careUntil_ || c.paused || !c.primaryVisible || Busy(c,kind) || state_->pet.roamingPaused) return false;
+        if(furniture.Requested() || !Bound() || !ready_ || !state_->enabled || ballPlaying_ || cursor_.Active() || actionClip_!=cat::sprite_sequence::Clip::None || wallApproaching_ || randomZoomies_.Active() || c.ticks<careUntil_ || c.paused || !c.primaryVisible || Busy(c,kind) || state_->pet.roamingPaused) return false;
         const auto own=physics_.CurrentPose();
         if(!own.grounded || !std::isfinite(c.primary.x) || !std::isfinite(c.primary.lift)) return false;
         if(kind==Interaction::WindowFollow) {
@@ -1032,7 +1035,7 @@ private:
         const bool owned=motion_==Motion::Zoomies && motionSerial_==randomZoomiesOwner_ &&
             interaction_==Interaction::None && !state_->pet.roamingPaused && !physical.onPlatform;
         const bool cancelled=randomZoomies_.Active()&&!owned;
-        const bool canStart=quietActive_ && c.ticks>=nextDecision_ &&
+        const bool canStart=!furniture.Requested() && quietActive_ && c.ticks>=nextDecision_ &&
             (motion_==Motion::Idle || motion_==Motion::Watch) && physical.grounded && !physical.onPlatform &&
             !landingRecovery && !waitingForStop_ && !jumpPending_ && interaction_==Interaction::None &&
             c.ticks>=careUntil_ && !state_->pet.roamingPaused && c.primaryVisible && !c.primaryBusy;

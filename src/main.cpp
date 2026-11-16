@@ -2081,7 +2081,7 @@ bool PrimaryAuthoredCareHolding(ULONGLONG ticks) {
 // Explicit care, an existing story's next phase and physical safety use their
 // own paths; no random owner may replace a half-played authored action.
 bool PrimaryAutonomousBoundary(ULONGLONG ticks) {
-    return !g.furniture.Owned() && !g.manualMotionActive && g.autonomousResting && ticks>=g.nextDecision && g.autonomousClaimedAt!=ticks &&
+    return !g.furniture.Owned() && (!g.furniture.Requested()||g.physics.CurrentPose().onPlatform) && !g.manualMotionActive && g.autonomousResting && ticks>=g.nextDecision && g.autonomousClaimedAt!=ticks &&
         g.physicsReady && g.physics.CurrentPose().grounded && !g.waitingForStop &&
         !g.perch.transitioning && !g.jumpPending && !g.lifeSequenceCount && !g.memorySequenceCount &&
         !g.lifeCrossing.Active() && !g.physics.Hanging() && !EnvironmentBusy() &&
@@ -2097,7 +2097,7 @@ bool PrimarySocialBoundary(ULONGLONG ticks,bool continuing=false) {
     // Reapplying the random proposal's minimum rest on the next Tick cancelled
     // a command accepted while the primary was still in a fresh quiet pose.
     const bool acceptedQuiet=continuing&&(g.motion==Motion::Idle||g.motion==Motion::Watch||g.motion==Motion::Walk);
-    return !g.furniture.Owned() && !g.manualMotionActive && !KeyboardPlayActive() &&
+    return !g.furniture.Owned() && (!g.furniture.Requested()||g.physics.CurrentPose().onPlatform) && !g.manualMotionActive && !KeyboardPlayActive() &&
         (acceptedQuiet||(g.autonomousResting&&ticks>=g.motionStart&&
             ticks-g.motionStart>=cat::behavior::Brain::NeutralRestMinMs)) && !g.waitingForStop &&
         !g.lifeSequenceCount && !g.memorySequenceCount && !g.toyEngaged &&
@@ -5198,6 +5198,10 @@ void DispatchAutonomousMotion(ULONGLONG ticks) {
             PrimaryAuthoredCareHolding(ticks))return;
     g.autonomousDispatching=true;g.autonomousTick=ticks;
     const auto choose=[&] {
+        if(g.furniture.Requested()&&!g.physics.CurrentPose().onPlatform) {
+            if(!g.autonomousResting) {if(g.brain)g.brain->Interrupt(ticks);BeginAutonomousRest(ticks);}
+            return;
+        }
         if(!g.autonomousResting) {
             if(ContinueLifeSequence() || ContinueMemorySequence())return;
             if(MaybeLifeEvent(ticks,true))return; // Matching completed-act reactions only.
@@ -6619,6 +6623,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
         const std::wstring encoder=args[6];bool appFrames=false;unsigned companionCoat=coat,ageDays=366;double dpi=1;
         for(int index=7;index<count;++index){const std::wstring option=args[index];
             if(option==L"--framebuffer")appFrames=true;
+            else if(option==L"--furniture-from-sleep")native_live_motion_audit::furnitureWakeFixture=true;
             else if(option==L"--companion-coat"&&index+1<count)companionCoat=wcstoul(args[++index],nullptr,10);
             else if(option==L"--age-days"&&index+1<count)ageDays=wcstoul(args[++index],nullptr,10);
             else if(option==L"--dpi-scale"&&index+1<count)dpi=wcstod(args[++index],nullptr);}

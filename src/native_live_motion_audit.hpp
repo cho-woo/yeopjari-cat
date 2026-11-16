@@ -36,8 +36,17 @@ struct LiveMotionAuditAccess {
     }
     static std::uint64_t Until(const Model& m){return m.nextDecision_;}
     static std::uint64_t Serial(const Model& m){return m.motionSerial_;}
-    static void Fish(Model& m,std::uint64_t ticks){m.SetMotion(cat::animation::Motion::Eat,ticks,
-        m.RegisteredDuration(cat::sprite_sequence::Clip::Fish,8000),0);m.feedingKind_=cat::feeding::FoodKind::Fish;}
+    static void Fish(Model& m,std::uint64_t ticks){
+        m.ResetControls();m.brain_->Interrupt(ticks);m.interaction_=Interaction::None;
+        m.storyActive_=true;m.quietActive_=false;
+        m.SetMotion(cat::animation::Motion::Eat,ticks,m.RegisteredDuration(cat::sprite_sequence::Clip::Fish,8000),0);
+        m.feedingKind_=cat::feeding::FoodKind::Fish;m.careUntil_=m.nextDecision_;
+    }
+    static void SleepForFurniture(Model& m,std::uint64_t ticks){
+        m.ResetControls();m.brain_->Interrupt(ticks);m.interaction_=Interaction::None;
+        m.storyActive_=true;m.quietActive_=false;
+        m.SetMotion(cat::animation::Motion::Sleep,ticks,600000,0);
+    }
     static void FinishBall(Model& m,std::uint64_t ticks){if(m.ballPlaying_&&
         (m.ballSession_.phase==cat::toy::Phase::Rest||m.ballSession_.phase==cat::toy::Phase::Wait)){m.ResetControls();m.BeginQuiet(ticks);}}
     static void RepeatToy(Model& m,std::uint64_t ticks){if(Ready(m,ticks)&&ticks>m.motionStart_+1500)m.Perform(cat::sprite_sequence::Clip::ToyPlay,ticks);}
@@ -52,6 +61,7 @@ namespace native_live_motion_audit {
 constexpr wchar_t ClassName[]=L"YeopjariCat.LiveMotionAudit";
 HWND backdrop=nullptr;
 bool closing=false;
+bool furnitureWakeFixture=false;
 std::function<void()> observeFrame;
 ULONGLONG pointerStarted=0;
 ULONGLONG pointerSampled=0;
@@ -110,7 +120,10 @@ void StartAction(unsigned selected,ULONGLONG ticks) {
     if(selected==36){const auto* fish=LoadedCareSprite(C::Fish,g.preferences.character);
         SetMotion(Motion::Eat,fish?cat::sprite_sequence::ProgramDuration(fish->layout->program):8000,ticks);
         g.fishMeal=true;A::Fish(g.companionModel,ticks);return;}
-    if(selected<=39){BeginAutonomousRest(ticks);RequestPrimaryFurniture(static_cast<cat::furniture::Kind>(selected-36));
+    if(selected<=39){
+        if(furnitureWakeFixture){SetMotion(Motion::Sleep,600000,ticks);A::SleepForFurniture(g.companionModel,ticks);}
+        else BeginAutonomousRest(ticks);
+        RequestPrimaryFurniture(static_cast<cat::furniture::Kind>(selected-36));
         g.companionModel.RequestFurniture(static_cast<cat::furniture::Kind>(selected-36));return;}
     if(selected==40||selected==41){g.pet.roamingPaused=false;g.companionStore.state.pet.roamingPaused=false;
         PlaceToy(selected==40?ToyKind::Ball:ToyKind::FishingRod);

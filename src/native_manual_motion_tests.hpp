@@ -9,6 +9,7 @@ struct Host {
     bool artworkReady=false;
     void Reset(cat::Character character = cat::Character::Cream, bool paused = false) {
         artworkReady=EnsureCareCoats(character);
+        g.furniture.Cancel();ReleaseFurnitureMovie(false);
         g.window = nullptr; g.initialized = true;
         g.hidden = g.menuOpen = g.dragging = g.closing = false;
         updates.applying = false;
@@ -73,6 +74,36 @@ struct Host {
 #include "native_toy_edge_tests.hpp"
 #include "native_climb_boundary_tests.hpp"
 
+int FurnitureWake() {
+    for(const auto coat:cat::kAvailableCharacters)for(const auto kind:{cat::furniture::Kind::Tower,cat::furniture::Kind::Scratcher,cat::furniture::Kind::Box}) {
+        Host host;host.Reset(coat,true);if(!host.artworkReady)return 780;
+        SetMotion(Motion::Sleep,600000,host.now);
+        const auto start=host.now;const auto position=g.physics.CurrentPose().x;
+        const auto* sleep=LoadedCareSprite(cat::sprite_sequence::Clip::Sleep,coat);
+        if(!sleep||!RequestPrimaryFurniture(kind))return 781;
+        const auto intro=cat::animation::ReferenceSleepIntroMs(&sleep->layout->program,sleep->layout->frameCount);
+        bool woke=false;ULONGLONG wakeUntil=0;
+        for(unsigned frame=0;frame<1000&&!g.furniture.Owned();++frame) {
+            host.now+=16;
+            UpdatePrimaryFurniture(host.now,.016);
+            if(g.motion==Motion::Stretch&&!woke) {
+                if(host.now<start+intro||!g.wakingFromSleep)return 782;
+                woke=true;wakeUntil=g.nextDecision;
+            }
+            if(g.furniture.Owned()) {
+                if(!woke||host.now<wakeUntil)return 783;
+                break;
+            }
+            FinishManualMotion(host.now);DispatchAutonomousMotion(host.now);
+            AdvancePrimaryMotion(host.now,.016);
+            if(std::abs(g.physics.CurrentPose().x-position)>.05)return 784;
+        }
+        if(!g.furniture.Owned())return 785;
+    }
+    g.furniture.Cancel();ReleaseFurnitureMovie(false);
+    return 0;
+}
+
 bool MenuCommands(bool enabled) {
     HMENU menu = BuildPetMenu(); if (!menu) return false;
     HMENU actions = nullptr;
@@ -93,6 +124,7 @@ bool MenuCommands(bool enabled) {
 }
 
 int Run(std::string& proof) {
+    if(const int wake=FurnitureWake())return wake;
     if(const int climb=climb_boundary::Run(proof))return climb;
     if(const int climb=climb_boundary::PrimaryRun(proof))return climb;
     if(const int rod=toy_edge::Run(proof))return rod;
@@ -297,7 +329,7 @@ int Run(std::string& proof) {
         YEOPJARI_VERSION_STRING "\",\"mesh_walk_default\":false,\"approved_walk_frames\":" +
         std::to_string(approvedWalkFrames) + ",\"menu_commands\":[2800,2801,2802,2803,2804],\"menu_labels_checked\":true,\"unsafe_states_checked\":" +
         std::to_string(unsafe) + ",\"pause_preference_preserved\":true,\"suspension_clock_preserved\":true,"
-        "\"characters\":[" + characters.str() + "]}\n";
+        "\"sleep_furniture_commands\":9,\"characters\":[" + characters.str() + "]}\n";
     return 0;
 }
 } // namespace native_manual_motion_tests

@@ -7,6 +7,19 @@ unsigned FurnitureRoll() {
 void UpdateFurniture(const Context& c) {
     using P=cat::furniture::Phase;using M=cat::animation::Motion;
     const auto physical=physics_.CurrentPose(),visible=physics_.RenderPose();
+    // An accepted furniture command survives sleep. Finish falling asleep,
+    // then use the registered wake outro instead of snapping to a walk.
+    if(furniture.State()==P::Queued&&motion_==M::Sleep&&physical.grounded&&
+            !physical.onPlatform&&!waitingForStop_&&!jumpPending_&&!keyboardActive_&&
+            !ballPlaying_&&!cursor_.Active()&&!wallApproaching_&&!physics_.Hanging()) {
+        const auto* sleep=Registered(cat::sprite_sequence::Clip::Sleep);
+        const auto intro=sleep?cat::animation::ReferenceSleepIntroMs(&sleep->program,sleep->frameCount):2000;
+        if(c.ticks>=motionStart_&&c.ticks-motionStart_>=intro) {
+            ResetControls();brain_->Interrupt(c.ticks);interaction_=Interaction::None;
+            storyActive_=true;quietActive_=false;
+            SetMotion(M::Stretch,c.ticks,3500,0);
+        }
+    }
     const bool quiet=(motion_==M::Idle||motion_==M::Watch)&&quietActive_&&
         c.ticks>=motionStart_+1000;
     const bool available=!Busy()&&quiet&&!keyboardActive_&&!physics_.Hanging()&&

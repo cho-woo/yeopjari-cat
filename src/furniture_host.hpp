@@ -7,6 +7,16 @@ bool RequestPrimaryFurniture(cat::furniture::Kind kind) {
 void UpdatePrimaryFurniture(ULONGLONG ticks,double seconds) {
     using Phase=cat::furniture::Phase;
     const auto body=g.physics.CurrentPose(),visible=g.physics.RenderPose();
+    if(seconds>0&&g.furniture.State()==Phase::Queued&&g.motion==Motion::Sleep&&
+            ManualMotionAvailable()&&!g.waitingForStop&&!g.jumpPending&&
+            !KeyboardPlayActive()&&!EnvironmentBusy()&&!g.toyEngaged) {
+        const auto* sleep=LoadedCareSprite(cat::sprite_sequence::Clip::Sleep,g.preferences.character);
+        const auto intro=sleep?cat::animation::ReferenceSleepIntroMs(&sleep->layout->program,sleep->layout->frameCount):2000;
+        if(ticks>=g.motionStart&&ticks-g.motionStart>=intro) {
+            if(g.brain)g.brain->Interrupt(ticks);
+            SetMotion(Motion::Stretch,3500,ticks);g.manualMotionActive=true;
+        }
+    }
     const bool calm=g.motion==Motion::Idle||g.motion==Motion::Watch;
     const bool available=!g.furniture.Owned()&&ManualMotionAvailable()&&calm&&g.autonomousResting&&
         !g.toyEngaged&&!g.approachingToy&&!g.approachingUser&&!g.memorySequenceCount&&!g.lifeSequenceCount&&
