@@ -6,6 +6,7 @@
 #endif
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
+#define YEOPJARI_WORLD_BALL_WINDOW 1
 #include <windows.h>
 #include <windowsx.h>
 #include <objidl.h>
@@ -317,6 +318,7 @@ struct App {
     unsigned sleepVariant = 0, groomVariant = 0;
     bool authoredBoxVisible = false;
     cat::toy::PhysicsBall toyBall;
+    cat::toy::BallContactTracker ballContactTracker;
     cat::toy::Lure toyLure;
     cat::toy::Session toySession;
     cat::toy::Automatic automaticToy;
@@ -325,6 +327,8 @@ struct App {
     unsigned toyAppliedRevision = 0;
     HWND toyWindow = nullptr;
     Surface toySurface;
+    HWND companionBallWindow=nullptr;
+    Surface companionBallSurface;
     ULONGLONG nextToyAction = 0;
     ULONGLONG updateAnnounceAfter = 0;
     HICON trayIcon = nullptr;
@@ -1802,6 +1806,8 @@ void UpdatePrimaryGroundArt(ULONGLONG ticks) {
     if(g.runningJump.active||CursorTravellingPounce())return;
     const auto* walk=PrimaryVideoGroundArt();
     const bool meal=PrimaryVideoSideMeal();
+    const bool ballSide=g.toy==ToyKind::Ball&&g.toyEngaged&&
+        (g.toySession.phase==cat::toy::Phase::Inspect||g.toySession.phase==cat::toy::Phase::Interact);
     const auto jumpTurn=walk?cat::video_ground_bridge::JumpTurns(*walk):cat::video_ground_bridge::JumpTurnProfile{};
     const bool jumpPreparation=jumpTurn.valid && g.jumpPending && (g.motion==Motion::Jump || g.motion==Motion::Pounce);
     const bool walking=cat::animation::Walking(g.motion);
@@ -1816,7 +1822,7 @@ void UpdatePrimaryGroundArt(ULONGLONG ticks) {
     if(g.stopClip!=cat::sprite_sequence::Clip::None&&ticks<g.stopUntil) {
         g.groundArtBridge.ContinueLocomotion(ticks);g.waitingForStop=true;return;
     }
-    const bool turnOwner=walking&&(g.motion==Motion::Zoomies||KeyboardPlayActive());
+    const bool turnOwner=walking&&(g.motion==Motion::Zoomies||KeyboardPlayActive()||(g.toy==ToyKind::Ball&&g.toyEngaged));
     if(!turnOwner)g.runningTurn.Reset();
     if(turnOwner&&physical.grounded&&LoadedCareSprite(cat::sprite_sequence::Clip::RunningTurn,g.preferences.character)) {
         if(travel&&g.direction!=g.facing&&!keyboardPlay.gaitTransition.Active()&&
@@ -1833,7 +1839,7 @@ void UpdatePrimaryGroundArt(ULONGLONG ticks) {
     }
     const bool reversing=travel && g.direction!=g.facing;
     g.groundArtBridge.Update(ticks,travel && (!reversing||(KeyboardPlayActive()&&g.groundArtBridge.Starting())),
-        physical.grounded,WalkingVelocity(physical),!EnvironmentBusy()||CursorChasing(),meal||jumpPreparation,jumpPreparation,KeyboardPlayActive());
+        physical.grounded,WalkingVelocity(physical),!EnvironmentBusy()||CursorChasing(),meal||ballSide||jumpPreparation,jumpPreparation,KeyboardPlayActive());
     if(!travel && (g.groundArtBridge.Stopping() || g.groundArtBridge.StartingForSideAction()))g.waitingForStop=true;
 }
 void ConfigurePrimaryAuthoredStride() {
@@ -3234,6 +3240,35 @@ void RenderToy() {
     SetWindowPos(g.toyWindow, g.window, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW);
 }
 
+// The companion ball has a fixed desktop coordinate system and its own
+// click-through surface. It cannot clip or move with the actor's small window.
+void RenderCompanionBall(const cat::companion::Snapshot& snapshot) {
+    if(g.hidden||!snapshot.enabled||!snapshot.ballVisible) {
+        if(g.companionBallWindow)ShowWindow(g.companionBallWindow,SW_HIDE);return;
+    }
+    if(!g.companionBallWindow) {
+        WNDCLASSEXW wc{};wc.cbSize=sizeof(wc);wc.lpfnWndProc=DefWindowProcW;
+        wc.hInstance=g.instance;wc.lpszClassName=L"YeopjariCat.CompanionBall.v1";RegisterClassExW(&wc);
+        g.companionBallWindow=CreateWindowExW(WS_EX_LAYERED|WS_EX_TRANSPARENT|WS_EX_TOOLWINDOW|WS_EX_TOPMOST|WS_EX_NOACTIVATE,
+            wc.lpszClassName,L"",WS_POPUP,0,0,1,1,nullptr,nullptr,g.instance,nullptr);
+    }
+    if(!g.companionBallWindow)return;
+    const int width=int(std::ceil(96*g.dpiScale));
+    const int height=int(std::ceil(std::max(200.,snapshot.ball.lift+32)*g.dpiScale));
+    auto& surface=g.companionBallSurface;
+    if((surface.width!=width||surface.height!=height)&&!surface.Create(width,height))return;
+    Graphics graphics(surface.image.get());graphics.SetCompositingMode(CompositingModeSourceCopy);graphics.Clear(Color(0,0,0,0));
+    graphics.SetCompositingMode(CompositingModeSourceOver);graphics.SetSmoothingMode(SmoothingModeAntiAlias);
+    // The window follows the ball horizontally; its floor and shadow stay
+    // registered to the desktop. Extra height contains an unusually high bounce.
+    DrawToyBall(graphics,width/2.f,REAL(height-1),REAL(g.dpiScale),snapshot.ball);graphics.Flush(FlushIntentionSync);
+    POINT position{LONG(std::lround(g.work.left+snapshot.ball.x*g.dpiScale-width/2.)),
+        LONG(g.work.bottom-height)};
+    SIZE size{width,height};POINT origin{};BLENDFUNCTION blend{AC_SRC_OVER,0,255,AC_SRC_ALPHA};HDC screen=GetDC(nullptr);
+    UpdateLayeredWindow(g.companionBallWindow,screen,&position,&size,surface.dc,&origin,0,&blend,ULW_ALPHA);ReleaseDC(nullptr,screen);
+    SetWindowPos(g.companionBallWindow,g.window,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE|SWP_SHOWWINDOW);
+}
+
 // Shared by the desktop renderer and native video captures. State gates,
 // landing/contact selection, authored transitions and final pose cannot drift.
 cat::animation::Pose PrimaryDisplayedPose(ULONGLONG ticks,const cat::physics::Pose& physical) {
@@ -3690,7 +3725,8 @@ void PlaceToy(ToyKind toy) {
     g.toyX = cat::toy::ClampCenter(g.centerX + g.direction * offset, low, high);
     g.toyBall.Reset(g.toyX / g.dpiScale);
     g.direction = g.toyX < g.centerX ? -1 : 1;
-    g.facing = g.direction;
+    if(toy!=ToyKind::Ball)g.facing = g.direction;
+    g.ballContactTracker.Reset();
     g.toySession.Start(toy,g.direction); g.toyAppliedRevision=0;
     g.nextToyAction=ticks;
     // A toy lives on the taskbar floor. Leave a supporting window through
@@ -4022,9 +4058,9 @@ bool ApplyCursorAttackPose(cat::animation::Pose& pose, ULONGLONG ticks, const ca
     return true;
 }
 
-cat::animation::Pose BallToyPawPose(ULONGLONG ticks,const cat::physics::Pose& physical,const cat::toy::BallPose& ball) {
+cat::animation::Pose BallToyPawPose(ULONGLONG,const cat::physics::Pose& physical,const cat::toy::BallPose& ball) {
     const double growth=cat::GrowthScale(g.pet.bornUtc,UtcNow());
-    const auto elapsed=ticks>=g.motionStart?ticks-g.motionStart:0;
+    const auto elapsed=static_cast<std::uint64_t>(std::max(0.,g.toySession.elapsedMs));
     auto pose=cat::cursor::BallPawPose(elapsed,g.facing,
         (ball.x-(g.work.left/g.dpiScale+physical.x))/growth,
         (ball.lift+cat::toy::PhysicsBall::Radius-physical.lift)/growth,CursorAttackGeometry());
@@ -4051,12 +4087,9 @@ double BallPawStandOff() {
     const double growth=cat::GrowthScale(g.pet.bornUtc,UtcNow());
     if(LoadedCareSprite(cat::sprite_sequence::Clip::BallPlay,g.preferences.character)) {
         const auto paw=cat::video_actions::BallPaws(static_cast<unsigned>(g.preferences.character),
-            g.preferences.character==cat::Character::Tuxedo?66:48)[1];
+            cat::video_actions::BallStandOffFrame(static_cast<unsigned>(g.preferences.character)))[1];
         const auto body=cat::appearance::VisualModifiers(g.nutrition,g.preferences.character);
-        const double dy=paw.y*growth*body.bodyHeight-cat::toy::PhysicsBall::Radius;
-        const double radius=cat::toy::PhysicsBall::Radius+3*growth;
-        const double reach=std::sqrt(std::max(0.,radius*radius-dy*dy))*.65;
-        return std::max(16.,paw.x*growth*body.bodyWidth+reach);
+        return cat::toy::PawStandOff(paw.x*growth*body.bodyWidth,paw.y*growth*body.bodyHeight,growth);
     }
     const auto pose=cat::cursor::BallPawPose(490,1,45,cat::toy::PhysicsBall::Radius/growth,CursorAttackGeometry());
     const auto paw=cat::cursor::PawPosition(pose,CursorAttackGeometry());
@@ -4070,19 +4103,17 @@ bool ApplyBallToyPose(cat::animation::Pose& pose,ULONGLONG ticks,const cat::phys
 }
 bool UpdateBallPlayContact(ULONGLONG ticks,const cat::physics::Pose& physical) {
     if(g.toy!=ToyKind::Ball||!g.toyEngaged||g.toySession.phase!=cat::toy::Phase::Interact||g.motion!=Motion::ToyPaw)return false;
-    const auto ball=g.toyBall.CurrentPose();const auto paw=BallToyPawWorldPoint(ticks,physical);
+    const auto rendered=g.physics.RenderPose();const auto ball=g.toyBall.RenderPose();
+    const auto paw=BallToyPawWorldPoint(ticks,rendered);
     const double growth=cat::GrowthScale(g.pet.bornUtc,UtcNow());
     const bool available=ToyInteractionAvailable()&&physical.grounded&&!physical.onPlatform&&
         std::abs(WalkingVelocity(physical))<=2&&!g.waitingForStop&&!EnvironmentBusy();
-    const bool video=LoadedCareSprite(cat::sprite_sequence::Clip::BallPlay,g.preferences.character)!=nullptr;
-    const auto contactStart=video?(g.preferences.character==cat::Character::Tuxedo?54:36)*1000/24:cat::toy::kPawContactMs;
-    const auto contactEnd=video?(g.preferences.character==cat::Character::Tuxedo?102:84)*1000/24:cat::toy::kPawContactEndMs;
-    if(!cat::toy::BallPawContactAt(ticks>=g.motionStart?ticks-g.motionStart:0,g.toyContact,paw.x,paw.y,ball,growth,available,
-            contactStart,contactEnd))return false;
-    g.lastBallPawDistance=std::hypot(ball.x-paw.x,ball.lift+cat::toy::PhysicsBall::Radius-paw.y);
-    const int direction=std::abs(ball.x-paw.x)>1?(ball.x<paw.x?-1:1):g.facing;
-    const double speed=45+(g.toySession.rounds%3)*13;
-    g.toyBall.Kick(direction,speed,17+(g.toySession.rounds%2)*9);++g.ballKickSerial;
+    const auto coat=static_cast<unsigned>(g.preferences.character);
+    const auto hit=g.ballContactTracker.Observe(g.motionSerial,ticks,static_cast<std::uint64_t>(g.toySession.elapsedMs),
+        paw.x,paw.y,ball,growth,g.facing,available,cat::video_actions::BallContactStartMs(coat),cat::video_actions::BallContactEndMs(coat));
+    if(!hit.contact)return false;
+    g.toyContact=true;g.lastBallPawDistance=hit.distance;
+    g.toyBall.Strike(hit.nx,hit.ny,hit.pawVx,hit.pawVy,hit.closingSpeed);++g.ballKickSerial;
     return true;
 }
 
@@ -4727,10 +4758,12 @@ void ApplyToyPhase(ULONGLONG ticks) {
         phase==cat::toy::Phase::Interact&&g.toy==ToyKind::FishingRod?Clip::ToyPlay:Clip::None;
     if(const auto* asset=LoadedCareSprite(phaseClip,g.preferences.character))
         g.toySession.authoredPhaseMs=cat::sprite_sequence::ProgramDuration(asset->layout->program);
+    if(g.toy==ToyKind::Ball&&phase==cat::toy::Phase::Approach&&g.toySession.rounds>0)
+        g.groundArtBridge.ContinueLocomotion(ticks);
     if (g.toyMotion==Motion::ToyPaw) {
         const double target=g.toyX+(g.toy==ToyKind::FishingRod ? g.toyLure.offset*g.dpiScale : 0);
         g.direction=target<g.centerX ? -1 : 1;
-        if(std::abs(WalkingVelocity(g.physics.CurrentPose()))<=.5) {
+        if(g.toy!=ToyKind::Ball&&std::abs(WalkingVelocity(g.physics.CurrentPose()))<=.5) {
             g.facing=g.direction;g.groundDrive.Reset(g.direction);
         }
     }
@@ -5237,7 +5270,7 @@ void AdvancePrimaryMotion(ULONGLONG ticks, double elapsed) {
         };
         if (available) {
             ApplyToyPhase(ticks);
-            const bool arrived=g.toy==ToyKind::Ball?ballChase.arrived:
+            const bool arrived=g.toy==ToyKind::Ball?(ballChase.arrived&&g.facing==ballChase.direction&&!g.runningTurn.Active()):
                 std::abs(distanceToTarget())<=2 && std::abs(WalkingVelocity(g.physics.CurrentPose()))<=3;
             if(g.toy==ToyKind::FishingRod&&g.toySession.phase==cat::toy::Phase::Interact&&
                     g.toySession.elapsedMs+elapsed*1000>=g.toySession.PhaseDuration()) {
@@ -5253,8 +5286,9 @@ void AdvancePrimaryMotion(ULONGLONG ticks, double elapsed) {
                 g.toy==ToyKind::Ball || g.toy==ToyKind::FishingRod ? 58 : 38;
             if(g.toy==ToyKind::Ball) {
                 g.toySession.entryDirection=ballChase.direction;targetSpeed=ballChase.velocity;
+                g.direction=targetSpeed!=0?(targetSpeed<0?-1:1):ballChase.direction;
             } else targetSpeed=cat::toy::ApproachVelocity(distanceToTarget(),speed*body.speed);
-            if (targetSpeed!=0) g.direction=targetSpeed<0 ? -1 : 1;
+            if (g.toy!=ToyKind::Ball&&targetSpeed!=0) g.direction=targetSpeed<0 ? -1 : 1;
         }
         if (g.toyEngaged && g.toy!=ToyKind::Ball && g.toySession.phase==cat::toy::Phase::Interact && g.motion==Motion::ToyPaw) {
             if (!g.toyContact&&g.toySession.elapsedMs>=1400&&g.toySession.elapsedMs<1800&&
@@ -5268,7 +5302,7 @@ void AdvancePrimaryMotion(ULONGLONG ticks, double elapsed) {
     targetSpeed *= cat::species::ProfileFor(g.preferences.character).movementSpeedMultiplier;
     if(g.runningJump.active)targetSpeed=g.runningJump.velocityX;
     if(CursorTravellingPounce())targetSpeed=cursorInteraction.takeoffVelocity;
-    if (!g.runningJump.active && g.physics.CurrentPose().grounded && targetSpeed != 0) {
+    if (!(g.toy==ToyKind::Ball&&g.toyEngaged) && !g.runningJump.active && g.physics.CurrentPose().grounded && targetSpeed != 0) {
         const auto support = g.physics.CurrentPose();
         const auto [low, high] = MovementBoundsLogical();
         if (cat::motion::BrakeBeforeEdge(support.x, WalkingVelocity(support), targetSpeed, low, high)) {
@@ -6404,6 +6438,7 @@ int NativeMenuContractTest() {
 #include "native_controls_capture.hpp"
 #include "native_groom_review.hpp"
 #include "native_ball_play_capture.hpp"
+#include "native_ball_contact_review.hpp"
 #include "native_fish_review.hpp"
 #include "native_fly_review.hpp"
 #include "native_identity_turn_review.hpp"
@@ -6480,6 +6515,8 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
         return NativeCursorPlayCapture(instance);
     }
     if(commandLine && wcsstr(commandLine,L"--render-groom-review"))return NativeGroomReview(instance);
+    if(commandLine && wcsstr(commandLine,L"--ball-review-all"))return NativeBallContactSuite(instance);
+    if(commandLine && wcsstr(commandLine,L"--ball-review")){unsigned coat=0,actor=0,scenario=0,film=1;swscanf(wcsstr(commandLine,L"--ball-review"),L"--ball-review %u %u %u %u",&coat,&actor,&scenario,&film);return NativeBallContactReview(instance,coat,actor!=0,film!=0,scenario);}
     if(commandLine && wcsstr(commandLine,L"--render-ball-play"))return NativeBallPlayCapture(instance);
     if(commandLine && wcsstr(commandLine,L"--render-mesh-walk-review")) {
         g.instance=instance;return RenderSelfTest(true);
@@ -6577,6 +6614,8 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
     g.companionWindow.Close();
     if (g.toyWindow) DestroyWindow(g.toyWindow);
     g.toySurface.Reset();
+    if(g.companionBallWindow)DestroyWindow(g.companionBallWindow);
+    g.companionBallSurface.Reset();
     StopKeyboardPlay(false,false);
     g.prank.Shutdown(); g.surface.Reset(); g.blendFrom.Reset(); g.blendTo.Reset(); ReleaseAtlases();
     if (g.trayIcon) DestroyIcon(g.trayIcon); GdiplusShutdown(g.gdiplusToken);

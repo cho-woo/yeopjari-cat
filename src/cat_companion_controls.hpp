@@ -15,9 +15,81 @@ int keyboardDirection_=0;
 cat::gait_transition::Transition keyboardGait_;
 unsigned cursorContacts_=0;
 cat::toy::PhysicsBall ball_;
-bool ballContact_=false;
+bool ballContact_=false,ballVisible_=false,ballPlaying_=false;
+cat::toy::Session ballSession_;
+cat::toy::BallContactTracker ballTracker_;
+unsigned ballRevision_=0;
+std::uint64_t ballKickSerial_=0,ballRetireAfter_=0;
+double ballDrive_=0;
+
+void ApplyBallPhase(std::uint64_t ticks) {
+    if(ballRevision_==ballSession_.revision)return;
+    ballRevision_=ballSession_.revision;
+    using P=cat::toy::Phase;using M=cat::animation::Motion;using C=cat::sprite_sequence::Clip;
+    actionClip_=C::None;
+    if(ballSession_.phase==P::Wait) {
+        ballPlaying_=false;ballDrive_=0;ballRetireAfter_=ticks+5000;BeginQuiet(ticks);return;
+    }
+    if(ballSession_.phase==P::Interact) {
+        ballSession_.authoredPhaseMs=RegisteredDuration(C::BallPlay,4042);
+        SetMotion(M::ToyPaw,ticks,static_cast<std::uint64_t>(ballSession_.PhaseDuration())+100,0);
+        motionStart_=ticks;++motionSerial_;actionClip_=C::BallPlay;ballContact_=false;ballTracker_.Reset();
+    } else {
+        const bool walking=ballSession_.phase==P::Approach;
+        if(walking&&ballSession_.rounds)groundArtBridge_.ContinueLocomotion(ticks);
+        SetMotion(walking?M::Walk:M::Watch,ticks,30000,0);
+    }
+}
+void StartBallPlay(std::uint64_t ticks) {
+    const double target=std::clamp(physics_.CurrentPose().x+(facing_<0?-1:1)*105,minX_,maxX_);
+    ball_.Reset(target);ballSession_.Start(cat::toy::Kind::Ball,facing_);
+    ballPlaying_=ballVisible_=true;ballRevision_=0;ballKickSerial_=0;ballRetireAfter_=0;ballTracker_.Reset();
+    ApplyBallPhase(ticks);
+}
+void AdvanceBallPlay(const Context& c) {
+    if(!ballVisible_)return;
+    ball_.Advance(c.elapsedSeconds,minX_,maxX_,state_->pet.roamingPaused);
+    if(!ballPlaying_) {
+        if(c.ticks>=ballRetireAfter_&&ball_.grounded&&std::abs(ball_.velocity)<.5&&std::abs(ball_.verticalVelocity)<.5)ballVisible_=false;
+        return;
+    }
+    const auto physical=physics_.CurrentPose();ballDrive_=0;
+    if(!physical.grounded||physical.onPlatform||state_->pet.roamingPaused)return;
+    const double growth=cat::GrowthScale(state_->pet.bornUtc,state_->pet.updatedUtc);
+    const auto body=cat::appearance::VisualModifiers(state_->nutrition,state_->preferences.character);
+    const auto coat=static_cast<unsigned>(state_->preferences.character);
+    const auto paw=cat::video_actions::BallPaws(coat,cat::video_actions::BallStandOffFrame(coat))[1];
+    const auto* walk=Registered(cat::sprite_sequence::Clip::Walk);
+    const auto chase=cat::toy::ChaseBall(physical.x,physical.velocityX-physical.supportVelocityX,ball_.CurrentPose(),
+        cat::toy::PawStandOff(paw.x*growth*body.bodyWidth,paw.y*growth*body.bodyHeight,growth),
+        ballSession_.entryDirection,minX_,maxX_,walk?cat::sprite_assets::NominalLocomotionSpeed(*walk):40);
+    ballSession_.entryDirection=chase.direction;
+    const bool available=!waitingForStop_&&!runningTurn_.Active();
+    const bool arrived=chase.arrived&&facing_==chase.direction&&!runningTurn_.Active();
+    if(available&&ballSession_.Advance(c.elapsedSeconds,true,arrived))ApplyBallPhase(c.ticks);
+    if(ballPlaying_&&ballSession_.phase==cat::toy::Phase::Approach) {
+        ballDrive_=chase.velocity;direction_=ballDrive_?(ballDrive_<0?-1:1):chase.direction;
+    }
+}
+void UpdateBallContact(const Context& c) {
+    if(!ballPlaying_||ballSession_.phase!=cat::toy::Phase::Interact)return;
+    const auto physical=physics_.RenderPose();const auto coat=static_cast<unsigned>(state_->preferences.character);
+    const auto age=static_cast<std::uint64_t>(ballSession_.elapsedMs);
+    const auto* art=Registered(cat::sprite_sequence::Clip::BallPlay);
+    cat::sprite_sequence::Options options;options.sheetFrames=art->frameCount;
+    const auto frame=cat::sprite_sequence::SampleProgram(art->clip,art->program,age,options).frame;
+    const auto paw=cat::video_actions::BallPaws(coat,frame)[1];
+    const double growth=cat::GrowthScale(state_->pet.bornUtc,state_->pet.updatedUtc);
+    const auto body=cat::appearance::VisualModifiers(state_->nutrition,state_->preferences.character);
+    const auto hit=ballTracker_.Observe(motionSerial_,c.ticks,age,
+        physical.x+(facing_<0?-1:1)*paw.x*growth*body.bodyWidth,physical.lift+paw.y*growth*body.bodyHeight,
+        ball_.RenderPose(),growth,facing_,physical.grounded&&!physical.onPlatform&&!waitingForStop_&&!state_->pet.roamingPaused,
+        cat::video_actions::BallContactStartMs(coat),cat::video_actions::BallContactEndMs(coat));
+    if(hit.contact){ballContact_=true;++ballKickSerial_;ball_.Strike(hit.nx,hit.ny,hit.pawVx,hit.pawVy,hit.closingSpeed);}
+}
 
 void ResetControls() {
+    ballPlaying_=ballVisible_=false;ballSession_.Cancel();ballTracker_.Reset();ballDrive_=0;
     wakeQueuedClip_=cat::sprite_sequence::Clip::None;
     cursor_={};cursorContact_.Reset();cursorLastAttack_=cat::environment::CursorAction::None;
     actionClip_=cat::sprite_sequence::Clip::None;cursorLaunchedAt_=cursorLanded_=nextFly_=0;
@@ -72,6 +144,8 @@ bool Perform(cat::sprite_sequence::Clip clip,std::uint64_t ticks) {
     using C=cat::sprite_sequence::Clip;using M=cat::animation::Motion;
     if(!Bound()||!ready_||!state_->enabled||!physics_.CurrentPose().grounded||Feeding(ticks)||
             runningTurn_.Active()||physics_.WallClimbing()||!Registered(clip))return false;
+    if(ballPlaying_)return clip==C::BallPlay;
+    if(clip==C::BallPlay&&physics_.CurrentPose().onPlatform)return false;
     if(wakeQueuedClip_!=C::None&&motion_==M::Stretch&&wakingFromSleep_) {wakeQueuedClip_=clip;return true;}
     const bool wakeFirst=motion_==M::Sleep&&clip!=C::Sleep;
     cursor_={};cursorContact_.Reset();cursorLaunched_=false;cursorLanded_=0;
@@ -81,6 +155,7 @@ bool Perform(cat::sprite_sequence::Clip clip,std::uint64_t ticks) {
     if(wakeFirst) {
         SetMotion(M::Stretch,ticks,3500,0);wakeQueuedClip_=clip;return true;
     }
+    if(clip==C::BallPlay){StartBallPlay(ticks);return true;}
     if(clip==C::Walk||clip==C::Run||clip==C::Jump||clip==C::Climb) {
         direction_=physics_.CurrentPose().x<(minX_+maxX_)*.5?1:-1;
         const auto* art=Registered(clip==C::Run?C::Run:C::Walk);
@@ -96,14 +171,7 @@ bool Perform(cat::sprite_sequence::Clip clip,std::uint64_t ticks) {
         motionStart_=ticks;++motionSerial_;nextDecision_=ticks+duration;
         actionClip_=clip;
         if(clip==C::Brake||clip==C::Slide||clip==C::Stumble)PrepareGroundArt(ticks);
-        if(clip==C::BallPlay) {
-            const auto body=cat::appearance::VisualModifiers(state_->nutrition,state_->preferences.character);
-            const double growth=cat::GrowthScale(state_->pet.bornUtc,state_->pet.updatedUtc);
-            const auto paw=cat::video_actions::BallPaws(static_cast<unsigned>(state_->preferences.character),
-                state_->preferences.character==cat::Character::Tuxedo?66:48)[1];
-            ball_.Reset(physics_.CurrentPose().x+(facing_<0?-1:1)*(paw.x*body.bodyWidth*growth+8));
-            ballContact_=false;
-        }
+
     }
     return true;
 }
@@ -116,19 +184,8 @@ void UpdateControls(const Context& c,std::uint64_t elapsed) {
     if(wakeQueuedClip_!=C::None&&c.ticks>=nextDecision_&&physical.grounded&&!waitingForStop_) {
         const auto queued=wakeQueuedClip_;wakeQueuedClip_=C::None;Perform(queued,c.ticks);return;
     }
-    if(actionClip_==C::BallPlay&&!waitingForStop_) {
-        ball_.Advance(c.elapsedSeconds,std::max(minX_,physical.x-95),std::min(maxX_,physical.x+95));
-        const auto* art=Registered(C::BallPlay);const auto age=c.ticks>=motionStart_?c.ticks-motionStart_:0;
-        cat::sprite_sequence::Options options;options.sheetFrames=art->frameCount;
-        const auto frame=cat::sprite_sequence::SampleProgram(C::BallPlay,art->program,age,options).frame;
-        const auto paw=cat::video_actions::BallPaws(static_cast<unsigned>(state_->preferences.character),frame)[1];
-        const double growth=cat::GrowthScale(state_->pet.bornUtc,state_->pet.updatedUtc);
-        const auto body=cat::appearance::VisualModifiers(state_->nutrition,state_->preferences.character);
-        const bool tuxedo=state_->preferences.character==cat::Character::Tuxedo;
-        if(cat::toy::BallPawContactAt(age,ballContact_,physical.x+(facing_<0?-1:1)*paw.x*growth*body.bodyWidth,
-                paw.y*growth*body.bodyHeight,ball_.CurrentPose(),growth,true,(tuxedo?54:36)*1000/24,(tuxedo?102:84)*1000/24))
-            ball_.Kick(facing_,58,26);
-    }
+    AdvanceBallPlay(c);
+    if(ballPlaying_)return;
     if(keyboardActive_) {
         if(keyboardGait_.Finish(c.ticks))gait_.SetAuthoredPhase(cat::video_actions::GaitArrivalPhase(
             static_cast<unsigned>(state_->preferences.character),keyboardGait_.ToRun()));
@@ -265,7 +322,7 @@ void ApplyControlsPose(cat::animation::Pose& pose,std::uint64_t ticks,const cat:
         cat::animation::AttachSprite(pose,C::Run,keyboardGait_.Elapsed(ticks),options);pose.flip=facing_<0;return;
     }
     if(actionClip_!=C::None&&!waitingForStop_) {
-        cat::animation::AttachSprite(pose,actionClip_,age);pose.flip=actionClip_==C::Climb?false:facing_<0;
+        cat::animation::AttachSprite(pose,actionClip_,actionClip_==C::BallPlay?static_cast<std::uint64_t>(ballSession_.elapsedMs):age);pose.flip=actionClip_==C::Climb?false:facing_<0;
         pose.groundContact=physical.grounded;cat::animation::UseAuthoredSprite(pose);return;
     }
     if(interaction_==Interaction::Paw&&motion_==cat::animation::Motion::Punch&&!waitingForStop_) {

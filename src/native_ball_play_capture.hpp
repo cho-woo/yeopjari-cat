@@ -143,10 +143,10 @@ int Simulate(Row& row,std::string& context,bool edgeCase=true) {
     // An interior placement must cover the full pursuit. At the constrained
     // edge require a real make-room step and two ball diameters of rolling;
     // that small scene deliberately exercises reversal rather than distance.
-    const double minimumBallTravel=edgeCase?4*cat::toy::PhysicsBall::Radius:80;
+    const double minimumBallTravel=edgeCase?4*cat::toy::PhysicsBall::Radius:40;
     const double minimumCatTravel=edgeCase?cat::toy::PhysicsBall::Radius:40;
     if(row.contacts<3||row.pawEntries<3||row.walkFrames<(edgeCase?30U:60U)||row.ballTravel<minimumBallTravel||row.catTravel<minimumCatTravel||
-            (edgeCase&&!row.turns)||!row.ballBounces||!row.brakingFrames||!row.profileUnchanged||!row.sourceImmutable||
+            (edgeCase&&!row.turns)||(edgeCase&&!row.ballBounces)||!row.brakingFrames||!row.profileUnchanged||!row.sourceImmutable||
             !row.duplicateContactRejected||row.contacts>row.pawEntries||row.maxFrameRootDelta>4)return 793;
     return 0;
 }

@@ -490,7 +490,14 @@ def bake(clip, character, indices):
             coordinates = [np.interp(source_index, keys[:, 0], keys[:, component]) for component in range(1, 5)]
             paws.append([[(coordinates[i] - anchor_x) * factor * 110 / REFERENCE_HEIGHT,
                 (anchor_y - coordinates[i + 1]) * factor * 110 / REFERENCE_HEIGHT] for i in (0, 2)])
-        if clip=='ball' and clip in IDENTITY['clips']:
+        if clip=='ball' and settings.get('paw_keys'):
+            keys=np.asarray(settings['paw_keys'][character]);px,py=[np.interp(source_index,keys[:,0],keys[:,i]) for i in (3,4)]
+            rgba=np.asarray(cell);yy,xx=np.where(rgba[:,:,3]>180)
+            tx=ROOT_POINT[0]+(px-anchor_x)*factor;ty=ROOT_POINT[1]+(py-anchor_y)*factor
+            best=np.argmin((xx-tx)**2+(yy-ty)**2)
+            point=[(float(xx[best])-ROOT_POINT[0])*110/REFERENCE_HEIGHT,(ROOT_POINT[1]-float(yy[best]))*110/REFERENCE_HEIGHT]
+            paws.append([point,point])
+        elif clip=='ball' and clip in IDENTITY['clips']:
             # Nearest opaque toe to the video's red ball, restricted to the
             # planted forepaw band so a low nose cannot become a paw contact.
             raw=frames[source_index];r,g,b=raw.transpose(2,0,1).astype(float)
@@ -539,13 +546,16 @@ def main(only=None,materials_only=False,metadata_only=False):
     evidence = json.loads((DIRECTORY/'registration.json').read_text(encoding='utf-8')) if only or materials_only or metadata_only else {}
     styles_path = ROOT / 'assets/styled-sprites/manifest.json'
     styles = json.loads(styles_path.read_text(encoding='utf-8'))
+    style_order={(e['character'],e['base_resource_id']):i for i,e in enumerate(styles['atlases'])}
     replaced = set(selected.values())
     styles['atlases'] = [entry for entry in styles['atlases'] if entry['base_resource_id'] not in replaced]
     odd_policy_path = ROOT / 'assets/styled-sprites/odd-eye-policy.json'
     odd_policy = json.loads(odd_policy_path.read_text(encoding='utf-8'))
+    policy_order={e['base_resource_id']:i for i,e in enumerate(odd_policy['atlases'])}
     odd_policy['atlases'] = [entry for entry in odd_policy['atlases'] if entry['base_resource_id'] not in replaced]
     iris_path = ROOT / 'assets/styled-sprites/odd-eye-iris-regions.json'
     iris = json.loads(iris_path.read_text(encoding='utf-8'))
+    iris_order={e['base_resource_id']:i for i,e in enumerate(iris['atlases'])}
     iris['atlases'] = [entry for entry in iris['atlases'] if entry['base_resource_id'] not in replaced]
     for clip, resource in selected.items():
         indices = selection(clip)
@@ -662,6 +672,10 @@ def main(only=None,materials_only=False,metadata_only=False):
                 'iris_mask': 'odd-eye-masks/' + snow_path.name, 'iris_mask_sha256': sha(mask_path),
                 'alpha_exact': True, 'skin_rgb_exact': True})
             iris['atlases'].append({'base_resource_id': resource, 'source': snow_path.name, 'frames': annotations})
+    entries.sort(key=lambda e:list(old_entries).index(e['clip']))
+    styles['atlases'].sort(key=lambda e:style_order.get((e['character'],e['base_resource_id']),100000))
+    odd_policy['atlases'].sort(key=lambda e:policy_order.get(e['base_resource_id'],100000))
+    iris['atlases'].sort(key=lambda e:iris_order.get(e['base_resource_id'],100000))
     manifest = DIRECTORY / 'manifest.json'
     write_json(manifest, {'schema': 2, 'clips': entries})
     write_json(styles_path, styles)
@@ -684,6 +698,13 @@ def main(only=None,materials_only=False,metadata_only=False):
         header.extend([f'inline Paws {symbol}Paws(unsigned character,unsigned frame) {{',
             f'    const auto& points=character==8?kTuxedo{symbol}:kCream{symbol};',
             '    return points[std::min<unsigned>(frame,points.size()-1)];', '}'])
+    ball=IDENTITY['clips']['ball']
+    header.extend(['inline unsigned BallStandOffFrame(unsigned character) {',
+        f'    return character==8?{ball["stand_off_frame"]["tuxedo"]}:{ball["stand_off_frame"]["cream"]};','}',
+        'inline unsigned BallContactStartMs(unsigned character) {',
+        f'    return character==8?{sum(ball["exposures_ms"][:ball["contact_windows"]["tuxedo"][0][0]])}:{sum(ball["exposures_ms"][:ball["contact_windows"]["cream"][0][0]])};','}',
+        'inline unsigned BallContactEndMs(unsigned character) {',
+        f'    return character==8?{sum(ball["exposures_ms"][:ball["contact_windows"]["tuxedo"][0][1]+1])}:{sum(ball["exposures_ms"][:ball["contact_windows"]["cream"][0][1]+1])};','}'])
     reach=IDENTITY['clips']['reach']
     starts={c:sum(reach['exposures_ms'][:reach['settle_start_frame'][c]]) for c in ('cream','tuxedo')}
     header.extend(['inline unsigned ReachSettleStart(unsigned character) {',

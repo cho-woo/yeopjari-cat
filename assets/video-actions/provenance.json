@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "method": "dropshot_video_extraction",
-  "manifest_sha256": "cce503bf47de8d103da24ea8aa2e6ffb5267e4853ffa11ce0d54cb6bfc4c356a",
+  "manifest_sha256": "230c3ea15eca427a0bcf982afd3d3cfc79a6b973679000897ba676b9c153ddeb",
   "precomputed_only": true,
   "files": [
     {
       "path": "cream-ball.png",
-      "sha256": "105b25f48a591a96d975a430c01bdece71569113a87ec999b1b6bb0378303039"
+      "sha256": "e640929f9d2388701fa4989655dd94c18353b679530b3357e4d42e8a845c6145"
     },
     {
       "path": "cream-brake.png",
@@ -174,7 +174,7 @@
     },
     {
       "path": "identity-v29.json",
-      "sha256": "86396ee70cb7783e59a3d7b254d3ef132ad0927fabf62e3785ecfb3a71a5881b"
+      "sha256": "ed746992fca734c925d602fee7d7c5172e3f169187e5bc1075a0cc88552d7ddb"
     },
     {
       "path": "motion-timing.json",
@@ -286,7 +286,15 @@
     },
     {
       "path": "registration.json",
-      "sha256": "9e2ba115649b94dd1e3683fec2a600e6e1df49f2ea5e0768a5d40f2d61982594"
+      "sha256": "7e83678471f84395335d4adb4068e42827037e5e6573a2930e00a6968b939ad2"
+    },
+    {
+      "path": "selected/ball-v38/generations.json",
+      "sha256": "c715f6151f1ec8b225e0babffa85d00a65cb8ccd19326fa6d91a40d088a78717"
+    },
+    {
+      "path": "selected/ball-v38/replaced-registration.json",
+      "sha256": "c913f8381a7d089ea2286f36307e09c18a7b286a6391ea7dcea72f4113bae4de"
     },
     {
       "path": "selected/continuity-v35/cream-sleep-entry-000.png",
@@ -519,6 +527,14 @@
     {
       "path": "selected/run-v36/tuxedo-deceleration-95.png",
       "sha256": "71ec431bafd6f13a02ef40c77c7b9b22ab9aa2cb4612163a230dec7444066a75"
+    },
+    {
+      "path": "sources/ball-v38/cream-single-bat.mp4",
+      "sha256": "6be264a559588b77435e1a888707643a4fd02af2a95bfedfa61fb754e8c15deb"
+    },
+    {
+      "path": "sources/ball-v38/tuxedo-single-bat.mp4",
+      "sha256": "12f8c0aa58df1644cca030a40ff6654d5b7bb601c50af82b97cb437cd40f4e17"
     },
     {
       "path": "sources/continuity-v35/cream-front-swat.mp4",
@@ -1050,7 +1066,7 @@
     },
     {
       "path": "tuxedo-ball.png",
-      "sha256": "d95aa765dec52cfeceade07b45eb3f965941e25b15de0b4a40aa8b71fbf06e36"
+      "sha256": "b7717dbdd9bcc4dc19fe482dc11eae32f08d9392458b84313942b0253e7059a1"
     },
     {
       "path": "tuxedo-brake.png",

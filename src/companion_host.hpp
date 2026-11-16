@@ -61,8 +61,7 @@ void PaintCompanion(HDC, unsigned char* pixels, int width, int height,
         static_cast<REAL>(110 * dpi * s.growthScale),
         s.presentationTicks?&CompanionCarePresentation():nullptr,
         s.presentationTicks,s.presentationGeneration,s.presentationPaused);
-    if(s.ballVisible)DrawToyBall(graphics,static_cast<REAL>(width/2.+(s.ball.x-s.physical.x)*dpi),
-        static_cast<REAL>(height-1-bottomInset),static_cast<REAL>(dpi),s.ball);
+
     graphics.Flush(FlushIntentionSync);
 }
 void ShowCompanionStatus() {
@@ -205,7 +204,10 @@ void ToggleCompanion() {
     if (adopting) { g.companionModel.Bind(g.companionStore.state); g.companionDpi = 0; }
     if (g.companionStore.enabled()) {
         if (!EnsureCompanionWindow()) Balloon(L"두 번째 동물", L"표시 창을 만들지 못했어요. 기록은 저장되어 있어요.", true);
-    } else if (g.companionWindow.Handle()) ShowWindow(g.companionWindow.Handle(),SW_HIDE);
+    } else {
+        if(g.companionWindow.Handle())ShowWindow(g.companionWindow.Handle(),SW_HIDE);
+        if(g.companionBallWindow)ShowWindow(g.companionBallWindow,SW_HIDE);
+    }
 }
 void ReactToCompanion(cat::companion::Interaction event,const cat::companion::Context& context,ULONGLONG ticks) {
     using E=cat::companion::Interaction;
@@ -249,6 +251,7 @@ void TickCompanion(ULONGLONG ticks, double elapsed) {
     const auto snapshot=g.companionModel.View(ticks);
     g.companionWindow.Present(snapshot,g.work.left,g.work.bottom,g.dpiScale,g.hidden,
         CompanionSpriteBottomInset(snapshot,g.dpiScale));
+    RenderCompanionBall(snapshot);
 }
 void NotifyCompanionFood() {
     if (g.companionStore.enabled() && g.companionModel.Bound())

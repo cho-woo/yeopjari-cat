@@ -26,6 +26,25 @@ void ContactNeedsTheActualCircleAndAVisibleStroke() {
     CHECK(BallPawContactAt(2000,consumed,438,12,ball,1,true,1500,3500)&&consumed);
     consumed=false;CHECK(!BallPawContactAt(3500,consumed,438,12,ball,1,true,1500,3500)&&consumed);
 }
+void SweptContactRejectsEmptyAirAndRetraction() {
+    BallContactTracker tracker;BallPose ball;ball.x=450;
+    auto observe=[&](unsigned serial,unsigned ms,double x,double y,bool enabled=true,double scale=1.){
+        return tracker.Observe(serial,ms,ms,x,y,ball,scale,1,enabled,100,900);};
+    CHECK(!observe(1,100,440,12).contact);CHECK(!observe(1,116,440,12).contact);
+    CHECK(!observe(1,132,430,12).contact); // Retracting overlap supplies no force.
+    CHECK(!observe(2,200,420,12).contact);
+    const auto hit=observe(2,216,445,12);CHECK(hit.contact&&hit.nx>.99&&hit.closingSpeed>0&&hit.distance<=16.00001);
+    CHECK(!observe(2,232,449,12).contact); // Exactly one physical impulse per source stroke.
+    CHECK(!observe(3,300,420,55).contact);CHECK(!observe(3,316,490,55).contact);
+    CHECK(!observe(4,400,300,12).contact);CHECK(!observe(4,416,330,12).contact);
+    CHECK(!observe(5,500,420,12,false).contact);CHECK(!observe(5,516,445,12).contact);
+    CHECK(!observe(6,600,420,12).contact);CHECK(!observe(7,616,445,12).contact); // New action has no stale sweep.
+    tracker.Reset();ball.x=500;
+    CHECK(!observe(8,700,450,12).contact);ball.x=400;
+    CHECK(observe(8,716,450,12).contact); // Fast returning ball crosses a real visible paw.
+    tracker.Reset();ball.x=450;
+    CHECK(!observe(9,900,420,12).contact);CHECK(!observe(9,916,445,12).contact); // After stroke window.
+}
 void ReversalBrakesBeforeChangingTheApproachSide() {
     BallPose ball;ball.x=350;ball.velocity=-20;
     ball.x=408;ball.velocity=0;
@@ -41,6 +60,9 @@ void ReversalBrakesBeforeChangingTheApproachSide() {
     ball.x=500;ball.velocity=40;
     const auto ahead=ChaseBall(400,40,ball,44,1,96,960,81.6);
     CHECK(ahead.target==462&&ahead.velocity>0&&ahead.velocity<=81.6);
+    ball.x=830;ball.velocity=0;
+    const auto edge=ChaseBall(850,0,ball,42,-1,96,864,40);
+    CHECK(edge.direction==1&&edge.target==788&&edge.velocity<0); // Take the reachable side, not a clipped dead end.
     for(const double x:{60.,96.,400.,960.,996.}) {
         ball.x=x;ball.velocity=0;const auto plan=ChaseBall(400,0,ball,44,1,96,960,81.6);
         CHECK(std::isfinite(plan.velocity)&&plan.target>=96&&plan.target<=960&&std::abs(plan.velocity)<=81.6);
@@ -87,6 +109,6 @@ void RealPawsImpulseTheRollingBallAndRepeatWithoutTeleporting() {
     }
 }
 }
-int main(){try{ContactNeedsTheActualCircleAndAVisibleStroke();ReversalBrakesBeforeChangingTheApproachSide();
+int main(){try{ContactNeedsTheActualCircleAndAVisibleStroke();SweptContactRejectsEmptyAirAndRetraction();ReversalBrakesBeforeChangingTheApproachSide();
     RealPawsImpulseTheRollingBallAndRepeatWithoutTeleporting();std::cout<<"Ball play: "<<checks<<" checks passed\n";return 0;
 }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

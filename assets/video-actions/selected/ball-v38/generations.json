@@ -1,0 +1,84 @@
+[
+  {
+    "character": "cream",
+    "args": {
+      "client_token": "yeopjari-v38-single-low-bat-cream-20261116-a",
+      "model": "bytedance/seedance-2.5",
+      "options": {
+        "prompt": "Animate the EXACT established desktop kitten in the supplied identical first and last reference. Preserve its exact face, ears, eye colors, fur markings, head/body proportions and size. Locked orthographic camera, full animal always visible at constant scale. Uniform pure #00FF00 chroma background, no shadow, no text, no props, NO ball or other objects. Start and finish in the identical reference four-paw planted side stance facing RIGHT. A single realistic low front-paw batting stroke toward a small imaginary rolling ball beside the right forepaw, while the hind feet and other forepaw remain planted on the same floor. 0.00-0.30s notice the floor just in front of the nearest forepaw with focused eyes and a subtle head tilt. 0.30-0.65s load weight gently into the planted legs and lift the nearest forepaw only a LITTLE above the floor, toes curled, never a high wave. 0.65-0.95s extend that one forepaw FORWARD and slightly DOWN in ONE decisive low sweeping tap, its toes moving close to the floor (maximum toe height only one sixth of head height). 0.95-1.55s follow through a little, then smoothly retract and plant the paw back under the shoulder. By 1.8s all four paws must be fully supported in the exact starting side stance, relaxed and ready to walk after the ball. 1.8-4.0s remain in that same planted stance with only a quiet breath and blink. The head, shoulder, elbow and paw stay connected, realistic feline weight transfer. Exactly ONE low stroke, no repeated batting, no jumping, no seated pose, no walking, no body or camera translation, no extra limbs, no changing character or size. The final frame must match the supplied reference.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/a51a2fd8db74428193c60b6470818c44/cream-planted-side-v35.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/a51a2fd8db74428193c60b6470818c44/cream-planted-side-v35.png",
+        "duration": 4,
+        "resolution": "720p",
+        "aspect_ratio": "1:1",
+        "generate_audio": false,
+        "generation_mode": "frame"
+      }
+    },
+    "result": {
+      "job_id": "mcp_b8a9194a780b419dbdd545ec84711fd1",
+      "creditCost": 460,
+      "reused": false
+    },
+    "generation": {
+      "jobId": "mcp_b8a9194a780b419dbdd545ec84711fd1",
+      "status": "succeeded",
+      "modelName": "bytedance/seedance-2.5",
+      "createdAt": "2026-11-16T00:57:42.524Z",
+      "completedAt": null,
+      "outputList": [
+        {
+          "imageUrl": null,
+          "videoUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_b8a9194a780b419dbdd545ec84711fd1/output/output_0.mp4",
+          "posterUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_b8a9194a780b419dbdd545ec84711fd1/output/output_0_poster.jpg",
+          "text": null
+        }
+      ]
+    },
+    "source_path": "sources/ball-v38/cream-single-bat.mp4",
+    "sha256": "6be264a559588b77435e1a888707643a4fd02af2a95bfedfa61fb754e8c15deb",
+    "frame_count": 97,
+    "fps": 24.0
+  },
+  {
+    "character": "tuxedo",
+    "args": {
+      "client_token": "yeopjari-v38-single-low-bat-tuxedo-20261116-a",
+      "model": "bytedance/seedance-2.5",
+      "options": {
+        "prompt": "Animate the EXACT established desktop kitten in the supplied identical first and last reference. Preserve its exact face, ears, eye colors, fur markings, head/body proportions and size. Locked orthographic camera, full animal always visible at constant scale. Uniform pure #00FF00 chroma background, no shadow, no text, no props, NO ball or other objects. Start and finish in the identical reference four-paw planted side stance facing RIGHT. A single realistic low front-paw batting stroke toward a small imaginary rolling ball beside the right forepaw, while the hind feet and other forepaw remain planted on the same floor. 0.00-0.30s notice the floor just in front of the nearest forepaw with focused eyes and a subtle head tilt. 0.30-0.65s load weight gently into the planted legs and lift the nearest forepaw only a LITTLE above the floor, toes curled, never a high wave. 0.65-0.95s extend that one forepaw FORWARD and slightly DOWN in ONE decisive low sweeping tap, its toes moving close to the floor (maximum toe height only one sixth of head height). 0.95-1.55s follow through a little, then smoothly retract and plant the paw back under the shoulder. By 1.8s all four paws must be fully supported in the exact starting side stance, relaxed and ready to walk after the ball. 1.8-4.0s remain in that same planted stance with only a quiet breath and blink. The head, shoulder, elbow and paw stay connected, realistic feline weight transfer. Exactly ONE low stroke, no repeated batting, no jumping, no seated pose, no walking, no body or camera translation, no extra limbs, no changing character or size. The final frame must match the supplied reference.",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/34ce4a4d60864b75b828d732f26b21dc/tuxedo-planted-side-v35.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/34ce4a4d60864b75b828d732f26b21dc/tuxedo-planted-side-v35.png",
+        "duration": 4,
+        "resolution": "720p",
+        "aspect_ratio": "1:1",
+        "generate_audio": false,
+        "generation_mode": "frame"
+      }
+    },
+    "result": {
+      "job_id": "mcp_979d7bcdc71346c49dc39238f7eeb196",
+      "creditCost": 460,
+      "reused": false
+    },
+    "generation": {
+      "jobId": "mcp_979d7bcdc71346c49dc39238f7eeb196",
+      "status": "succeeded",
+      "modelName": "bytedance/seedance-2.5",
+      "createdAt": "2026-11-16T00:57:43.571Z",
+      "completedAt": null,
+      "outputList": [
+        {
+          "imageUrl": null,
+          "videoUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_979d7bcdc71346c49dc39238f7eeb196/output/output_0.mp4",
+          "posterUrl": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_979d7bcdc71346c49dc39238f7eeb196/output/output_0_poster.jpg",
+          "text": null
+        }
+      ]
+    },
+    "source_path": "sources/ball-v38/tuxedo-single-bat.mp4",
+    "sha256": "12f8c0aa58df1644cca030a40ff6654d5b7bb601c50af82b97cb437cd40f4e17",
+    "frame_count": 97,
+    "fps": 24.0
+  }
+]
