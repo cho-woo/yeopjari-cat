@@ -17,23 +17,43 @@ int main(){
         state.pet.updatedUtc=state.nutrition.updatedUtc=state.memory.updatedUtc=state.life.updatedUtc=now;
         Model model;model.Bind(state);model.Reset(96,904,600);
         Check(model.Perform(C::Climb,1000),"climb request rejected");
-        std::uint64_t began=0;bool airborne=false,returned=false;double peak=0;
+        std::uint64_t began=0;bool airborne=false,returned=false,completeClimb=false;double peak=0;
         const auto* art=cat::sprite_assets::Find(C::Climb,static_cast<unsigned>(coat),cat::sprite_assets::kCareSprites);
         Check(art!=nullptr,"missing climb registration");
         const auto duration=cat::sprite_sequence::ProgramDuration(art->program);
+        const auto* walk=cat::sprite_assets::Find(C::Walk,static_cast<unsigned>(coat),cat::sprite_assets::kCareSprites);
+        Check(walk!=nullptr,"missing authored return registration");
+        const auto outro=walk->program.outro;
+        std::array<bool,cat::sprite_sequence::kMaxAuthoredFrames> seen{};
         for(unsigned frame=0;frame<3000;++frame){
             Context c;c.nowUtc=now;c.ticks=1000+(frame+1)*1000ULL/60;c.elapsedSeconds=1./60;c.primaryVisible=false;
             model.Tick(c);const auto view=model.View(c.ticks);peak=std::max(peak,view.physical.lift);
             if(!began&&view.animation.spriteClip==C::Climb)began=c.ticks;
+            if(view.animation.spriteClip==C::Climb) {
+                auto options=view.animation.spriteOptions;options.sheetFrames=art->frameCount;
+                const auto source=cat::sprite_sequence::SampleProgram(C::Climb,art->program,view.animation.spriteElapsedMs,options).frame;
+                completeClimb|=source+1==art->frameCount;
+            } else if(began&&completeClimb) {
+                if(view.animation.spriteClip==C::Walk) {
+                    Check(!view.animation.flip,"climb return mirrored before its planted turn");
+                    seen[view.animation.spriteFrame]=true;
+                } else {
+                    bool complete=true;
+                    for(unsigned i=0;i<outro.count;++i)complete&=seen[walk->program.steps[outro.first+i].frame];
+                    Check(complete,"planted climb skipped authored turn/sit return frames");
+                }
+            }
             airborne=airborne||!view.physical.grounded;
-            if(began&&c.ticks>=began+duration+1000){
+            if(began&&c.ticks>=began+duration+cat::sprite_sequence::Duration(walk->program,outro)+500){
                 if(view.animation.spriteClip==C::Climb)LiveMotionAuditAccess::Dump(model,c.ticks);
                 Check(view.physical.grounded,"climb did not land");
                 Check(view.animation.spriteClip!=C::Climb,"terminal raised-paw climb frame stranded in quiet interval");
                 Check(!model.Busy(),"walking owner retained the completed wall action");returned=true;break;
             }
         }
-        Check(began&&airborne&&returned&&peak>80,"incomplete real climb/drop/recovery");++cases;
+        unsigned returnedFrames=0;
+        for(unsigned i=0;i<outro.count;++i)returnedFrames+=seen[walk->program.steps[outro.first+i].frame];
+        Check(began&&airborne&&returned&&completeClimb&&returnedFrames==outro.count&&peak>80,"incomplete real climb/drop/authored turn and sit");++cases;
     }
     std::cout<<"companion climb: "<<cases<<" coats/pause cases complete source, land and release owner passed\n";
 }

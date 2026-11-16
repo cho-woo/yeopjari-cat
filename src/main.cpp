@@ -3017,13 +3017,7 @@ void DrawStyledAnimation(Graphics& graphics, cat::animation::Pose pose, REAL cen
     const bool pawBoundary=authored&&(pose.spriteTimed||pose.spriteClip==Clip::BallPlay)&&
         (authored->layout->clip==Clip::Punch||authored->layout->clip==Clip::Reach||authored->layout->clip==Clip::BallPlay)&&
         (pose.spriteElapsedMs<=300||pose.spriteElapsedMs+500>=cat::sprite_sequence::ProgramDuration(authored->layout->program));
-    // The climb's final planted side pose is still authored artwork. Retain
-    // just its grounded exit for the ordinary neutral transition; flight and
-    // wall contacts keep their unmodified source drawing and clock.
-    const bool climbBoundary=authored&&authored->layout->clip==Clip::Climb&&pose.groundContact&&
-        pose.spriteElapsedMs+cat::care_presentation::Transition::DurationMs>=
-            cat::sprite_sequence::ProgramDuration(authored->layout->program);
-    const bool eligible=fixed&&(scene|| (authored?(calm(authored->layout->clip)||groundTurn||jumpBoundary||pawBoundary||climbBoundary):pose.frame>=4&&pose.frame<cat::animation::kSpriteCount))&&
+    const bool eligible=fixed&&(scene|| (authored?(calm(authored->layout->clip)||groundTurn||jumpBoundary||pawBoundary):pose.frame>=4&&pose.frame<cat::animation::kSpriteCount))&&
         pose.joints.pawReachX==0&&pose.joints.pawReachY==0&&pose.joints.pawAnchorX==0&&!cat::cursor_rig::Active(pose.cursorReach);
     if(!eligible) {
         state.Reset();direct(graphics,pose);

@@ -1,61 +1,68 @@
 #pragma once
-// Included inside native_manual_motion_tests. Paint the actual authored final
-// climb poses and the ordinary planted neutral in the shipping renderer.
+// Included inside native_manual_motion_tests. Actual companion controller,
+// Box2D and shipping GDI+ path, with the complete authored return to neutral.
 namespace climb_boundary {
 int Run(std::string& detail) {
-    CreateDirectoryW(L"render-self-test",nullptr);
-    CreateDirectoryW(L"render-self-test/climb-boundary",nullptr);
-    Surface image,previous,direct,previousDirect;
-    constexpr int W=260,H=260;constexpr std::size_t bytes=W*H*4;
-    if(!image.Create(W,H)||!previous.Create(W,H)||!direct.Create(W,H)||!previousDirect.Create(W,H))return 560;
+    CreateDirectoryW(L"render-self-test",nullptr);CreateDirectoryW(L"render-self-test/climb-boundary",nullptr);
+    Surface image;if(!image.Create(320,300))return 560;
+    using Clip=cat::sprite_sequence::Clip;
     std::ostringstream report;report.imbue(std::locale::classic());
-    report<<"{\"version\":\"" YEOPJARI_VERSION_STRING "\",\"capture\":\"shipping GDI+, synthetic clock, fixed planted root\",\"cases\":[";
+    report<<"{\"version\":\"" YEOPJARI_VERSION_STRING "\",\"capture\":\"actual companion model, Box2D and GDI+, synthetic clock\",\"cases\":[";
     bool comma=false;
-    for(const auto character:cat::kAvailableCharacters) {
+    for(const auto character:cat::kAvailableCharacters)for(const bool paused:{false,true}) {
         Host host;host.Reset(character,true);if(!host.artworkReady)return 561;
-        const auto saved=host.Saved();CarePresentationRenderer presentation;
-        const auto* climb=LoadedCareSprite(cat::sprite_sequence::Clip::Climb,character);
-        if(!climb)return 561;
+        auto state=cat::companion::NewState(g.pet.bornUtc);state.enabled=true;state.preferences.character=character;
+        state.pet.roamingPaused=paused;state.pet.position=1;state.nutrition.bodyCondition=50;
+        const auto utc=UtcNow();state.pet.updatedUtc=state.nutrition.updatedUtc=state.memory.updatedUtc=state.life.updatedUtc=utc;
+        const auto saved=cat::companion::Serialize(state);
+        cat::companion::Model model;model.Bind(state);model.Reset(96,904,600);
+        if(!model.Perform(Clip::Climb,host.now))return 561;
+        const auto* climb=LoadedCareSprite(Clip::Climb,character);const auto* walk=LoadedCareSprite(Clip::Walk,character);
+        if(!climb||!walk)return 561;
         const auto duration=cat::sprite_sequence::ProgramDuration(climb->layout->program);
-        double boundary=0,directBoundary=0,endpoint=0;bool held=false;
-        for(unsigned frame=0;frame<42;++frame) {
-            auto pose=cat::animation::Evaluate(Motion::Idle,0,host.now+frame*16,1);pose.groundContact=true;pose.flip=false;
-            if(frame<19)cat::animation::AttachSprite(pose,cat::sprite_sequence::Clip::Climb,duration-304+frame*16);
-            else {
-                pose.spriteClip=cat::sprite_sequence::Clip::Sleep;pose.spriteFrame=0;pose.spriteTimed=false;
-                cat::animation::UseAuthoredSprite(pose);
+        const auto outro=walk->layout->program.outro;
+        std::array<bool,cat::sprite_sequence::kMaxAuthoredFrames> seen{};
+        CarePresentationRenderer presentation;std::uint64_t began=0,finished=0;
+        bool lastClimb=false,returned=false;unsigned painted=0,outroFrames=0;double prior=904,maxStep=0;
+        const auto folder=L"render-self-test/climb-boundary/c"+std::to_wstring(static_cast<unsigned>(character))+(paused?L"-paused":L"-roaming");
+        CreateDirectoryW(folder.c_str(),nullptr);
+        for(unsigned frame=0;frame<2600;++frame) {
+            cat::companion::Context c;c.nowUtc=utc;c.ticks=host.now+(frame+1)*16;c.elapsedSeconds=.016;c.primaryVisible=false;
+            model.Tick(c);const auto view=model.View(c.ticks);const auto& pose=view.animation;
+            const auto* art=CareSpriteFor(pose,character);const unsigned source=art?SpriteFrameFor(pose,*art->layout):unsigned(pose.frame);
+            if(pose.spriteClip==Clip::Climb) {
+                if(!began)began=c.ticks;
+                lastClimb|=source+1==climb->layout->frameCount;
             }
-            const auto draw=[&](Surface& surface,CarePresentationRenderer* state) {
-                Graphics graphics(surface.image.get());graphics.SetCompositingMode(CompositingModeSourceCopy);
-                graphics.Clear(Color(0,0,0,0));graphics.SetCompositingMode(CompositingModeSourceOver);
-                graphics.SetInterpolationMode(InterpolationModeHighQualityBicubic);graphics.SetSmoothingMode(SmoothingModeAntiAlias);
-                graphics.SetPixelOffsetMode(PixelOffsetModeHighQuality);
-                DrawPetStyle(graphics,character,cat::Outfit::None,pose,cat::appearance::VisualModifiers(g.nutrition,character),130,210,110,state,host.now+frame*16);
+            if(began&&lastClimb&&pose.spriteClip!=Clip::Climb&&!finished) {
+                if(pose.spriteClip!=Clip::Walk)return 563;
+                finished=c.ticks;
+            }
+            if(finished&&pose.spriteClip==Clip::Walk) {
+                if(pose.flip)return 565;
+                seen[source]=true;
+            }
+            if(began&&c.ticks>=began+duration-250) {
+                maxStep=std::max(maxStep,std::abs(view.physical.x-prior));prior=view.physical.x;
+                Graphics graphics(image.image.get());graphics.SetCompositingMode(CompositingModeSourceCopy);graphics.Clear(Color(0,0,0,0));
+                graphics.SetCompositingMode(CompositingModeSourceOver);graphics.SetInterpolationMode(InterpolationModeHighQualityBicubic);
+                graphics.SetSmoothingMode(SmoothingModeAntiAlias);graphics.SetPixelOffsetMode(PixelOffsetModeHighQuality);
+                DrawPetStyle(graphics,character,cat::Outfit::None,pose,view.body,160,260,110,&presentation,c.ticks,view.presentationGeneration,false);
                 graphics.Flush(FlushIntentionSync);
-            };
-            draw(image,&presentation);draw(direct,nullptr);
-            const auto difference=[&](const BYTE* a,const BYTE* b) {
-                double total=0;std::size_t active=0;
-                for(std::size_t i=0;i<bytes;i+=4)if(std::max(a[i+3],b[i+3])>16) {
-                    for(unsigned channel=0;channel<4;++channel)total+=std::abs(int(a[i+channel])-b[i+channel]);++active;
-                }
-                return active?total/(active*4*255):0.;
-            };
-            if(frame==19){boundary=difference(previous.pixels,image.pixels);directBoundary=difference(previousDirect.pixels,direct.pixels);held=presentation.transition.Active(host.now+frame*16);}
-            if(frame==41)endpoint=difference(direct.pixels,image.pixels);
-            const auto file=L"render-self-test/climb-boundary/c"+std::to_wstring(static_cast<unsigned>(character))+L"-f"+std::to_wstring(frame)+L".png";
-            const auto directFile=L"render-self-test/climb-boundary/direct-c"+std::to_wstring(static_cast<unsigned>(character))+L"-f"+std::to_wstring(frame)+L".png";
-            if(!SaveNativeWalkingReview(*image.image,file.c_str())||!SaveNativeWalkingReview(*direct.image,directFile.c_str()))return 562;
-            std::memcpy(previous.pixels,image.pixels,bytes);
-            std::memcpy(previousDirect.pixels,direct.pixels,bytes);
+                const auto digits=std::to_wstring(painted++);
+                if(!SaveNativeWalkingReview(*image.image,(folder+L"/frame-"+std::wstring(5-digits.size(),L'0')+digits+L".png").c_str()))return 562;
+            }
+            if(finished&&c.ticks>finished+cat::sprite_sequence::Duration(walk->layout->program,outro)+350&&!model.Busy()) {
+                returned=view.physical.grounded;break;
+            }
         }
+        for(unsigned i=0;i<outro.count;++i)outroFrames+=seen[walk->layout->program.steps[outro.first+i].frame];
+        detail="climb authored return coat="+std::to_string(static_cast<unsigned>(character))+" outro="+std::to_string(outroFrames);
+        if(!lastClimb||!returned||outroFrames!=outro.count||maxStep>.1||cat::companion::Serialize(state)!=saved)return 563;
         if(comma)report<<',';comma=true;
-        report<<"{\"coat\":"<<static_cast<unsigned>(character)<<",\"direct_boundary_pixel_delta\":"<<directBoundary<<",\"first_neutral_pixel_delta\":"<<boundary
-            <<",\"endpoint_direct_delta\":"<<endpoint<<",\"transition_active\":"<<(held?"true":"false")<<'}';
-        detail="climb planted boundary coat="+std::to_string(static_cast<unsigned>(character))+" first_delta="+std::to_string(boundary);
-        if(!held||boundary>.02||endpoint>.001||host.Saved()!=saved) {
-            report<<"],\"passed\":false}";WriteBytes(L"render-self-test/climb-boundary/report.json",report.str());return 563;
-        }
+        report<<"{\"coat\":"<<static_cast<unsigned>(character)<<",\"paused\":"<<(paused?"true":"false")
+            <<",\"final_climb_frame\":true,\"return_frames\":"<<outroFrames<<",\"required_return_frames\":"<<outro.count
+            <<",\"max_root_step\":"<<maxStep<<",\"painted_frames\":"<<painted<<",\"complete\":true}";
     }
     report<<"],\"passed\":true,\"profile_unchanged\":true}";
     return WriteBytes(L"render-self-test/climb-boundary/report.json",report.str())?0:564;
