@@ -42,8 +42,9 @@ struct LiveMotionAuditAccess {
         (m.ballSession_.phase==cat::toy::Phase::Rest||m.ballSession_.phase==cat::toy::Phase::Wait)){m.ResetControls();m.BeginQuiet(ticks);}}
     static void RepeatToy(Model& m,std::uint64_t ticks){if(Ready(m,ticks)&&ticks>m.motionStart_+1500)m.Perform(cat::sprite_sequence::Clip::ToyPlay,ticks);}
     static void FreeRun(Model& m,std::uint64_t ticks){m.ResetControls();m.brain_->Interrupt(ticks);m.BeginQuiet(ticks);m.nextDecision_=ticks+1000;}
-    static bool Ready(const Model& m,std::uint64_t){return !m.Busy()&&
-        (m.motion_==cat::animation::Motion::Idle||m.motion_==cat::animation::Motion::Watch)&&
+    static bool Ready(const Model& m,std::uint64_t ticks){return !m.Busy()&&
+        (m.motion_==cat::animation::Motion::Idle||m.motion_==cat::animation::Motion::Watch||
+            (m.motion_==cat::animation::Motion::Sleep&&ticks>=m.motionStart_+2000))&&
         !m.groundArtBridge_.Starting()&&!m.groundArtBridge_.Stopping();}
 };
 }
@@ -320,7 +321,7 @@ int Run(HINSTANCE instance,unsigned coat,unsigned first,unsigned last,unsigned r
     if(fullProfile&&!SavePet(false))return 975;
     std::ostringstream region;region<<"{\"x\":"<<origin.x<<",\"y\":"<<origin.y<<",\"width\":"<<Width<<",\"height\":"<<Height<<"}";
     WriteBytes(L"capture-region.json",region.str());
-    const auto started=GetTickCount64();g.lastTick=started;g.lastPhysicsTime=MotionClock();
+    const auto started=GetTickCount64();const double preciseStarted=MotionClock();g.lastTick=started;g.lastPhysicsTime=preciseStarted;
     g.nextMaintenance=started+(fullProfile?1500:86400000);g.nextSave=started+(fullProfile?60000:86400000);
     g.foodRequestAfter=g.updateAnnounceAfter=started+86400000;
     g.nextCuriosity=g.nextFlyHunt=started+86400000;g.perch.nextTry=started+86400000;
@@ -329,10 +330,10 @@ int Run(HINSTANCE instance,unsigned coat,unsigned first,unsigned last,unsigned r
     Recorder recorder;if(!recorder.Open(ffmpeg))return 972;
     if(!appFrames)recorder.StartCapture(origin,started);
     std::array<double,6> timings{};liveAuditTimings=&timings;
-    std::ofstream trace("trace.csv");trace<<"wall_ms,action,repeat,role,motion,clip,source,x,lift,vx,vy,serial,timer_gap_ms,setup_ms,furniture_ms,companion_ms,dispatch_ms,physics_ms,render_ms,scene,pounce,source_ms,contact_serial,grounded,origin_x,origin_y,coat,target_x,target_height\n";
+    std::ofstream trace("trace.csv");trace<<"wall_ms,action,repeat,role,motion,clip,source,x,lift,vx,vy,serial,timer_gap_ms,setup_ms,furniture_ms,companion_ms,dispatch_ms,physics_ms,render_ms,scene,pounce,source_ms,contact_serial,grounded,origin_x,origin_y,coat,target_x,target_height,wall_precise_ms\n";
     unsigned selected=first,repeat=0,completed=0;bool active=false,stopping=false;ULONGLONG next=started+2000,begin=0,end=0,lastSample=started;
     std::uint64_t maxGap=0,lateFrames=0,frames=0,renderEpochMismatches=0;
-    ULONGLONG nextAppCapture=started;
+    double nextAppCapture=preciseStarted;
     observeFrame=[&]{
         const auto ticks=g.lastTick;
         POINT moved{};ClientToScreen(backdrop,&moved);
@@ -358,7 +359,7 @@ int Run(HINSTANCE instance,unsigned coat,unsigned first,unsigned last,unsigned r
                 trace<<','<<unsigned(drawing.furnitureScene)<<','<<drawing.ballPounce<<','<<
                     (drawing.furnitureScene!=cat::furniture::Kind::None?drawing.furnitureElapsedMs:drawing.spriteElapsedMs)<<','<<contact<<','<<grounded<<','<<origin.x<<','<<origin.y<<','<<appearance;
                 if(liveAuditPointer&&pointerObserved)trace<<','<<(pointerPoint.x-g.work.left)/g.dpiScale<<','<<(g.work.bottom-pointerPoint.y)/g.dpiScale;
-                else trace<<",,";trace<<'\n';
+                else trace<<",,";trace<<','<<(g.lastPhysicsTime-preciseStarted)*1000<<'\n';
             };
             trace<<ticks-started<<','<<selected<<','<<repeat<<",0,"<<static_cast<unsigned>(g.motion)<<','<<static_cast<unsigned>(pose.spriteClip)<<','<<
                 sourceFrame(pose,art)<<','<<physical.x<<','<<physical.lift<<','<<physical.velocityX<<','<<physical.velocityY<<','<<g.motionSerial<<','<<gap;
@@ -367,8 +368,8 @@ int Run(HINSTANCE instance,unsigned coat,unsigned first,unsigned last,unsigned r
                 sourceFrame(companion.animation,second)<<','<<companion.physical.x<<','<<companion.physical.lift<<','<<companion.physical.velocityX<<','<<companion.physical.velocityY<<','<<cat::companion::LiveMotionAuditAccess::Serial(g.companionModel)<<','<<gap;
             for(double time:timings)trace<<','<<time;extra(companion.animation,unsigned(cat::companion::BallReviewAccess::Contact(g.companionModel)),companion.physical.grounded,companionCoat);
         }
-        if(appFrames&&ticks>=nextAppCapture){const auto index=unsigned((ticks-started)*30/1000);
-            recorder.AppFrame(origin,index);nextAppCapture=started+((std::uint64_t(index)+1)*1000+29)/30;}
+        if(appFrames&&g.lastPhysicsTime>=nextAppCapture){const auto index=unsigned((g.lastPhysicsTime-preciseStarted)*30);
+            recorder.AppFrame(origin,index);nextAppCapture=preciseStarted+(index+1)/30.;}
     };
     while(!closing&&selected<=last) {
         MSG message{};for(unsigned pumped=0;pumped<4&&PeekMessageW(&message,nullptr,0,0,PM_REMOVE);++pumped){
@@ -401,7 +402,10 @@ int Run(HINSTANCE instance,unsigned coat,unsigned first,unsigned last,unsigned r
         ",\"timer_gaps_over_50ms\":"<<lateFrames<<",\"encoded_frames\":"<<recorder.written<<",\"encoder_drops\":"<<recorder.dropped<<",\"occluded_captures\":"<<recorder.occluded<<",\"encoder_failed\":"<<(recorder.failed?"true":"false")<<
         ",\"maintenance_and_save_enabled\":"<<(fullProfile?"true":"false")<<",\"fixture_save_passed\":"<<(saved?"true":"false")<<",\"render_epoch_mismatches\":"<<renderEpochMismatches<<"}";
     WriteBytes(L"report.json",report.str());
-    g.companionWindow.Close();DestroyWindow(g.window);g.window=nullptr;DestroyWindow(backdrop);backdrop=nullptr;
+    g.companionWindow.Close();
+    if(g.toyWindow){DestroyWindow(g.toyWindow);g.toyWindow=nullptr;}g.toySurface.Reset();
+    if(g.companionBallWindow){DestroyWindow(g.companionBallWindow);g.companionBallWindow=nullptr;}g.companionBallSurface.Reset();
+    DestroyWindow(g.window);g.window=nullptr;DestroyWindow(backdrop);backdrop=nullptr;
     ReleaseAtlases();ReleaseCarePresentation();g.surface.Reset();g.blendFrom.Reset();g.blendTo.Reset();
     if(g.preciseTimer){timeEndPeriod(1);g.preciseTimer=false;}g.initialized=false;
     GdiplusShutdown(token);if(SUCCEEDED(com))CoUninitialize();

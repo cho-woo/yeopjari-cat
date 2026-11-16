@@ -2089,11 +2089,16 @@ bool PrimaryAutonomousBoundary(ULONGLONG ticks) {
 bool CanStartAutonomousStory(ULONGLONG ticks) {
     return PrimaryAutonomousBoundary(ticks) && !g.companionModel.Busy();
 }
-bool PrimarySocialBoundary(ULONGLONG ticks) {
+bool PrimarySocialBoundary(ULONGLONG ticks,bool continuing=false) {
     // Two independent random clocks need an overlap, not one matching frame.
     // A social proposal may use the latter part of an already quiet interval.
-    return !g.furniture.Owned() && !g.manualMotionActive && g.autonomousResting && ticks>=g.motionStart &&
-        ticks-g.motionStart>=cat::behavior::Brain::NeutralRestMinMs && !g.waitingForStop &&
+    // A manually accepted social command owns its approach as well as contact.
+    // Reapplying the random proposal's minimum rest on the next Tick cancelled
+    // a command accepted while the primary was still in a fresh quiet pose.
+    const bool acceptedQuiet=continuing&&(g.motion==Motion::Idle||g.motion==Motion::Watch||g.motion==Motion::Walk);
+    return !g.furniture.Owned() && !g.manualMotionActive && !KeyboardPlayActive() &&
+        (acceptedQuiet||(g.autonomousResting&&ticks>=g.motionStart&&
+            ticks-g.motionStart>=cat::behavior::Brain::NeutralRestMinMs)) && !g.waitingForStop &&
         !g.lifeSequenceCount && !g.memorySequenceCount && !g.toyEngaged &&
         !g.approachingToy && !g.approachingUser && g.pendingCare<0;
 }

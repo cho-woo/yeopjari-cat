@@ -37,7 +37,7 @@ cat::companion::Context CompanionContext(ULONGLONG ticks, double elapsed) {
         // Joining an existing sleep/run story does not replace the primary's
         // action. Care and unrelated gestures still require a quiet boundary.
         (!g.companionReaction && g.motion!=Motion::Sleep && g.motion!=Motion::Zoomies &&
-            !PrimarySocialBoundary(ticks));
+            !PrimarySocialBoundary(ticks,g.companionModel.SocialActive()));
     if (g.perch.active) c.primaryPlatform = CompanionPlatform(g.perch.hwnd);
     const auto support = reinterpret_cast<HWND>(g.companionModel.SupportId());
     if (support) c.supportPlatform = CompanionPlatform(support);

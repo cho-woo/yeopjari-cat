@@ -55,7 +55,7 @@ def inspect_trace(path, primary, companion):
         point = tuple(float(row[key]) for key in ('x', 'lift', 'vx', 'vy'))
         if not all(math.isfinite(n) for n in point):
             raise ValueError('Non-finite actor physics')
-        now = int(row['wall_ms'])
+        now = float(row.get('wall_precise_ms') or row['wall_ms'])
         if role in last:
             prior, then = last[role]
             dt = (now - then) / 1000

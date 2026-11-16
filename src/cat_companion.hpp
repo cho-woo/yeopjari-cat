@@ -554,6 +554,13 @@ public:
         if(own.onPlatform!=c.primary.onPlatform || (own.onPlatform && supportId_!=c.primaryPlatform.id)) return false;
         if(kind==Interaction::FoodCompetition && state_->nutrition.fullness>85) return false;
         interaction_=kind; socialUntil_=c.ticks+(kind==Interaction::SharedSleep?30000:kind==Interaction::RunTogether?10000:12000);
+        if(kind==Interaction::Paw) {
+            // The play clock starts after a real approach, including the
+            // planted walk entry. A distant accepted friend must not time out
+            // before the first paw can reach the shared play spacing.
+            const double distance=std::max(0.,std::abs(own.x-c.primary.x)-82.);
+            socialUntil_+=static_cast<std::uint64_t>(std::min(45000.,5000.+distance/14.*1000.));
+        }
         pairRound_=0;pairRestUntil_=0;
         storyActive_=true;quietActive_=false;
         contactRecorded_=false; brain_->Interrupt(c.ticks); nextDecision_=socialUntil_;

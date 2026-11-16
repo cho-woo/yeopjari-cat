@@ -57,6 +57,15 @@ Two additional issues were reproduced during real-time review:
 - One Tick now uses one timestamp for physical updates, source frame selection,
   rendering and frame-timer selection. The audit observes the exact painted pose
   without re-evaluating mutable transition state with an earlier timestamp.
+- The real-time social group exposed a further host integration bug: a manual
+  play request was accepted during a fresh quiet pose, then cancelled on the
+  next Tick by the random-proposal rest gate. An accepted interaction now retains
+  its safe neutral approach; other commands, keyboard control and care owners
+  still preempt it. The native paired-play review now uses the actual host
+  context on every frame instead of a simplified busy flag.
+  Its previous fixed 12-second event budget also omitted distant approaches;
+  the budget now includes travel and the planted entry. Three coat regressions
+  verify a distant friend is reached and both paw bouts complete.
 
 Local intermediate evidence is under `build/full-motion-audit`. The opt-in
 `--live-motion-audit` fixture uses the real WM_TIMER, Tick, Box2D, renderer and
@@ -81,6 +90,13 @@ behavior. Pointer input is shared between actors and drains its current recovery
 before the test ends. Retired BoxSit and floor Hang states are pose probes; actual
 wall grip/drop is case 44. DPI is an app coordinate simulation; physical monitor
 coverage must be stated separately.
+
+Harness corrections found during pilot runs are separate from product defects:
+temporary toy surfaces are released before GDI+ shutdown, a stable autonomous
+nap may satisfy the quiet endpoint after an already completed wall command, and
+physical continuity uses the actual high-resolution physics clock rather than
+the coarse GetTickCount64 sample grid. Interrupted superseded package runs are
+retained as intermediate evidence, never counted as final verification.
 
 The runner records process exits, exact source/CI/executable provenance, selected
 source coverage, finite physics, physical continuity, capture drops and epoch
