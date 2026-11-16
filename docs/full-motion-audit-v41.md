@@ -66,6 +66,12 @@ Two additional issues were reproduced during real-time review:
   Its previous fixed 12-second event budget also omitted distant approaches;
   the budget now includes travel and the planted entry. Three coat regressions
   verify a distant friend is reached and both paw bouts complete.
+- The young/150%-scale group exposed an edge-target starvation: ordinary roaming
+  edge avoidance braked a cat before a fishing rod's clamped destination. Targeted
+  toy play now retains its own approach/braking controller and is not cancelled
+  by the generic edge reversal. A native host regression exercises three coats,
+  young/adult growth, 100/150% scale, negative work origins and both edges, including
+  the final authored ToyPlay recovery and unchanged care records (24 cases).
 
 Local intermediate evidence is under `build/full-motion-audit`. The opt-in
 `--live-motion-audit` fixture uses the real WM_TIMER, Tick, Box2D, renderer and

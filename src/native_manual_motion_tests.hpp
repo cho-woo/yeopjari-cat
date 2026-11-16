@@ -70,6 +70,7 @@ struct Host {
 #include "native_jump_continuity_tests.hpp"
 #include "native_random_zoomies_tests.hpp"
 #include "native_keyboard_play_tests.hpp"
+#include "native_toy_edge_tests.hpp"
 
 bool MenuCommands(bool enabled) {
     HMENU menu = BuildPetMenu(); if (!menu) return false;
@@ -91,6 +92,7 @@ bool MenuCommands(bool enabled) {
 }
 
 int Run(std::string& proof) {
+    if(const int rod=toy_edge::Run(proof))return rod;
     if(const int keyboardResult=keyboard_native::Run())return keyboardResult;
     if(!EnsureCareCoats(cat::Character::Cream,cat::Character::Tuxedo))return 520;
     if(const int randomZoomies=random_zoomies_native::Run())return randomZoomies;

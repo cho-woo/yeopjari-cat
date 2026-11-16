@@ -5391,7 +5391,10 @@ void AdvancePrimaryMotion(ULONGLONG ticks, double elapsed) {
     targetSpeed *= cat::species::ProfileFor(g.preferences.character).movementSpeedMultiplier;
     if(g.runningJump.active)targetSpeed=g.runningJump.velocityX;
     if(CursorTravellingPounce())targetSpeed=cursorInteraction.takeoffVelocity;
-    if (!g.furniture.Owned() && !(g.toy==ToyKind::Ball&&g.toyEngaged) && !g.runningJump.active && g.physics.CurrentPose().grounded && targetSpeed != 0) {
+    // Targeted play already brakes toward a reachable, clamped destination.
+    // Free-roaming edge avoidance stopped a small cat short of a rod placed
+    // at that same edge, so its approach never reached the interaction gate.
+    if (!g.furniture.Owned() && !g.toyEngaged && !g.runningJump.active && g.physics.CurrentPose().grounded && targetSpeed != 0) {
         const auto support = g.physics.CurrentPose();
         const auto [low, high] = MovementBoundsLogical();
         if (cat::motion::BrakeBeforeEdge(support.x, WalkingVelocity(support), targetSpeed, low, high)) {
@@ -5492,7 +5495,7 @@ void AdvancePrimaryMotion(ULONGLONG ticks, double elapsed) {
         const auto [low, high] = MovementBoundsLogical();
         const bool atLeft = targetSpeed < 0 && physical.x <= low + .3;
         const bool atRight = targetSpeed > 0 && physical.x >= high - .3;
-        if (atLeft || atRight) {
+        if ((atLeft || atRight)&&!g.toyEngaged) {
             if(!KeyboardPlayActive())g.direction = atLeft ? 1 : -1;
             if (!KeyboardPlayActive() && (g.motion == Motion::Walk || g.motion == Motion::Stalk)) SetMotion(Motion::Watch, 2400);
         }
