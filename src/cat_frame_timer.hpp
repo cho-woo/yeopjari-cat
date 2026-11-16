@@ -37,7 +37,7 @@ public:
     }
     bool Consume(WPARAM generation) {
         std::lock_guard<std::mutex> lock(mutex_);
-        if(!enabled_||generation!=generation_)return false;
+        if(!enabled_||generation!=generation_||!pending_)return false;
         return true;
     }
     void Complete(WPARAM generation) {

@@ -130,6 +130,9 @@ enum Command {
 };
 using Motion = cat::animation::Motion;
 bool (*liveAuditPointer)(POINT&,bool)=nullptr; // Opt-in fixture sample; null in ordinary startup.
+bool liveAuditFixedWorkArea=false;
+struct LiveRenderReceipt {cat::animation::Pose pose;cat::physics::Pose physical;ULONGLONG ticks=0;};
+LiveRenderReceipt* liveAuditRenderReceipt=nullptr;
 constexpr cat::update::Version kVersion{YEOPJARI_VERSION_MAJOR, YEOPJARI_VERSION_MINOR, YEOPJARI_VERSION_PATCH};
 
 struct UpdateState {
@@ -292,6 +295,7 @@ using ToyKind = cat::toy::Kind;
 
 struct App {
     cat::frame::Timer frameTimer;
+    ULONGLONG frameEpoch=0;
     cat::furniture::Session furniture;
     cat::furniture::RandomSchedule furnitureRandom;
     std::mt19937 furnitureRandomSource{std::random_device{}()};
@@ -1879,7 +1883,7 @@ ULONGLONG PrimaryTakeoffMs(bool pounce=false) {
 
 void RefreshAnimationTimer() {
     if (!g.window) return;
-    const auto ticks=GetTickCount64();
+    const auto ticks=g.frameEpoch?g.frameEpoch:GetTickCount64();
     bool companionResting = true;
     if (g.companionStore.enabled() && g.companionModel.Bound()) {
         const auto second = g.companionModel.View(ticks);
@@ -1930,6 +1934,7 @@ void RefreshAnimationTimer() {
     }
 }
 void KeepOnWorkArea(bool reposition = false) {
+    if(liveAuditFixedWorkArea)return;
     MONITORINFO info{}; info.cbSize = sizeof(info);
     if (!g.monitor || !GetMonitorInfoW(g.monitor, &info)) {
         POINT cursor{}; GetCursorPos(&cursor); g.monitor = MonitorFromPoint(cursor, MONITOR_DEFAULTTOPRIMARY);
@@ -3501,6 +3506,7 @@ void RenderFrame(ULONGLONG ticks,bool withPresentation,bool submitWindow=true) {
     const REAL scale = static_cast<REAL>(110.0 * g.dpiScale * cat::GrowthScale(g.pet.bornUtc, now) / CurrentArt().base.standingHeight);
     const auto physical = g.physics.RenderPose();
     const auto pose=PrimaryDisplayedPose(ticks,physical);
+    if(liveAuditRenderReceipt)*liveAuditRenderReceipt={pose,physical,ticks};
     const auto* authored=CareSpriteFor(pose,g.preferences.character);
     Graphics graphics(g.surface.image.get());
     graphics.SetCompositingMode(CompositingModeSourceCopy); graphics.Clear(Color(0, 0, 0, 0));
@@ -3565,7 +3571,7 @@ void RenderFrame(ULONGLONG ticks,bool withPresentation,bool submitWindow=true) {
     UpdateLayeredWindow(g.window, screen, &destination, &size, g.surface.dc, &origin, 0, &blend, ULW_ALPHA);
     ReleaseDC(nullptr, screen);
 }
-void Render() {RenderFrame(GetTickCount64(),true);}
+void Render() {RenderFrame(g.frameEpoch?g.frameEpoch:GetTickCount64(),true);}
 HICON CreateCatIcon() {
     Surface icon; if (!icon.Create(32, 32)) return CopyIcon(LoadIconW(nullptr, IDI_APPLICATION));
     {
@@ -5585,6 +5591,7 @@ void Tick() {
     PollUpdates();
     if (g.closing) return;
     const auto ticks = GetTickCount64();
+    struct EpochScope {ULONGLONG prior=g.frameEpoch;explicit EpochScope(ULONGLONG now){g.frameEpoch=now;}~EpochScope(){g.frameEpoch=prior;}} epoch(ticks);
     const auto clockDelta = ticks >= g.lastTick ? ticks - g.lastTick : 0;
     g.lastTick = ticks;
     const double motionNow = MotionClock();
@@ -6591,9 +6598,15 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
         int count=0;auto args=CommandLineToArgvW(GetCommandLineW(),&count);
         if(!args||count<7){if(args)LocalFree(args);return 974;}
         const unsigned coat=wcstoul(args[2],nullptr,10),first=wcstoul(args[3],nullptr,10),last=wcstoul(args[4],nullptr,10),repeat=wcstoul(args[5],nullptr,10);
-        const std::wstring encoder=args[6];LocalFree(args);
-        if(!cat::CharacterAvailable(static_cast<cat::Character>(coat))||first>last||last>45||repeat<1||repeat>3)return 974;
-        return native_live_motion_audit::Run(instance,coat,first,last,repeat,encoder);
+        const std::wstring encoder=args[6];bool appFrames=false;unsigned companionCoat=coat,ageDays=366;double dpi=1;
+        for(int index=7;index<count;++index){const std::wstring option=args[index];
+            if(option==L"--framebuffer")appFrames=true;
+            else if(option==L"--companion-coat"&&index+1<count)companionCoat=wcstoul(args[++index],nullptr,10);
+            else if(option==L"--age-days"&&index+1<count)ageDays=wcstoul(args[++index],nullptr,10);
+            else if(option==L"--dpi-scale"&&index+1<count)dpi=wcstod(args[++index],nullptr);}
+        LocalFree(args);
+        if(!cat::CharacterAvailable(static_cast<cat::Character>(coat))||!cat::CharacterAvailable(static_cast<cat::Character>(companionCoat))||first>last||last>46||repeat<1||repeat>3||ageDays>36500||!std::isfinite(dpi)||dpi<.5||dpi>2)return 974;
+        return native_live_motion_audit::Run(instance,coat,first,last,repeat,encoder,appFrames,companionCoat,ageDays,dpi);
     }
     if(commandLine && wcsstr(commandLine,L"--render-jump-review"))return NativeManualMotionTest(instance,false,true);
     if(commandLine && wcsstr(commandLine,L"--render-update-notice"))return NativeBoundaryReview(instance,true);

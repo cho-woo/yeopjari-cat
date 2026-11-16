@@ -64,6 +64,7 @@ public:
         ReleaseSurface(); painter_={}; handler_={}; pressed_=moved_=false;
     }
 private:
+    friend struct LiveFrameAccess;
     friend bool NativeWindowSmokeTest(HINSTANCE,const Painter&,std::string&);
     HWND hwnd_=nullptr;
     HDC dc_=nullptr;

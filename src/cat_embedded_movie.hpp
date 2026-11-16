@@ -2,7 +2,8 @@
 // Offline authored RGBA movies: RGB over a separately encoded grey alpha plane.
 // Windows decodes the local resource only. No URL, audio or external codec is used.
 // Decode off the UI thread before starting an action; playback never seeks or
-// decodes in the timer/render path. Two actors own at most two bounded movies.
+// decodes in the timer/render path. Each actor retains its current bounded
+// movie; at most one cancelled decode can still be finishing in the worker.
 #include <windows.h>
 #include <mfapi.h>
 #include <mfidl.h>

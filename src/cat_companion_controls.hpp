@@ -251,7 +251,7 @@ void UpdateControls(const Context& c,std::uint64_t elapsed) {
         else {SetMotion(M::Jump,c.ticks,3000,0,true);landedAt_=0;}
     }
     if(!nextFly_)nextFly_=c.ticks+90000;
-    if(!Busy()&&!state_->pet.roamingPaused&&quietActive_&&c.ticks>=nextFly_) {
+    if(!Busy()&&!state_->pet.roamingPaused&&quietActive_&&c.ticks>=nextDecision_&&c.ticks>=nextFly_) {
         nextFly_=c.ticks+120000+static_cast<std::uint64_t>(Random()*180000);
         Perform(C::FlyHunt,c.ticks);
     }

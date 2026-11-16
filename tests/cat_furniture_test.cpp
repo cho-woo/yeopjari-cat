@@ -33,6 +33,13 @@ int main() {
     int events=0;for(int i=0;i<1000;++i)events+=random.Advance(.1,true,0);
     assert(events==1);random.Completed(0);
     for(int i=0;i<1700;++i)assert(!random.Advance(.1,true,0));
+    RandomSchedule overdue;
+    for(int i=0;i<1000;++i)assert(!overdue.Advance(.1,true,0,false));
+    assert(overdue.Remaining()==0);
+    for(int i=0;i<500;++i)assert(!overdue.Advance(.1,true,1234,false));
+    assert(overdue.Remaining()==0); // Due work is retained, never re-rolled or rushed.
+    assert(overdue.Advance(.016,true,1234,true));
+    assert(overdue.Remaining()>=180000);
     // A menu command must not starve behind an indefinitely repeated pointer
     // game. Drain a real authored paw, preserving its complete source clock.
     using A=cat::environment::CursorAction;

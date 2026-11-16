@@ -13,7 +13,7 @@ void UpdateFurniture(const Context& c) {
         !physical.onPlatform&&c.ticks>=careUntil_&&std::abs(physical.velocityX)<=.5;
     const auto roll=FurnitureRoll();
     if(!furniture.Requested()&&furnitureRandom.Advance(c.elapsedSeconds,
-            c.supportsFurniture&&available&&!c.primaryBusy&&!state_->pet.roamingPaused,roll))
+            c.supportsFurniture&&available&&!c.primaryBusy&&!state_->pet.roamingPaused,roll,c.ticks>=nextDecision_))
         furniture.Request(static_cast<cat::furniture::Kind>(1+roll%3));
     if(c.furnitureFailed) {
         const bool owned=furniture.Owned();furniture.Cancel();explicitTravel_=false;

@@ -58,15 +58,21 @@ private:
 // cannot cause a burst of overdue random events when they finish.
 class RandomSchedule {
 public:
-    bool Advance(double seconds,bool quiet,unsigned roll) {
+    bool Advance(double seconds,bool quiet,unsigned roll,bool mayStart=true) {
         if(!quiet||seconds<=0||seconds>.25)return false;
-        if(!remaining_)remaining_=90000+roll%90001;
-        remaining_=std::max(0.,remaining_-seconds*1000);
-        if(remaining_>0)return false;
-        remaining_=180000+(roll/3)%240001;return true;
+        if(!due_) {
+            if(!remaining_)remaining_=90000+roll%90001;
+            remaining_=std::max(0.,remaining_-seconds*1000);
+            if(remaining_>0)return false;
+            due_=true;
+        }
+        // Cooldown still accrues during usable quiet time, but an overdue
+        // event cannot steal a just-started neutral recovery/rest interval.
+        if(!mayStart)return false;
+        due_=false;remaining_=180000+(roll/3)%240001;return true;
     }
-    void Completed(unsigned roll){remaining_=180000+roll%240001;}
+    void Completed(unsigned roll){due_=false;remaining_=180000+roll%240001;}
     double Remaining()const{return remaining_;}
-private: double remaining_=0;
+private: double remaining_=0;bool due_=false;
 };
 } // namespace cat::furniture
