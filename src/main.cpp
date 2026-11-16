@@ -6610,6 +6610,7 @@ int SelfTest(HINSTANCE instance) {
 }
 
 int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
+    if(commandLine&&wcsstr(commandLine,L"--framebuffer-visibility-audit"))return native_live_motion_audit::VisibilityProbe(instance);
     if(commandLine&&wcsstr(commandLine,L"--movie-cancel-audit"))return native_live_motion_audit::QueueProbe(instance);
     if(commandLine&&wcsstr(commandLine,L"--live-motion-audit")) {
         int count=0;auto args=CommandLineToArgvW(GetCommandLineW(),&count);

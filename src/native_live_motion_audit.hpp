@@ -1,6 +1,6 @@
 #pragma once
-// Opt-in developer fixture. Real WM_TIMER / Tick / layered HWNDs and desktop
-// compositor capture; never loads a profile, registers hotkeys or starts updates.
+// Opt-in developer fixture. Real timer / Tick / visible layered HWND pixels;
+// optional desktop capture. Never loads the user's profile or starts updates.
 #include <condition_variable>
 #include <deque>
 #include <fstream>
@@ -173,7 +173,7 @@ struct Recorder {
     struct CaptureFrame {unsigned index=0;std::vector<unsigned char> pixels;};
     std::deque<CaptureFrame> queue;
     std::thread worker;bool stop=false,failed=false;
-    std::atomic<unsigned> written{0};unsigned dropped=0,occluded=0;
+    std::atomic<unsigned> written{0};unsigned dropped=0,occluded=0;std::uint64_t hiddenLayersExcluded=0;
     bool Open(const std::wstring& ffmpeg) {
         if(ffmpeg.empty())return true;
         SECURITY_ATTRIBUTES sa{sizeof(sa),nullptr,TRUE};HANDLE read=nullptr;
@@ -228,10 +228,15 @@ struct Recorder {
         // This real-time app-frame capture is explicitly NOT desktop video.
         const auto layer=[&](HWND window,const Surface& surface){RECT area{};
             if(window&&GetWindowRect(window,&area))Blit(frame.pixels,surface.pixels,surface.width,surface.height,area,origin);};
-        struct Order {std::array<HWND,4> actors;std::vector<HWND> ordered;} order{{g.window,g.companionWindow.Handle(),g.toyWindow,g.companionBallWindow},{}};
+        struct Order {std::array<HWND,4> actors;std::vector<HWND> ordered;unsigned hidden=0;} order{{g.window,g.companionWindow.Handle(),g.toyWindow,g.companionBallWindow},{}};
         EnumWindows([](HWND window,LPARAM value)->BOOL{auto& order=*reinterpret_cast<Order*>(value);
-            if(std::find(order.actors.begin(),order.actors.end(),window)!=order.actors.end())order.ordered.push_back(window);return TRUE;
+            if(std::find(order.actors.begin(),order.actors.end(),window)!=order.actors.end()) {
+                // Hidden toy HWNDs retain their last painted surface. They
+                // must disappear from the recording when the app hides them.
+                if(IsWindowVisible(window))order.ordered.push_back(window);else ++order.hidden;
+            }return TRUE;
         },reinterpret_cast<LPARAM>(&order));
+        hiddenLayersExcluded+=order.hidden;
         for(auto window=order.ordered.rbegin();window!=order.ordered.rend();++window){
             if(*window==g.window)layer(g.window,g.surface);
             else if(*window==g.toyWindow)layer(g.toyWindow,g.toySurface);
@@ -271,6 +276,40 @@ struct Recorder {
         DWORD code=1;GetExitCodeProcess(process,&code);failed=failed||code!=0;CloseHandle(process);process=nullptr;}
     ~Recorder(){Finish();}
 };
+
+int VisibilityProbe(HINSTANCE instance) {
+    ULONG_PTR token=0;GdiplusStartupInput startup;
+    if(GdiplusStartup(&token,&startup,nullptr)!=Ok)return 980;
+    const POINT origin{-12000,-12000};
+    const auto window=[&](int x){return CreateWindowExW(WS_EX_TOOLWINDOW|WS_EX_NOACTIVATE,L"STATIC",L"",
+        WS_POPUP,origin.x+x,origin.y+180,20,20,nullptr,nullptr,instance,nullptr);};
+    g.window=window(40);g.toyWindow=window(90);
+    if(!g.window||!g.toyWindow||!g.surface.Create(20,20)||!g.toySurface.Create(20,20))return 980;
+    std::fill_n(reinterpret_cast<std::uint32_t*>(g.surface.pixels),400,0xffff0000u);
+    std::fill_n(reinterpret_cast<std::uint32_t*>(g.toySurface.pixels),400,0xff0000ffu);
+    ShowWindow(g.window,SW_SHOWNOACTIVATE);
+    Recorder recorder;
+    // No encoder or writer is started: inspect the exact composite queued by
+    // AppFrame before encoding. Clear this sentinel before Recorder teardown.
+    recorder.input=INVALID_HANDLE_VALUE;
+    recorder.AppFrame(origin,0);
+    ShowWindow(g.toyWindow,SW_SHOWNOACTIVATE);recorder.AppFrame(origin,1);
+    ShowWindow(g.toyWindow,SW_HIDE);recorder.AppFrame(origin,2);
+    recorder.input=nullptr;
+    std::array<unsigned,3> red{},blue{};
+    for(unsigned i=0;i<recorder.queue.size();++i) {
+        const auto& pixels=recorder.queue[i].pixels;
+        for(std::size_t offset=0;offset<pixels.size();offset+=4) {
+            std::uint32_t pixel=0;std::memcpy(&pixel,pixels.data()+offset,4);
+            red[i]+=pixel==0xffff0000u;blue[i]+=pixel==0xff0000ffu;
+        }
+    }
+    const bool passed=red==std::array<unsigned,3>{400,400,400}&&blue==std::array<unsigned,3>{0,400,0}&&recorder.hiddenLayersExcluded==2;
+    std::ostringstream report;report<<"{\"passed\":"<<(passed?"true":"false")<<",\"hidden_layers_skipped\":"<<recorder.hiddenLayersExcluded<<",\"visible_red_pixels\":["<<red[0]<<','<<red[1]<<','<<red[2]<<"],\"toy_blue_pixels_hidden_shown_hidden\":["<<blue[0]<<','<<blue[1]<<','<<blue[2]<<"]}";
+    WriteBytes(L"framebuffer-visibility.json",report.str());
+    DestroyWindow(g.toyWindow);DestroyWindow(g.window);g.toyWindow=g.window=nullptr;
+    g.toySurface.Reset();g.surface.Reset();GdiplusShutdown(token);return passed?0:980;
+}
 
 int Run(HINSTANCE instance,unsigned coat,unsigned first,unsigned last,unsigned repeats,const std::wstring& ffmpeg,bool appFrames,unsigned companionCoat,unsigned ageDays,double dpi) {
     g.instance=instance;ULONG_PTR token=0;GdiplusStartupInput startup;
@@ -398,7 +437,7 @@ int Run(HINSTANCE instance,unsigned coat,unsigned first,unsigned last,unsigned r
     liveAuditRenderReceipt=nullptr;
     const bool saved=!fullProfile||SavePet(false);liveAuditFixedWorkArea=false;
     std::ostringstream report;report<<"{\"version\":\"" YEOPJARI_VERSION_STRING "\",\"real_wall_clock\":true,\"desktop_compositor_capture\":"<<(appFrames?"false":"true")<<
-        ",\"native_app_framebuffer_capture\":"<<(appFrames?"true":"false")<<",\"coat\":"<<coat<<",\"companion_coat\":"<<companionCoat<<",\"age_days\":"<<ageDays<<",\"dpi_scale\":"<<dpi<<
+        ",\"native_app_framebuffer_capture\":"<<(appFrames?"true":"false")<<",\"hidden_layers_excluded\":"<<(appFrames?"true":"false")<<",\"hidden_layer_skips\":"<<recorder.hiddenLayersExcluded<<",\"coat\":"<<coat<<",\"companion_coat\":"<<companionCoat<<",\"age_days\":"<<ageDays<<",\"dpi_scale\":"<<dpi<<
         ",\"completed\":"<<completed<<",\"requested\":"<<(last-first+1)*repeats<<",\"timer_frames\":"<<frames<<",\"max_timer_gap_ms\":"<<maxGap<<
         ",\"timer_gaps_over_50ms\":"<<lateFrames<<",\"encoded_frames\":"<<recorder.written<<",\"encoder_drops\":"<<recorder.dropped<<",\"occluded_captures\":"<<recorder.occluded<<",\"encoder_failed\":"<<(recorder.failed?"true":"false")<<
         ",\"maintenance_and_save_enabled\":"<<(fullProfile?"true":"false")<<",\"fixture_save_passed\":"<<(saved?"true":"false")<<",\"render_epoch_mismatches\":"<<renderEpochMismatches<<"}";

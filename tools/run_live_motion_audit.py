@@ -149,6 +149,7 @@ def main():
             result['passed'] = (completed.returncode == 0 and report['version'] == args.version and
                                 report['completed'] == report['requested'] == (last - first + 1) * repeat and
                                 report['native_app_framebuffer_capture'] and not report['desktop_compositor_capture'] and
+                                report['hidden_layers_excluded'] and
                                 not report['encoder_failed'] and report['fixture_save_passed'] and
                                 report['render_epoch_mismatches'] == 0 and
                                 result['trace']['physical_discontinuities'] == 0 and not result['trace']['missing_action_coverage'])
