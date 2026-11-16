@@ -5,9 +5,12 @@ import json
 import math
 import unittest
 
-import cv2
-import numpy as np
-from PIL import Image
+try:
+    import cv2
+    import numpy as np
+    from PIL import Image
+except ImportError:
+    cv2 = np = Image = None
 
 ROOT = Path(__file__).resolve().parents[1]
 DIRECTORY = ROOT / 'assets/furniture-v39'
@@ -22,6 +25,7 @@ def pigments(image, rect):
 
 
 class FurnitureIrisIdentityTest(unittest.TestCase):
+    @unittest.skipUnless(cv2 is not None, 'Authoring pixel dependencies unavailable')
     def test_packed_runtime_movie_preserves_endpoint_pigments_and_clock(self):
         manifest = json.loads((DIRECTORY / 'manifest.json').read_text())
         for asset in manifest['assets']:
@@ -53,6 +57,7 @@ class FurnitureIrisIdentityTest(unittest.TestCase):
                     self.assertGreater(br, gr, (asset['kind'], index, 'encoded right', gr, br))
                 capture.release()
 
+    @unittest.skipUnless(Image is not None and np is not None, 'Authoring pixel dependencies unavailable')
     def test_canonical_first_and_last_have_the_same_visible_eye_identity(self):
         review = DIRECTORY / 'selected/review'
         for kind, last in [('tower', 191), ('scratch', 157), ('box', 191)]:
