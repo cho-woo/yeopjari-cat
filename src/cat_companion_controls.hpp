@@ -227,8 +227,12 @@ void UpdateControls(const Context& c,std::uint64_t elapsed) {
     }
     if(wallApproaching_&&physical.grounded&&physical.x>=maxX_-1.9&&
             std::abs(physical.velocityX-physical.supportVelocityX)<3) {
-        wallApproaching_=false;SetMotion(M::Hang,c.ticks,RegisteredDuration(C::Climb,6000),0);
-        actionClip_=C::Climb;waitingForStop_=false;
+        // The wall film now owns its full climb, drop and recovery. Keeping
+        // the walking owner alive let its generic timeout replace this end
+        // time with a long quiet interval, stranding the final raised paws.
+        wallApproaching_=false;explicitTravel_=false;
+        SetMotion(M::Hang,c.ticks,RegisteredDuration(C::Climb,6000),0);
+        actionClip_=C::Climb;waitingForStop_=false;landedAt_=0;
         if(!physics_.BeginWallClimb(std::min(150.,maxLift_*.6)))actionClip_=C::None;
     }
     if(wallApproaching_&&physical.x>maxX_-45)speed_=std::min(speed_,std::max(6.,(maxX_-physical.x)*2));

@@ -491,7 +491,10 @@ public:
         physics_.Update(c.elapsedSeconds);
         const auto after=physics_.CurrentPose();
         const auto rendered=physics_.RenderPose();
-        if(after.landed) {
+        // Climb includes its own authored drop and planted recovery. Routing
+        // that contact through the stationary Jump outro froze the climb
+        // movie for an extra recovery and could resurrect a raised-paw pose.
+        if(after.landed && actionClip_!=cat::sprite_sequence::Clip::Climb) {
             landedAt_=c.ticks; landingStrength_=std::clamp(after.landingSpeed/300.0,.2,1.0);
             if(cursorLaunched_)cursorLanded_=c.ticks;
             if(runningJump_.active && runningJump_.launched) {

@@ -50,9 +50,9 @@ LRESULT CALLBACK BackdropProc(HWND window,UINT message,WPARAM wParam,LPARAM lPar
 LRESULT CALLBACK ActorProc(HWND window,UINT message,WPARAM wParam,LPARAM lParam) {
     // Audit playback is observational. Accidental input cannot open a menu,
     // move a root or offer food while the timed test script owns both cats.
-    if(message==WM_TIMER||message==WM_PAINT||message==WM_ERASEBKGND){
+    if(message==WM_TIMER||message==kFrameTick||message==WM_PAINT||message==WM_ERASEBKGND){
         const auto result=WindowProc(window,message,wParam,lParam);
-        if(message==WM_TIMER&&observeFrame)observeFrame();return result;}
+        if((message==WM_TIMER||message==kFrameTick)&&observeFrame)observeFrame();return result;}
     if(message==WM_NCHITTEST)return HTTRANSPARENT;
     return DefWindowProcW(window,message,wParam,lParam);
 }
@@ -271,14 +271,15 @@ int Run(HINSTANCE instance,unsigned coat,unsigned first,unsigned last,unsigned r
         }
     };
     while(!closing&&selected<=last) {
-        MSG message{};while(PeekMessageW(&message,nullptr,0,0,PM_REMOVE)){if(message.message==WM_QUIT){closing=true;break;}TranslateMessage(&message);DispatchMessageW(&message);}
+        MSG message{};for(unsigned pumped=0;pumped<4&&PeekMessageW(&message,nullptr,0,0,PM_REMOVE);++pumped){
+            if(message.message==WM_QUIT){closing=true;break;}TranslateMessage(&message);DispatchMessageW(&message);}
         const auto ticks=GetTickCount64();
         if(!active&&ticks>=next) {
             label=L"Coat "+std::to_wstring(coat)+L" | motion "+std::to_wstring(selected)+L" | repetition "+std::to_wstring(repeat+1);
             InvalidateRect(backdrop,nullptr,FALSE);UpdateWindow(backdrop);
             stopping=false;StartAction(selected,ticks);
             begin=ticks;end=selected<37?std::max(g.nextDecision,cat::companion::LiveMotionAuditAccess::Until(g.companionModel)):
-                selected>=40&&selected<=43?ticks+60000:ticks+1000;active=true;
+                selected>=40&&selected<=44?ticks+60000:ticks+1000;active=true;
         }
         if(active)DriveAction(selected,ticks,begin,stopping);
         if(active&&ticks>end+2000&&!g.waitingForStop&&!g.manualMotionActive&&!PrimaryAuthoredCareHolding(ticks)&&
@@ -291,7 +292,7 @@ int Run(HINSTANCE instance,unsigned coat,unsigned first,unsigned last,unsigned r
         if(active&&ticks>begin+90000){closing=true;break;}
         Sleep(1);
     }
-    KillTimer(g.window,kTickTimer);observeFrame={};liveAuditTimings=nullptr;liveAuditPointer=nullptr;recorder.Finish();
+    KillTimer(g.window,kTickTimer);g.frameTimer.Disable();observeFrame={};liveAuditTimings=nullptr;liveAuditPointer=nullptr;recorder.Finish();
     std::ostringstream report;report<<"{\"version\":\"" YEOPJARI_VERSION_STRING "\",\"real_wall_clock\":true,\"desktop_compositor_capture\":true,\"coat\":"<<coat<<
         ",\"completed\":"<<completed<<",\"requested\":"<<(last-first+1)*repeats<<",\"timer_frames\":"<<frames<<",\"max_timer_gap_ms\":"<<maxGap<<
         ",\"timer_gaps_over_50ms\":"<<lateFrames<<",\"encoded_frames\":"<<recorder.written<<",\"encoder_drops\":"<<recorder.dropped<<",\"occluded_captures\":"<<recorder.occluded<<",\"encoder_failed\":"<<(recorder.failed?"true":"false")<<"}";

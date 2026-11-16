@@ -37,6 +37,7 @@
 #include "cat_behavior.hpp"
 #include "cat_random_zoomies.hpp"
 #include "cat_keyboard_play.hpp"
+#include "cat_frame_timer.hpp"
 #include "cat_gait_transition.hpp"
 #include "cat_memory.hpp"
 #include "cat_memory_motion.hpp"
@@ -100,6 +101,7 @@ constexpr wchar_t kTitle[] = L"옆자리 고양이";
 constexpr UINT kTrayMessage = WM_APP + 1;
 constexpr UINT kShowExisting = WM_APP + 2;
 constexpr UINT_PTR kTickTimer = 1;
+constexpr UINT kFrameTick = WM_APP+0x39b;
 constexpr int kFeedHotkey = 1, kSnackHotkey = 2, kHideHotkey = 3;
 // Retired motion/toy IDs stay inert, including queued older WM_HOTKEYs.
 constexpr int kKeyboardHotkey=0x2601;
@@ -289,6 +291,7 @@ struct WindowPerch {
 using ToyKind = cat::toy::Kind;
 
 struct App {
+    cat::frame::Timer frameTimer;
     cat::furniture::Session furniture;
     cat::furniture::RandomSchedule furnitureRandom;
     std::mt19937 furnitureRandomSource{std::random_device{}()};
@@ -1917,6 +1920,10 @@ void RefreshAnimationTimer() {
     const bool precise = interval == 16;
     if (precise && !g.preciseTimer) g.preciseTimer = timeBeginPeriod(1) == TIMERR_NOERROR;
     else if (!precise && g.preciseTimer) { timeEndPeriod(1); g.preciseTimer = false; }
+    if(precise&&g.frameTimer.Enable(g.window,kFrameTick,interval)) {
+        KillTimer(g.window,kTickTimer);g.timerInterval=interval;return;
+    }
+    g.frameTimer.Disable();
     if (interval != g.timerInterval) {
         SetTimer(g.window, kTickTimer, interval, nullptr);
         g.timerInterval = interval;
@@ -5641,6 +5648,7 @@ void Tick() {
 LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lParam) {
     if (message == g.taskbarCreated && g.initialized) { AddTray(); return 0; }
     switch (message) {
+    case kFrameTick: if(g.frameTimer.Consume(wParam)){Tick();g.frameTimer.Complete(wParam);}return 0;
     case WM_TIMER: if (wParam == kTickTimer) Tick(); return 0;
     case WM_MOUSEACTIVATE: return MA_NOACTIVATE;
     case WM_ERASEBKGND: return 1;
@@ -5713,6 +5721,7 @@ LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
     case WM_ENDSESSION: if (wParam) { SavePet(false); } return 0;
     case WM_CLOSE: if (!g.closing) { StopKeyboardPlay(false,false);g.closing = true; updates.cancel.store(true); SavePet(false); DestroyWindow(window); } return 0;
     case WM_DESTROY:
+        g.frameTimer.Disable();
         StopKeyboardPlay(false,false);
         g.prank.Shutdown();
         if (g.preciseTimer) { timeEndPeriod(1); g.preciseTimer = false; }
@@ -5794,6 +5803,7 @@ int NativePerchHitTest() {
 #include "native_expanded_tests.hpp"
 #include "native_care_sprite_tests.hpp"
 #include "native_care_cache_tests.hpp"
+#include "native_frame_timer_tests.hpp"
 #include "native_care_presentation_tests.hpp"
 #include "native_coat_tests.hpp"
 #include "native_reference_sleep_tests.hpp"
@@ -6537,6 +6547,7 @@ int NativeMenuContractTest() {
 #include "native_live_motion_audit.hpp"
 
 int SelfTest(HINSTANCE instance) {
+    if(const int cadence=native_frame_timer::Run(instance))return cadence;
     const auto start = cat::ToUnix({2026, 10, 31, 0, 0, 0});
     cat::PetState original = cat::NewPet(start), parsed; std::string error;
     if (!cat::Parse(cat::Serialize(original), parsed, error) || parsed.bornUtc != start) return 10;

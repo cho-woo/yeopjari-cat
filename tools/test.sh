@@ -21,6 +21,8 @@ build/native-tests/cat_physics_test
 
 g++ -std=c++17 -O2 -Wall -Wextra tests/cat_running_jump_test.cpp src/cat_physics.cpp -Ithird_party/box2d/include build/native-box2d/libbox2d.a -lm -o build/native-tests/cat_running_jump_test
 build/native-tests/cat_running_jump_test
+g++ -std=c++17 -O2 -Wall -Wextra tests/cat_companion_climb_test.cpp src/cat_physics.cpp -Ithird_party/box2d/include build/native-box2d/libbox2d.a -lm -o build/native-tests/cat_companion_climb_test
+build/native-tests/cat_companion_climb_test
 
 g++ -std=c++17 -O2 -Wall -Wextra tests/cat_toy_physics_test.cpp src/cat_physics.cpp -Ithird_party/box2d/include build/native-box2d/libbox2d.a -lm -o build/native-tests/cat_toy_physics_test
 build/native-tests/cat_toy_physics_test

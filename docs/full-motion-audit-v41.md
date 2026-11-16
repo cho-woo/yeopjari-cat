@@ -33,6 +33,22 @@ validation and exact release package remain pending.
 
 ## Evidence and remaining work
 
+Two additional issues were reproduced during real-time review:
+
+- The requested 16 ms WM_TIMER cadence was frequently delivered at 31 ms.
+  Tuxedo ball-play trace: 2,486 active frames, mean interval 25.7381 ms
+  (about 38.9 Hz), mean Tick work 7.3922 ms. A high-resolution waitable timer
+  now posts at most one pending active-animation frame. Slow frames complete
+  before another is queued, preserving input responsiveness; rest/hide retains
+  the inexpensive timer and unsupported systems retain the old timer fallback.
+  Real-time after measurements remain pending.
+- Companion climbing retained its approach owner. The approach timeout could
+  overwrite the climb end with a 45–100 second quiet interval while leaving
+  the final climb frame active. Its physical landing also entered the separate
+  stationary-jump recovery, freezing the already-authored climb recovery clock.
+  The approach owner is now released at grip and the climb keeps its own landing
+  clock. Six coat/pause regressions pass; desktop re-verification is pending.
+
 Local intermediate evidence is under `build/full-motion-audit`. The opt-in
 `--live-motion-audit` fixture uses the real WM_TIMER, Tick, Box2D, renderer and
 layered windows, plus a bounded background encoder. Input targets in scripted
