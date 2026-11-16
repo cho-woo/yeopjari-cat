@@ -156,10 +156,25 @@ void BoundsChangesAndInvalidInputsStayFinite() {
     ball.Advance(0,180,120); // Reversed bounds collapse to the same midpoint.
     CHECK(Near(ball.x,150,.6));
 }
+void ContactImpulsePreservesDisplayedPositionAndRespondsToGeometry() {
+    PhysicsBall ball(400);ball.Reset(400,0,20);ball.Advance(.024,100,900);
+    const auto rendered=ball.RenderPose(),physical=ball.CurrentPose();
+    ball.Strike(1,0,80,-40,60);
+    CHECK(Near(ball.RenderPose().x,rendered.x,1e-8));CHECK(Near(ball.RenderPose().lift,rendered.lift,1e-8));
+    CHECK(Near(ball.CurrentPose().x,physical.x,1e-8));CHECK(std::abs(ball.angularVelocity)>.1);
+    const auto flat=ball.CurrentPose();
+    PhysicsBall angled(400);angled.Strike(.7,.7,60,15,30);const auto glancing=angled.CurrentPose();
+    CHECK(glancing.velocity>0&&glancing.verticalVelocity>0);
+    CHECK(std::abs(glancing.velocity-flat.velocity)>5);
+    const auto stopped=angled.CurrentPose();angled.Strike(1,0,100,0,0);
+    CHECK(angled.velocity==stopped.velocity&&angled.x==stopped.x);
+}
+
 }
 
 int main() {
     try {
+        ContactImpulsePreservesDisplayedPositionAndRespondsToGeometry();
         ActualEngineGravityBounceAndRest();
         PawImpulseTranslatesSpinsAndSettles();
         RealSideCollidersReboundAboveTheFloor();

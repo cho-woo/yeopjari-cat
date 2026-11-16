@@ -280,6 +280,7 @@ struct Snapshot {
 // primary cat is a read-only observation; mutual reactions are explicit events
 // returned to the existing main loop, never writes through a primary pointer.
 class Model {
+    friend struct BallReviewAccess;
 public:
     // A review build may use a newly authored Walk through the same renderer.
     // The caller owns this immutable registration for the model's lifetime.
@@ -308,7 +309,7 @@ public:
     bool Bound() const { return state_ && brain_; }
     bool Busy() const {
         if(!Bound() || !ready_ || !state_->enabled) return false;
-        return cursor_.Active() || actionClip_!=cat::sprite_sequence::Clip::None || wallApproaching_ || randomZoomies_.Active() || !physics_.CurrentPose().grounded || StationaryLanding(lastTicks_,physics_.CurrentPose()) ||
+        return ballPlaying_ || cursor_.Active() || actionClip_!=cat::sprite_sequence::Clip::None || wallApproaching_ || randomZoomies_.Active() || !physics_.CurrentPose().grounded || StationaryLanding(lastTicks_,physics_.CurrentPose()) ||
             waitingForStop_ || jumpPending_ || interaction_!=Interaction::None ||
             motion_==cat::animation::Motion::Eat || motion_==cat::animation::Motion::Treat ||
             motion_==cat::animation::Motion::TailRaise || motion_==cat::animation::Motion::ToyPaw;
@@ -388,7 +389,7 @@ public:
             FinishSocial(c);
         }
         AdvanceRandomZoomies(c,before,landingRecovery);
-        if(!keyboardActive_ && !cursor_.Active() && actionClip_==cat::sprite_sequence::Clip::None && !wallApproaching_ && !runningTurn_.Active() && !randomZoomies_.Active() && !landingRecovery && before.grounded && !waitingForStop_ && !jumpPending_ && interaction_==Interaction::None &&
+        if(!ballPlaying_ && !keyboardActive_ && !cursor_.Active() && actionClip_==cat::sprite_sequence::Clip::None && !wallApproaching_ && !runningTurn_.Active() && !randomZoomies_.Active() && !landingRecovery && before.grounded && !waitingForStop_ && !jumpPending_ && interaction_==Interaction::None &&
                 c.ticks>=nextDecision_ && !AuthoredCareHolding(c.ticks)) {
             const bool continuation=storyActive_ && !quietActive_ && brain_->HasContinuation();
             if(!quietActive_ && !continuation) BeginQuiet(c.ticks);
@@ -411,6 +412,7 @@ public:
         if(!landingRecovery && !runningJump_.active && interaction_!=Interaction::None) velocity=SocialVelocity(c);
         else if(!landingRecovery && cat::animation::Walking(motion_) && (!state_->pet.roamingPaused||keyboardActive_||explicitTravel_)) velocity=direction_*speed_;
         if(cursor_.Active())velocity=cursor_.Velocity();
+        if(ballPlaying_)velocity=ballDrive_;
         if(cursor_.Action()==cat::environment::CursorAction::Pounce&&jumpPending_&&cursorTakeoffVelocity_)velocity=cursorTakeoffVelocity_;
         if(wallApproaching_)velocity=direction_*speed_;
         if(!keyboardActive_&&!cursor_.Active()&&!runningJump_.active&&interaction_==Interaction::None&&motion_==cat::animation::Motion::Zoomies)
@@ -425,7 +427,7 @@ public:
             if(careUntil_>start) careUntil_+=motionStart_-start;
             velocity=0;
         }
-        if(!wallApproaching_ && !runningJump_.active && before.grounded && !before.onPlatform && cat::motion::BrakeBeforeEdge(
+        if(!ballPlaying_ && !wallApproaching_ && !runningJump_.active && before.grounded && !before.onPlatform && cat::motion::BrakeBeforeEdge(
                 before.x,before.velocityX-before.supportVelocityX,velocity,minX_,maxX_)) {
             direction_=velocity<0?1:-1; velocity=0;
             if(motion_==cat::animation::Motion::Zoomies&&Registered(cat::sprite_sequence::Clip::RunningTurn)) {
@@ -514,11 +516,12 @@ public:
         if(groundArtBridge_.ConsumeLoopReady())gait_.SetAuthoredPhase(walk&&walk->frameCount==229?
             cat::video_actions::WalkBoundaryPhase(static_cast<unsigned>(state_->preferences.character),groundArtBridge_.LoopFromReversedExit()):0);
         UpdateCursorContact(c);
+        UpdateBallContact(c);
         state_->pet.position=std::clamp((after.x-minX_)/(maxX_-minX_),0.0,1.0);
     }
 
     bool TrySocial(Interaction kind,const Context& c) {
-        if(!Bound() || !ready_ || !state_->enabled || cursor_.Active() || actionClip_!=cat::sprite_sequence::Clip::None || wallApproaching_ || randomZoomies_.Active() || c.ticks<careUntil_ || c.paused || !c.primaryVisible || Busy(c,kind) || state_->pet.roamingPaused) return false;
+        if(!Bound() || !ready_ || !state_->enabled || ballPlaying_ || cursor_.Active() || actionClip_!=cat::sprite_sequence::Clip::None || wallApproaching_ || randomZoomies_.Active() || c.ticks<careUntil_ || c.paused || !c.primaryVisible || Busy(c,kind) || state_->pet.roamingPaused) return false;
         const auto own=physics_.CurrentPose();
         if(!own.grounded || !std::isfinite(c.primary.x) || !std::isfinite(c.primary.lift)) return false;
         if(kind==Interaction::WindowFollow) {
@@ -618,7 +621,7 @@ public:
         s.presentationGeneration=presentationGeneration_+(presentationIdentity_!=state_->preferences.character?1:0);
         s.presentationPaused=presentationPaused_;
         s.cursorAction=cursor_.Action();s.cursorContacts=cursorContacts_;
-        s.ballVisible=actionClip_==cat::sprite_sequence::Clip::BallPlay;
+        s.ballVisible=ballVisible_;
         if(s.ballVisible)s.ball=ball_.RenderPose();
         const double relativeVelocity=s.physical.velocityX-s.physical.supportVelocityX;
         const auto displayed=runningJump_.active&&jumpPending_&&RegisteredVideoWalk()?motion_:cat::motion::DisplayedMotion(motion_,walkingMotion_,s.physical.grounded,waitingForStop_,relativeVelocity);
@@ -763,6 +766,7 @@ private:
         if(runningJump_.active)return;
         const auto* videoWalk=RegisteredVideoWalk();
         const bool sideMeal=VideoSideMeal();
+        const bool ballSide=ballPlaying_&&(ballSession_.phase==cat::toy::Phase::Inspect||ballSession_.phase==cat::toy::Phase::Interact);
         const bool sideStop=actionClip_==cat::sprite_sequence::Clip::Brake||
             actionClip_==cat::sprite_sequence::Clip::Slide||actionClip_==cat::sprite_sequence::Clip::Stumble;
         const auto jumpTurn=videoWalk?cat::video_ground_bridge::JumpTurns(*videoWalk):cat::video_ground_bridge::JumpTurnProfile{};
@@ -785,7 +789,7 @@ private:
                 facing_=direction_;groundDrive_.Reset(direction_);
             }
             groundArtBridge_.Update(ticks,travel && (direction_==facing_||(keyboardActive_&&groundArtBridge_.Starting()&&keyboardDirection_)),
-                visible.grounded,visible.velocityX-visible.supportVelocityX,true,sideMeal||sideStop||jumpPreparation,jumpPreparation,keyboardActive_);
+                visible.grounded,visible.velocityX-visible.supportVelocityX,true,sideMeal||ballSide||sideStop||jumpPreparation,jumpPreparation,keyboardActive_);
             // Reversing an existing walk gates its motor without restarting
             // the whole action clock on every short work-area crossing.
             if(!travel && (groundArtBridge_.Stopping() || groundArtBridge_.StartingForSideAction()))waitingForStop_=true;
@@ -1000,7 +1004,7 @@ private:
     }
     void AdvanceRandomZoomies(const Context& c,const cat::physics::Pose& physical,bool landingRecovery) {
         using Motion=cat::animation::Motion;
-        if(keyboardActive_||cursor_.Active()||actionClip_!=cat::sprite_sequence::Clip::None||wallApproaching_)return;
+        if(ballPlaying_||keyboardActive_||cursor_.Active()||actionClip_!=cat::sprite_sequence::Clip::None||wallApproaching_)return;
         const bool owned=motion_==Motion::Zoomies && motionSerial_==randomZoomiesOwner_ &&
             interaction_==Interaction::None && !state_->pet.roamingPaused && !physical.onPlatform;
         const bool cancelled=randomZoomies_.Active()&&!owned;

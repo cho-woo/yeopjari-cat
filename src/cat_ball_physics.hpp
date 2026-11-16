@@ -82,8 +82,24 @@ public:
             {position.x, position.y + static_cast<float>(Radius * .35 / PixelsPerMeter)}, true);
         ReadPose();
         current_.grounded = false;
-        previous_ = current_;
         Sync();
+    }
+
+    // Impulse at the observed surface contact. The tangential paw motion
+    // supplies spin; an upward/low glancing stroke differs from a flat push.
+    // Keep the interpolation history: force changes velocity, never position.
+    void Strike(double nx,double ny,double pawVx,double pawVy,double closingSpeed) {
+        if(!std::isfinite(nx)||!std::isfinite(ny)||!std::isfinite(pawVx)||
+                !std::isfinite(pawVy)||!std::isfinite(closingSpeed)||closingSpeed<=0)return;
+        const double length=std::hypot(nx,ny);if(length<.1)return;
+        nx/=length;ny/=length;
+        const double normal=std::clamp(12+closingSpeed*.9,18.,95.);
+        const double tangent=std::clamp((pawVy*nx-pawVx*ny)*.22,-25.,25.);
+        double ix=nx*normal-ny*tangent,iy=ny*normal+nx*tangent;
+        const auto position=b2Body_GetPosition(body_);const float mass=b2Body_GetMass(body_);
+        b2Body_ApplyLinearImpulse(body_,{mass*float(ix/PixelsPerMeter),mass*float(iy/PixelsPerMeter)},
+            {position.x-float(nx*Radius/PixelsPerMeter),position.y-float(ny*Radius/PixelsPerMeter)},true);
+        ReadPose();Sync();
     }
 
     void Advance(double seconds, double low, double high, bool paused = false) {

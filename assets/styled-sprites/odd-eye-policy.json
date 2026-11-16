@@ -191,11 +191,11 @@
       "base_resource_id": 430,
       "base_source": "assets/video-actions/cream-ball.png",
       "source": "c10-r430.png",
-      "input_sha256": "105b25f48a591a96d975a430c01bdece71569113a87ec999b1b6bb0378303039",
-      "output_sha256": "b94b43e9e132312a16e289ab9b90a28e14e76d323b37caf22db7e58601d2a2b9",
-      "source_alpha_sha256": "130f7305ad2a2d59613db4eb644efa2b8248fd2c2c913363799113121972a3af",
+      "input_sha256": "e640929f9d2388701fa4989655dd94c18353b679530b3357e4d42e8a845c6145",
+      "output_sha256": "86f64132b855d10fedf6ce23737f74287989caf44136f288ba4c3a46f0b2848d",
+      "source_alpha_sha256": "89946ab85a90b29ba69fdf5f3486a7593f9ef82b26339fdf81608193b69c97e4",
       "iris_mask": "odd-eye-masks/c10-r430.png",
-      "iris_mask_sha256": "1ab04548b8ea3d0b9d15b37fae3d0bc88e3657b852f58f85cf8983d6678155f2",
+      "iris_mask_sha256": "a156a854881478aa0f98ed7fb7f23a1150fe378fb1b2228904d5f1fede4281d3",
       "alpha_exact": true,
       "skin_rgb_exact": true
     },
@@ -394,5 +394,5 @@
   ],
   "tool_sha256": "38aff80a6a8fe818168305d47c6f697ab0d9af7892119f3e5ab903e5c41c86c4",
   "additional_authoring_tool": "tools/pack_video_actions.py",
-  "additional_authoring_tool_sha256": "f45dabb3b8ed91d579bc4fbe42f6950e5194ae52234dd39d4e424553f2cca2d0"
+  "additional_authoring_tool_sha256": "b96486272633d556f9cdc2ec58d7aa7b0a856cb7f5f195131e1dc069ef37122d"
 }

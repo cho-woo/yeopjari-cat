@@ -325,6 +325,9 @@ int Run() {
     if(!result) {
         Clear();host.Reset(cat::Character::Cream,true);keyboardPlay.fixture=true;
         SetMotion(Motion::Sleep,60000,host.now);ToggleKeyboardPlay();
+        // Toggle owns the real request timestamp; the deterministic fixture
+        // must not run an earlier tick under CPU load and underflow its timeout.
+        host.now=std::max(host.now,GetTickCount64());
         if(!keyboardPlay.requested||keyboardPlay.input.Active()||keyboardPlay.hook||g.motion!=Motion::Stretch)result=782;
         else {for(unsigned frame=0;frame<600&&!keyboardPlay.input.Active();++frame)Step(host);
             if(!keyboardPlay.input.Active())result=782;}

@@ -992,8 +992,12 @@ void CompanionPointerAndAuthoredActions() {
             bool seen=false;unsigned last=0;bool progressed=false;double ballSpeed=0;
             const auto* art=cat::sprite_assets::Find(clip,static_cast<unsigned>(coat),cat::sprite_assets::kCareSprites);
             CHECK(art);const auto duration=cat::sprite_sequence::ProgramDuration(art->program);
-            for(unsigned frame=0;frame<(duration+2500)/16;++frame) {
+            for(unsigned frame=0;frame<(clip==C::BallPlay?60000:duration+2500)/16;++frame) {
                 c.ticks+=16;model.Tick(c);const auto view=model.View(c.ticks);const auto pose=view.animation;
+                if(clip==C::BallPlay&&frame==300) {
+                    CHECK(model.Perform(clip,c.ticks));const auto repeated=model.View(c.ticks);
+                    CHECK(repeated.ball.x==view.ball.x&&repeated.animation.spriteElapsedMs==pose.spriteElapsedMs);
+                }
                 if(view.ballVisible)ballSpeed=std::max(ballSpeed,std::abs(view.ball.velocity));
                 if(pose.spriteClip==clip) {
                     auto options=pose.spriteOptions;options.sheetFrames=art->frameCount;
