@@ -1841,7 +1841,8 @@ void UpdatePrimaryGroundArt(ULONGLONG ticks) {
     if(g.stopClip!=cat::sprite_sequence::Clip::None&&ticks<g.stopUntil) {
         g.groundArtBridge.ContinueLocomotion(ticks);g.waitingForStop=true;return;
     }
-    const bool turnOwner=walking&&(g.furniture.Owned()||g.motion==Motion::Zoomies||KeyboardPlayActive()||(g.toy==ToyKind::Ball&&g.toyEngaged));
+    const bool turnOwner=walking&&(g.furniture.Owned()||g.motion==Motion::Zoomies||KeyboardPlayActive()||
+        g.wallPhase==App::WallPhase::Return||(g.toy==ToyKind::Ball&&g.toyEngaged));
     if(!turnOwner)g.runningTurn.Reset();
     if(turnOwner&&physical.grounded&&LoadedCareSprite(cat::sprite_sequence::Clip::RunningTurn,g.preferences.character)) {
         if(travel&&g.direction!=g.facing&&!keyboardPlay.gaitTransition.Active()&&
@@ -5252,18 +5253,26 @@ bool AdvanceWallMotion(ULONGLONG ticks,double elapsed) {
         if(age>=5000)g.physics.EndWallClimb();
         if(age>=6583&&physical.grounded) {
             SetMotion(Motion::Walk,10000,ticks);
-            g.wallPhase=App::WallPhase::Return;g.manualMotionActive=true;g.direction=g.facing=-1;
+            g.wallPhase=App::WallPhase::Return;g.manualMotionActive=true;g.direction=-1;g.facing=1;g.groundDrive.Reset(1);
+            if(LoadedCareSprite(cat::sprite_sequence::Clip::RunningTurn,g.preferences.character)) {
+                g.runningTurn.Begin(1,-1,cat::video_actions::TurnTiming(static_cast<unsigned>(g.preferences.character)));
+                g.groundArtBridge.ContinueLocomotion(ticks);
+            } else g.facing=-1;
         }
     }
     if(g.wallPhase==App::WallPhase::Return&&physical.grounded) {
-        g.direction=g.facing=-1;
+        g.direction=-1;
         speed=cat::toy::ApproachVelocity(normalHigh-12-physical.x,std::min(55.,RegisteredWalkSpeed()),260);
-        if(physical.x<=normalHigh-8&&std::abs(physical.velocityX)<2) {
+        speed=g.runningTurn.Motor(speed);
+        if(!g.runningTurn.Active()&&physical.x<=normalHigh-8&&std::abs(physical.velocityX)<2) {
             g.wallPhase=App::WallPhase::None;g.wallBounds=false;
             const auto bounds=MovementBoundsLogical();g.physics.SetBounds(bounds.first,bounds.second);
             BeginAutonomousRest(ticks);return false;
         }
     }
+    // The wall controller shares the ordinary planted entrance. Its motor
+    // cannot move the body while the source is still standing and turning.
+    if(g.groundArtBridge.HoldMotor())speed=0;
     const auto before=g.physics.RenderPose();
     g.physics.SetTargetVelocity(speed);g.physics.Update(elapsed);
     const auto rendered=g.physics.RenderPose();
@@ -5296,7 +5305,6 @@ void AdvancePrimaryMotion(ULONGLONG ticks, double elapsed) {
         }
     }
     UpdatePrimaryGroundArt(ticks);
-    if(AdvanceWallMotion(ticks,elapsed))return;
     const auto turnBody=g.physics.CurrentPose(),turnDisplay=g.physics.RenderPose();
     const bool wasTurning=g.runningTurn.Active();
     if(g.runningTurn.Advance(elapsed,turnBody.grounded,WalkingVelocity(turnBody),WalkingVelocity(turnDisplay))) {
@@ -5306,6 +5314,7 @@ void AdvancePrimaryMotion(ULONGLONG ticks, double elapsed) {
         g.groundArtBridge.ContinueLocomotion(ticks);g.gait.SetAuthoredPhase(cat::video_actions::TurnArrivalPhase(
             static_cast<unsigned>(g.preferences.character),g.gait.AuthoredMode()==cat::authored_locomotion::Mode::Run));
     }
+    if(AdvanceWallMotion(ticks,elapsed))return;
     if(g.wallBounds&&g.physics.CurrentPose().grounded) {
         const auto bounds=MovementBoundsLogical();
         if(g.physics.CurrentPose().x<=bounds.second) {

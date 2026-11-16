@@ -67,4 +67,71 @@ int Run(std::string& detail) {
     report<<"],\"passed\":true,\"profile_unchanged\":true}";
     return WriteBytes(L"render-self-test/climb-boundary/report.json",report.str())?0:564;
 }
+int PrimaryRun(std::string& detail) {
+    CreateDirectoryW(L"render-self-test",nullptr);CreateDirectoryW(L"render-self-test/climb-primary",nullptr);
+    using Clip=cat::sprite_sequence::Clip;
+    Surface image;if(!image.Create(320,300))return 570;
+    std::ostringstream report;report.imbue(std::locale::classic());
+    report<<"{\"version\":\"" YEOPJARI_VERSION_STRING "\",\"capture\":\"actual primary command, Box2D and GDI+, synthetic clock\",\"cases\":[";
+    bool comma=false;
+    for(const auto character:cat::kAvailableCharacters) {
+        Host host;host.Reset(character,false);if(!host.artworkReady)return 571;
+        g.work={0,0,1000,620};g.dpiScale=1;g.centerX=904;g.direction=g.facing=1;g.cursorPlay=g.workInterference=false;
+        ResetMovement();for(unsigned i=0;i<12;++i)g.physics.Update(1./60);
+        const auto saved=host.Saved();host.Command(kWallClimbCommand);
+        const auto* climb=LoadedCareSprite(Clip::Climb,character);const auto* turn=LoadedCareSprite(Clip::RunningTurn,character);
+        if(!climb||!turn)return 571;
+        const auto duration=cat::sprite_sequence::ProgramDuration(climb->layout->program);
+        std::array<bool,cat::sprite_sequence::kMaxAuthoredFrames> wanted{},seen{};
+        unsigned required=0;
+        for(unsigned i=0;i<turn->layout->program.stepCount;++i) {
+            const auto source=turn->layout->program.steps[i].frame;if(!wanted[source]){wanted[source]=true;++required;}
+        }
+        CarePresentationRenderer presentation;std::uint64_t began=0,returnedAt=0;
+        bool lastClimb=false,turned=false,returned=false;double prior=0,maxStep=0,turnRoot=0,maxUnreleased=0;
+        unsigned painted=0,turnFrames=0;
+        const auto folder=L"render-self-test/climb-primary/c"+std::to_wstring(static_cast<unsigned>(character))+L"-roaming";
+        CreateDirectoryW(folder.c_str(),nullptr);
+        for(unsigned frame=0;frame<3000;++frame) {
+            host.Frame();const auto physical=g.physics.RenderPose();const auto pose=PrimaryDisplayedPose(host.now,physical);
+            const auto* art=CareSpriteFor(pose,character);const auto source=art?SpriteFrameFor(pose,*art->layout):unsigned(pose.frame);
+            if(pose.spriteClip==Clip::Climb) {
+                if(!began)began=host.now;
+                lastClimb|=source+1==climb->layout->frameCount;
+            }
+            if(pose.spriteClip==Clip::RunningTurn) {
+                if(!turned){turned=true;turnRoot=physical.x;}
+                if(!lastClimb||pose.flip)return 573;
+                seen[source]=true;
+                if(!g.runningTurn.Released())maxUnreleased=std::max(maxUnreleased,std::abs(physical.x-turnRoot));
+            }
+            if(lastClimb&&pose.spriteClip==Clip::Walk&&!g.runningTurn.Active()) {
+                bool complete=turned;
+                for(unsigned i=0;i<wanted.size();++i)if(wanted[i])complete&=seen[i];
+                if(!complete)return 574;
+            }
+            if(began&&host.now>=began+duration-250) {
+                if(painted)maxStep=std::max(maxStep,std::abs(physical.x-prior));prior=physical.x;
+                Graphics graphics(image.image.get());graphics.SetCompositingMode(CompositingModeSourceCopy);graphics.Clear(Color(0,0,0,0));
+                graphics.SetCompositingMode(CompositingModeSourceOver);graphics.SetInterpolationMode(InterpolationModeHighQualityBicubic);
+                graphics.SetSmoothingMode(SmoothingModeAntiAlias);graphics.SetPixelOffsetMode(PixelOffsetModeHighQuality);
+                DrawPetStyle(graphics,character,cat::Outfit::None,pose,cat::appearance::VisualModifiers(g.nutrition,character),160,260,110,&presentation,host.now);
+                graphics.Flush(FlushIntentionSync);const auto digits=std::to_wstring(painted++);
+                if(!SaveNativeWalkingReview(*image.image,(folder+L"/frame-"+std::wstring(5-digits.size(),L'0')+digits+L".png").c_str()))return 572;
+            }
+            if(lastClimb&&g.wallPhase==App::WallPhase::None&&!g.waitingForStop&&g.groundArtBridge.Neutral()&&g.autonomousResting&&physical.grounded) {
+                if(!returnedAt)returnedAt=host.now;
+                if(host.now-returnedAt>350){returned=true;break;}
+            }
+        }
+        for(unsigned i=0;i<wanted.size();++i)turnFrames+=wanted[i]&&seen[i];
+        detail="primary climb planted turn coat="+std::to_string(static_cast<unsigned>(character))+" source="+std::to_string(turnFrames);
+        if(!returned||!lastClimb||!turned||turnFrames!=required||maxStep>2||maxUnreleased>.1||host.Saved()!=saved)return 575;
+        if(comma)report<<',';comma=true;
+        report<<"{\"coat\":"<<static_cast<unsigned>(character)<<",\"turn_frames\":"<<turnFrames<<",\"required_turn_frames\":"<<required
+            <<",\"max_root_step\":"<<maxStep<<",\"max_unreleased_drift\":"<<maxUnreleased<<",\"painted_frames\":"<<painted<<",\"complete\":true}";
+    }
+    report<<"],\"passed\":true,\"profile_unchanged\":true}";
+    return WriteBytes(L"render-self-test/climb-primary/report.json",report.str())?0:576;
+}
 }

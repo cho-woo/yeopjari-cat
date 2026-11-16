@@ -94,6 +94,7 @@ bool MenuCommands(bool enabled) {
 
 int Run(std::string& proof) {
     if(const int climb=climb_boundary::Run(proof))return climb;
+    if(const int climb=climb_boundary::PrimaryRun(proof))return climb;
     if(const int rod=toy_edge::Run(proof))return rod;
     if(const int keyboardResult=keyboard_native::Run())return keyboardResult;
     if(!EnsureCareCoats(cat::Character::Cream,cat::Character::Tuxedo))return 520;
