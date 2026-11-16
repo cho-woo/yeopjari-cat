@@ -1904,7 +1904,8 @@ void RefreshAnimationTimer() {
         cat::idle_gestures::NeedsFineCadence(ticks-g.motionStart);
     const auto age=ticks>=g.motionStart?ticks-g.motionStart:0;
     const auto* sleep=LoadedCareSprite(cat::sprite_sequence::Clip::Sleep,g.preferences.character);
-    const bool sourceActing=(g.flyActive&&g.flySerial==g.motionSerial)||ticks<g.stopUntil||age<240||
+    const bool sourceActing=g.furniture.Owned()||g.companionModel.furniture.Owned()||
+        (g.flyActive&&g.flySerial==g.motionSerial)||ticks<g.stopUntil||age<240||
         (g.motion==Motion::Sleep&&sleep&&age<cat::animation::ReferenceSleepIntroMs(&sleep->layout->program,
             sleep->layout->frameCount)+cat::care_presentation::Transition::DurationMs)||CarePresentationActive(ticks);
     const UINT interval = g.hidden ? 250 : (g.menuOpen || g.dragging || (resting&&!idleActing&&!sourceActing&&!CursorNeedsFineCadence(ticks)) ? 40 : 16);
