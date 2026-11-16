@@ -253,6 +253,7 @@ struct Context {
     cat::animation::Motion primaryMotion = cat::animation::Motion::Idle;
     Platform primaryPlatform, supportPlatform;
     bool supportsFurniture=false,furnitureReady=false,furnitureFailed=false;
+    cat::furniture::Space primaryFurnitureSpace,primaryFurnitureFallback;
     bool supportsBallMovie=false,ballMovieReady=false,ballMovieFailed=false;
     bool cursorEnabled=false,cursorAvailable=false;
     double cursorX=0,cursorWorldHeight=0;
@@ -284,6 +285,7 @@ struct Snapshot {
 // returned to the existing main loop, never writes through a primary pointer.
 class Model {
     friend struct BallReviewAccess;
+    friend struct LiveMotionAuditAccess;
 public:
     // A review build may use a newly authored Walk through the same renderer.
     // The caller owns this immutable registration for the model's lifetime.
@@ -400,7 +402,10 @@ public:
         if(!furniture.Owned() && !ballPlaying_ && !keyboardActive_ && !cursor_.Active() && actionClip_==cat::sprite_sequence::Clip::None && !wallApproaching_ && !runningTurn_.Active() && !randomZoomies_.Active() && !landingRecovery && before.grounded && !waitingForStop_ && !jumpPending_ && interaction_==Interaction::None &&
                 c.ticks>=nextDecision_ && !AuthoredCareHolding(c.ticks)) {
             const bool continuation=storyActive_ && !quietActive_ && brain_->HasContinuation();
-            if(!quietActive_ && !continuation) BeginQuiet(c.ticks);
+            if(furniture.Requested()&&!before.onPlatform) {
+                if(!quietActive_) {brain_->Interrupt(c.ticks);BeginQuiet(c.ticks);}
+            }
+            else if(!quietActive_ && !continuation) BeginQuiet(c.ticks);
             else {
                 bool social=false;
                 if(!continuation && c.primaryVisible && !c.primaryBusy && !state_->pet.roamingPaused &&
@@ -490,7 +495,10 @@ public:
         physics_.Update(c.elapsedSeconds);
         const auto after=physics_.CurrentPose();
         const auto rendered=physics_.RenderPose();
-        if(after.landed) {
+        // Climb includes its own authored drop and planted recovery. Routing
+        // that contact through the stationary Jump outro froze the climb
+        // movie for an extra recovery and could resurrect a raised-paw pose.
+        if(after.landed && actionClip_!=cat::sprite_sequence::Clip::Climb) {
             landedAt_=c.ticks; landingStrength_=std::clamp(after.landingSpeed/300.0,.2,1.0);
             if(cursorLaunched_)cursorLanded_=c.ticks;
             if(runningJump_.active && runningJump_.launched) {
@@ -530,7 +538,7 @@ public:
     }
 
     bool TrySocial(Interaction kind,const Context& c) {
-        if(furniture.Owned() || !Bound() || !ready_ || !state_->enabled || ballPlaying_ || cursor_.Active() || actionClip_!=cat::sprite_sequence::Clip::None || wallApproaching_ || randomZoomies_.Active() || c.ticks<careUntil_ || c.paused || !c.primaryVisible || Busy(c,kind) || state_->pet.roamingPaused) return false;
+        if(furniture.Requested() || !Bound() || !ready_ || !state_->enabled || ballPlaying_ || cursor_.Active() || actionClip_!=cat::sprite_sequence::Clip::None || wallApproaching_ || randomZoomies_.Active() || c.ticks<careUntil_ || c.paused || !c.primaryVisible || Busy(c,kind) || state_->pet.roamingPaused) return false;
         const auto own=physics_.CurrentPose();
         if(!own.grounded || !std::isfinite(c.primary.x) || !std::isfinite(c.primary.lift)) return false;
         if(kind==Interaction::WindowFollow) {
@@ -550,6 +558,13 @@ public:
         if(own.onPlatform!=c.primary.onPlatform || (own.onPlatform && supportId_!=c.primaryPlatform.id)) return false;
         if(kind==Interaction::FoodCompetition && state_->nutrition.fullness>85) return false;
         interaction_=kind; socialUntil_=c.ticks+(kind==Interaction::SharedSleep?30000:kind==Interaction::RunTogether?10000:12000);
+        if(kind==Interaction::Paw) {
+            // The play clock starts after a real approach, including the
+            // planted walk entry. A distant accepted friend must not time out
+            // before the first paw can reach the shared play spacing.
+            const double distance=std::max(0.,std::abs(own.x-c.primary.x)-82.);
+            socialUntil_+=static_cast<std::uint64_t>(std::min(45000.,5000.+distance/14.*1000.));
+        }
         pairRound_=0;pairRestUntil_=0;
         storyActive_=true;quietActive_=false;
         contactRecorded_=false; brain_->Interrupt(c.ticks); nextDecision_=socialUntil_;
@@ -1021,7 +1036,7 @@ private:
         const bool owned=motion_==Motion::Zoomies && motionSerial_==randomZoomiesOwner_ &&
             interaction_==Interaction::None && !state_->pet.roamingPaused && !physical.onPlatform;
         const bool cancelled=randomZoomies_.Active()&&!owned;
-        const bool canStart=quietActive_ && c.ticks>=nextDecision_ &&
+        const bool canStart=!furniture.Requested() && quietActive_ && c.ticks>=nextDecision_ &&
             (motion_==Motion::Idle || motion_==Motion::Watch) && physical.grounded && !physical.onPlatform &&
             !landingRecovery && !waitingForStop_ && !jumpPending_ && interaction_==Interaction::None &&
             c.ticks>=careUntil_ && !state_->pet.roamingPaused && c.primaryVisible && !c.primaryBusy;

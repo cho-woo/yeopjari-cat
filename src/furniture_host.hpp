@@ -7,6 +7,16 @@ bool RequestPrimaryFurniture(cat::furniture::Kind kind) {
 void UpdatePrimaryFurniture(ULONGLONG ticks,double seconds) {
     using Phase=cat::furniture::Phase;
     const auto body=g.physics.CurrentPose(),visible=g.physics.RenderPose();
+    if(seconds>0&&g.furniture.State()==Phase::Queued&&g.motion==Motion::Sleep&&
+            ManualMotionAvailable()&&!g.waitingForStop&&!g.jumpPending&&
+            !KeyboardPlayActive()&&!EnvironmentBusy()&&!g.toyEngaged) {
+        const auto* sleep=LoadedCareSprite(cat::sprite_sequence::Clip::Sleep,g.preferences.character);
+        const auto intro=sleep?cat::animation::ReferenceSleepIntroMs(&sleep->layout->program,sleep->layout->frameCount):2000;
+        if(ticks>=g.motionStart&&ticks-g.motionStart>=intro) {
+            if(g.brain)g.brain->Interrupt(ticks);
+            SetMotion(Motion::Stretch,3500,ticks);g.manualMotionActive=true;
+        }
+    }
     const bool calm=g.motion==Motion::Idle||g.motion==Motion::Watch;
     const bool available=!g.furniture.Owned()&&ManualMotionAvailable()&&calm&&g.autonomousResting&&
         !g.toyEngaged&&!g.approachingToy&&!g.approachingUser&&!g.memorySequenceCount&&!g.lifeSequenceCount&&
@@ -15,7 +25,7 @@ void UpdatePrimaryFurniture(ULONGLONG ticks,double seconds) {
         !g.randomZoomies.Active()&&std::abs(WalkingVelocity(body))<=.5&&
         ticks>=g.motionStart+1000;
     if(!g.furniture.Requested()&&g.furnitureRandom.Advance(seconds,
-            available&&!g.pet.roamingPaused&&!g.companionModel.Busy(),g.furnitureRandomSource()))
+            available&&!g.pet.roamingPaused&&!g.companionModel.Busy(),g.furnitureRandomSource(),CanStartAutonomousStory(ticks)))
         g.furniture.Request(static_cast<cat::furniture::Kind>(1+g.furnitureRandomSource()%3));
     if(!g.furniture.Requested()){ReleaseFurnitureMovie(false);return;}
     const bool ready=PrepareFurnitureMovie(false,g.furniture.Action(),static_cast<unsigned>(g.preferences.character));
@@ -27,8 +37,19 @@ void UpdatePrimaryFurniture(ULONGLONG ticks,double seconds) {
     if(seconds<=0)return;
     if(g.furniture.State()==Phase::Queued&&available) {
         const auto bounds=MovementBoundsLogical();
+        cat::furniture::Space occupied,fallback;
+        const auto other=g.companionModel.Physical();
+        if(g.companionStore.state.enabled&&other.grounded&&!other.onPlatform&&std::abs(other.lift)<1) {
+            const auto& state=g.companionStore.state;
+            const double scale=cat::GrowthScale(state.pet.bornUtc,UtcNow())*std::max(1.,cat::appearance::VisualModifiers(state.nutrition,state.preferences.character).bodyWidth);
+            const auto bodySpace=cat::furniture::BodySpace(other.x,scale);
+            const auto& scene=g.companionModel.furniture;
+            occupied=scene.Owned()?scene.ReservedSpace():scene.Requested()?
+                cat::furniture::MovieSpace(scene.Action(),static_cast<unsigned>(state.preferences.character),other.x,scale):bodySpace;
+            if(!scene.Owned())fallback=bodySpace;
+        }
         if(g.furniture.Begin(body.x,bounds.first,bounds.second,cat::GrowthScale(g.pet.bornUtc,UtcNow())*std::max(1.,cat::appearance::VisualModifiers(g.nutrition,g.preferences.character).bodyWidth),
-                static_cast<unsigned>(g.preferences.character))) {
+                static_cast<unsigned>(g.preferences.character),occupied,fallback)) {
             if(g.brain)g.brain->Interrupt(ticks);
             const auto velocity=g.furniture.Velocity(body.x,RegisteredWalkSpeed());
             g.direction=velocity<0?-1:1;

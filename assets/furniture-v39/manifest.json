@@ -1267,7 +1267,7 @@
       "character": 10,
       "resource": 2107,
       "path": "assets/furniture-v39/runtime/snowdrop-tower.mp4",
-      "sha256": "f618dfc2a3bf1af7a134c56e0ba1c47505622efa4fcbac90bd57dbb309b6e298",
+      "sha256": "a7f885b992726e8e06e43acbf14833a4d078ba72b76b0bd6803463536d42eb9a",
       "source": "assets/furniture-v39/sources/cream-tower.mp4",
       "source_sha256": "f52fd03c336c268818793f78d5d098e3332ade9d1a8bb71ed142e33799762149",
       "source_dimensions": [
@@ -1481,7 +1481,10 @@
       "reference_height": 103.21875,
       "fixed_scene_floor": 880,
       "fixed_scene_origin_x": 300,
-      "material": "approved Snowdrop white fur + anatomical gold/blue iris; furniture RGB protected"
+      "material": "approved Snowdrop white fur + upright source gold/blue iris identity; furniture RGB protected",
+      "chroma_qp_offset": -6,
+      "blue_iris_min_saturation": 170,
+      "blue_iris_min_value": 140
     },
     {
       "kind": "scratch",
@@ -1489,7 +1492,7 @@
       "character": 10,
       "resource": 2108,
       "path": "assets/furniture-v39/runtime/snowdrop-scratch.mp4",
-      "sha256": "174f8a01849703de348e747c4c97e5536c1f66a16380d78527d3025274363cde",
+      "sha256": "625c4b73867a38edd0584dd722a248b4b5068a1cad6d4ba7c7b224f75d01f43c",
       "source": "assets/furniture-v39/sources/cream-scratch.mp4",
       "source_sha256": "643a4e579ff9b5cc9a0914ba6a1a12ffa06c3871f655647f46cdc3804f034672",
       "source_dimensions": [
@@ -1669,7 +1672,10 @@
       "reference_height": 103.21875,
       "fixed_scene_floor": 880,
       "fixed_scene_origin_x": 300,
-      "material": "approved Snowdrop white fur + anatomical gold/blue iris; furniture RGB protected"
+      "material": "approved Snowdrop white fur + upright source gold/blue iris identity; furniture RGB protected",
+      "chroma_qp_offset": -6,
+      "blue_iris_min_saturation": 170,
+      "blue_iris_min_value": 140
     },
     {
       "kind": "box",
@@ -1677,7 +1683,7 @@
       "character": 10,
       "resource": 2109,
       "path": "assets/furniture-v39/runtime/snowdrop-box.mp4",
-      "sha256": "900e3704cbc32586099de202f070b789d94bb6029a6467af770be970f18d5d78",
+      "sha256": "cc3f11e0d96a79dbf676829068cabbfe32e293e8c6fe15cc8e58f4a363110233",
       "source": "assets/furniture-v39/sources/cream-box.mp4",
       "source_sha256": "66c52a8b4d1caa539c21be4232a2f1cb05a4cff3cd4ecdaa060e968af5f0c5bc",
       "source_dimensions": [
@@ -1891,7 +1897,10 @@
       "reference_height": 103.21875,
       "fixed_scene_floor": 880,
       "fixed_scene_origin_x": 300,
-      "material": "approved Snowdrop white fur + anatomical gold/blue iris; furniture RGB protected"
+      "material": "approved Snowdrop white fur + upright source gold/blue iris identity; furniture RGB protected",
+      "chroma_qp_offset": -6,
+      "blue_iris_min_saturation": 170,
+      "blue_iris_min_value": 140
     }
   ]
 }

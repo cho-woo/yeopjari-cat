@@ -26,9 +26,19 @@ cat::companion::Context CompanionContext(ULONGLONG ticks, double elapsed) {
     c.paused = g.hidden || g.menuOpen || g.dragging || g.companionWindow.Interacting() || g.closing || updates.applying;
     c.primaryVisible = !g.hidden;
     c.primary = g.physics.CurrentPose(); c.primaryMotion = g.motion;
+    if(c.primaryVisible&&c.primary.grounded&&!c.primary.onPlatform&&std::abs(c.primary.lift)<1) {
+        const double scale=cat::GrowthScale(g.pet.bornUtc,c.nowUtc)*std::max(1.,cat::appearance::VisualModifiers(g.nutrition,g.preferences.character).bodyWidth);
+        const auto body=cat::furniture::BodySpace(c.primary.x,scale);
+        c.primaryFurnitureSpace=g.furniture.Owned()?g.furniture.ReservedSpace():g.furniture.Requested()?
+            cat::furniture::MovieSpace(g.furniture.Action(),static_cast<unsigned>(g.preferences.character),c.primary.x,scale):body;
+        // With insufficient room, a queued actor may yield its future movie
+        // space. An already owned movie retains the whole reserved canvas.
+        if(!g.furniture.Owned())c.primaryFurnitureFallback=body;
+    }
     POINT cursor{};
     c.cursorEnabled=g.cursorPlay&&!KeyboardPlayActive();
-    c.cursorAvailable=GetCursorPos(&cursor)&&MonitorFromPoint(cursor,MONITOR_DEFAULTTONULL)==g.monitor;
+    c.cursorAvailable=liveAuditPointer?liveAuditPointer(cursor,true):
+        GetCursorPos(&cursor)&&MonitorFromPoint(cursor,MONITOR_DEFAULTTONULL)==g.monitor;
     c.cursorX=(cursor.x-g.work.left)/g.dpiScale;c.cursorWorldHeight=(g.work.bottom-cursor.y)/g.dpiScale;
     c.primaryBusy = g.furniture.Owned() || g.dragging || g.perch.transitioning || g.waitingForStop ||
         g.toyEngaged || g.approachingToy || g.approachingUser || g.memorySequenceCount || g.lifeSequenceCount ||
@@ -36,7 +46,7 @@ cat::companion::Context CompanionContext(ULONGLONG ticks, double elapsed) {
         // Joining an existing sleep/run story does not replace the primary's
         // action. Care and unrelated gestures still require a quiet boundary.
         (!g.companionReaction && g.motion!=Motion::Sleep && g.motion!=Motion::Zoomies &&
-            !PrimarySocialBoundary(ticks));
+            !PrimarySocialBoundary(ticks,g.companionModel.SocialActive()));
     if (g.perch.active) c.primaryPlatform = CompanionPlatform(g.perch.hwnd);
     const auto support = reinterpret_cast<HWND>(g.companionModel.SupportId());
     if (support) c.supportPlatform = CompanionPlatform(support);

@@ -7,13 +7,26 @@ unsigned FurnitureRoll() {
 void UpdateFurniture(const Context& c) {
     using P=cat::furniture::Phase;using M=cat::animation::Motion;
     const auto physical=physics_.CurrentPose(),visible=physics_.RenderPose();
+    // An accepted furniture command survives sleep. Finish falling asleep,
+    // then use the registered wake outro instead of snapping to a walk.
+    if(furniture.State()==P::Queued&&motion_==M::Sleep&&physical.grounded&&
+            !physical.onPlatform&&!waitingForStop_&&!jumpPending_&&!keyboardActive_&&
+            !ballPlaying_&&!cursor_.Active()&&!wallApproaching_&&!physics_.Hanging()) {
+        const auto* sleep=Registered(cat::sprite_sequence::Clip::Sleep);
+        const auto intro=sleep?cat::animation::ReferenceSleepIntroMs(&sleep->program,sleep->frameCount):2000;
+        if(c.ticks>=motionStart_&&c.ticks-motionStart_>=intro) {
+            ResetControls();brain_->Interrupt(c.ticks);interaction_=Interaction::None;
+            storyActive_=true;quietActive_=false;
+            SetMotion(M::Stretch,c.ticks,3500,0);
+        }
+    }
     const bool quiet=(motion_==M::Idle||motion_==M::Watch)&&quietActive_&&
         c.ticks>=motionStart_+1000;
     const bool available=!Busy()&&quiet&&!keyboardActive_&&!physics_.Hanging()&&
         !physical.onPlatform&&c.ticks>=careUntil_&&std::abs(physical.velocityX)<=.5;
     const auto roll=FurnitureRoll();
     if(!furniture.Requested()&&furnitureRandom.Advance(c.elapsedSeconds,
-            c.supportsFurniture&&available&&!c.primaryBusy&&!state_->pet.roamingPaused,roll))
+            c.supportsFurniture&&available&&!c.primaryBusy&&!state_->pet.roamingPaused,roll,c.ticks>=nextDecision_))
         furniture.Request(static_cast<cat::furniture::Kind>(1+roll%3));
     if(c.furnitureFailed) {
         const bool owned=furniture.Owned();furniture.Cancel();explicitTravel_=false;
@@ -21,7 +34,7 @@ void UpdateFurniture(const Context& c) {
     }
     if(furniture.State()==P::Queued&&available) {
         if(furniture.Begin(physical.x,minX_,maxX_,cat::GrowthScale(state_->pet.bornUtc,state_->pet.updatedUtc)*std::max(1.,cat::appearance::VisualModifiers(state_->nutrition,state_->preferences.character).bodyWidth),
-                static_cast<unsigned>(state_->preferences.character))) {
+                static_cast<unsigned>(state_->preferences.character),c.primaryFurnitureSpace,c.primaryFurnitureFallback)) {
             brain_->Interrupt(c.ticks);storyActive_=true;quietActive_=false;explicitTravel_=true;
             const auto* walk=Registered(cat::sprite_sequence::Clip::Walk);
             const double speed=walk?cat::sprite_assets::NominalLocomotionSpeed(*walk):40;

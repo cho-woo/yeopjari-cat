@@ -227,8 +227,15 @@ void UpdateControls(const Context& c,std::uint64_t elapsed) {
     }
     if(wallApproaching_&&physical.grounded&&physical.x>=maxX_-1.9&&
             std::abs(physical.velocityX-physical.supportVelocityX)<3) {
-        wallApproaching_=false;SetMotion(M::Hang,c.ticks,RegisteredDuration(C::Climb,6000),0);
-        actionClip_=C::Climb;waitingForStop_=false;
+        // The wall film now owns its full climb, drop and recovery. Keeping
+        // the walking owner alive let its generic timeout replace this end
+        // time with a long quiet interval, stranding the final raised paws.
+        wallApproaching_=false;explicitTravel_=false;
+        SetMotion(M::Hang,c.ticks,RegisteredDuration(C::Climb,6000),0);
+        actionClip_=C::Climb;waitingForStop_=false;landedAt_=0;
+        // Grip artwork faces right even when the request started at the wall
+        // before its walking motor had time to update the previous facing.
+        direction_=facing_=1;groundDrive_.Reset(1);groundArtBridge_.Reset(c.ticks);
         if(!physics_.BeginWallClimb(std::min(150.,maxLift_*.6)))actionClip_=C::None;
     }
     if(wallApproaching_&&physical.x>maxX_-45)speed_=std::min(speed_,std::max(6.,(maxX_-physical.x)*2));
@@ -239,15 +246,21 @@ void UpdateControls(const Context& c,std::uint64_t elapsed) {
     }
     if(actionClip_!=C::None&&!waitingForStop_&&c.ticks>=nextDecision_) {
         const bool waking=actionClip_==C::Sleep;
+        const bool climbing=actionClip_==C::Climb;
         if(actionClip_==C::Brake||actionClip_==C::Slide||actionClip_==C::Stumble)groundArtBridge_.Reset(c.ticks);
-        if(actionClip_==C::Climb)physics_.EndWallClimb();
+        if(climbing)physics_.EndWallClimb();
         actionClip_=C::None;
         if(waking&&physics_.CurrentPose().grounded)SetMotion(M::Stretch,c.ticks,3200,0);
-        else if(physics_.CurrentPose().grounded)BeginQuiet(c.ticks);
+        else if(physics_.CurrentPose().grounded) {
+            // The film ends in a planted side pose. The registered walk
+            // outro owns the real side-to-front turn and sit before quiet.
+            if(climbing&&RegisteredVideoWalk())groundArtBridge_.ContinueLocomotion(c.ticks);
+            BeginQuiet(c.ticks);
+        }
         else {SetMotion(M::Jump,c.ticks,3000,0,true);landedAt_=0;}
     }
     if(!nextFly_)nextFly_=c.ticks+90000;
-    if(!Busy()&&!state_->pet.roamingPaused&&quietActive_&&c.ticks>=nextFly_) {
+    if((!furniture.Requested()||physics_.CurrentPose().onPlatform)&&!Busy()&&!state_->pet.roamingPaused&&quietActive_&&c.ticks>=nextDecision_&&c.ticks>=nextFly_) {
         nextFly_=c.ticks+120000+static_cast<std::uint64_t>(Random()*180000);
         Perform(C::FlyHunt,c.ticks);
     }

@@ -2,7 +2,8 @@
 // Offline authored RGBA movies: RGB over a separately encoded grey alpha plane.
 // Windows decodes the local resource only. No URL, audio or external codec is used.
 // Decode off the UI thread before starting an action; playback never seeks or
-// decodes in the timer/render path. Two actors own at most two bounded movies.
+// decodes in the timer/render path. Each actor retains its current bounded
+// movie; at most one cancelled decode can still be finishing in the worker.
 #include <windows.h>
 #include <mfapi.h>
 #include <mfidl.h>
@@ -20,6 +21,7 @@
 #include <mutex>
 #include <string>
 #include <vector>
+#include "cat_decode_queue.hpp"
 
 namespace cat::movie {
 template<class T> struct Com {
@@ -141,31 +143,26 @@ inline std::shared_ptr<Movie> Decode(const unsigned char* data,std::size_t size,
 
 // Weak reuse never retains completed scenes. A hidden/paused actor retains its
 // own immutable movie until the complete source and recovery have finished.
-inline std::mutex cacheMutex;
-inline std::map<int,std::weak_ptr<Movie>> cache;
+inline DecodeQueue<Movie>& Decoder(){static DecodeQueue<Movie> queue;return queue;}
 class Loader {
 public:
-    void Reset(){if(pending_.valid())pending_.wait();pending_={};movie_.reset();resource_=0;}
+    void Reset(){pending_.reset();movie_.reset();resource_=0;}
     ~Loader(){Reset();}
     void Prepare(HINSTANCE instance,Specification spec) {
         if(resource_==spec.resource)return;
         Reset();resource_=spec.resource;
-        {std::lock_guard<std::mutex> lock(cacheMutex);movie_=cache[resource_].lock();}
-        if(movie_)return;
         const auto resource=FindResourceW(instance,MAKEINTRESOURCEW(spec.resource),RT_RCDATA);
         const auto handle=resource?LoadResource(instance,resource):nullptr;
         const auto* data=handle?static_cast<const unsigned char*>(LockResource(handle)):nullptr;
         const auto size=resource?SizeofResource(instance,resource):0;
-        pending_=std::async(std::launch::async,[data,size,spec]{return Decode(data,size,spec);});
+        pending_=Decoder().Prepare(spec.resource,[data,size,spec]{return Decode(data,size,spec);});
     }
     bool Ready() {
-        if(pending_.valid()&&pending_.wait_for(std::chrono::seconds(0))==std::future_status::ready) {
-            movie_=pending_.get();if(SUCCEEDED(movie_->error)){std::lock_guard<std::mutex> lock(cacheMutex);cache[resource_]=movie_;}
-        }
+        if(pending_&&pending_->ready.load(std::memory_order_acquire))movie_=pending_->value;
         return movie_&&SUCCEEDED(movie_->error)&&!movie_->frames.empty();
     }
-    bool Failed(){Ready();return movie_&&FAILED(movie_->error);}
-    HRESULT Error()const{return movie_?movie_->error:E_PENDING;}
+    bool Failed(){Ready();return movie_?FAILED(movie_->error):pending_&&pending_->ready.load(std::memory_order_acquire);}
+    HRESULT Error()const{return movie_?movie_->error:pending_&&pending_->ready.load(std::memory_order_acquire)?E_FAIL:E_PENDING;}
     const Movie* Get(){return Ready()?movie_.get():nullptr;}
     const Frame* Sample(std::uint64_t milliseconds,unsigned* index=nullptr) {
         const auto* movie=Get();if(!movie)return nullptr;
@@ -175,6 +172,6 @@ public:
         if(index)*index=static_cast<unsigned>(found-movie->frames.begin());return &*found;
     }
 private:
-    int resource_=0;std::future<std::shared_ptr<Movie>> pending_;std::shared_ptr<Movie> movie_;
+    int resource_=0;DecodeQueue<Movie>::Request pending_;std::shared_ptr<Movie> movie_;
 };
 } // namespace cat::movie

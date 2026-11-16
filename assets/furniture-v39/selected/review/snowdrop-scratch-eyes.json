@@ -151,8 +151,8 @@
         17,
         12
       ],
-      "anatomical_side": "left",
-      "material": "blue",
+      "anatomical_side": "right",
+      "material": "gold",
       "pixels": 12
     }
   ],
@@ -166,8 +166,8 @@
         14,
         9
       ],
-      "anatomical_side": "left",
-      "material": "blue",
+      "anatomical_side": "right",
+      "material": "gold",
       "pixels": 8
     }
   ],
@@ -347,8 +347,8 @@
         23,
         22
       ],
-      "anatomical_side": "right",
-      "material": "gold",
+      "anatomical_side": "left",
+      "material": "blue",
       "pixels": 44
     }
   ],
@@ -456,8 +456,8 @@
         24,
         21
       ],
-      "anatomical_side": "right",
-      "material": "gold",
+      "anatomical_side": "left",
+      "material": "blue",
       "pixels": 47
     }
   ],
@@ -1850,8 +1850,8 @@
         24,
         23
       ],
-      "anatomical_side": "right",
-      "material": "gold",
+      "anatomical_side": "left",
+      "material": "blue",
       "pixels": 22
     }
   ],
@@ -1863,8 +1863,8 @@
         24,
         24
       ],
-      "anatomical_side": "right",
-      "material": "gold",
+      "anatomical_side": "left",
+      "material": "blue",
       "pixels": 29
     }
   ],
@@ -1876,8 +1876,8 @@
         24,
         24
       ],
-      "anatomical_side": "right",
-      "material": "gold",
+      "anatomical_side": "left",
+      "material": "blue",
       "pixels": 18
     }
   ],
@@ -2009,8 +2009,8 @@
         23,
         25
       ],
-      "anatomical_side": "right",
-      "material": "gold",
+      "anatomical_side": "left",
+      "material": "blue",
       "pixels": 15
     }
   ],
@@ -2096,8 +2096,8 @@
         24,
         24
       ],
-      "anatomical_side": "right",
-      "material": "gold",
+      "anatomical_side": "left",
+      "material": "blue",
       "pixels": 17
     }
   ],
@@ -2157,8 +2157,8 @@
         24,
         25
       ],
-      "anatomical_side": "right",
-      "material": "gold",
+      "anatomical_side": "left",
+      "material": "blue",
       "pixels": 13
     }
   ],
@@ -2870,8 +2870,8 @@
         25,
         22
       ],
-      "anatomical_side": "right",
-      "material": "gold",
+      "anatomical_side": "left",
+      "material": "blue",
       "pixels": 51
     }
   ],
@@ -2907,8 +2907,8 @@
         25,
         21
       ],
-      "anatomical_side": "right",
-      "material": "gold",
+      "anatomical_side": "left",
+      "material": "blue",
       "pixels": 47
     }
   ],
@@ -2968,8 +2968,8 @@
         15,
         11
       ],
-      "anatomical_side": "left",
-      "material": "blue",
+      "anatomical_side": "right",
+      "material": "gold",
       "pixels": 7
     }
   ],
@@ -2983,8 +2983,8 @@
         16,
         12
       ],
-      "anatomical_side": "left",
-      "material": "blue",
+      "anatomical_side": "right",
+      "material": "gold",
       "pixels": 18
     }
   ],

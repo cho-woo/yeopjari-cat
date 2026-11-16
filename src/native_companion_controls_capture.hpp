@@ -4,7 +4,7 @@ int CompanionReview(std::string& context) {
     constexpr unsigned Count=360;
     struct Pair {std::array<Row,2> actors;std::array<std::vector<Frame>,2> frames;};
     std::array<Pair,3> pairs;
-    CreateDirectoryW(L"render-self-test/companion-play",nullptr);
+    for(const auto path:{L"render-self-test",L"render-self-test/cursor-actors",L"render-self-test/companion-play"})CreateDirectoryW(path,nullptr);
     Surface actor;if(!actor.Create(ActorWidth,ActorHeight))return 820;
     for(unsigned r=0;r<3;++r) {
         auto& pair=pairs[r];const auto first=cat::kAvailableCharacters[r],second=cat::kAvailableCharacters[(r+1)%3];
@@ -24,8 +24,7 @@ int CompanionReview(std::string& context) {
         for(unsigned index=0;index<Count;++index) {
             for(unsigned sub=0;sub<2;++sub) {
                 const unsigned sample=index*2+sub,step=(sample+1)*1000/60-sample*1000/60;
-                host.now+=step;c.ticks=host.now;c.elapsedSeconds=step/1000.;c.primary=g.physics.CurrentPose();
-                c.primaryMotion=g.motion;c.primaryBusy=!g.companionReaction&&g.motion==Motion::Punch;
+                host.now+=step;c=CompanionContext(host.now,step/1000.);
                 g.companionModel.Tick(c);const auto event=g.companionModel.TakeEvent();
                 events+=event==cat::companion::Interaction::Paw;
                 const auto serial=g.motionSerial;ReactToCompanion(event,c,host.now);
