@@ -174,6 +174,7 @@ struct Recorder {
     std::deque<CaptureFrame> queue;
     std::thread worker;bool stop=false,failed=false;
     std::atomic<unsigned> written{0};unsigned dropped=0,occluded=0;std::uint64_t hiddenLayersExcluded=0;
+    unsigned appSamples=0,missingPrimary=0,missingCompanion=0;
     bool Open(const std::wstring& ffmpeg) {
         if(ffmpeg.empty())return true;
         SECURITY_ATTRIBUTES sa{sizeof(sa),nullptr,TRUE};HANDLE read=nullptr;
@@ -222,6 +223,8 @@ struct Recorder {
     void Enqueue(CaptureFrame frame){std::lock_guard<std::mutex> lock(mutex);
         if(queue.size()>=3){++dropped;return;}queue.push_back(std::move(frame));signal.notify_one();}
     void AppFrame(POINT origin,unsigned index){if(!input)return;
+        ++appSamples;missingPrimary+=!IsWindowVisible(g.window);
+        missingCompanion+=!IsWindowVisible(g.companionWindow.Handle());
         CaptureFrame frame;frame.index=index;frame.pixels.resize(std::size_t(Width)*Height*4);
         auto* pixels=reinterpret_cast<std::uint32_t*>(frame.pixels.data());std::fill(pixels,pixels+std::size_t(Width)*Height,0xfff6f2eb);
         // Copy only the shipping windows' already-painted BGRA surfaces.
@@ -366,7 +369,12 @@ int Run(HINSTANCE instance,unsigned coat,unsigned first,unsigned last,unsigned r
     g.foodRequestAfter=g.updateAnnounceAfter=started+86400000;
     g.nextCuriosity=g.nextFlyHunt=started+86400000;g.perch.nextTry=started+86400000;
     SetMotion(Motion::Idle,86400000,started);g.autonomousResting=true;
-    Render();if(!appFrames)ShowWindow(g.window,SW_SHOWNOACTIVATE);RefreshAnimationTimer();
+    Render();
+    // Render has already positioned the framebuffer fixture offscreen. Keep
+    // its visible style like the shipping app, so the visibility-aware
+    // compositor includes the primary actor. NOACTIVATE preserves user focus.
+    SetWindowPos(g.window,nullptr,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_NOZORDER|SWP_NOACTIVATE|SWP_SHOWWINDOW);
+    RefreshAnimationTimer();
     Recorder recorder;if(!recorder.Open(ffmpeg))return 972;
     if(!appFrames)recorder.StartCapture(origin,started);
     std::array<double,6> timings{};liveAuditTimings=&timings;
@@ -436,8 +444,9 @@ int Run(HINSTANCE instance,unsigned coat,unsigned first,unsigned last,unsigned r
     KillTimer(g.window,kTickTimer);g.frameTimer.Disable();observeFrame={};liveAuditTimings=nullptr;liveAuditPointer=nullptr;recorder.Finish();
     liveAuditRenderReceipt=nullptr;
     const bool saved=!fullProfile||SavePet(false);liveAuditFixedWorkArea=false;
+    const bool actorsComplete=!appFrames||(recorder.appSamples>0&&recorder.missingPrimary==0&&recorder.missingCompanion==0);
     std::ostringstream report;report<<"{\"version\":\"" YEOPJARI_VERSION_STRING "\",\"real_wall_clock\":true,\"desktop_compositor_capture\":"<<(appFrames?"false":"true")<<
-        ",\"native_app_framebuffer_capture\":"<<(appFrames?"true":"false")<<",\"hidden_layers_excluded\":"<<(appFrames?"true":"false")<<",\"hidden_layer_skips\":"<<recorder.hiddenLayersExcluded<<",\"coat\":"<<coat<<",\"companion_coat\":"<<companionCoat<<",\"age_days\":"<<ageDays<<",\"dpi_scale\":"<<dpi<<
+        ",\"native_app_framebuffer_capture\":"<<(appFrames?"true":"false")<<",\"hidden_layers_excluded\":"<<(appFrames?"true":"false")<<",\"hidden_layer_skips\":"<<recorder.hiddenLayersExcluded<<",\"capture_actors_complete\":"<<(actorsComplete?"true":"false")<<",\"capture_samples\":"<<recorder.appSamples<<",\"missing_primary_samples\":"<<recorder.missingPrimary<<",\"missing_companion_samples\":"<<recorder.missingCompanion<<",\"coat\":"<<coat<<",\"companion_coat\":"<<companionCoat<<",\"age_days\":"<<ageDays<<",\"dpi_scale\":"<<dpi<<
         ",\"completed\":"<<completed<<",\"requested\":"<<(last-first+1)*repeats<<",\"timer_frames\":"<<frames<<",\"max_timer_gap_ms\":"<<maxGap<<
         ",\"timer_gaps_over_50ms\":"<<lateFrames<<",\"encoded_frames\":"<<recorder.written<<",\"encoder_drops\":"<<recorder.dropped<<",\"occluded_captures\":"<<recorder.occluded<<",\"encoder_failed\":"<<(recorder.failed?"true":"false")<<
         ",\"maintenance_and_save_enabled\":"<<(fullProfile?"true":"false")<<",\"fixture_save_passed\":"<<(saved?"true":"false")<<",\"render_epoch_mismatches\":"<<renderEpochMismatches<<"}";
@@ -449,7 +458,7 @@ int Run(HINSTANCE instance,unsigned coat,unsigned first,unsigned last,unsigned r
     ReleaseAtlases();ReleaseCarePresentation();g.surface.Reset();g.blendFrom.Reset();g.blendTo.Reset();
     if(g.preciseTimer){timeEndPeriod(1);g.preciseTimer=false;}g.initialized=false;
     GdiplusShutdown(token);if(SUCCEEDED(com))CoUninitialize();
-    return completed==(last-first+1)*repeats&&!recorder.failed&&saved?0:973;
+    return completed==(last-first+1)*repeats&&!recorder.failed&&saved&&actorsComplete?0:973;
 }
 
 int QueueProbe(HINSTANCE instance) {
