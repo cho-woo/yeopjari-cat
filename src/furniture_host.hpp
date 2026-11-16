@@ -37,8 +37,19 @@ void UpdatePrimaryFurniture(ULONGLONG ticks,double seconds) {
     if(seconds<=0)return;
     if(g.furniture.State()==Phase::Queued&&available) {
         const auto bounds=MovementBoundsLogical();
+        cat::furniture::Space occupied,fallback;
+        const auto other=g.companionModel.Physical();
+        if(g.companionStore.state.enabled&&other.grounded&&!other.onPlatform&&std::abs(other.lift)<1) {
+            const auto& state=g.companionStore.state;
+            const double scale=cat::GrowthScale(state.pet.bornUtc,UtcNow())*std::max(1.,cat::appearance::VisualModifiers(state.nutrition,state.preferences.character).bodyWidth);
+            const auto bodySpace=cat::furniture::BodySpace(other.x,scale);
+            const auto& scene=g.companionModel.furniture;
+            occupied=scene.Owned()?scene.ReservedSpace():scene.Requested()?
+                cat::furniture::MovieSpace(scene.Action(),static_cast<unsigned>(state.preferences.character),other.x,scale):bodySpace;
+            if(!scene.Owned())fallback=bodySpace;
+        }
         if(g.furniture.Begin(body.x,bounds.first,bounds.second,cat::GrowthScale(g.pet.bornUtc,UtcNow())*std::max(1.,cat::appearance::VisualModifiers(g.nutrition,g.preferences.character).bodyWidth),
-                static_cast<unsigned>(g.preferences.character))) {
+                static_cast<unsigned>(g.preferences.character),occupied,fallback)) {
             if(g.brain)g.brain->Interrupt(ticks);
             const auto velocity=g.furniture.Velocity(body.x,RegisteredWalkSpeed());
             g.direction=velocity<0?-1:1;

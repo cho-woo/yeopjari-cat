@@ -6624,6 +6624,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int) {
         for(int index=7;index<count;++index){const std::wstring option=args[index];
             if(option==L"--framebuffer")appFrames=true;
             else if(option==L"--furniture-from-sleep")native_live_motion_audit::furnitureWakeFixture=true;
+            else if(option==L"--nearby-furniture")native_live_motion_audit::nearbyFurnitureFixture=true;
             else if(option==L"--companion-coat"&&index+1<count)companionCoat=wcstoul(args[++index],nullptr,10);
             else if(option==L"--age-days"&&index+1<count)ageDays=wcstoul(args[++index],nullptr,10);
             else if(option==L"--dpi-scale"&&index+1<count)dpi=wcstod(args[++index],nullptr);}

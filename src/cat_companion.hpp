@@ -253,6 +253,7 @@ struct Context {
     cat::animation::Motion primaryMotion = cat::animation::Motion::Idle;
     Platform primaryPlatform, supportPlatform;
     bool supportsFurniture=false,furnitureReady=false,furnitureFailed=false;
+    cat::furniture::Space primaryFurnitureSpace,primaryFurnitureFallback;
     bool supportsBallMovie=false,ballMovieReady=false,ballMovieFailed=false;
     bool cursorEnabled=false,cursorAvailable=false;
     double cursorX=0,cursorWorldHeight=0;

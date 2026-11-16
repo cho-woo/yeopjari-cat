@@ -28,6 +28,24 @@ int main() {
         assert(done&&!s.Requested());
     }
     Session small;assert(small.Request(Kind::Tower));assert(!small.Begin(100,96,110,1.2,0));
+    unsigned placements=0;
+    for(unsigned coat:{0u,8u,10u})for(auto kind:{Kind::Tower,Kind::Scratcher,Kind::Box})
+        for(double scale:{.7,1.,1.3})for(double other:{120.,400.,700.}) {
+            Session first,second;assert(first.Request(kind)&&second.Request(kind));
+            const auto pending=MovieSpace(kind,coat,other,scale);
+            assert(first.Begin(other-60,96,904,scale,coat,pending,BodySpace(other,scale)));
+            assert(second.Begin(other,96,904,scale,coat,first.ReservedSpace()));
+            const auto a=first.ReservedSpace(),b=second.ReservedSpace();
+            assert(a.right+12*scale<=b.left+.001||b.right+12*scale<=a.left+.001);
+            assert(first.Target()>=96&&second.Target()>=96);
+            // A new destination drives the ordinary bounded walking motor.
+            if(std::abs(first.Target()-(other-60))>.6)assert(first.State()==Phase::Approach);
+            ++placements;
+        }
+    Session waiting;assert(waiting.Request(Kind::Box));
+    assert(!waiting.Begin(400,96,904,1,0,{0,1000,true}));
+    assert(waiting.State()==Phase::Queued); // Retain intent until space is free.
+    assert(waiting.Begin(400,96,904,1,0));
     RandomSchedule random;
     for(int i=0;i<10000;++i)assert(!random.Advance(.1,false,0));
     int events=0;for(int i=0;i<1000;++i)events+=random.Advance(.1,true,0);
@@ -61,5 +79,5 @@ int main() {
     for(int i=0;i<10&&pointer.Active();++i){input.nowMs+=16;pointer.Step(input);}
     assert(!pointer.Active());
     for(int i=0;i<1000;++i){input.nowMs+=16;pointer.Step(input);assert(!pointer.Active());}
-    std::cout<<"Furniture: 9 complete timelines, safe approach, decode gate, pause, recovery and random spacing passed\n";
+    std::cout<<"Furniture: 9 complete timelines,"<<placements<<" paired placements, safe approach, decode gate, pause, recovery and random spacing passed\n";
 }

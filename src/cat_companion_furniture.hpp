@@ -34,7 +34,7 @@ void UpdateFurniture(const Context& c) {
     }
     if(furniture.State()==P::Queued&&available) {
         if(furniture.Begin(physical.x,minX_,maxX_,cat::GrowthScale(state_->pet.bornUtc,state_->pet.updatedUtc)*std::max(1.,cat::appearance::VisualModifiers(state_->nutrition,state_->preferences.character).bodyWidth),
-                static_cast<unsigned>(state_->preferences.character))) {
+                static_cast<unsigned>(state_->preferences.character),c.primaryFurnitureSpace,c.primaryFurnitureFallback)) {
             brain_->Interrupt(c.ticks);storyActive_=true;quietActive_=false;explicitTravel_=true;
             const auto* walk=Registered(cat::sprite_sequence::Clip::Walk);
             const double speed=walk?cat::sprite_assets::NominalLocomotionSpeed(*walk):40;

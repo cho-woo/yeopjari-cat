@@ -26,6 +26,15 @@ cat::companion::Context CompanionContext(ULONGLONG ticks, double elapsed) {
     c.paused = g.hidden || g.menuOpen || g.dragging || g.companionWindow.Interacting() || g.closing || updates.applying;
     c.primaryVisible = !g.hidden;
     c.primary = g.physics.CurrentPose(); c.primaryMotion = g.motion;
+    if(c.primaryVisible&&c.primary.grounded&&!c.primary.onPlatform&&std::abs(c.primary.lift)<1) {
+        const double scale=cat::GrowthScale(g.pet.bornUtc,c.nowUtc)*std::max(1.,cat::appearance::VisualModifiers(g.nutrition,g.preferences.character).bodyWidth);
+        const auto body=cat::furniture::BodySpace(c.primary.x,scale);
+        c.primaryFurnitureSpace=g.furniture.Owned()?g.furniture.ReservedSpace():g.furniture.Requested()?
+            cat::furniture::MovieSpace(g.furniture.Action(),static_cast<unsigned>(g.preferences.character),c.primary.x,scale):body;
+        // With insufficient room, a queued actor may yield its future movie
+        // space. An already owned movie retains the whole reserved canvas.
+        if(!g.furniture.Owned())c.primaryFurnitureFallback=body;
+    }
     POINT cursor{};
     c.cursorEnabled=g.cursorPlay&&!KeyboardPlayActive();
     c.cursorAvailable=liveAuditPointer?liveAuditPointer(cursor,true):

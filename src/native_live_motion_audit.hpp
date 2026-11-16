@@ -62,6 +62,7 @@ constexpr wchar_t ClassName[]=L"YeopjariCat.LiveMotionAudit";
 HWND backdrop=nullptr;
 bool closing=false;
 bool furnitureWakeFixture=false;
+bool nearbyFurnitureFixture=false;
 std::function<void()> observeFrame;
 ULONGLONG pointerStarted=0;
 ULONGLONG pointerSampled=0;
@@ -359,7 +360,7 @@ int Run(HINSTANCE instance,unsigned coat,unsigned first,unsigned last,unsigned r
         appFrames?-12000:50,appFrames?-12000:80,outer.right-outer.left,outer.bottom-outer.top,nullptr,nullptr,instance,nullptr);
     if(!appFrames)ShowWindow(backdrop,SW_SHOWNORMAL);UpdateWindow(backdrop);
     POINT origin{};ClientToScreen(backdrop,&origin);
-    g.work={origin.x,origin.y+100,origin.x+Width,origin.y+Height-20};g.dpiScale=dpi;g.centerX=g.work.left+260;
+    g.work={origin.x,origin.y+100,origin.x+Width,origin.y+Height-20};g.dpiScale=dpi;g.centerX=g.work.left+(nearbyFurnitureFixture?548.753*dpi:260);
     ResetMovement();for(unsigned i=0;i<12;++i)g.physics.Update(1./60);
     WNDCLASSW actor{};actor.lpfnWndProc=ActorProc;actor.hInstance=instance;actor.lpszClassName=L"YeopjariCat.LiveAuditActor";RegisterClassW(&actor);
     g.window=CreateWindowExW(WS_EX_LAYERED|WS_EX_TRANSPARENT|WS_EX_TOOLWINDOW|WS_EX_TOPMOST|WS_EX_NOACTIVATE,actor.lpszClassName,
@@ -367,6 +368,7 @@ int Run(HINSTANCE instance,unsigned coat,unsigned first,unsigned last,unsigned r
     g.surface.Create(320,300);g.blendFrom.Create(320,300);g.blendTo.Create(320,300);
     auto& state=g.companionStore.state;state=cat::companion::NewState(g.pet.bornUtc);state.enabled=true;
     state.preferences.character=static_cast<cat::Character>(companionCoat);state.pet.position=.76;state.pet.roamingPaused=true;
+    if(nearbyFurnitureFixture)state.pet.position=std::clamp((608.508-96)/(Width/dpi-192),0.,1.);
     state.pet.updatedUtc=state.nutrition.updatedUtc=state.memory.updatedUtc=state.life.updatedUtc=UtcNow();
     state.nutrition.bodyCondition=50;g.companionStore.outcome=cat::companion::Outcome::Adopted;
     if(fullProfile){if(!WriteBytes(g.directory+L"/companion.ini",cat::companion::Serialize(state)))return 971;LoadCompanion();}
@@ -391,7 +393,7 @@ int Run(HINSTANCE instance,unsigned coat,unsigned first,unsigned last,unsigned r
     Recorder recorder;if(!recorder.Open(ffmpeg))return 972;
     if(!appFrames)recorder.StartCapture(origin,started);
     std::array<double,6> timings{};liveAuditTimings=&timings;
-    std::ofstream trace("trace.csv");trace<<"wall_ms,action,repeat,role,motion,clip,source,x,lift,vx,vy,serial,timer_gap_ms,setup_ms,furniture_ms,companion_ms,dispatch_ms,physics_ms,render_ms,scene,pounce,source_ms,contact_serial,grounded,origin_x,origin_y,coat,target_x,target_height,wall_precise_ms\n";
+    std::ofstream trace("trace.csv");trace<<"wall_ms,action,repeat,role,motion,clip,source,x,lift,vx,vy,serial,timer_gap_ms,setup_ms,furniture_ms,companion_ms,dispatch_ms,physics_ms,render_ms,scene,pounce,source_ms,contact_serial,grounded,origin_x,origin_y,coat,target_x,target_height,wall_precise_ms,scene_left,scene_right\n";
     unsigned selected=first,repeat=0,completed=0;bool active=false,stopping=false;ULONGLONG next=started+2000,begin=0,end=0,lastSample=started;
     std::uint64_t maxGap=0,lateFrames=0,frames=0,renderEpochMismatches=0;
     double nextAppCapture=preciseStarted;
@@ -416,18 +418,22 @@ int Run(HINSTANCE instance,unsigned coat,unsigned first,unsigned last,unsigned r
                     return asset?unsigned(std::min<std::uint64_t>(asset->frames-1,drawing.furnitureElapsedMs*24/1000)):0;}
                 return sprite?SpriteFrameFor(drawing,*sprite->layout):unsigned(drawing.frame);
             };
-            const auto extra=[&](const cat::animation::Pose& drawing,unsigned contact,bool grounded,unsigned appearance) {
+            const auto extra=[&](const cat::animation::Pose& drawing,unsigned contact,bool grounded,unsigned appearance,double root,double scale) {
                 trace<<','<<unsigned(drawing.furnitureScene)<<','<<drawing.ballPounce<<','<<
                     (drawing.furnitureScene!=cat::furniture::Kind::None?drawing.furnitureElapsedMs:drawing.spriteElapsedMs)<<','<<contact<<','<<grounded<<','<<origin.x<<','<<origin.y<<','<<appearance;
                 if(liveAuditPointer&&pointerObserved)trace<<','<<(pointerPoint.x-g.work.left)/g.dpiScale<<','<<(g.work.bottom-pointerPoint.y)/g.dpiScale;
-                else trace<<",,";trace<<','<<(g.lastPhysicsTime-preciseStarted)*1000<<'\n';
+                else trace<<",,";trace<<','<<(g.lastPhysicsTime-preciseStarted)*1000;
+                const auto space=cat::furniture::MovieSpace(drawing.furnitureScene,appearance,root,scale);
+                if(space.valid)trace<<','<<space.left<<','<<space.right;else trace<<",,";trace<<'\n';
             };
             trace<<ticks-started<<','<<selected<<','<<repeat<<",0,"<<static_cast<unsigned>(g.motion)<<','<<static_cast<unsigned>(pose.spriteClip)<<','<<
                 sourceFrame(pose,art)<<','<<physical.x<<','<<physical.lift<<','<<physical.velocityX<<','<<physical.velocityY<<','<<g.motionSerial<<','<<gap;
-            for(double time:timings)trace<<','<<time;extra(pose,g.ballKickSerial,physical.grounded,coat);
+            for(double time:timings)trace<<','<<time;extra(pose,g.ballKickSerial,physical.grounded,coat,physical.x,
+                cat::GrowthScale(g.pet.bornUtc,UtcNow())*cat::appearance::VisualModifiers(g.nutrition,g.preferences.character).bodyWidth);
             trace<<ticks-started<<','<<selected<<','<<repeat<<",1,"<<static_cast<unsigned>(companion.motion)<<','<<static_cast<unsigned>(companion.animation.spriteClip)<<','<<
                 sourceFrame(companion.animation,second)<<','<<companion.physical.x<<','<<companion.physical.lift<<','<<companion.physical.velocityX<<','<<companion.physical.velocityY<<','<<cat::companion::LiveMotionAuditAccess::Serial(g.companionModel)<<','<<gap;
-            for(double time:timings)trace<<','<<time;extra(companion.animation,unsigned(cat::companion::BallReviewAccess::Contact(g.companionModel)),companion.physical.grounded,companionCoat);
+            for(double time:timings)trace<<','<<time;extra(companion.animation,unsigned(cat::companion::BallReviewAccess::Contact(g.companionModel)),companion.physical.grounded,companionCoat,
+                companion.physical.x,companion.growthScale*companion.body.bodyWidth);
         }
         if(appFrames&&g.lastPhysicsTime>=nextAppCapture){const auto index=unsigned((g.lastPhysicsTime-preciseStarted)*30);
             recorder.AppFrame(origin,index);nextAppCapture=preciseStarted+(index+1)/30.;}

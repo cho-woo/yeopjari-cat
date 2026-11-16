@@ -48,6 +48,7 @@ def inspect_trace(path, primary, companion):
     warps = []
     covers = collections.defaultdict(lambda: collections.defaultdict(set))
     gaps = []
+    spaces = {};overlaps = [];space_samples = 0
     for row in rows:
         role = int(row['role'])
         if int(row['coat']) != (companion if role else primary):
@@ -67,6 +68,12 @@ def inspect_trace(path, primary, companion):
         last[role] = point, now
         clip = f"scene-{row['scene']}" if int(row['scene']) else 'pounce' if int(row['pounce']) else f"clip-{row['clip']}"
         covers[(int(row['action']), int(row['repeat']), role)][clip].add(int(row['source']))
+        if row.get('scene_left') and row.get('scene_right'):
+            key=row['wall_ms'];spaces.setdefault(key,{})[role]=(float(row['scene_left']),float(row['scene_right']))
+            if len(spaces[key])==2:
+                a,b=spaces.pop(key).values();space_samples+=1
+                overlap=min(a[1],b[1])-max(a[0],b[0])
+                if overlap>1.5:overlaps.append({'wall_ms':key,'overlap_logical_pixels':overlap})
         if role == 0:
             gaps.append(int(row['timer_gap_ms']))
     coverage = [{'action': key[0], 'repeat': key[1], 'role': key[2],
@@ -90,6 +97,7 @@ def inspect_trace(path, primary, companion):
         if action == 43 and not {'clip-6', 'clip-20'} <= clips.keys():
             missing.append({'action': action, 'repeat': repeat, 'role': role, 'wanted': 'keyboard jump and planted turn'})
     return {'rows': len(rows), 'physical_discontinuities': len(warps), 'warp_events': warps[:30],
+            'furniture_space_samples':space_samples,'furniture_visual_overlaps':len(overlaps),'furniture_overlap_events':overlaps[:30],
             'timer_mean_ms': statistics.mean(gaps) if gaps else None,
             'timer_histogram': dict(collections.Counter(gaps)), 'missing_action_coverage': missing, 'coverage': coverage}
 
@@ -153,7 +161,8 @@ def main():
                                 report['capture_actors_complete'] and
                                 not report['encoder_failed'] and report['fixture_save_passed'] and
                                 report['render_epoch_mismatches'] == 0 and
-                                result['trace']['physical_discontinuities'] == 0 and not result['trace']['missing_action_coverage'])
+                                result['trace']['physical_discontinuities'] == 0 and not result['trace']['missing_action_coverage'] and
+                                result['trace']['furniture_visual_overlaps'] == 0)
             result['status'] = 'passed' if result['passed'] else 'failed'
         except Exception as error:
             result['status'], result['error'] = 'failed', str(error)
