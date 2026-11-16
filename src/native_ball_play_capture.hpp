@@ -12,7 +12,7 @@ struct Frame {
     cat::toy::BallPose ball,currentBall;
     double x=0,lift=0,vx=0,vy=0,pawX=0,pawHeight=0,kickDistance=0;
     std::uint64_t serial=0,actionElapsed=0,kicks=0;
-    unsigned source=0,resource=0,revision=0;
+    unsigned source=0,resource=0,revision=0,contactStroke=0;
     Phase phase=Phase::None;
     Motion motion=Motion::Idle;
     int facing=1,direction=1;
@@ -71,6 +71,7 @@ int ContactGuards(std::string& context) {
 }
 int Simulate(Row& row,std::string& context,bool edgeCase=true) {
     native_manual_motion_tests::Host host;Configure(host,row.character,edgeCase?1184:1000);
+    for(unsigned attempt=0;!PrepareBallMovie(false,static_cast<unsigned>(row.character));++attempt){if(attempt>=1000)return 799;Sleep(10);}
     const auto saved=host.Saved();row.body=cat::appearance::VisualModifiers(g.nutrition,row.character);
     row.contactThreshold=cat::toy::PhysicsBall::Radius+4*cat::GrowthScale(g.pet.bornUtc,UtcNow());
     const auto& source=CurrentArt(row.character).base.skins[4].source;
@@ -108,16 +109,17 @@ int Simulate(Row& row,std::string& context,bool edgeCase=true) {
         const auto pose=PrimaryDisplayedPose(now,rendered);
         if(!cat::deform::Finite(pose.joints)||!std::isfinite(pose.x)||!std::isfinite(pose.lift))return 792;
         const auto* asset=CareSpriteFor(pose,row.character);
-        const auto sourceFrame=asset?SpriteFrameFor(pose,*asset->layout):static_cast<unsigned>(pose.frame);
-        if(asset&&sourceFrame>=asset->layout->frameCount)return 792;
+        const auto sourceFrame=pose.ballPounce?cat::ball_movie::Frame(pose.spriteElapsedMs):asset?SpriteFrameFor(pose,*asset->layout):static_cast<unsigned>(pose.frame);
+        if(asset&&!pose.ballPounce&&sourceFrame>=asset->layout->frameCount)return 792;
         Frame frame;frame.pose=pose;frame.ball=ball;frame.currentBall=currentBall;
         frame.x=rendered.x;frame.lift=rendered.lift;frame.vx=rendered.velocityX;frame.vy=rendered.velocityY;
         frame.serial=g.motionSerial;frame.actionElapsed=now>=g.motionStart?now-g.motionStart:0;
         frame.kicks=g.ballKickSerial-baseKick;frame.contact=g.ballKickSerial>previousKick;
         const auto paw=BallToyPawWorldPoint(now,physical);frame.pawX=paw.x;frame.pawHeight=paw.y;
         frame.kickDistance=g.lastBallPawDistance;frame.source=sourceFrame;
-        frame.resource=asset?asset->layout->resourceId:CurrentArt(row.character).base.baseResourceId;
+        frame.resource=pose.ballPounce?cat::ball_movie::Find(static_cast<unsigned>(row.character))->resource:asset?asset->layout->resourceId:CurrentArt(row.character).base.baseResourceId;
         frame.phase=g.toySession.phase;frame.revision=g.toySession.revision;
+        frame.contactStroke=cat::toy::PlayContactStroke(g.toySession,static_cast<unsigned>(row.character));
         frame.motion=g.motion;frame.facing=g.facing;frame.direction=g.direction;
         frame.grounded=rendered.grounded;frame.waiting=g.waitingForStop;frame.braking=braking;
         if(frame.contact) {
@@ -147,7 +149,7 @@ int Simulate(Row& row,std::string& context,bool edgeCase=true) {
     const double minimumCatTravel=edgeCase?cat::toy::PhysicsBall::Radius:40;
     if(row.contacts<3||row.pawEntries<3||row.walkFrames<(edgeCase?30U:60U)||row.ballTravel<minimumBallTravel||row.catTravel<minimumCatTravel||
             (edgeCase&&!row.turns)||(edgeCase&&!row.ballBounces)||!row.brakingFrames||!row.profileUnchanged||!row.sourceImmutable||
-            !row.duplicateContactRejected||row.contacts>row.pawEntries||row.maxFrameRootDelta>4)return 793;
+            !row.duplicateContactRejected||row.contacts>row.pawEntries*2||row.maxFrameRootDelta>4)return 793;
     return 0;
 }
 int Run(std::string& context) {
@@ -162,6 +164,9 @@ int Run(std::string& context) {
         if(const int result=Simulate(row,context))return result;
     }
     if(!EnsureCareCoats(cat::Character::Cream,cat::Character::Tuxedo))return 790;
+    for(auto& row:rows)for(unsigned attempt=0;!row.presentation.ballMovie.Prepare(g.instance,static_cast<unsigned>(row.character));++attempt) {
+        if(attempt>=1000)return 799;Sleep(10);
+    }
     Surface canvas;if(!canvas.Create(Width,Height))return 791;
     std::ostringstream trace;trace.imbue(std::locale::classic());trace<<"{\"schema\":1,\"fps\":60,\"frames\":[";
     std::array<bool,5> saved{};const std::array<const wchar_t*,5> names{{L"bat",L"pursue",L"brake",L"turn",L"repeat"}};
@@ -199,6 +204,7 @@ int Run(std::string& context) {
                 trace<<"{\"character\":"<<static_cast<unsigned>(row.character)<<",\"phase\":\""<<PhaseName(frame.phase)
                     <<"\",\"phase_id\":"<<static_cast<unsigned>(frame.phase)<<",\"motion\":"<<static_cast<unsigned>(frame.motion)
                     <<",\"motion_serial\":"<<frame.serial<<",\"action_elapsed_ms\":"<<frame.actionElapsed
+                    <<",\"contact_stroke\":"<<frame.contactStroke
                     <<",\"root_x\":"<<frame.x<<",\"physical_lift\":"<<frame.lift<<",\"velocity_x\":"<<frame.vx
                     <<",\"floor_y\":"<<floor<<",\"canvas_root_x\":"<<center<<",\"camera_offset_x\":"<<camera
                     <<",\"reference_height_px\":110,\"sprite_clip\":"<<static_cast<unsigned>(frame.pose.spriteClip)

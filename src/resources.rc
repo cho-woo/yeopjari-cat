@@ -5,6 +5,7 @@
 #include "furniture_assets.generated.rc"
 #include "styled_sprites.generated.rc"
 #include "cream_mesh_walk.generated.rc"
+#include "ball_pounce.generated.rc"
 101 RCDATA "../assets/cat.png"
 102 RCDATA "../assets/cat-actions.png"
 105 RCDATA "../assets/cream-extra.png"
@@ -15,7 +16,6 @@
 130 RCDATA "../assets/cursor-rig/forelimbs.png"
 131 RCDATA "../assets/cursor-rig/forelimbs-tuxedo.png"
 132 RCDATA "../assets/cursor-rig/forelimbs-odd-eye.png"
-193 RCDATA "../assets/care-sprites/box-prop.png"
 1 RT_MANIFEST "app.manifest"
 
 1 VERSIONINFO

@@ -81,6 +81,7 @@
 #include "cat_species.hpp"
 #include "cat_companion.hpp"
 #include "cat_furniture_movie.hpp"
+#include "cat_ball_movie.hpp"
 #include "care_sprites.generated.hpp"
 #include "styled_sprites.generated.hpp"
 #if __has_include("cream_mesh_walk.generated.hpp")
@@ -1664,7 +1665,9 @@ bool LoadAtlas() {
         g.authoredBoxProp.Reset();g.authoredBoxProp.image=std::move(image);
         g.authoredBoxProp.frames[0]=Rect(0,0,228,136);finalBox=true;break;
     }
-    if(!finalBox && !LoadAtlasResource(193,g.authoredBoxProp,1,1))return false;
+    // Retired box-prop fallback193 is no longer embedded. The legacy box
+    // atlas above still supplies archived geometry when it is available.
+    if(!finalBox)g.authoredBoxProp.Reset();
     for (int i = 0; i < 1; ++i) {
         auto& art = g.characters[i];
         if (!LoadAtlasResource(101 + i * 2, art.base) || !LoadAtlasResource(102 + i * 2, art.actions)) return false;
@@ -1815,8 +1818,7 @@ void UpdatePrimaryGroundArt(ULONGLONG ticks) {
     if(g.runningJump.active||CursorTravellingPounce())return;
     const auto* walk=PrimaryVideoGroundArt();
     const bool meal=PrimaryVideoSideMeal();
-    const bool ballSide=g.toy==ToyKind::Ball&&g.toyEngaged&&
-        (g.toySession.phase==cat::toy::Phase::Inspect||g.toySession.phase==cat::toy::Phase::Interact);
+    const bool ballSide=g.toy==ToyKind::Ball&&g.toyEngaged&&g.toySession.BallSidePose();
     const auto jumpTurn=walk?cat::video_ground_bridge::JumpTurns(*walk):cat::video_ground_bridge::JumpTurnProfile{};
     const bool jumpPreparation=jumpTurn.valid && g.jumpPending && (g.motion==Motion::Jump || g.motion==Motion::Pounce);
     const bool walking=cat::animation::Walking(g.motion);
@@ -1905,7 +1907,8 @@ void RefreshAnimationTimer() {
         cat::idle_gestures::NeedsFineCadence(ticks-g.motionStart);
     const auto age=ticks>=g.motionStart?ticks-g.motionStart:0;
     const auto* sleep=LoadedCareSprite(cat::sprite_sequence::Clip::Sleep,g.preferences.character);
-    const bool sourceActing=g.furniture.Owned()||g.companionModel.furniture.Owned()||
+    const bool sourceActing=(g.toy==ToyKind::Ball&&g.toyEngaged)||g.companionModel.View(ticks).ballVisible||
+        g.furniture.Owned()||g.companionModel.furniture.Owned()||
         (g.flyActive&&g.flySerial==g.motionSerial)||ticks<g.stopUntil||age<240||
         (g.motion==Motion::Sleep&&sleep&&age<cat::animation::ReferenceSleepIntroMs(&sleep->layout->program,
             sleep->layout->frameCount)+cat::care_presentation::Transition::DurationMs)||CarePresentationActive(ticks);
@@ -2914,6 +2917,7 @@ void DrawStyledAnimationDirect(Graphics& graphics, cat::animation::Pose pose, RE
 
 struct CarePresentationRenderer {
     cat::furniture::Player furnitureMovie;
+    cat::ball_movie::Player ballMovie;
     bool sceneBlend=false;
     cat::care_presentation::Transition transition;
     cat::raster_transition::RegisteredMorph morph;
@@ -2925,6 +2929,11 @@ struct CarePresentationRenderer {
 };
 CarePresentationRenderer& PrimaryCarePresentation() {static CarePresentationRenderer state;return state;}
 CarePresentationRenderer& CompanionCarePresentation() {static CarePresentationRenderer state;return state;}
+bool PrepareBallMovie(bool companion,unsigned coat) {
+    return (companion?CompanionCarePresentation():PrimaryCarePresentation()).ballMovie.Prepare(g.instance,coat);
+}
+bool BallMovieFailed(bool companion) {return (companion?CompanionCarePresentation():PrimaryCarePresentation()).ballMovie.Failed();}
+void ReleaseBallMovie(bool companion) {(companion?CompanionCarePresentation():PrimaryCarePresentation()).ballMovie.Reset();}
 bool PrepareFurnitureMovie(bool companion,cat::furniture::Kind kind,unsigned coat) {
     return (companion?CompanionCarePresentation():PrimaryCarePresentation()).furnitureMovie.Prepare(g.instance,kind,coat);
 }
@@ -2938,7 +2947,7 @@ void PausePrimaryCarePresentation(std::uint64_t milliseconds) {PrimaryCarePresen
 void ResetPrimaryCarePresentation() {PrimaryCarePresentation().Reset();}
 void ReleaseCarePresentation() {
     for(auto* state:{&PrimaryCarePresentation(),&CompanionCarePresentation()}) {
-        state->furnitureMovie.Reset();state->Reset();state->previous.Reset();state->from.Reset();state->target.Reset();
+        state->ballMovie.Reset();state->furnitureMovie.Reset();state->Reset();state->previous.Reset();state->from.Reset();state->target.Reset();
     }
 }
 
@@ -2948,6 +2957,9 @@ void DrawStyledAnimation(Graphics& graphics, cat::animation::Pose pose, REAL cen
                          CarePresentationRenderer* presentation=nullptr,std::uint64_t ticks=0,
                          std::uint64_t generation=0,bool paused=false) {
     const auto direct=[&](Graphics& target,const cat::animation::Pose& drawing) {
+        if(drawing.ballPounce && presentation && presentation->ballMovie.Prepare(g.instance,static_cast<unsigned>(character)) &&
+            presentation->ballMovie.Draw(target,drawing.spriteElapsedMs,center,bottom,
+                scale*CurrentArt(character).base.standingHeight,body.bodyWidth,body.bodyHeight,drawing.flip))return;
         if(drawing.furnitureScene!=cat::furniture::Kind::None && presentation &&
             presentation->furnitureMovie.Draw(target,drawing.furnitureElapsedMs,center,bottom,
                 scale*CurrentArt(character).base.standingHeight,body.bodyWidth,body.bodyHeight))return;
@@ -2961,7 +2973,7 @@ void DrawStyledAnimation(Graphics& graphics, cat::animation::Pose pose, REAL cen
     if(!presentation) {direct(graphics,pose);return;}
     auto& state=*presentation;
     const auto* authored=CareSpriteFor(pose,character);
-    const bool scene=pose.furnitureScene!=cat::furniture::Kind::None;
+    const bool scene=pose.furnitureScene!=cat::furniture::Kind::None||pose.ballPounce;
     using Clip=cat::sprite_sequence::Clip;
     const auto calm=[](Clip clip) {return clip==Clip::Groom||clip==Clip::Sleep||clip==Clip::Eat||
         clip==Clip::Treat||clip==Clip::Fish||clip==Clip::Knead||clip==Clip::ToyPlay||clip==Clip::FlyHunt||
@@ -2984,8 +2996,8 @@ void DrawStyledAnimation(Graphics& graphics, cat::animation::Pose pose, REAL cen
          (pose.spriteOptions.jump==cat::sprite_sequence::JumpPhase::Landing&&
           pose.spriteOptions.contactElapsedMs+cat::care_presentation::Transition::DurationMs>=
               cat::sprite_sequence::Duration(authored->layout->program,authored->layout->program.outro)));
-    const bool pawBoundary=authored&&pose.spriteTimed&&
-        (authored->layout->clip==Clip::Punch||authored->layout->clip==Clip::Reach)&&
+    const bool pawBoundary=authored&&(pose.spriteTimed||pose.spriteClip==Clip::BallPlay)&&
+        (authored->layout->clip==Clip::Punch||authored->layout->clip==Clip::Reach||authored->layout->clip==Clip::BallPlay)&&
         (pose.spriteElapsedMs<=300||pose.spriteElapsedMs+500>=cat::sprite_sequence::ProgramDuration(authored->layout->program));
     const bool eligible=fixed&&(scene|| (authored?(calm(authored->layout->clip)||groundTurn||jumpBoundary||pawBoundary):pose.frame>=4&&pose.frame<cat::animation::kSpriteCount))&&
         pose.joints.pawReachX==0&&pose.joints.pawReachY==0&&pose.joints.pawAnchorX==0&&!cat::cursor_rig::Active(pose.cursorReach);
@@ -3032,7 +3044,7 @@ void DrawStyledAnimation(Graphics& graphics, cat::animation::Pose pose, REAL cen
     } else if(changed||reshaped||(state.geometry&&(std::abs(dx)>.5||std::abs(dy)>.5)))state.transition.Reset();
     state.center=center;state.bottom=bottom;state.scale=scale;state.bodyWidth=body.bodyWidth;state.bodyHeight=body.bodyHeight;state.geometry=true;
     cat::care_presentation::Tag tag;
-    tag.representation=scene?2000+static_cast<unsigned>(pose.furnitureScene):authored?1+static_cast<unsigned>(authored->layout->clip):1000+static_cast<unsigned>(pose.frame);
+    tag.representation=pose.ballPounce?2100:scene?2000+static_cast<unsigned>(pose.furnitureScene):authored?1+static_cast<unsigned>(authored->layout->clip):1000+static_cast<unsigned>(pose.frame);
     tag.action=pose.presentationSerial;
     tag.identity=static_cast<unsigned>(character);tag.generation=generation;tag.eligible=true;
     tag.authored=scene||authored!=nullptr;tag.flip=pose.flip;tag.neutralBridge=false;
@@ -4107,8 +4119,11 @@ cat::animation::Pose BallToyPawPose(ULONGLONG,const cat::physics::Pose& physical
         cat::sprite_sequence::Options options;options.sheetFrames=asset->layout->frameCount;
         cat::animation::AttachSprite(pose,C::BallPlay,elapsed,options);
         pose.spriteFrame=cat::sprite_sequence::SampleProgram(C::BallPlay,asset->layout->program,elapsed,options).frame;
+        pose.ballPounce=g.toySession.BallPounce();
+        if(pose.ballPounce)pose.spriteFrame=cat::ball_movie::Frame(elapsed);
         pose.spriteTimed=false;pose.spritePawsValid=true;
-        pose.spritePaws=cat::video_actions::BallPaws(static_cast<unsigned>(g.preferences.character),pose.spriteFrame);
+        const auto paw=cat::toy::PlayPaw(g.toySession,static_cast<unsigned>(g.preferences.character),pose.spriteFrame);
+        pose.spritePaws={paw,paw};
         const auto body=cat::appearance::VisualModifiers(g.nutrition,g.preferences.character);
         for(auto& paw:pose.spritePaws){paw.x*=body.bodyWidth;paw.y*=body.bodyHeight;}
         cat::animation::UseAuthoredSprite(pose);
@@ -4124,8 +4139,8 @@ cat::deform::Point BallToyPawWorldPoint(ULONGLONG ticks,const cat::physics::Pose
 double BallPawStandOff() {
     const double growth=cat::GrowthScale(g.pet.bornUtc,UtcNow());
     if(LoadedCareSprite(cat::sprite_sequence::Clip::BallPlay,g.preferences.character)) {
-        const auto paw=cat::video_actions::BallPaws(static_cast<unsigned>(g.preferences.character),
-            cat::video_actions::BallStandOffFrame(static_cast<unsigned>(g.preferences.character)))[1];
+        const auto paw=cat::toy::PlayPaw(g.toySession,static_cast<unsigned>(g.preferences.character),
+            cat::toy::PlayStandOffFrame(g.toySession,static_cast<unsigned>(g.preferences.character)));
         const auto body=cat::appearance::VisualModifiers(g.nutrition,g.preferences.character);
         return cat::toy::PawStandOff(paw.x*growth*body.bodyWidth,paw.y*growth*body.bodyHeight,growth);
     }
@@ -4147,11 +4162,11 @@ bool UpdateBallPlayContact(ULONGLONG ticks,const cat::physics::Pose& physical) {
     const bool available=ToyInteractionAvailable()&&physical.grounded&&!physical.onPlatform&&
         std::abs(WalkingVelocity(physical))<=2&&!g.waitingForStop&&!EnvironmentBusy();
     const auto coat=static_cast<unsigned>(g.preferences.character);
-    const auto hit=g.ballContactTracker.Observe(g.motionSerial,ticks,static_cast<std::uint64_t>(g.toySession.elapsedMs),
-        paw.x,paw.y,ball,growth,g.facing,available,cat::video_actions::BallContactStartMs(coat),cat::video_actions::BallContactEndMs(coat));
+    const auto hit=g.ballContactTracker.Observe(g.motionSerial*2+cat::toy::PlayContactStroke(g.toySession,coat),ticks,static_cast<std::uint64_t>(g.toySession.elapsedMs),
+        paw.x,paw.y,ball,growth,g.facing,available,cat::toy::PlayContactStart(g.toySession,coat),cat::toy::PlayContactEnd(g.toySession,coat));
     if(!hit.contact)return false;
     g.toyContact=true;g.lastBallPawDistance=hit.distance;
-    g.toyBall.Strike(hit.nx,hit.ny,hit.pawVx,hit.pawVy,hit.closingSpeed);++g.ballKickSerial;
+    g.toyBall.Strike(hit.nx,hit.ny,hit.pawVx,hit.pawVy,hit.closingSpeed,cat::toy::PlayContactStrength(g.toySession,coat));++g.ballKickSerial;
     return true;
 }
 
@@ -4723,15 +4738,22 @@ bool ToyInteractionAvailable() {
 void AdvanceToyObjects(double elapsed) {
     const bool paused=g.pet.roamingPaused || g.hidden || g.menuOpen || g.dragging;
     if (g.toy==ToyKind::Ball) {
+        g.toySession.ballPounceEnabled=true;
+        PrepareBallMovie(false,static_cast<unsigned>(g.preferences.character));
+        g.toySession.ballPounceUnavailable|=BallMovieFailed(false);
         // Floor toys retain work-area bounds while the cat visits a window.
         const double width=(g.work.right-g.work.left)/g.dpiScale;
         const double margin=std::min(96.0,width*.5);
-        const auto [low,high]=cat::toy::RollingBounds(width,margin,width-margin,
-            std::max(12.,BallPawStandOff()-18));
+        // Activity selection must never shrink a live physics world. Both
+        // source programs can approach these fixed, reachable floor bounds.
+        const auto [low,high]=cat::toy::RollingBounds(width,margin,width-margin,12.);
         g.toyBall.Advance(elapsed,g.work.left/g.dpiScale+low,g.work.left/g.dpiScale+high,paused);
         g.toyX=g.toyBall.x*g.dpiScale;
-    } else if (g.toy==ToyKind::FishingRod) g.toyLure.Advance(elapsed,paused||
-        (g.toyEngaged&&(g.toySession.phase==cat::toy::Phase::Inspect||g.toySession.phase==cat::toy::Phase::Interact)));
+    } else {
+        ReleaseBallMovie(false);
+        if(g.toy==ToyKind::FishingRod)g.toyLure.Advance(elapsed,paused||
+            (g.toyEngaged&&(g.toySession.phase==cat::toy::Phase::Inspect||g.toySession.phase==cat::toy::Phase::Interact)));
+    }
 }
 
 void AdvanceAutomaticToy(double elapsed) {
@@ -4776,7 +4798,7 @@ Motion ToySessionMotion() {
         if (g.toy==ToyKind::Catnip) return Motion::BellyRoll;
         if (g.toy==ToyKind::Cushion) return Motion::Knead;
         return Motion::Watch;
-    case Phase::Rest: return Motion::Groom;
+    case Phase::Rest: return g.toy==ToyKind::Ball?Motion::Watch:Motion::Groom;
     case Phase::Sleep: return Motion::Sleep;
     case Phase::BoxExit: return Motion::Watch; // Retired cardboard-box phase.
     default: return Motion::Watch;
@@ -4802,8 +4824,8 @@ void ApplyToyPhase(ULONGLONG ticks) {
         phase==cat::toy::Phase::Interact&&g.toy==ToyKind::FishingRod?Clip::ToyPlay:Clip::None;
     if(const auto* asset=LoadedCareSprite(phaseClip,g.preferences.character))
         g.toySession.authoredPhaseMs=cat::sprite_sequence::ProgramDuration(asset->layout->program);
-    if(g.toy==ToyKind::Ball&&phase==cat::toy::Phase::Approach&&g.toySession.rounds>0)
-        g.groundArtBridge.ContinueLocomotion(ticks);
+    if(phase==cat::toy::Phase::Interact&&g.toySession.BallPounce())
+        g.toySession.authoredPhaseMs=cat::ball_movie::Find(static_cast<unsigned>(g.preferences.character))->durationMs;
     if (g.toyMotion==Motion::ToyPaw) {
         const double target=g.toyX+(g.toy==ToyKind::FishingRod ? g.toyLure.offset*g.dpiScale : 0);
         g.direction=target<g.centerX ? -1 : 1;
@@ -5322,7 +5344,9 @@ void AdvancePrimaryMotion(ULONGLONG ticks, double elapsed) {
                 g.toyLure.offset=(g.centerX-g.toyX)/g.dpiScale+point.x*growth*body.bodyWidth;
                 g.toyLure.velocity=0;
             }
-            if (g.toySession.Advance(elapsed,true,arrived)) ApplyToyPhase(ticks);
+            const bool sourceReady=!(g.toySession.phase==cat::toy::Phase::Inspect&&g.toySession.BallPounce())||
+                PrepareBallMovie(false,static_cast<unsigned>(g.preferences.character));
+            if (g.toySession.Advance(elapsed,sourceReady,arrived)) ApplyToyPhase(ticks);
         }
         targetSpeed=0;
         if (g.toyEngaged && available && cat::toy::Travels(g.toySession.phase)) {

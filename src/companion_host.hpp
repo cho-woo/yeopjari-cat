@@ -252,6 +252,11 @@ void TickCompanion(ULONGLONG ticks, double elapsed) {
             context.furnitureReady=PrepareFurnitureMovie(true,scene.Action(),static_cast<unsigned>(g.companionStore.state.preferences.character));
             context.furnitureFailed=FurnitureMovieFailed(true);
         } else ReleaseFurnitureMovie(true);
+        context.supportsBallMovie=true;
+        if(g.companionModel.View(ticks).ballVisible) {
+            context.ballMovieReady=PrepareBallMovie(true,static_cast<unsigned>(g.companionStore.state.preferences.character));
+            context.ballMovieFailed=BallMovieFailed(true);
+        } else ReleaseBallMovie(true);
         g.companionModel.Tick(context);
         const auto event = g.companionModel.TakeEvent();
         ReactToCompanion(event,context,ticks);

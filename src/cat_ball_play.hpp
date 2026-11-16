@@ -2,8 +2,32 @@
 
 #include "cat_ball_physics.hpp"
 #include "cat_toy.hpp"
+#include "ball_pounce.generated.hpp"
+#include "video_action_contacts.generated.hpp"
 
 namespace cat::toy {
+inline cat::deform::Point PlayPaw(const Session& session,unsigned coat,unsigned frame) {
+    return session.BallPounce()?cat::ball_movie::Paw(coat,frame):cat::video_actions::BallPaws(coat,frame)[1];
+}
+inline unsigned PlayStandOffFrame(const Session& session,unsigned coat) {
+    return session.BallPounce()?cat::ball_movie::StandOffFrame(coat):cat::video_actions::BallStandOffFrame(coat);
+}
+inline unsigned PlayContactStroke(const Session& session,unsigned coat) {
+    return session.BallPounce()&&session.elapsedMs>=(coat==8?2600:2900)?1:0;
+}
+inline unsigned PlayContactStart(const Session& session,unsigned coat) {
+    if(session.BallPounce())return PlayContactStroke(session,coat)?(coat==8?2750:3083):cat::ball_movie::ContactStart(coat);
+    return cat::video_actions::BallContactStartMs(coat);
+}
+inline unsigned PlayContactEnd(const Session& session,unsigned coat) {
+    if(session.BallPounce())return PlayContactStroke(session,coat)?(coat==8?3375:3542):cat::ball_movie::ContactEnd(coat);
+    return cat::video_actions::BallContactEndMs(coat);
+}
+inline double PlayContactStrength(const Session& session,unsigned coat) {
+    // Pounce catches/nudges first, then the authored low sweep releases it.
+    // These are two distinct visible strokes, each with one real contact.
+    return session.BallPounce()&&!PlayContactStroke(session,coat)?.065:session.BallStrength();
+}
 struct BallStrike {
     bool contact=false;
     double nx=0,ny=0,pawVx=0,pawVy=0,closingSpeed=0,distance=0;
@@ -74,18 +98,20 @@ inline BallChase ChaseBall(double catX,double catVelocity,const BallPose& ball,d
             !std::isfinite(ball.lift)||!std::isfinite(standOff)||!std::isfinite(maxSpeed)||
             !std::isfinite(low)||!std::isfinite(high)||standOff<=0||maxSpeed<=0)return result;
     const double delta=ball.x-catX;
-    const int desired=std::abs(delta)>4?(delta<0?-1:1):result.direction;
-    if(desired!=result.direction) {
-        if(std::abs(catVelocity)>.5){result.braking=true;return result;}
-        result.direction=desired;
-    }
+    const int previousSide=result.direction;
+    result.direction=std::abs(delta)>4?(delta<0?-1:1):previousSide;
     const double prediction=std::clamp(ball.velocity*.15,-12.,12.);
     const double predicted=ball.x+prediction;
     double target=predicted-result.direction*standOff;
     const double alternate=predicted+result.direction*standOff;
     if(std::abs(ClampCenter(target,low,high)-target)>2. && alternate>=low&&alternate<=high) {
-        if(std::abs(catVelocity)>.5){result.braking=true;return result;}
         result.direction=-result.direction;target=alternate;
+    }
+    // Resolve the reachable side BEFORE deciding to brake. Near a wall the
+    // cat may need to make room on the opposite side of the ball. Braking on
+    // the raw ball direction first repeatedly restarted planted turns.
+    if(result.direction!=previousSide&&std::abs(catVelocity)>.5) {
+        result.direction=previousSide;result.braking=true;return result;
     }
     result.target=ClampCenter(target,low,high);
     const double separation=result.direction*delta;

@@ -253,6 +253,7 @@ struct Context {
     cat::animation::Motion primaryMotion = cat::animation::Motion::Idle;
     Platform primaryPlatform, supportPlatform;
     bool supportsFurniture=false,furnitureReady=false,furnitureFailed=false;
+    bool supportsBallMovie=false,ballMovieReady=false,ballMovieFailed=false;
     bool cursorEnabled=false,cursorAvailable=false;
     double cursorX=0,cursorWorldHeight=0;
 };
@@ -778,7 +779,7 @@ private:
         if(runningJump_.active)return;
         const auto* videoWalk=RegisteredVideoWalk();
         const bool sideMeal=VideoSideMeal();
-        const bool ballSide=ballPlaying_&&(ballSession_.phase==cat::toy::Phase::Inspect||ballSession_.phase==cat::toy::Phase::Interact);
+        const bool ballSide=ballPlaying_&&ballSession_.BallSidePose();
         const bool sideStop=actionClip_==cat::sprite_sequence::Clip::Brake||
             actionClip_==cat::sprite_sequence::Clip::Slide||actionClip_==cat::sprite_sequence::Clip::Stumble;
         const auto jumpTurn=videoWalk?cat::video_ground_bridge::JumpTurns(*videoWalk):cat::video_ground_bridge::JumpTurnProfile{};
