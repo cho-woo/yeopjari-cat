@@ -1,5 +1,6 @@
 package com.valuewander.yeopjaricat;
 
+import android.app.AlertDialog;
 import android.app.KeyguardManager;
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -20,14 +21,17 @@ import android.os.Looper;
 import android.os.PowerManager;
 import android.os.SystemClock;
 import android.provider.Settings;
+import android.util.DisplayMetrics;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
+import java.io.FileDescriptor;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 
 public final class CatOverlayService extends Service implements SharedPreferences.OnSharedPreferenceChangeListener {
-    static volatile boolean running;
+    static volatile boolean running,displaying;
     static volatile long renderedFrames;
     static final String STOP="com.valuewander.yeopjaricat.STOP_OVERLAY";
     final Handler handler=new Handler(Looper.getMainLooper());
@@ -35,75 +39,109 @@ public final class CatOverlayService extends Service implements SharedPreference
     WindowManager manager;
     PetScene scene;
     PetSettings settings;
+    AlertDialog menuDialog;
     float density;
     long previous;
     boolean receiverRegistered;
-    final BroadcastReceiver screen=new BroadcastReceiver(){@Override public void onReceive(Context c,Intent i){refreshVisibility();}};
+    final Runnable homeChanged=()->{ensureScene();refreshVisibility();};
+    final BroadcastReceiver screen=new BroadcastReceiver(){@Override public void onReceive(Context c,Intent i){ensureScene();refreshVisibility();}};
     @Override public IBinder onBind(Intent intent){return null;}
     @Override public void onCreate(){
         super.onCreate();manager=(WindowManager)getSystemService(WINDOW_SERVICE);density=getResources().getDisplayMetrics().density;
         settings=new PetSettings(this);settings.prefs.registerOnSharedPreferenceChangeListener(this);
-        NotificationManager notifications=(NotificationManager)getSystemService(NOTIFICATION_SERVICE);
-        notifications.createNotificationChannel(new NotificationChannel("pet_overlay","다른 앱 위의 고양이",NotificationManager.IMPORTANCE_LOW));
+        ((NotificationManager)getSystemService(NOTIFICATION_SERVICE)).createNotificationChannel(new NotificationChannel("pet_overlay","고양이 터치 조작",NotificationManager.IMPORTANCE_LOW));
+        HomeSceneStore.listen(homeChanged);
         IntentFilter filter=new IntentFilter();filter.addAction(Intent.ACTION_SCREEN_OFF);filter.addAction(Intent.ACTION_SCREEN_ON);filter.addAction(Intent.ACTION_USER_PRESENT);
         if(Build.VERSION.SDK_INT>=33)registerReceiver(screen,filter,Context.RECEIVER_NOT_EXPORTED);else registerReceiver(screen,filter);
         receiverRegistered=true;
     }
     @Override public int onStartCommand(Intent intent,int flags,int startId){
-        if(intent==null||STOP.equals(intent.getAction())||!Settings.canDrawOverlays(this)){stopSelf();return START_NOT_STICKY;}
+        if(intent!=null&&STOP.equals(intent.getAction())){PetLifecycle.stop(this);stopSelf();return START_NOT_STICKY;}
+        if(intent==null||!Settings.canDrawOverlays(this)||!settings.enabled()||(!settings.overlay()&&!settings.homeTouch())){stopSelf();return START_NOT_STICKY;}
         PendingIntent open=PendingIntent.getActivity(this,0,new Intent(this,MainActivity.class),PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT);
         PendingIntent stop=PendingIntent.getService(this,1,new Intent(this,CatOverlayService.class).setAction(STOP),PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT);
         Notification notice=new Notification.Builder(this,"pet_overlay").setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle("옆자리 고양이가 함께 있어요").setContentText("다른 앱 위 표시 중 · 언제든 숨길 수 있어요")
-            .setContentIntent(open).setOngoing(true).addAction(new Notification.Action.Builder(null,"고양이 숨기기",stop).build()).build();
-        try {
+            .setContentTitle("옆자리 고양이 터치 조작").setContentText(settings.overlay()?"다른 앱 위 표시 켜짐":"홈 화면 터치 조작 켜짐 · 다른 앱 위 표시 꺼짐")
+            .setContentIntent(open).setOngoing(true).addAction(new Notification.Action.Builder(null,"종료하기",stop).build()).build();
+        try{
             if(Build.VERSION.SDK_INT>=34)startForeground(100,notice,android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);else startForeground(100,notice);
-            running=true;settings.prefs.edit().putBoolean("overlay",true).apply();reload();refreshVisibility();
-        } catch(SecurityException|IllegalStateException e){stopSelf();}
+            running=true;ensureScene();refreshVisibility();
+        }catch(SecurityException|IllegalStateException e){stopSelf();}
         return START_NOT_STICKY;
     }
-    void reload(){
-        handler.removeCallbacks(frame);removeWindows();if(scene!=null)scene.close();
-        scene=new PetScene(this,()->{for(PetWindow w:windows)w.invalidate();});
-        android.util.DisplayMetrics metrics=getResources().getDisplayMetrics();
-        scene.resize(metrics.widthPixels/density,metrics.heightPixels/density,48);
+    void ensureScene(){
+        if(!running)return;
+        PetScene selected=HomeSceneStore.get(this);
+        if(selected==scene&&scene!=null)return;
+        handler.removeCallbacks(frame);hideWindows();windows.clear();
+        scene=selected;
+        resizeScene();
         for(int i=0;i<scene.actors.length;i++)if(scene.actors[i]!=null)windows.add(new PetWindow(this,i));
-        previous=SystemClock.uptimeMillis();
     }
-    boolean canShow(){return ((PowerManager)getSystemService(POWER_SERVICE)).isInteractive()&&!((KeyguardManager)getSystemService(KEYGUARD_SERVICE)).isKeyguardLocked();}
+    @SuppressWarnings("deprecation") void resizeScene(){
+        DisplayMetrics metrics=new DisplayMetrics();manager.getDefaultDisplay().getRealMetrics(metrics);density=metrics.density;
+        float height=metrics.heightPixels/density;
+        float bottom=height*(1-Math.max(30,Math.min(88,settings.prefs.getInt("home_floor_percent",58)))/100f);
+        scene.resize(metrics.widthPixels/density,height,bottom);
+        for(PetWindow w:windows)w.position();
+    }
+    boolean canShow(){return settings.enabled()&&((PowerManager)getSystemService(POWER_SERVICE)).isInteractive()&&!((KeyguardManager)getSystemService(KEYGUARD_SERVICE)).isKeyguardLocked()&&(settings.overlay()||(settings.homeTouch()&&HomeSceneStore.touchEligible()&&HomeVisibility.isHome(this)));}
     void refreshVisibility(){
         handler.removeCallbacks(frame);if(!running||scene==null)return;
         if(!Settings.canDrawOverlays(this)){stopSelf();return;}
-        if(canShow()) {
-            for(PetWindow view:windows)if(!view.attached){try{manager.addView(view,view.params);view.attached=true;}catch(SecurityException e){stopSelf();return;}}
-            previous=SystemClock.uptimeMillis();handler.post(frame);
-        }else removeWindows();
+        if(canShow()){
+            for(PetWindow v:windows)if(!v.attached)try{v.position();manager.addView(v,v.params);v.attached=true;}catch(SecurityException e){stopSelf();return;}
+            displaying=!windows.isEmpty();previous=SystemClock.uptimeMillis();handler.post(frame);
+        }else{hideWindows();watchHome();}
     }
-    void removeWindows(){for(PetWindow view:windows)if(view.attached){manager.removeView(view);view.attached=false;}}
-    final Runnable frame=new Runnable(){public void run(){
+    void watchHome(){if(running&&settings.homeTouch()&&!settings.overlay()&&HomeSceneStore.visible)handler.postDelayed(frame,150);}
+    void hideWindows(){
+        displaying=false;if(menuDialog!=null){menuDialog.dismiss();menuDialog=null;}
+        for(PetWindow v:windows){v.touch.cancel();if(v.attached){manager.removeView(v);v.attached=false;}}
+    }
+    void redraw(){for(PetWindow v:windows)if(v.attached){int x=v.params.x,y=v.params.y,w=v.params.width,h=v.params.height;v.position();if(x!=v.params.x||y!=v.params.y||w!=v.params.width||h!=v.params.height)manager.updateViewLayout(v,v.params);v.invalidate();}}
+    final Runnable frame=new Runnable(){@Override public void run(){
+        if(!running||scene==null)return;
         if(!Settings.canDrawOverlays(CatOverlayService.this)){stopSelf();return;}
-        if(!running||scene==null||!canShow()){refreshVisibility();return;}
-        long now=SystemClock.uptimeMillis();scene.tick(now-previous);previous=now;
-        for(PetWindow view:windows)if(view.attached){int x=view.params.x,y=view.params.y;view.position();try{if(x!=view.params.x||y!=view.params.y)manager.updateViewLayout(view,view.params);}catch(SecurityException e){stopSelf();return;}view.invalidate();}
-        renderedFrames++;handler.postDelayed(this,scene.animating()?33:250);
+        if(!canShow()){hideWindows();watchHome();return;}
+        // A visibility/app-op watcher may resume without a wallpaper callback.
+        // Reattach the native windows before advancing the shared scene again.
+        if(!displaying){refreshVisibility();return;}
+        ensureScene();long now=SystemClock.uptimeMillis();scene.tick(now-previous);previous=now;
+        try{redraw();}catch(SecurityException e){stopSelf();return;}
+        renderedFrames++;handler.postDelayed(this,scene.animating()?33:100);
     }};
     final class PetWindow extends View {
         final int actor;
         final WindowManager.LayoutParams params;
+        final PetTouch touch;
         boolean attached;
-        @android.annotation.SuppressLint("RtlHardcoded") // Scene coordinates keep a physical left origin in RTL.
+        @android.annotation.SuppressLint("RtlHardcoded")
         PetWindow(Context context,int actor){
             super(context);this.actor=actor;
             params=new WindowManager.LayoutParams(Math.round(160*density),Math.round(160*density),WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,PixelFormat.TRANSLUCENT);
-            params.gravity=Gravity.TOP|Gravity.LEFT;setContentDescription("옆자리 고양이. 톡 누르면 반응해요.");position();
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL|WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,PixelFormat.TRANSLUCENT);
+            params.gravity=Gravity.TOP|Gravity.LEFT;if(Build.VERSION.SDK_INT>=30)params.setFitInsetsTypes(0);
+            touch=new PetTouch(context,()->scene,index->showMenu(),CatOverlayService.this::redraw);
+            setContentDescription("고양이. 끌어서 이동, 길게 눌러 종료 메뉴.");position();
         }
-        void position(){params.x=Math.round((scene.actors[actor].x-80)*density);params.y=Math.round((scene.floor-148)*density);}
-        @Override protected void onDraw(Canvas canvas){super.onDraw(canvas);canvas.save();canvas.scale(density,density);canvas.translate(80-scene.actors[actor].x,148-scene.floor);scene.actors[actor].draw(canvas);canvas.restore();}
-        @Override public boolean onTouchEvent(MotionEvent event){if(event.getAction()==MotionEvent.ACTION_UP){scene.actors[actor].request("punch");performClick();}return true;}
+        void showMenu(){menuDialog=PetMenus.show(CatOverlayService.this,true,touch);}
+        void position(){android.graphics.RectF b=scene.actors[actor].bounds(true);float w=b.width()+12,h=b.height()+12;params.width=Math.round(w*density);params.height=Math.round(h*density);params.x=Math.round(Math.max(0,Math.min(scene.width-w,b.left-6))*density);params.y=Math.round(Math.max(0,Math.min(scene.height-h,b.top-6))*density);}
+        @Override protected void onDraw(Canvas canvas){super.onDraw(canvas);canvas.save();canvas.scale(density,density);canvas.translate(-params.x/density,-params.y/density);scene.actors[actor].draw(canvas);canvas.restore();}
+        @Override public boolean onTouchEvent(MotionEvent event){boolean result=touch.event(event.getActionMasked(),event.getPointerCount(),event.getRawX()/density,event.getRawY()/density,event.getEventTime());if(event.getActionMasked()==MotionEvent.ACTION_UP)performClick();return result;}
         @Override public boolean performClick(){super.performClick();return true;}
     }
-    @Override public void onSharedPreferenceChanged(SharedPreferences prefs,String key){if(!"overlay".equals(key)&&running){reload();refreshVisibility();}}
-    @Override public void onConfigurationChanged(android.content.res.Configuration config){super.onConfigurationChanged(config);if(running){reload();refreshVisibility();}}
-    @Override public void onDestroy(){running=false;handler.removeCallbacksAndMessages(null);removeWindows();if(scene!=null)scene.close();if(settings!=null){settings.prefs.unregisterOnSharedPreferenceChangeListener(this);settings.prefs.edit().putBoolean("overlay",false).apply();}if(receiverRegistered)unregisterReceiver(screen);super.onDestroy();}
+    @Override public void onSharedPreferenceChanged(SharedPreferences prefs,String key){
+        if(!running)return;
+        if(!settings.enabled()||(!settings.overlay()&&!settings.homeTouch())){stopSelf();return;}
+        if(!key.startsWith("position.")){ensureScene();refreshVisibility();}
+    }
+    @Override public void onConfigurationChanged(android.content.res.Configuration config){super.onConfigurationChanged(config);if(running&&scene!=null){resizeScene();refreshVisibility();}}
+    @Override protected void dump(FileDescriptor fd,PrintWriter out,String[] args){super.dump(fd,out,args);out.println("cat_layer_running="+running+" displaying="+displaying+" cross_apps="+settings.overlay()+" home_touch="+settings.homeTouch()+" enabled="+settings.enabled()+" frames="+renderedFrames);if(scene!=null)for(int i=0;i<scene.actors.length;i++)if(scene.actors[i]!=null)out.println("actor="+i+" x="+scene.actors[i].x+" y="+scene.actors[i].footY()+" state="+scene.actors[i].action);}
+    @Override public void onDestroy(){
+        running=false;handler.removeCallbacksAndMessages(null);hideWindows();windows.clear();HomeSceneStore.save();
+        HomeSceneStore.unlisten(homeChanged);
+        if(settings!=null){settings.prefs.unregisterOnSharedPreferenceChangeListener(this);settings.prefs.edit().putBoolean("overlay",false).putBoolean("touch_home",false).apply();}
+        if(receiverRegistered)unregisterReceiver(screen);super.onDestroy();
+    }
 }

@@ -36,6 +36,7 @@ public final class MotionSmoke extends Instrumentation {
             directory=new File(getTargetContext().getExternalFilesDir(null),"mobile-review");directory.mkdirs();
             activity=(MainActivity)startActivitySync(new Intent(getTargetContext(),MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
             waitForIdleSync();
+            if(arguments!=null&&"touch".equals(arguments.getString("mode"))){new TouchReview(this,activity,directory).run();Bundle b=new Bundle();b.putString("stream","TOUCH_REVIEW_PASSED");finish(RESULT_OK,b);return;}
             if(arguments!=null&&"wallpaper".equals(arguments.getString("mode"))){wallpaperChecks();return;}
             check(!new PetSettings(getTargetContext()).prefs.getBoolean("overlay",false),"Overlay must default OFF");
             check(!CatOverlayService.running,"Default must not start overlay service");
@@ -43,7 +44,7 @@ public final class MotionSmoke extends Instrumentation {
             results.put(new JSONObject().put("default_home_only",true).put("overlay_service_running",false).put("overlay_permission_granted",false));
             for(int coat:new int[]{0,8,10}){
                 final int c=coat;
-                runOnMainSync(()->{new PetSettings(activity).prefs.edit().putInt("coat",c).putBoolean("companion",false).apply();activity.preview.reload();});
+                runOnMainSync(()->{new PetSettings(activity).prefs.edit().putInt("coat",c).putBoolean("companion",false).apply();activity.preview.reload();activity.preview.scene.automatic=false;});
                 waitFor(()->activity.preview.scene.actors[0].idle!=null,"Idle not decoded");
                 shot("coat-"+coat+"-idle");
                 for(String action:new String[]{"walk","groom","knead","punch","sleep","settle"}){
@@ -62,7 +63,7 @@ public final class MotionSmoke extends Instrumentation {
                     check(rendered>10,"Normal app view did not render");
                     results.put(new JSONObject().put("coat",coat).put("role","primary").put("action",action).put("app_draws",rendered).put("wall_time_ms",SystemClock.uptimeMillis()-start).put("complete_recovery",true));
                 }
-                runOnMainSync(()->{new PetSettings(activity).prefs.edit().putBoolean("companion",true).putInt("companion_coat",c).apply();activity.preview.reload();});
+                runOnMainSync(()->{new PetSettings(activity).prefs.edit().putBoolean("companion",true).putInt("companion_coat",c).apply();activity.preview.reload();activity.preview.scene.automatic=false;});
                 waitFor(()->activity.preview.scene.actors[1]!=null&&activity.preview.scene.actors[1].idle!=null,"Companion not ready");
                 runOnMainSync(()->activity.preview.scene.actors[1].request("punch"));
                 waitFor(()->activity.preview.scene.actors[1].clock!=null,"Companion punch not started");Thread.sleep(1000);shot("coat-"+coat+"-companion");

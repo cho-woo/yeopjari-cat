@@ -1,9 +1,11 @@
 # Android preview — 옆자리 고양이
 
 User scope confirmed 2026-11-17: **home screen only by default**. Showing the pet
-above other apps is a separate, explicit opt-in setting. No home-launcher
-classification, foreground-app surveillance, accessibility permission, screen
-capture, or boot receiver is used.
+above other apps is a separate, explicit opt-in setting. No
+accessibility permission, screen capture, automated interaction with other apps,
+network permission, or boot receiver is used. Optional Home touch controls compare
+the latest foreground package to the selected launcher locally, with explicit
+Usage Access permission; no usage history or UI contents are stored/transmitted.
 
 ## Product behavior
 
@@ -23,6 +25,21 @@ capture, or boot receiver is used.
 - The small pet window receives touches inside its rectangle. Other portions
   of the display remain outside that window. The app does not observe or inject
   interaction with other apps. Launcher touch forwarding is device-dependent.
+- **홈 화면 터치 조작** provides reliable long press and 2D drag through small
+  native pet windows. It requires overlay permission (for the touch windows) and
+  Usage Access (to hide them outside the selected Home app, including transparent
+  foreground apps). This does **not** turn on the separate cross-app switch.
+  Permission explanations can be cancelled without starting the service. Loss of
+  usage access fails closed. Basic wallpaper remains available without these
+  optional permissions; launcher-forwarded long press/drag alone is not reliable.
+- Hold either cat for 550ms to open **종료하기 / 취소**. Quit disables both cats,
+  wallpaper animation and touch service. App settings can turn cats back on.
+  Dragged positions are stored as normalized coordinates, shared between the
+  Home wallpaper and touch/cross-app windows, and retained across viewport changes.
+- Mobile automatic rest is 0.4–1.0 seconds **after full recovery** (startup
+  0.6–1.2 seconds). Stroll, grooming, kneading and paw play remain active; automatic
+  sleep/settling is removed. Source frame clocks and authored recoveries are not
+  shortened. Holding/dragging pauses the owned actor, with no timeline rewind.
 
 ## Preview scope
 
@@ -43,7 +60,7 @@ and mobile store publication are **not** claimed by this preview.
 3. `tools/build_android.ps1 -Tests` repacks verified source atlases, builds the
    debug-signed preview and runs Android lint. Temporary ASCII drive mapping
    avoids native Android tools' Unicode-path limitations on Windows.
-4. Output: `build/android-preview/YeopjariCat-Android-0.1.0-preview.apk`.
+4. Output: `build/android-0.2.0-preview/YeopjariCat-Android-0.2.0-preview.apk`.
 
 The preview uses a local Android debug signing key; it is not the future store
 release key. Do not upload this test key as the production signing identity.
@@ -52,6 +69,11 @@ No APK is placed in the Windows release or its update feed.
 ## Verification
 
 - `mobile/tests/MotionClockSpec.java` checks full timeline/recovery continuity.
+- `mobile/tests/PointerGestureSpec.java` checks tap/drag/long-press ownership,
+  hold thresholds, release endpoints and cancellation across 367 cases.
+- `TouchReview` sends real touchscreen events to the app View for all three
+  coats and both actor roles, checks drag/menu/quit/resume, then samples 35 seconds
+  of normal elapsed-time automatic play for each pair.
 - `MotionSmoke` runs all six complete actions in the normal elapsed-time app
   View for each coat, companion paw recovery, rapid input ownership, default
   permission/service absence and explicit overlay start/stop. It stores the
@@ -62,6 +84,11 @@ No APK is placed in the Windows release or its update feed.
   invalidate an already selected wallpaper during testing. First frames are
   posted for surface redraw callbacks, and the launcher wallpaper camera offset
   is cancelled independently of each pet's physical root.
+- `tools/verify_android_touch.py` operates the actual system picker, native Home
+  windows and native exit dialog. It checks permission cancellation, both actors'
+  drag, saved heights, transparent/opaque app hiding, cross-app opt-in independence,
+  usage-access revocation, screen-off, viewport changes, quit and resume. Its
+  translucent test Activity exists only in the separate test APK.
 - Actual Galaxy Z Fold7 (user's phone), One UI launchers, battery use and Google
   Play service approval remain release gates. Emulator viewport simulations are
   not described as physical foldable-device verification.
@@ -75,3 +102,23 @@ No APK is placed in the Windows release or its update feed.
 - [Play foreground-service declarations and demonstration](https://support.google.com/googleplay/android-developer/answer/13392821?hl=en)
 
 Technical ability to show an overlay is not a guarantee of Google Play approval.
+
+## Interaction with other apps / launcher UI
+
+Drawing a cat over an icon does not reveal that icon's bounds or activate it.
+Wallpaper input is forwarded by the launcher; overlay permission grants neither
+another app's UI tree nor global touch observation. Our own scene objects can
+provide accurate contact geometry. General launcher icons, widgets and other-app
+buttons cannot currently serve as automatic climbable platforms in this preview.
+
+Accessibility services can obtain exposed UI nodes and perform supported actions,
+with separate user approval. Custom-drawn and protected UI can be unavailable.
+MediaProjection is a different user-approved screen-capture route and would still
+need image interpretation; this app does not request it. Actual button automation
+has additional policy constraints and is not added by this update. A pet must not
+misrepresent itself as an accessibility tool. Any future narrow feature would
+need its own clear purpose, disclosure, opt-in and Play review.
+
+- [Accessibility service capabilities](https://developer.android.com/guide/topics/ui/accessibility/views/service)
+- [Play AccessibilityService policy](https://support.google.com/googleplay/android-developer/answer/10964491?hl=en)
+- [Usage Access is user-granted in Settings](https://developer.android.com/reference/android/Manifest.permission#PACKAGE_USAGE_STATS)

@@ -1,0 +1,7 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <!-- Separate test APK only: a transparent foreground app must not keep Home touch windows visible. -->
+        <activity android:name="com.valuewander.yeopjaricat.TranslucentReviewActivity"
+            android:exported="true" android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+    </application>
+</manifest>

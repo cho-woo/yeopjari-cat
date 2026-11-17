@@ -30,6 +30,7 @@ final class MotionLibrary {
         final int[][] rectangles;
         final float[][] anchors;
         final int[] page;
+        float left=Float.POSITIVE_INFINITY,top=Float.POSITIVE_INFINITY,right=Float.NEGATIVE_INFINITY,bottom=Float.NEGATIVE_INFINITY;
         Clip(JSONObject spec, Bitmap[] pages) throws Exception {
             this.spec=spec; this.pages=pages;
             reference=(float)spec.getDouble("reference_height"); stride=(float)spec.optDouble("stride_pixels",0);
@@ -47,6 +48,7 @@ final class MotionLibrary {
                 JSONObject f=all.getJSONObject(i); page[i]=f.getInt("page");
                 for(int k=0;k<4;k++) rectangles[i][k]=f.getJSONArray("rect").getInt(k);
                 for(int k=0;k<2;k++) anchors[i][k]=(float)f.getJSONArray("anchor").getDouble(k);
+                left=Math.min(left,-anchors[i][0]);top=Math.min(top,-anchors[i][1]);right=Math.max(right,rectangles[i][2]-anchors[i][0]);bottom=Math.max(bottom,rectangles[i][3]-anchors[i][1]);
             }
         }
         private static void append(JSONArray array, ArrayList<Integer> frames, ArrayList<Integer> times) throws Exception {

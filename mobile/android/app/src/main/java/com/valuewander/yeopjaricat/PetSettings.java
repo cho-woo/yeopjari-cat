@@ -12,6 +12,9 @@ final class PetSettings {
     static int validCoat(int c) { return c == 8 || c == 10 ? c : 0; }
     boolean companion() { return prefs.getBoolean("companion", false); }
     boolean overlay() { return prefs.getBoolean("overlay", false); }
+    boolean enabled() { return prefs.getBoolean("pets_enabled", true); }
+    boolean homeTouch() { return prefs.getBoolean("touch_home", false); }
+    static boolean changesScene(String key){return key!=null&&(key.equals("coat")||key.equals("companion")||key.equals("companion_coat")||key.equals("size")||key.equals("home_floor_percent"));}
     int size() { return Math.max(52, Math.min(100, prefs.getInt("size", 74))); }
     int background() { return prefs.getInt("background", 0xffeae3f6); }
     String photo() { return prefs.getString("photo", ""); }
