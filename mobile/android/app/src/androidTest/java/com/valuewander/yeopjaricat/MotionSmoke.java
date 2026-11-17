@@ -103,7 +103,13 @@ public final class MotionSmoke extends Instrumentation {
     static final int RESULT_OK=-1,RESULT_CANCELED=0;
     void wallpaperChecks()throws Exception{
         runOnMainSync(()->activity.stopService(new Intent(activity,CatOverlayService.class)));
-        shell("input keyevent KEYCODE_HOME");waitFor(()->CatWallpaperService.wallpaperVisible,"Wallpaper not active on Home");
+        // Starting instrumentation force-stops the target process and can reset
+        // an already selected live wallpaper. Apply it through the system picker
+        // after this runner is attached, rather than treating that reset as app behavior.
+        Bundle ready=new Bundle();ready.putString("stream","READY_FOR_WALLPAPER_PICKER");sendStatus(1,ready);
+        long deadline=SystemClock.uptimeMillis()+90000;
+        while(!CatWallpaperService.wallpaperVisible&&SystemClock.uptimeMillis()<deadline)Thread.sleep(80);
+        check(CatWallpaperService.wallpaperVisible,"Wallpaper not applied after runner attached");
         long before=CatWallpaperService.renderedFrames;Thread.sleep(2000);check(CatWallpaperService.renderedFrames>before+10,"Home wallpaper did not render");shot("home-wallpaper");
         check(!CatOverlayService.running,"Home must not require overlay service");
         shell("am start -a android.settings.SETTINGS");waitFor(()->!CatWallpaperService.wallpaperVisible,"Wallpaper stayed visible behind opaque app");Thread.sleep(1000);

@@ -56,9 +56,15 @@ No APK is placed in the Windows release or its update feed.
   View for each coat, companion paw recovery, rapid input ownership, default
   permission/service absence and explicit overlay start/stop. It stores the
   report and actual device screenshots under external files `mobile-review`.
-- Wallpaper home/app switching, lock and screen-off need actual system lifecycle
-  checks in addition to the SceneView test. Actual OEM phones and launchers,
-  battery use and Google Play service approval remain release gates.
+- `tools/verify_android_wallpaper.py` checks Home/app switching, screen-off and
+  three fold/rotation viewport sizes through the actual system wallpaper.
+  It does not start Instrumentation, which restarts the target process and can
+  invalidate an already selected wallpaper during testing. First frames are
+  posted for surface redraw callbacks, and the launcher wallpaper camera offset
+  is cancelled independently of each pet's physical root.
+- Actual Galaxy Z Fold7 (user's phone), One UI launchers, battery use and Google
+  Play service approval remain release gates. Emulator viewport simulations are
+  not described as physical foldable-device verification.
 
 ## Official platform references
 

@@ -9,17 +9,25 @@ import android.os.SystemClock;
 import android.service.wallpaper.WallpaperService;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
+import java.io.FileDescriptor;
+import java.io.PrintWriter;
+import java.util.ArrayList;
 
 public final class CatWallpaperService extends WallpaperService {
     static volatile long renderedFrames;
     static volatile boolean wallpaperVisible;
-    @Override public Engine onCreateEngine(){return new CatEngine();}
+    final ArrayList<CatEngine> engines=new ArrayList<>();
+    @Override public Engine onCreateEngine(){CatEngine engine=new CatEngine();engines.add(engine);return engine;}
+    @Override protected void dump(FileDescriptor fd,PrintWriter out,String[] args){super.dump(fd,out,args);out.println("cat_home_visible="+wallpaperVisible+" cat_frames="+renderedFrames);for(CatEngine e:engines)out.println("preview="+e.isPreview()+" visible="+e.visible+" ready="+e.surfaceReady+" viewport="+e.scene.width+"x"+e.scene.height+" offset="+e.offsetX+","+e.offsetY+" error="+e.lastError);}
     final class CatEngine extends Engine implements SharedPreferences.OnSharedPreferenceChangeListener {
         final Handler handler=new Handler(Looper.getMainLooper());
         PetScene scene;
         Backdrop backdrop;
         boolean visible,surfaceReady,closed;
+        float cameraX,cameraY;
         long previous;
+        int offsetX,offsetY;
+        String lastError="none";
         final float density=getResources().getDisplayMetrics().density;
         final KeyguardManager keyguard=(KeyguardManager)getSystemService(KEYGUARD_SERVICE);
         final PetSettings settings=new PetSettings(CatWallpaperService.this);
@@ -28,29 +36,47 @@ public final class CatWallpaperService extends WallpaperService {
             if(scene!=null)scene.close();if(backdrop!=null)backdrop.close();
             scene=new PetScene(CatWallpaperService.this,this::schedule);
             backdrop=new Backdrop(CatWallpaperService.this,this::schedule);
-            if(surfaceReady){android.graphics.Rect r=getSurfaceHolder().getSurfaceFrame();scene.resize(r.width()/density,r.height()/density,groundBottom(r.height()/density));}
+            if(surfaceReady){android.graphics.Rect r=getSurfaceHolder().getSurfaceFrame();resizeViewport(r.width(),r.height());}
         }
         void schedule(){if(!closed&&visible&&surfaceReady){handler.removeCallbacks(frame);handler.post(frame);}}
         final Runnable frame=new Runnable(){public void run(){
             if(closed||!visible||!surfaceReady)return;
+            drawFrame(true);
+            handler.postDelayed(this,scene.animating()?33:250);
+        }};
+        void drawFrame(boolean advance){
+            if(closed||!surfaceReady)return;
             long now=SystemClock.uptimeMillis();double delta=previous==0?0:Math.min(250,now-previous);previous=now;
-            boolean paintCat=!CatOverlayService.running && (isPreview()||!keyguard.isKeyguardLocked());
-            if(paintCat)scene.tick(delta);
+            boolean paintCat=!CatOverlayService.running&&(isPreview()||!keyguard.isKeyguardLocked());
+            if(advance&&paintCat)scene.tick(delta);
             Canvas canvas=null;
             try {
-                canvas=getSurfaceHolder().lockHardwareCanvas();
-                if(canvas!=null){canvas.save();canvas.scale(density,density);backdrop.draw(canvas,canvas.getWidth()/density,canvas.getHeight()/density);if(paintCat)scene.draw(canvas);canvas.restore();renderedFrames++;}
-            } catch(IllegalArgumentException|IllegalStateException ignored){ /* Surface lifetime is owned by Android. */ }
-            finally{if(canvas!=null)getSurfaceHolder().unlockCanvasAndPost(canvas);}
-            handler.postDelayed(this,paintCat&&scene.animating()?33:250);
-        }};
+                try{canvas=getSurfaceHolder().lockHardwareCanvas();}catch(UnsupportedOperationException e){canvas=getSurfaceHolder().lockCanvas();}
+                if(canvas!=null){
+                    canvas.drawColor(0xffece3f9);canvas.save();canvas.scale(density,density);
+                    // Android scrolls a virtual wallpaper surface, often several screens wide.
+                    // Cancel that camera translation; pet state stays in the visible viewport.
+                    // Offset callbacks can describe the launcher's desired virtual size,
+                    // even when Android supplied a screen-sized drawing surface. Only
+                    // compensate for excess pixels that exist in this actual buffer.
+                    canvas.translate(Math.max(0,canvas.getWidth()/density-scene.width)*cameraX,
+                        Math.max(0,canvas.getHeight()/density-scene.height)*cameraY);
+                    backdrop.draw(canvas,scene.width,scene.height);if(paintCat)scene.draw(canvas);
+                    canvas.restore();renderedFrames++;lastError="none";
+                }
+            }catch(IllegalArgumentException|IllegalStateException e){lastError=e.toString();}
+            finally{if(canvas!=null)try{getSurfaceHolder().unlockCanvasAndPost(canvas);}catch(IllegalArgumentException|IllegalStateException e){lastError=e.toString();}}
+        }
         @Override public void onVisibilityChanged(boolean value){visible=value;if(!isPreview())wallpaperVisible=value;previous=0;handler.removeCallbacks(frame);schedule();}
         @Override public void onSurfaceCreated(SurfaceHolder holder){super.onSurfaceCreated(holder);surfaceReady=true;schedule();}
         float groundBottom(float height){int percent=Math.max(30,Math.min(88,settings.prefs.getInt("home_floor_percent",58)));return height*(1-percent/100f);}
-        @Override public void onSurfaceChanged(SurfaceHolder holder,int format,int w,int h){super.onSurfaceChanged(holder,format,w,h);scene.resize(w/density,h/density,groundBottom(h/density));schedule();}
+        void resizeViewport(int w,int h){android.util.DisplayMetrics m=getResources().getDisplayMetrics();float width=Math.min(w,m.widthPixels)/density,height=Math.min(h,m.heightPixels)/density;scene.resize(width,height,groundBottom(height));}
+        @Override public void onSurfaceChanged(SurfaceHolder holder,int format,int w,int h){super.onSurfaceChanged(holder,format,w,h);resizeViewport(w,h);drawFrame(false);schedule();}
+        @Override public void onSurfaceRedrawNeeded(SurfaceHolder holder){super.onSurfaceRedrawNeeded(holder);drawFrame(false);}
+        @Override public void onOffsetsChanged(float x,float y,float xs,float ys,int xp,int yp){cameraX=x;cameraY=y;offsetX=xp;offsetY=yp;if(visible)drawFrame(false);}
         @Override public void onSurfaceDestroyed(SurfaceHolder holder){surfaceReady=false;handler.removeCallbacks(frame);super.onSurfaceDestroyed(holder);}
-        @Override public void onTouchEvent(MotionEvent event){if(event.getAction()==MotionEvent.ACTION_UP)scene.touch(event.getX()/density,event.getY()/density);super.onTouchEvent(event);}
+        @Override public void onTouchEvent(MotionEvent event){if(event.getAction()==MotionEvent.ACTION_UP)scene.touch(event.getRawX()/density,event.getRawY()/density);super.onTouchEvent(event);}
         @Override public void onSharedPreferenceChanged(SharedPreferences prefs,String key){if(!"overlay".equals(key)){reload();schedule();}}
-        @Override public void onDestroy(){closed=true;if(!isPreview())wallpaperVisible=false;handler.removeCallbacksAndMessages(null);settings.prefs.unregisterOnSharedPreferenceChangeListener(this);scene.close();backdrop.close();super.onDestroy();}
+        @Override public void onDestroy(){closed=true;engines.remove(this);if(!isPreview())wallpaperVisible=false;handler.removeCallbacksAndMessages(null);settings.prefs.unregisterOnSharedPreferenceChangeListener(this);scene.close();backdrop.close();super.onDestroy();}
     }
 }
