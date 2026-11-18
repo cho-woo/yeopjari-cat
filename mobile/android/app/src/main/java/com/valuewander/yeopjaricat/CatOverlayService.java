@@ -19,7 +19,6 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.PowerManager;
-import android.os.SystemClock;
 import android.provider.Settings;
 import android.util.DisplayMetrics;
 import android.view.Gravity;
@@ -42,7 +41,8 @@ public final class CatOverlayService extends Service implements SharedPreference
     PetSettings settings;
     AlertDialog menuDialog;
     float density;
-    long previous;
+    final PetFrameLoop frames=new PetFrameLoop(this::drawFrame);
+    final Runnable visibilityPoll=this::refreshVisibility;
     boolean receiverRegistered;
     final Runnable homeChanged=()->{ensureScene();refreshVisibility();};
     final BroadcastReceiver screen=new BroadcastReceiver(){@Override public void onReceive(Context c,Intent i){ensureScene();refreshVisibility();}};
@@ -74,7 +74,7 @@ public final class CatOverlayService extends Service implements SharedPreference
         if(!running)return;
         PetScene selected=HomeSceneStore.get(this);
         if(selected==scene&&scene!=null)return;
-        handler.removeCallbacks(frame);hideWindows();windows.clear();objects.clear();
+        handler.removeCallbacks(visibilityPoll);hideWindows();windows.clear();objects.clear();
         scene=selected;
         resizeScene();
         for(int i=0;i<scene.actors.length;i++)if(scene.actors[i]!=null){objects.add(new ObjectWindow(i));windows.add(new PetWindow(this,i));}
@@ -98,37 +98,33 @@ public final class CatOverlayService extends Service implements SharedPreference
     }
 
     void refreshVisibility(){
-        handler.removeCallbacks(frame);if(!running||scene==null)return;
+        handler.removeCallbacks(visibilityPoll);if(!running||scene==null)return;
         if(!Settings.canDrawOverlays(this)){stopSelf();return;}
         if(canShow()){
             if(!displaying)AppUpdates.get(this).check(false);
             for(ObjectWindow v:objects)if(!v.attached){try{manager.addView(v,v.params);v.attached=true;}catch(SecurityException e){stopSelf();return;}}
             for(PetWindow v:windows)if(!v.attached)try{v.position();manager.addView(v,v.params);v.attached=true;}catch(SecurityException e){stopSelf();return;}
-            displaying=!windows.isEmpty();previous=SystemClock.uptimeMillis();handler.post(frame);
+            if(!displaying){displaying=!windows.isEmpty();if(displaying)frames.start();}
+            handler.postDelayed(visibilityPoll,150);
         }else{hideWindows();watchHome();}
     }
     void watchHome(){
         // A normal photo or third-party wallpaper cannot send us visibility callbacks.
         if(running && settings.homeTouch() && !settings.overlay() && screenUnlocked()
-                && MainActivity.visibleActivities==0)handler.postDelayed(frame,350);
+                && MainActivity.visibleActivities==0)handler.postDelayed(visibilityPoll,350);
     }
     void hideWindows(){
-        displaying=false;if(menuDialog!=null){menuDialog.dismiss();menuDialog=null;}
+        frames.stop();displaying=false;if(menuDialog!=null){menuDialog.dismiss();menuDialog=null;}
         for(ObjectWindow v:objects)if(v.attached){manager.removeView(v);v.attached=false;}
         for(PetWindow v:windows){v.touch.cancel();if(v.attached){manager.removeView(v);v.attached=false;}}
     }
     void redraw(){for(ObjectWindow v:objects)if(v.attached)v.update();for(PetWindow v:windows)if(v.attached){int x=v.params.x,y=v.params.y,w=v.params.width,h=v.params.height;v.position();if(x!=v.params.x||y!=v.params.y||w!=v.params.width||h!=v.params.height)manager.updateViewLayout(v,v.params);v.invalidate();}}
-    final Runnable frame=new Runnable(){@Override public void run(){
-        if(!running||scene==null)return;
-        if(!Settings.canDrawOverlays(CatOverlayService.this)){stopSelf();return;}
-        if(!canShow()){hideWindows();watchHome();return;}
-        // A visibility/app-op watcher may resume without a wallpaper callback.
-        // Reattach the native windows before advancing the shared scene again.
-        if(!displaying){refreshVisibility();return;}
-        ensureScene();long now=SystemClock.uptimeMillis();scene.tick(now-previous);previous=now;
-        try{redraw();}catch(SecurityException e){stopSelf();return;}
-        renderedFrames++;handler.postDelayed(this,scene.animating()?33:100);
-    }};
+    boolean drawFrame(double elapsed){
+        if(!displaying||scene==null)return false;
+        scene.tick(elapsed);
+        try{redraw();}catch(SecurityException e){frames.stop();stopSelf();return false;}
+        renderedFrames++;return scene.animating();
+    }
     final class ObjectWindow extends View {
         final int index;
         final WindowManager.LayoutParams params;
@@ -167,13 +163,28 @@ public final class CatOverlayService extends Service implements SharedPreference
             params=new WindowManager.LayoutParams(Math.round(160*density),Math.round(160*density),WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL|WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,PixelFormat.TRANSLUCENT);
             params.gravity=Gravity.TOP|Gravity.LEFT;if(Build.VERSION.SDK_INT>=30)params.setFitInsetsTypes(0);
-            touch=new PetTouch(context,()->scene,index->showMenu(),CatOverlayService.this::redraw);
+            touch=new PetTouch(context,()->scene,index->showMenu(),()->{redraw();frames.wake();});
             setContentDescription("고양이. 끌어서 이동, 길게 눌러 놀이 또는 종료.");position();
         }
         void showMenu(){menuDialog=PetMenus.show(CatOverlayService.this,true,touch);}
-        void position(){android.graphics.RectF b=scene.actors[actor].bounds(true);float w=b.width()+12,h=b.height()+12;params.width=Math.round(w*density);params.height=Math.round(h*density);params.x=Math.round(Math.max(0,Math.min(scene.width-w,b.left-6))*density);params.y=Math.round(Math.max(0,Math.min(scene.height-h,b.top-6))*density);}
+        void position(){
+            android.graphics.RectF b=scene.actors[actor].bounds(true);
+            float w=b.width()+12,h=b.height()+12;
+            int wide=Math.round(w*density),high=Math.round(h*density);
+            // Move the sprite inside its existing six-dp padding first. Repositioning
+            // a launcher surface costs a WindowManager transaction and layout.
+            if(!attached||params.width!=wide||Math.max(0,b.left)*density<params.x
+                    ||Math.min(scene.width,b.right)*density>params.x+wide){
+                params.x=Math.round(Math.max(0,Math.min(scene.width-w,b.left-6))*density);
+            }
+            if(!attached||params.height!=high||Math.max(0,b.top)*density<params.y
+                    ||Math.min(scene.height,b.bottom)*density>params.y+high){
+                params.y=Math.round(Math.max(0,Math.min(scene.height-h,b.top-6))*density);
+            }
+            params.width=wide;params.height=high;
+        }
         @Override protected void onDraw(Canvas canvas){super.onDraw(canvas);canvas.save();canvas.scale(density,density);canvas.translate(-params.x/density,-params.y/density);scene.actors[actor].draw(canvas);canvas.restore();}
-        @Override public boolean onTouchEvent(MotionEvent event){boolean result=touch.event(event.getActionMasked(),event.getPointerCount(),event.getRawX()/density,event.getRawY()/density,event.getEventTime());if(event.getActionMasked()==MotionEvent.ACTION_UP)performClick();return result;}
+        @Override public boolean onTouchEvent(MotionEvent event){boolean result=touch.event(event.getActionMasked(),event.getPointerCount(),event.getRawX()/density,event.getRawY()/density,event.getEventTime());if(result)frames.wake();if(event.getActionMasked()==MotionEvent.ACTION_UP)performClick();return result;}
         @Override public boolean performClick(){super.performClick();return true;}
     }
     @Override public void onSharedPreferenceChanged(SharedPreferences prefs,String key){

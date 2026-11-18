@@ -38,6 +38,7 @@ public final class MotionSmoke extends Instrumentation {
             if(arguments!=null&&arguments.getString("mode","").startsWith("update")){new UpdateReview(this,directory).run(arguments.getString("mode"));return;}
             activity=(MainActivity)startActivitySync(new Intent(getTargetContext(),MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
             waitForIdleSync();
+            if(arguments!=null&&("pacing".equals(arguments.getString("mode"))||"pacing-home".equals(arguments.getString("mode")))){new MotionPacingReview(this).run(Integer.parseInt(arguments.getString("coat","0")),"pacing-home".equals(arguments.getString("mode")));return;}
             if(arguments!=null&&arguments.getString("mode","").startsWith("parity")){
                 new ActionParityReview(this).run(arguments.getString("mode"),Integer.parseInt(arguments.getString("coat","0")));return;
             }

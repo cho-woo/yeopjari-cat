@@ -2,7 +2,6 @@ package com.valuewander.yeopjaricat;
 
 import android.content.Context;
 import android.graphics.Canvas;
-import android.os.SystemClock;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -11,24 +10,23 @@ final class SceneView extends View {
     Backdrop backdrop;
     PetTouch touch;
     android.app.AlertDialog menuDialog;
-    long previous;
+    final PetFrameLoop frames=new PetFrameLoop(this::drawFrame);
     boolean running;
     long renderedFrames;
     SceneView(Context context) { super(context);setContentDescription("고양이 미리보기. 고양이를 톡 누르면 앞발로 반응해요.");reload(); }
     void reload() {
         if(touch!=null)touch.cancel();if(menuDialog!=null){menuDialog.dismiss();menuDialog=null;}if(scene!=null)scene.close();if(backdrop!=null)backdrop.close();
-        scene=new PetScene(getContext(),this::invalidate);backdrop=new Backdrop(getContext(),this::invalidate);
-        touch=new PetTouch(getContext(),()->scene,index->showMenu(),this::invalidate);
+        scene=new PetScene(getContext(),this::wake);backdrop=new Backdrop(getContext(),this::invalidate);
+        touch=new PetTouch(getContext(),()->scene,index->showMenu(),this::wake);
         touch.previewInput=true;
         if(getWidth()>0)scene.resize(getWidth()/density(),getHeight()/density(),20);
         invalidate();
     }
     float density(){return getResources().getDisplayMetrics().density;}
-    void start(){if(running)return;running=true;previous=SystemClock.uptimeMillis();postOnAnimation(frame);}
-    void stop(){running=false;removeCallbacks(frame);}
-    private final Runnable frame=new Runnable(){public void run(){
-        if(!running)return;long now=SystemClock.uptimeMillis();scene.tick(now-previous);previous=now;invalidate();postDelayed(this,scene.animating()?33:250);
-    }};
+    void wake(){invalidate();frames.wake();}
+    void start(){if(!running){running=true;frames.start();}}
+    void stop(){running=false;frames.stop();}
+    private boolean drawFrame(double elapsed){scene.tick(elapsed);invalidate();return scene.animating();}
     @Override protected void onSizeChanged(int w,int h,int oldw,int oldh){scene.resize(w/density(),h/density(),20);}
     @Override protected void onDraw(Canvas canvas){super.onDraw(canvas);canvas.save();canvas.scale(density(),density());backdrop.draw(canvas,getWidth()/density(),getHeight()/density());scene.draw(canvas);canvas.restore();renderedFrames++;}
     void showMenu(){menuDialog=PetMenus.show(getContext(),false,touch);}

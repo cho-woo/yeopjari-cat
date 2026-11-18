@@ -122,7 +122,7 @@ begin on a cat so launcher controls outside the cat retain their normal input.
 3. `tools/build_android.ps1 -Tests` repacks verified source atlases, builds the
    debug-signed preview and runs Android lint. Temporary ASCII drive mapping
    avoids native Android tools' Unicode-path limitations on Windows.
-4. Output: `build/android-0.4.0-preview/YeopjariCat-Android-0.4.0-preview.apk`.
+4. Output: `build/android-0.4.1-preview/YeopjariCat-Android-0.4.1-preview.apk`.
 
 The preview uses a local Android debug signing key; it is not the future store
 release key. Do not upload this test key as the production signing identity.
@@ -136,6 +136,11 @@ No APK is placed in the Windows release or its update feed.
   screen recordings. The first exercises all commands in both roles, geometry,
   registered ball contact, handoffs, pairing and rapid finger reversals. The
   second uses the activity's own renderer and Android frame scheduling.
+- Use `--mode pacing-home` to inject finger gestures through the launcher and
+  record both cats completing the jump, strike, landing and reciprocal paw
+  exchange. Use `--mode pacing` for the same sequences in the activity. Each
+  coat pair produces an MP4 and a JSON report of draw intervals and observed
+  atlas waits. The same runner can measure the previous public APK.
 
 - Starting in 0.3.2, `tools/verify_android_home_overlay.py` checks Home-only
   operation over an independently selected wallpaper, permission cancellation,

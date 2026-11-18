@@ -39,6 +39,7 @@ final class PetScene {
         Actor(int coat,float x){
             this.coat=coat;this.x=x;restMs=500+random.nextInt(901);
             idle=library.neutral(coat);idleFrame=0;
+            library.preload(coat,"run",null);
         }
         boolean busy(){return loading||clock!=null||!plan.isEmpty()||!owner.isEmpty();}
         float ground(){return floor+offsetY;}
@@ -55,9 +56,27 @@ final class PetScene {
         void remember(){
             if(clip!=null&&clock!=null){idle=clip;idleFrame=clock.frame();idleFacing=facing;}
         }
-        void armFinger(){cancelSocial();cancelStory();fingerArmed=true;}
+        // Keep the small working set for the current interaction even if another coat
+        // evicts an entry from the shared LRU. Late replies cannot retain an old story.
+        java.util.HashMap<String,MotionLibrary.Clip> upcoming=new java.util.HashMap<>();
+        void reserve(String name){
+            if(upcoming.containsKey(name))return;
+            java.util.HashMap<String,MotionLibrary.Clip> story=upcoming;
+            story.put(name,null);
+            library.preload(coat,name,value->{
+                if(!closed && upcoming==story){
+                    if(value==null)story.remove(name);else story.put(name,value);
+                }
+            });
+        }
+        void releaseClips(){if(!upcoming.isEmpty())upcoming=new java.util.HashMap<>();}
+        void obtain(String name,MotionLibrary.Ready ready){
+            MotionLibrary.Clip resident=upcoming.get(name);
+            if(resident!=null)ready.accept(resident);else library.request(coat,name,ready);
+        }
+        void armFinger(){cancelSocial();cancelStory();fingerArmed=true;library.preload(coat,"run",null);library.preload(coat,"cursor-pounce",null);}
         void cancelStory(){
-            remember();revision++;loading=false;loadingAction=null;clock=null;clip=null;
+            remember();releaseClips();revision++;loading=false;loadingAction=null;clock=null;clip=null;
             plan.clear();queued=null;owner="";action="idle";object.kind="";fingerDown=false;
             // User input may interrupt in midair. Keep the visible baseline and ease back on the next clock.
             if(lift!=0){carryLift=lift+carryLift*smooth(carryMs/320);carryMs=320;lift=0;}
@@ -149,10 +168,11 @@ final class PetScene {
         }
         void nextStep(){
             Step next=plan.poll();
-            if(next==null && sideReady){next=new Step("walk");next.bridge=-1;next.direction=facing;}
+            boolean exchange=owner.equals("pair-paw") && socialActive && socialPhase<3;
+            if(next==null && sideReady && !exchange){next=new Step("walk");next.bridge=-1;next.direction=facing;}
             if(next==null){
                 finishedOwner=owner;completed++;ballHits+=object.hits;object.hits=0;object.kind="";
-                owner="";action="idle";step=null;sideReady=false;
+                owner="";action="idle";step=null;if(!exchange){sideReady=false;releaseClips();}
                 restMs=900+random.nextInt(1301);return;
             }
             if(next.name.equals("ball-approach")){
@@ -164,6 +184,9 @@ final class PetScene {
                 Step gait=new Step("run");gait.travel=true;gait.x=safeX(dest);gait.y=ground();next=gait;
             }
             if(next.travel && Math.hypot(next.x-x,next.y-ground())<1){nextStep();return;}
+            if(exchange && sideReady && !next.travel && sidePose(next.name) && next.direction!=0 && next.direction!=facing){
+                plan.addFirst(next);next=new Step("turn");next.direction=facing;
+            }
             if(next.bridge==0 && !next.travel && sidePose(next.name) && !sideReady && !owner.equals("finger")){
                 plan.addFirst(next);Step enter=new Step("walk");enter.bridge=1;
                 enter.direction=next.direction==0?facing:next.direction;next=enter;
@@ -173,7 +196,7 @@ final class PetScene {
             }
             step=next;
             String name=next.name;int token=++revision;loading=true;loadingAction=name;
-            library.request(coat,name,value->{
+            obtain(name,value->{
                 if(closed||revision!=token)return;
                 loading=false;loadingAction=null;
                 if(value==null){android.util.Log.e("YeopjariCat","Cannot play "+name);cancelStory();restMs=4000;return;}
@@ -210,7 +233,12 @@ final class PetScene {
                 if(name.equals("ball")||name.equals("ball-pounce"))object.beginStroke();
                 // Stage the immediately following pose before it owns the renderer.
                 Step ahead=plan.peek();
-                if(ahead!=null&&!ahead.name.equals("ball-approach"))library.request(coat,ahead.name,c->{});
+                if(ahead!=null&&!ahead.name.equals("ball-approach"))library.preload(coat,ahead.name,null);
+                if(owner.equals("finger")){
+                    if(name.equals("run")){reserve("cursor-pounce");reserve("turn");}
+                    if(name.equals("run") || name.equals("cursor-pounce"))reserve("punch");
+                    if(name.equals("punch") || name.equals("reach") || name.equals("cursor-pounce"))reserve("walk");
+                }
                 invalidate.run();
             });
         }
@@ -290,7 +318,7 @@ final class PetScene {
         }
         void beginFinger(float px,float py){
             fingerArmed=false;cancelSocial();cancelStory();fingerDown=true;owner="finger";fingerMiss=Float.POSITIVE_INFINITY;
-            fingerX=px;fingerY=py;fingerAim=115;
+            fingerX=px;fingerY=py;fingerAim=115;reserve("run");reserve("cursor-pounce");invalidate.run();
         }
         void tick(double delta){
             if(controlled)return;
@@ -377,6 +405,7 @@ final class PetScene {
         library=MotionLibrary.get(context);settings=new PetSettings(context);size=settings.size();
         actors[0]=new Actor(settings.coat(),width*(settings.companion()?.18f:.28f));
         if(settings.companion())actors[1]=new Actor(settings.companionCoat(),width*.82f);
+        for(Actor actor:actors)if(actor!=null)library.preload(actor.coat,"cursor-pounce",null);
     }
     void resize(float w,float h,float bottom){
         if(w<=0||h<=0)return;
@@ -417,10 +446,12 @@ final class PetScene {
         float lane=a.safeY((a.ground()+b.ground())/2);
         a.owner=b.owner="pair-"+socialName;
         if(socialPhase==0){
-            if(socialName.equals("paw"))for(Actor actor:actors){
-                library.request(actor.coat,"punch",c->{});library.request(actor.coat,"reach",c->{});
+            boolean exchange=socialName.equals("paw");
+            if(exchange){
+                for(Actor actor:actors)actor.reserve("walk");
+                for(Actor actor:actors){actor.reserve("punch");actor.reserve("reach");}
             }
-            a.route("walk",center-dir*gap/2,lane,false);b.route("walk",center+dir*gap/2,lane,false);
+            a.route("walk",center-dir*gap/2,lane,exchange);b.route("walk",center+dir*gap/2,lane,exchange);
         }else if(socialPhase==1){
             switch(socialName){
                 case "perch":{

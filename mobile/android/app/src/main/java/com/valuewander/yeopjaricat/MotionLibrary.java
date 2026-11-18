@@ -16,8 +16,9 @@ import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 final class MotionLibrary {
     interface Ready { void accept(Clip clip); }
@@ -75,11 +76,20 @@ final class MotionLibrary {
     private static MotionLibrary instance;
     static synchronized MotionLibrary get(Context c) { if(instance==null)instance=new MotionLibrary(c.getApplicationContext());return instance; }
     final Context context;
-    final ExecutorService worker=Executors.newSingleThreadExecutor();
+    private final LinkedBlockingDeque<Runnable> jobs=new LinkedBlockingDeque<>();
+    final ThreadPoolExecutor worker=new ThreadPoolExecutor(1,1,0,TimeUnit.MILLISECONDS,jobs);
     final Handler main=new Handler(Looper.getMainLooper());
     final HashMap<Integer,Clip> neutrals=new HashMap<>();
-    final HashMap<String,ArrayList<Ready>> waiting=new HashMap<>();
-    final LruCache<String,Clip> cache=new LruCache<>(Math.min(48*1024*1024,(int)(Runtime.getRuntime().maxMemory()/5))) { @Override protected int sizeOf(String key,Clip clip){return clip.bytes();} };
+    final HashMap<String,Load> waiting=new HashMap<>();
+    // A displayed recovery pose can outlive the LRU entry. Reuse its atlas when
+    // either scene requests it again, without keeping discarded poses alive.
+    private final HashMap<String,java.lang.ref.WeakReference<Clip>> displayed=new HashMap<>();
+    final LruCache<String,Clip> cache=new LruCache<>(Math.min(48*1024*1024,(int)(Runtime.getRuntime().maxMemory()/5))) {
+        @Override protected int sizeOf(String key,Clip clip){return clip.bytes();}
+        @Override protected void entryRemoved(boolean evicted,String key,Clip old,Clip replacement){
+            if(evicted)displayed.put(key,new java.lang.ref.WeakReference<>(old));
+        }
+    };
     private MotionLibrary(Context context) { this.context=context; }
     Clip neutral(int coat){
         if(!neutrals.containsKey(coat))try{neutrals.put(coat,readClip(coat,"neutral"));}
@@ -95,22 +105,47 @@ final class MotionLibrary {
         }
         JSONArray ps=spec.getJSONArray("pages");Bitmap[] pages=new Bitmap[ps.length()];
         for(int i=0;i<pages.length;i++)try(InputStream in=context.getAssets().open("motions/"+ps.getJSONObject(i).getString("file"))){
-            pages[i]=BitmapFactory.decodeStream(in);if(pages[i]==null)throw new IllegalStateException("Cannot decode atlas");
+            pages[i]=BitmapFactory.decodeStream(in);
+            if(pages[i]==null)throw new IllegalStateException("Cannot decode atlas");
+            if(i==0)pages[i].prepareToDraw(); // Do not upload every future page during the current action.
         }
         return new Clip(spec,pages);
     }
-    void request(int coat, String action, Ready callback) {
-        String key=coat+":"+action;
-        Clip found=cache.get(key);if(found!=null){callback.accept(found);return;}
-        if(waiting.containsKey(key)){waiting.get(key).add(callback);return;}
-        ArrayList<Ready> callbacks=new ArrayList<>();callbacks.add(callback);waiting.put(key,callbacks);
-        worker.execute(()->{
+    // Submitted and delivered on the main thread. Only bitmap decoding runs on the worker.
+    private final class Load implements Runnable {
+        final int coat;
+        final String action,key;
+        final ArrayList<Ready> listeners=new ArrayList<>();
+        Load(int coat,String action,String key){this.coat=coat;this.action=action;this.key=key;}
+        public void run(){
             Clip clip=null;
-            try {
-                clip=readClip(coat,action);cache.put(key,clip);
-            } catch(Exception e) { android.util.Log.e("YeopjariCat","Motion load failed: "+key,e); }
+            try{clip=readClip(coat,action);}catch(Exception e){android.util.Log.e("YeopjariCat","Motion load failed: "+key,e);}
             Clip result=clip;
-            main.post(()->{ArrayList<Ready> list=waiting.remove(key);if(list!=null)for(Ready cb:list)cb.accept(result);});
-        });
+            main.post(()->{
+                waiting.remove(key);
+                if(result!=null)cache.put(key,result);
+                for(Ready listener:listeners)listener.accept(result);
+            });
+        }
+    }
+    void request(int coat,String action,Ready callback){schedule(coat,action,callback,true);}
+    void preload(int coat,String action,Ready callback){schedule(coat,action,callback,false);}
+    private void schedule(int coat,String action,Ready callback,boolean current){
+        String key=coat+":"+action;
+        Clip found=cache.get(key);
+        if(found==null){
+            java.lang.ref.WeakReference<Clip> ref=displayed.remove(key);
+            if(ref!=null){found=ref.get();if(found!=null)cache.put(key,found);}
+        }
+        if(found!=null){if(callback!=null)callback.accept(found);return;}
+        Load job=waiting.get(key);
+        if(job==null){
+            job=new Load(coat,action,key);
+            waiting.put(key,job);
+            worker.execute(job);
+        }
+        if(callback!=null)job.listeners.add(callback);
+        // A newly requested action outranks speculative work for either cat.
+        if(current && jobs.remove(job))jobs.addFirst(job);
     }
 }

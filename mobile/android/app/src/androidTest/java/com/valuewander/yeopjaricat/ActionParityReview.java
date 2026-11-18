@@ -49,6 +49,10 @@ final class ActionParityReview {
                     view.eraseColor(Color.TRANSPARENT);scene.draw(new Canvas(view));
                     for(int i=0;i<2;i++){
                         PetScene.Actor a=scene.actors[i];float delta=(float)Math.hypot(a.x-old[i*2],a.footY()-old[i*2+1]);
+                        if(label.endsWith("/pair/paw") && a.step!=null && scene.socialActive){
+                            check(scene.socialPhase!=2 || a.step.bridge>=0,"Seated outro between paw exchanges");
+                            check(scene.socialPhase!=3 || a.step.bridge<=0,"Restarted seated intro at return swat");
+                        }
                         check(Float.isFinite(delta)&&delta<scene.size*.27f,label+" root discontinuity "+delta+" in "+a.action);
                         maxTravel=Math.max(maxTravel,delta);rootSamples++;
                         if(a.clock==null)continue;

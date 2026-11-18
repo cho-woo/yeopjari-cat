@@ -12,7 +12,8 @@ def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--adb',required=True)
     parser.add_argument('--out',required=True,type=Path)
-    parser.add_argument('--mode',choices=('parity','parity-live'),required=True)
+    parser.add_argument('--mode',choices=('parity','parity-live','pacing','pacing-home'),required=True)
+    parser.add_argument('--no-video',action='store_true',help='Measure draw intervals without the emulator screen encoder')
     parser.add_argument('--coats',type=int,nargs='+',default=[0,8,10])
     a=parser.parse_args()
     a.out.mkdir(parents=True,exist_ok=True)
@@ -23,7 +24,7 @@ def main():
     for coat in a.coats:
         name=f'{a.mode}-{coat}'
         video=None
-        if a.mode=='parity-live':
+        if not a.no_video and a.mode in ('parity-live','pacing','pacing-home'):
             video=subprocess.Popen(prefix+['shell','screenrecord','--size','540x1200','--bit-rate','2400000','--time-limit','180','/sdcard/'+name+'.mp4'])
         try:
             output=adb('shell','am','instrument','-w','-e','mode',a.mode,'-e','coat',str(coat),
