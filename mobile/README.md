@@ -130,10 +130,11 @@ No APK is placed in the Windows release or its update feed.
   live-wallpaper round trip, default return, legacy photo selection, persistence,
   cat shutdown and preservation of a separate Lock wallpaper. Synthetic photo
   selection is supplied by the separate test APK; no user photo is used.
-  The runner's `wallpaper-return-auto` mode performs the same round trips with
+  The runner's `wallpaper-return-auto` mode performs the completed restore paths with
   one UiAutomation owner clicking the actual app/native accessibility controls.
   It avoids the review AVD's stalled gesture monitors, reports any unrelated
-  system ANR dismissed, and never dismisses a cat-app ANR. Neither review path
+  system ANR dismissed, and never dismisses a cat-app ANR. Cancellation remains
+  in the external review because the AVD's global Back monitor can stall. Neither review path
   installs test control endpoints in the downloadable app.
 - `mobile/tests/MotionClockSpec.java` checks full timeline/recovery continuity.
 - `mobile/tests/PointerGestureSpec.java` checks tap/drag/long-press ownership,
