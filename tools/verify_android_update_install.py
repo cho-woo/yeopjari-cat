@@ -18,8 +18,12 @@ def main():
         raw=adb('shell','dumpsys','package',PACKAGE);return re.search(r'versionName=(\S+)',raw)[1]
     assert version()=='0.3.0-preview','Install the final release candidate first'
     def nodes():
-        adb('shell','uiautomator','dump','/sdcard/cat-update-ui.xml');xml=adb('shell','cat','/sdcard/cat-update-ui.xml')
-        assert "isn't responding" not in xml,'System ANR obscures UI';return list(ET.fromstring(xml).iter('node'))
+        for _ in range(5):
+            output=adb('shell','uiautomator','dump','/sdcard/cat-update-ui.xml')
+            if 'dumped to:' not in output:time.sleep(.5);continue
+            xml=adb('shell','cat','/sdcard/cat-update-ui.xml')
+            assert "isn't responding" not in xml,'System ANR obscures UI';return list(ET.fromstring(xml).iter('node'))
+        raise AssertionError('No fresh UI hierarchy after transition')
     def visible(text):return any(n.get('text')==text for n in nodes())
     def tap_node(node):
         b=list(map(int,re.findall(r'\d+',node.get('bounds',''))));assert len(b)==4 and b[3]>b[1];adb('shell','input','tap',str((b[0]+b[2])//2),str((b[1]+b[3])//2));time.sleep(.3)
@@ -30,7 +34,8 @@ def main():
         for _ in range(8 if scroll else 1):
             for node in nodes():
                 if node.get('text')==text:tap_node(node);return
-            if scroll:adb('shell','input','swipe','40','2100','40','600','250');time.sleep(.2)
+            # Slow steps avoid flinging past the small update card mid-page.
+            if scroll:adb('shell','input','swipe','40','1800','40','1200','800');time.sleep(.3)
         raise AssertionError('Missing control: '+text)
     def wait(condition,message,timeout=30):
         until=time.monotonic()+timeout
@@ -67,9 +72,10 @@ def main():
         except subprocess.TimeoutExpired:process.terminate()
     if visible('Open'):tap('Open')
     else:adb('shell','am','start','-W','-n',PACKAGE+'/.MainActivity')
-    time.sleep(1);shot('08-settings-retained')
+    wait(lambda:visible('홈 화면에 데려오기'),'Updated app did not open');time.sleep(1);shot('08-settings-retained')
     raw=adb('shell','run-as',PACKAGE,'cat','shared_prefs/pet_settings.xml');prefs={n.get('name'):n.get('value',n.text) for n in ET.fromstring(raw)}
     assert prefs.get('upgrade_marker')=='keep-v03-settings' and prefs.get('coat')=='8' and prefs.get('companion_coat')=='10' and prefs.get('companion')=='true',prefs
+    assert prefs.get('overlay')=='true','User-selected display mode was lost'
     assert abs(float(prefs['position.home.0.y'])-.45)<.002 and abs(float(prefs['position.home.1.y'])-.53)<.002,prefs
     results.append({'in_place_upgrade':True,'user_settings_and_both_cats_retained':True,'dragged_heights_retained':True})
     (a.out/'install-report.json').write_text(json.dumps({'passed':True,'scope':'Android15 AVD real OS installer; final v0.3 updater installs a same-DEX higher-version fixture, not a public v0.3.1 release','from_version':'0.3.0-preview','fixture_version':'0.3.1-preview','results':results},indent=2),encoding='utf-8')

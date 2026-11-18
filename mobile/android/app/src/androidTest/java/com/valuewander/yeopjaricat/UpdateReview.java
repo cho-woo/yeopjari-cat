@@ -51,7 +51,7 @@ final class UpdateReview {
         AppUpdates offline=new AppUpdates(context,new UpdateClient(context,address->{throw new IOException("Offline");}));test.runOnMainSync(()->offline.check(true));test.waitFor(()->offline.state==AppUpdates.State.ERROR,"Offline check must not say latest");check(true,"offline_check_is_retryable_error");offline.worker.shutdown();
         context.getSharedPreferences("app_updates",Context.MODE_PRIVATE).edit().clear().apply();
         test.runOnMainSync(()->{AppUpdates.instance=new AppUpdates(context,new UpdateClient(context));});
-        test.activity=(MainActivity)test.startActivitySync(new Intent(context,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+        test.activity=(MainActivity)test.startActivitySync(new Intent(context,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TASK));
         test.waitFor(()->test.activity.updatePanel.updates.state==AppUpdates.State.LATEST,"Current build did not show latest status");
         test.runOnMainSync(()->{android.view.View button=test.activity.updatePanel.button;button.requestRectangleOnScreen(new android.graphics.Rect(0,0,button.getWidth(),button.getHeight()),true);});Thread.sleep(250);test.shot("updater-current");
         JSONObject report=new JSONObject().put("passed",true).put("scope","Final v0.3 APK on Android15 AVD; native upgrade confirmation checked separately").put("results",results);
@@ -63,7 +63,7 @@ final class UpdateReview {
             new PetSettings(context).prefs.edit().putBoolean("pets_enabled",true).putInt("coat",8).putInt("companion_coat",10).putBoolean("companion",true).putString("upgrade_marker","keep-v03-settings").putFloat("position.home.0.y",.45f).putFloat("position.home.1.y",.53f).putBoolean("overlay",true).apply();
             AppUpdates.instance=new AppUpdates(context,fake(future,next,feed));
         });
-        test.activity=(MainActivity)test.startActivitySync(new Intent(context,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+        test.activity=(MainActivity)test.startActivitySync(new Intent(context,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TASK));
         // External system UI driver owns UiAutomation during this flow.
         test.waitFor(()->AppUpdates.instance.state==AppUpdates.State.AVAILABLE,"Update offer missing");Thread.sleep(500);
         Bundle status=new Bundle();status.putString("stream","READY_FOR_UPDATE_FLOW");test.sendStatus(1,status);
