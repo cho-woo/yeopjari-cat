@@ -56,6 +56,8 @@ Usage Access permission; no usage history or UI contents are stored/transmitted.
 - The previous snapshot is committed only after successful application. Cancelling
   the picker preserves the current wallpaper and the last confirmed backup.
   Reapplying an already selected cat wallpaper does not overwrite that backup.
+  Open return/backup menus survive Activity recreation, including Android's
+  wallpaper-color resource refresh, without repeating a selected restore action.
 - Older installations did not save the previous image: the app cannot recover
   an overwritten photo retroactively. Return offers explicit photo selection,
   the phone's default wallpaper, and the system wallpaper chooser. The default

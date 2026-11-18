@@ -17,8 +17,12 @@ import java.nio.file.Files;
 /** One UiAutomation owner; accessibility clicks avoid the AVD's stalled gesture monitors. */
 final class WallpaperAutoReview {
     final WallpaperReview review;final MotionSmoke test;final WallpaperHistory history;
-    final JSONArray results=new JSONArray();int osWaits;
-    WallpaperAutoReview(WallpaperReview r){review=r;test=r.test;history=WallpaperHistory.get(r.context);}
+    final JSONArray results=new JSONArray();int osWaits;volatile android.app.Activity current;
+    final android.app.Application.ActivityLifecycleCallbacks activities=new android.app.Application.ActivityLifecycleCallbacks(){
+        public void onActivityResumed(android.app.Activity a){if(a instanceof MainActivity)current=a;}
+        public void onActivityCreated(android.app.Activity a,Bundle b){}public void onActivityStarted(android.app.Activity a){}public void onActivityPaused(android.app.Activity a){}public void onActivityStopped(android.app.Activity a){}public void onActivitySaveInstanceState(android.app.Activity a,Bundle b){}public void onActivityDestroyed(android.app.Activity a){}
+    };
+    WallpaperAutoReview(WallpaperReview r){review=r;test=r.test;history=WallpaperHistory.get(r.context);current=test.activity;test.activity.getApplication().registerActivityLifecycleCallbacks(activities);}
     AccessibilityNodeInfo node(String label){
         AccessibilityNodeInfo root=test.getUiAutomation().getRootInActiveWindow();if(root==null)return null;
         for(AccessibilityNodeInfo n:root.findAccessibilityNodeInfosByText(label))if(n.getText()!=null&&n.getText().toString().equals(label)&&n.isVisibleToUser())return n;
@@ -52,6 +56,7 @@ final class WallpaperAutoReview {
     }
     void run()throws Exception{
         int original=history.id(),blue=color();shot("01-original");
+        click("홈 화면에 데려오기");click("취소");check(history.id()==original&&!history.available()&&history.phase().isEmpty(),"cancel_backup_prompt_preserves_original");
         // Cancellation is reviewed by the external driver. The AVD's global Back
         // gesture monitor can stall independently of this app; this mode uses
         // accessibility clicks throughout and covers the completed restore paths.
@@ -60,13 +65,15 @@ final class WallpaperAutoReview {
         click("이전 배경으로 돌아가기");click("보관한 이전 사진으로 되돌리기");await(()->!history.isCat()&&!history.busy&&color()==blue,"Photo not restored");
         check(!new PetSettings(review.context).enabled()&&lock()==locked,"photo_restore_stops_cats_and_preserves_lock");shot("03-photo-restored");
         WallpaperHistory reloaded=new WallpaperHistory(review.context);check(reloaded.available()&&reloaded.read("saved_").file.equals(file),"private_backup_survives_store_recreation");reloaded.worker.shutdown();
-        test.runOnMainSync(()->test.activity.startActivityForResult(new Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER).putExtra(WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT,new ComponentName("com.valuewander.yeopjaricat.test",FixtureWallpaperService.class.getName())),499));picker();
+        test.runOnMainSync(()->current.startActivityForResult(new Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER).putExtra(WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT,new ComponentName("com.valuewander.yeopjaricat.test",FixtureWallpaperService.class.getName())),499));picker();
         check(history.info()!=null&&history.info().getComponent().getClassName().contains("FixtureWallpaperService"),"independent_live_wallpaper_selected");
         click("홈 화면에 데려오기");picker();check(history.read("saved_").kind.equals("live"),"previous_live_component_saved");
         click("이전 배경으로 돌아가기");click("이전 움직이는 배경으로 되돌리기");picker();
         check(history.info()!=null&&history.info().getComponent().getClassName().contains("FixtureWallpaperService")&&!new PetSettings(review.context).enabled(),"previous_live_restored_through_native_picker");shot("04-live-restored");
         click("홈 화면에 데려오기");picker();locked=separateLock();test.runOnMainSync(()->{history.prefs.edit().clear().apply();history.notice="";history.cleanup();history.changed();});
-        click("이전 배경으로 돌아가기");check(node("보관한 이전 사진으로 되돌리기")==null,"legacy_menu_does_not_claim_missing_photo");click("휴대폰 기본 배경으로 해제");await(()->!history.isCat()&&!history.busy,"Default return failed");
+        click("이전 배경으로 돌아가기");await(()->node("휴대폰 기본 배경으로 해제")!=null,"Legacy return menu not visible");check(node("보관한 이전 사진으로 되돌리기")==null,"legacy_menu_does_not_claim_missing_photo");
+        android.app.Activity previous=current;test.runOnMainSync(previous::recreate);await(()->current!=previous,"Activity was not recreated");await(()->node("휴대폰 기본 배경으로 해제")!=null,"Return menu lost on Activity recreation");check(true,"return_menu_survives_activity_recreation");
+        click("휴대폰 기본 배경으로 해제");await(()->!history.isCat()&&!history.busy,"Default return failed");
         check(!new PetSettings(review.context).enabled()&&lock()==locked,"legacy_default_return_preserves_lock_and_stops_cats");
         click("홈 화면에 데려오기");picker();check(history.read("saved_").kind.equals("default"),"known_default_is_retained");locked=separateLock();
         click("이전 배경으로 돌아가기");click("보관한 기본 배경으로 되돌리기");await(()->!history.isCat()&&!history.busy,"Known default return failed");check(lock()==locked,"known_default_round_trip_preserves_lock");
@@ -74,6 +81,6 @@ final class WallpaperAutoReview {
         click("이전 배경으로 돌아가기");click("이전 사진을 골라서 되돌리기");await(()->!history.isCat()&&!history.busy&&history.read("saved_").kind.equals("image")&&color()==blue,"Manual legacy photo return failed");
         check(!new PetSettings(review.context).enabled()&&lock()==locked&&history.available(),"manual_legacy_photo_return_preserves_lock_and_backup");shot("05-manual-photo-restored");
         JSONObject report=new JSONObject().put("passed",true).put("scope","Android15 AVD, one UiAutomation owner clicking actual app and native-picker controls; synthetic document-picker result, real WallpaperManager; independent Lock seeded after OS picker for direct restore checks").put("unrelated_system_anrs_dismissed",osWaits).put("results",results);
-        Files.write(new File(review.directory,"wallpaper-return-report.json").toPath(),report.toString(2).getBytes(StandardCharsets.UTF_8));Bundle done=new Bundle();done.putString("stream",report.toString());test.finish(MotionSmoke.RESULT_OK,done);
+        Files.write(new File(review.directory,"wallpaper-return-report.json").toPath(),report.toString(2).getBytes(StandardCharsets.UTF_8));test.activity.getApplication().unregisterActivityLifecycleCallbacks(activities);Bundle done=new Bundle();done.putString("stream",report.toString());test.finish(MotionSmoke.RESULT_OK,done);
     }
 }

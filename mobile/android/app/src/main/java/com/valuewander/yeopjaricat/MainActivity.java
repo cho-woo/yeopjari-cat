@@ -55,7 +55,7 @@ public final class MainActivity extends Activity {
         preview=new SceneView(this);preview.setBackground(round(0xffece3f9,26));preview.setClipToOutline(true);
         LinearLayout.LayoutParams previewParams=new LinearLayout.LayoutParams(-1,dp(225));previewParams.topMargin=dp(22);content.addView(preview,previewParams);
         Button apply=button("홈 화면에 데려오기",true);apply.setContentDescription("홈 화면에 데려오기. 움직이는 배경화면 선택 화면을 엽니다.");add(content,apply,14);
-        wallpaperReturn=new WallpaperReturn(this,content,apply);
+        wallpaperReturn=new WallpaperReturn(this,content,apply,saved);
         apply.setOnClickListener(v->wallpaperReturn.apply());
         add(content,text("고양이는 아이콘 뒤에서 지내요. 적용할 때 ‘홈 화면’을 선택해 주세요. 다른 앱 위에는 기본으로 표시하지 않아요.",12,MUTED),10);
         LinearLayout touchCard=card(content,"고양이 직접 움직이기");
@@ -126,7 +126,7 @@ public final class MainActivity extends Activity {
     @Override protected void onStop(){visibleActivities=Math.max(0,visibleActivities-1);HomeSceneStore.notifyLayer(this);super.onStop();}
     @Override protected void onResume(){super.onResume();if(preview!=null){preview.start();syncOverlay();power.setText(settings.enabled()?"종료하기":"고양이 다시 켜기");}if(wallpaperReturn!=null)wallpaperReturn.resume();if(permissionPending){permissionPending=false;if(Settings.canDrawOverlays(this)&&(!usagePending||HomeVisibility.hasAccess(this)))enableMode(requestedHome);else syncOverlay();}if(settings.enabled()&&(settings.overlay()||settings.homeTouch())&&!CatOverlayService.running&&Settings.canDrawOverlays(this))reconcileLayer();if(updatePanel!=null)updatePanel.resume();}
     @Override protected void onPause(){if(wallpaperReturn!=null)wallpaperReturn.pause();if(updatePanel!=null)updatePanel.pause();if(preview!=null)preview.stop();super.onPause();}
-    @Override protected void onSaveInstanceState(Bundle b){b.putBoolean("pending_overlay",permissionPending);b.putBoolean("pending_home",requestedHome);b.putBoolean("pending_usage",usagePending);if(updatePanel!=null)updatePanel.save(b);super.onSaveInstanceState(b);}
+    @Override protected void onSaveInstanceState(Bundle b){b.putBoolean("pending_overlay",permissionPending);b.putBoolean("pending_home",requestedHome);b.putBoolean("pending_usage",usagePending);if(updatePanel!=null)updatePanel.save(b);if(wallpaperReturn!=null)wallpaperReturn.save(b);super.onSaveInstanceState(b);}
     @Override public void onRequestPermissionsResult(int request,String[] permissions,int[] grants){super.onRequestPermissionsResult(request,permissions,grants);if(request==200)startMode();}
     @Override protected void onDestroy(){if(wallpaperReturn!=null)wallpaperReturn.close();if(updatePanel!=null)updatePanel.close();settings.prefs.unregisterOnSharedPreferenceChangeListener(preferences);super.onDestroy();}
     @Override protected void onActivityResult(int request,int result,Intent data){super.onActivityResult(request,result,data);if(wallpaperReturn!=null)wallpaperReturn.result(request,result,data);if(request==100&&result==RESULT_OK&&data!=null&&data.getData()!=null){Uri uri=data.getData();try{getContentResolver().takePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION);}catch(SecurityException ignored){}settings.prefs.edit().putString("photo",uri.toString()).apply();preview.reload();}}
