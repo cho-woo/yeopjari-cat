@@ -10,39 +10,33 @@ Usage Access permission; no usage history or UI contents are stored/transmitted.
 
 ## Product behavior
 
-- `WallpaperService` is the default. The pet is behind launcher icons, rather
-  than an overlay. Opening another opaque app hides the wallpaper naturally.
-  The renderer stops when the system reports the wallpaper hidden. Cats are
-  suppressed while the keyguard is locked, even if the user chooses the same
-  wallpaper for both Home and Lock screens in the system picker.
-- **홈 화면에 데려오기** offers to retain the previous photo before opening the
-  system wallpaper picker. The user selects Home there. Existing wallpaper
-  images are not read automatically; see the return feature below.
-- Optional `TYPE_APPLICATION_OVERLAY` windows require an explicit switch,
-  Android's special permission, and a user-started `specialUse` foreground
-  service. Notification and app settings both provide Stop. There is no restart
-  after boot/process death until the user opens the app again. The overlay hides
-  on screen-off/lock and while the app launches installation permission/confirmation.
-- The small pet window receives touches inside its rectangle. Other portions
-  of the display remain outside that window. The app does not observe or inject
-  interaction with other apps. Launcher touch forwarding is device-dependent.
-- **홈 화면 터치 조작** provides reliable long press and 2D drag through small
-  native pet windows. It requires overlay permission (for the touch windows) and
-  Usage Access (to hide them outside the selected Home app, including transparent
-  foreground apps). This does **not** turn on the separate cross-app switch.
-  Permission explanations can be cancelled without starting the service. Loss of
-  usage access fails closed. Basic wallpaper remains available without these
-  optional permissions; launcher-forwarded long press/drag alone is not reliable.
-- Hold either cat for 550ms to open **종료하기 / 취소**. Quit disables both cats,
-  wallpaper animation and touch service. App settings can turn cats back on.
-  Dragged positions are stored as normalized coordinates, shared between the
-  Home wallpaper and touch/cross-app windows, and retained across viewport changes.
+- **홈 화면에 고양이 켜기** starts a user-controlled foreground service and
+  opens Home. The cat lives in a small transparent window over the existing
+  launcher. Starting, quitting, dragging, and changing display modes do not
+  write the Home or Lock wallpaper or copy its contents.
+- Android's overlay permission allows drawing the cat window. Usage Access
+  identifies the resumed Home activity on-device. Cancel either setup prompt
+  to leave the service off. While the screen is unlocked, the Home-only mode
+  checks foreground activity changes, removes the windows when another app
+  becomes active and resumes them when Home returns. This is a sampled
+  observation, so removal can briefly follow a foreground transition.
+- **다른 앱 위에 고양이 표시** is a separate switch, initially off. Switching
+  it back off while Home mode is running returns the cat to Home-only display.
+  Locked screens, screen-off and the app's settings/installer hide the windows.
+- Hold either cat for 550 ms and choose **종료하기**, use **고양이 종료하기**
+  in settings, or stop it from the notification. This removes both cats and
+  stops the service. Starting again defaults to Home only. Dragged positions
+  are retained across sessions and viewport changes.
+- The former live wallpaper service remains installed to preserve backgrounds
+  on upgrades. The previous backdrop stays selected until the user changes it.
+  **이전 배경으로 돌아가기** appears when the old background or a retained backup
+  is present. Only an explicit restore can replace the background.
 - Mobile automatic rest is 0.4–1.0 seconds **after full recovery** (startup
   0.6–1.2 seconds). Stroll, grooming, kneading and paw play remain active; automatic
   sleep/settling is removed. Source frame clocks and authored recoveries are not
   shortened. Holding/dragging pauses the owned actor, with no timeline rewind.
 
-## Return to the previous wallpaper (0.3.1+)
+## Previous wallpaper edition (0.3.1)
 
 - **이전 배경으로 돌아가기** sits directly below the Apply button. A retained
   photo is restored to Home through `WallpaperManager.setStream(FLAG_SYSTEM)`;
@@ -118,13 +112,20 @@ and mobile store publication are **not** claimed by this preview.
 3. `tools/build_android.ps1 -Tests` repacks verified source atlases, builds the
    debug-signed preview and runs Android lint. Temporary ASCII drive mapping
    avoids native Android tools' Unicode-path limitations on Windows.
-4. Output: `build/android-0.3.1-preview/YeopjariCat-Android-0.3.1-preview.apk`.
+4. Output: `build/android-0.3.2-preview/YeopjariCat-Android-0.3.2-preview.apk`.
 
 The preview uses a local Android debug signing key; it is not the future store
 release key. Do not upload this test key as the production signing identity.
 No APK is placed in the Windows release or its update feed.
 
 ## Verification
+
+- Starting in 0.3.2, `tools/verify_android_home_overlay.py` checks Home-only
+  operation over an independently selected wallpaper, permission cancellation,
+  switching to opaque/translucent apps, explicit cross-app opt-in/out and
+  quitting the service. It compares Home/Lock IDs and components at each step.
+  Earlier wallpaper application and installer walkthroughs below refer to their
+  respective versioned releases.
 
 - `tools/verify_android_wallpaper_return.py` operates the actual system live
   wallpaper picker and WallpaperManager on the owned Android 15 AVD. It checks

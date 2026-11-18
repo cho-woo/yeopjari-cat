@@ -61,7 +61,7 @@ public final class CatOverlayService extends Service implements SharedPreference
         PendingIntent open=PendingIntent.getActivity(this,0,new Intent(this,MainActivity.class),PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT);
         PendingIntent stop=PendingIntent.getService(this,1,new Intent(this,CatOverlayService.class).setAction(STOP),PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT);
         Notification notice=new Notification.Builder(this,"pet_overlay").setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle("옆자리 고양이 터치 조작").setContentText(settings.overlay()?"다른 앱 위 표시 켜짐":"홈 화면 터치 조작 켜짐 · 다른 앱 위 표시 꺼짐")
+            .setContentTitle("옆자리 고양이 터치 조작").setContentText(settings.overlay()?"다른 앱 위 표시 켜짐":"홈 화면에 고양이 표시 중")
             .setContentIntent(open).setOngoing(true).addAction(new Notification.Action.Builder(null,"종료하기",stop).build()).build();
         try{
             if(Build.VERSION.SDK_INT>=34)startForeground(100,notice,android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);else startForeground(100,notice);
@@ -85,16 +85,31 @@ public final class CatOverlayService extends Service implements SharedPreference
         scene.resize(metrics.widthPixels/density,height,bottom);
         for(PetWindow w:windows)w.position();
     }
-    boolean canShow(){return MainActivity.visibleActivities==0&&!AppUpdates.installerOpen&&!WallpaperReturn.pickerOpen&&settings.enabled()&&((PowerManager)getSystemService(POWER_SERVICE)).isInteractive()&&!((KeyguardManager)getSystemService(KEYGUARD_SERVICE)).isKeyguardLocked()&&(settings.overlay()||(settings.homeTouch()&&HomeSceneStore.touchEligible()&&HomeVisibility.isHome(this)));}
+    boolean screenUnlocked(){
+        return ((PowerManager)getSystemService(POWER_SERVICE)).isInteractive()
+            && !((KeyguardManager)getSystemService(KEYGUARD_SERVICE)).isKeyguardLocked();
+    }
+
+    boolean canShow(){
+        if(MainActivity.visibleActivities>0 || AppUpdates.installerOpen || WallpaperReturn.pickerOpen
+                || !settings.enabled() || !screenUnlocked())return false;
+        return settings.overlay() || (settings.homeTouch() && HomeVisibility.isHome(this));
+    }
+
     void refreshVisibility(){
         handler.removeCallbacks(frame);if(!running||scene==null)return;
         if(!Settings.canDrawOverlays(this)){stopSelf();return;}
         if(canShow()){
+            if(!displaying)AppUpdates.get(this).check(false);
             for(PetWindow v:windows)if(!v.attached)try{v.position();manager.addView(v,v.params);v.attached=true;}catch(SecurityException e){stopSelf();return;}
             displaying=!windows.isEmpty();previous=SystemClock.uptimeMillis();handler.post(frame);
         }else{hideWindows();watchHome();}
     }
-    void watchHome(){if(running&&settings.homeTouch()&&!settings.overlay()&&HomeSceneStore.visible)handler.postDelayed(frame,150);}
+    void watchHome(){
+        // A normal photo or third-party wallpaper cannot send us visibility callbacks.
+        if(running && settings.homeTouch() && !settings.overlay() && screenUnlocked()
+                && MainActivity.visibleActivities==0)handler.postDelayed(frame,350);
+    }
     void hideWindows(){
         displaying=false;if(menuDialog!=null){menuDialog.dismiss();menuDialog=null;}
         for(PetWindow v:windows){v.touch.cancel();if(v.attached){manager.removeView(v);v.attached=false;}}

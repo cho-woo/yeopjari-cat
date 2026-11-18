@@ -47,16 +47,15 @@ public final class CatWallpaperService extends WallpaperService {
         final Runnable frame=new Runnable(){public void run(){
             if(closed||!visible||!surfaceReady)return;
             drawFrame(true);
-            if(settings.enabled())handler.postDelayed(this,scene.animating()?33:250);
+            if(isPreview() && settings.enabled())handler.postDelayed(this,scene.animating()?33:250);
         }};
         void drawFrame(boolean advance){
             if(closed||!surfaceReady)return;
             if(!isPreview())scene=HomeSceneStore.get(CatWallpaperService.this);
             long now=SystemClock.uptimeMillis();double delta=previous==0?0:Math.min(250,now-previous);if(advance)previous=now;
-            // Transparent foreground apps may leave the wallpaper surface visible.
-            // With strict Home touch mode, suppress its fallback cat there too.
-            boolean homeAllowed=!settings.homeTouch()||settings.overlay()||HomeVisibility.isHome(CatWallpaperService.this);
-            boolean paintCat=isPreview()||(!CatOverlayService.displaying&&!keyguard.isKeyguardLocked()&&homeAllowed);
+            // Keep the backdrop for people migrating from the live-wallpaper edition.
+            // All cats outside the preview now belong to the independently gated service.
+            boolean paintCat=isPreview();
             if(advance&&paintCat)scene.tick(delta);
             Canvas canvas=null;
             try {
@@ -85,7 +84,7 @@ public final class CatWallpaperService extends WallpaperService {
         @Override public void onSurfaceRedrawNeeded(SurfaceHolder holder){super.onSurfaceRedrawNeeded(holder);drawFrame(false);}
         @Override public void onOffsetsChanged(float x,float y,float xs,float ys,int xp,int yp){cameraX=x;cameraY=y;offsetX=xp;offsetY=yp;if(visible)drawFrame(false);}
         @Override public void onSurfaceDestroyed(SurfaceHolder holder){surfaceReady=false;handler.removeCallbacks(frame);super.onSurfaceDestroyed(holder);}
-        @Override public void onTouchEvent(MotionEvent event){if(!CatOverlayService.displaying&&touch!=null)touch.event(event.getActionMasked(),event.getPointerCount(),event.getRawX()/density,event.getRawY()/density,event.getEventTime());super.onTouchEvent(event);}
+        @Override public void onTouchEvent(MotionEvent event){if(isPreview()&&touch!=null)touch.event(event.getActionMasked(),event.getPointerCount(),event.getRawX()/density,event.getRawY()/density,event.getEventTime());super.onTouchEvent(event);}
         @Override public void onSharedPreferenceChanged(SharedPreferences prefs,String key){if(key==null||key.startsWith("position."))return;if(PetSettings.changesScene(key)||key.equals("photo"))reload();schedule();}
         @Override public void onDestroy(){closed=true;engines.remove(this);updateHomeVisibility();if(touch!=null)touch.cancel();handler.removeCallbacksAndMessages(null);settings.prefs.unregisterOnSharedPreferenceChangeListener(this);if(isPreview())scene.close();backdrop.close();super.onDestroy();}
     }

@@ -25,24 +25,18 @@ final class WallpaperReturn {
         restore=a.button("이전 배경으로 돌아가기",false);a.add(parent,restore,8);restore.setOnClickListener(v->chooseRestore());
         status=a.text("",12,MainActivity.MUTED);a.add(parent,status,8);history.listen(listener);refresh();
     }
-    void apply(){
-        dialogKind="";
-        WallpaperHistory.Snapshot before=history.beforeApply();
-        if(before!=null){if(before.kind.equals("keep")){PetLifecycle.resume(activity);history.notice="이미 고양이 배경이에요. 이전 배경 보관 내용은 유지했어요.";refresh();}else history.stage(before,"ready");return;}
-        dialog=new AlertDialog.Builder(activity).setTitle("이전 배경을 보관할까요?")
-            .setMessage("Android가 기존 배경 사진을 앱에 제공하지 않아요. 지금 쓰던 사진을 한 번 골라 보관하면, 나중에 바로 되돌릴 수 있어요. 사진은 이 기기에만 보관해요.")
-            .setPositiveButton("이전 사진 보관",(d,w)->selectPhoto("backup"))
-            .setNeutralButton("보관 없이 적용",(d,w)->{dialogKind="";history.stage(new WallpaperHistory.Snapshot("none","","",history.id()),"ready");})
-            .setNegativeButton("취소",null).show();
-        track(dialog,"backup");
-    }
     void refresh(){
-        apply.setEnabled(!history.busy);restore.setEnabled(!history.busy);
-        status.setText(history.busy?"배경 사진을 처리하고 있어요…":!history.notice.isEmpty()?history.notice:history.available()?"이전 배경이 보관돼 있어요. 돌아가기를 누르면 복원할 수 있어요.":"이전 사진이 저장돼 있지 않으면 다시 선택할 수 있어요. 기본 배경으로 바로 해제할 수도 있어요.");
-        if(resumed&&history.phase().equals("ready")){
-            if(history.id()!=history.read("pending_").id&&!history.isCat()){history.notice="그동안 배경이 바뀌었어요. 현재 배경을 확인한 뒤 다시 적용해 주세요.";history.cancel();return;}
-            history.picking();launch(new Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER).putExtra(WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT,new ComponentName(activity,CatWallpaperService.class)),APPLY);
-        }
+        // Older installations may still have the cat wallpaper or a retained backup.
+        // Only an explicit restore action may change the wallpaper.
+        boolean legacy=history.isCat()||history.available()||!history.notice.isEmpty();
+        restore.setVisibility(legacy?android.view.View.VISIBLE:android.view.View.GONE);
+        status.setVisibility(restore.getVisibility());
+        apply.setEnabled(!history.busy);
+        restore.setEnabled(!history.busy);
+        status.setText(history.busy?"배경 사진을 처리하고 있어요…":
+            !history.notice.isEmpty()?history.notice:
+            history.isCat()?"이전 버전의 고양이 배경을 사용 중이에요. 원래 배경으로 바꾸려면 위 버튼을 눌러 주세요.":
+            "이전에 보관한 배경을 복원할 수 있어요.");
     }
     void chooseRestore(){
         ArrayList<String> labels=new ArrayList<>();ArrayList<Runnable> actions=new ArrayList<>();WallpaperHistory.Snapshot saved=history.read("saved_");
@@ -72,7 +66,7 @@ final class WallpaperReturn {
     void result(int request,int result,Intent data){
         if(request==PHOTO){pickerOpen=false;HomeSceneStore.notifyLayer(activity);if(result==Activity.RESULT_OK&&data!=null&&data.getData()!=null)history.receivePhoto(data.getData());else history.cancel();}
     }
-    void resume(){resumed=true;pickerOpen=false;HomeSceneStore.notifyLayer(activity);history.reconcile();refresh();if(history.phase().isEmpty()&&!history.busy&&(dialog==null||!dialog.isShowing())){String pending=dialogKind;dialogKind="";if(pending.equals("restore"))chooseRestore();else if(pending.equals("backup"))apply();}}
+    void resume(){resumed=true;pickerOpen=false;HomeSceneStore.notifyLayer(activity);history.reconcile();if(history.phase().equals("ready"))history.cancel();refresh();if(history.phase().isEmpty()&&!history.busy&&(dialog==null||!dialog.isShowing())){String pending=dialogKind;dialogKind="";if(pending.equals("restore"))chooseRestore();}}
     void pause(){resumed=false;}
     void close(){closing=true;history.unlisten(listener);if(dialog!=null)dialog.dismiss();}
 }

@@ -14,14 +14,14 @@ import android.os.SystemClock;
 final class HomeVisibility {
     private static long checked,lastEventTime;
     private static boolean cached;
-    private static String foreground;
+    private static String foreground,foregroundClass;
     static boolean hasAccess(Context context){
         AppOpsManager ops=(AppOpsManager)context.getSystemService(Context.APP_OPS_SERVICE);
         int mode=Build.VERSION.SDK_INT>=29?ops.unsafeCheckOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS,Process.myUid(),context.getPackageName()):ops.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS,Process.myUid(),context.getPackageName());
         return mode==AppOpsManager.MODE_ALLOWED;
     }
     @SuppressWarnings("deprecation") static boolean isHome(Context context){
-        if(!hasAccess(context)){foreground=null;cached=false;return false;}
+        if(!hasAccess(context)){foreground=null;foregroundClass=null;lastEventTime=0;cached=false;return false;}
         long now=SystemClock.uptimeMillis();if(now-checked<150)return cached;checked=now;
         long wall=System.currentTimeMillis();
         UsageEvents events;
@@ -31,10 +31,26 @@ final class HomeVisibility {
         UsageEvents.Event event=new UsageEvents.Event();
         while(events!=null&&events.hasNextEvent()){
             events.getNextEvent(event);
-            if(event.getEventType()==UsageEvents.Event.MOVE_TO_FOREGROUND&&event.getTimeStamp()>=lastEventTime){foreground=event.getPackageName();lastEventTime=event.getTimeStamp();}
+            if(event.getTimeStamp()<lastEventTime)continue;
+            if(event.getEventType()==UsageEvents.Event.MOVE_TO_FOREGROUND){
+                foreground=event.getPackageName();
+                foregroundClass=event.getClassName();
+                lastEventTime=event.getTimeStamp();
+            }else if(event.getEventType()==UsageEvents.Event.MOVE_TO_BACKGROUND
+                    && event.getPackageName().equals(foreground)
+                    && java.util.Objects.equals(event.getClassName(),foregroundClass)){
+                foreground=null;
+                foregroundClass=null;
+                lastEventTime=event.getTimeStamp();
+            }
         }
         Intent home=new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME);
         ResolveInfo selected=context.getPackageManager().resolveActivity(home,android.content.pm.PackageManager.MATCH_DEFAULT_ONLY);
-        cached=selected!=null&&selected.activityInfo!=null&&selected.activityInfo.packageName.equals(foreground);return cached;
+        cached=selected!=null && selected.activityInfo!=null
+                && selected.activityInfo.packageName.equals(foreground)
+                && foregroundClass!=null
+                && (foregroundClass.equals(selected.activityInfo.name)
+                    || foregroundClass.equals(selected.activityInfo.targetActivity));
+        return cached;
     }
 }
