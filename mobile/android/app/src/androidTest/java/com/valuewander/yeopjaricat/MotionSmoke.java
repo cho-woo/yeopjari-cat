@@ -34,6 +34,7 @@ public final class MotionSmoke extends Instrumentation {
     @Override public void onStart(){
         try{
             directory=new File(getTargetContext().getExternalFilesDir(null),"mobile-review");directory.mkdirs();
+            if(arguments!=null&&arguments.getString("mode","").startsWith("update")){new UpdateReview(this,directory).run(arguments.getString("mode"));return;}
             activity=(MainActivity)startActivitySync(new Intent(getTargetContext(),MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
             waitForIdleSync();
             if(arguments!=null&&"touch".equals(arguments.getString("mode"))){new TouchReview(this,activity,directory).run();Bundle b=new Bundle();b.putString("stream","TOUCH_REVIEW_PASSED");finish(RESULT_OK,b);return;}
@@ -91,7 +92,10 @@ public final class MotionSmoke extends Instrumentation {
             // The optional path starts only after the user setting is enabled.
             shell("appops set com.valuewander.yeopjaricat SYSTEM_ALERT_WINDOW allow");shell("pm grant com.valuewander.yeopjaricat android.permission.POST_NOTIFICATIONS");
             click("다른 앱 위에 고양이 표시");waitFor(()->CatOverlayService.running,"Optional overlay not started");
+            check(!CatOverlayService.displaying,"Native windows must not obscure this app's controls");
+            shell("am start -a android.settings.SETTINGS");waitFor(()->CatOverlayService.displaying,"Optional overlay did not appear over another app");
             long before=CatOverlayService.renderedFrames;Thread.sleep(1500);check(CatOverlayService.renderedFrames>before,"Optional overlay did not animate");shot("optional-overlay");
+            runOnMainSync(()->activity.startActivity(new Intent(activity,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)));waitFor(()->MainActivity.visibleActivities>0,"Settings did not return");
             click("다른 앱 위에 고양이 표시");waitFor(()->!CatOverlayService.running,"Overlay switch did not stop service");
             results.put(new JSONObject().put("overlay_explicit_opt_in",true).put("overlay_stop_switch",true));
             runOnMainSync(()->{new PetSettings(activity).prefs.edit().putInt("coat",0).putInt("companion_coat",8).putBoolean("companion",true).apply();activity.preview.reload();});

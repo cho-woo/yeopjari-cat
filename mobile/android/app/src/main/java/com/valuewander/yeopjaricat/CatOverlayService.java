@@ -85,7 +85,7 @@ public final class CatOverlayService extends Service implements SharedPreference
         scene.resize(metrics.widthPixels/density,height,bottom);
         for(PetWindow w:windows)w.position();
     }
-    boolean canShow(){return settings.enabled()&&((PowerManager)getSystemService(POWER_SERVICE)).isInteractive()&&!((KeyguardManager)getSystemService(KEYGUARD_SERVICE)).isKeyguardLocked()&&(settings.overlay()||(settings.homeTouch()&&HomeSceneStore.touchEligible()&&HomeVisibility.isHome(this)));}
+    boolean canShow(){return MainActivity.visibleActivities==0&&!AppUpdates.installerOpen&&settings.enabled()&&((PowerManager)getSystemService(POWER_SERVICE)).isInteractive()&&!((KeyguardManager)getSystemService(KEYGUARD_SERVICE)).isKeyguardLocked()&&(settings.overlay()||(settings.homeTouch()&&HomeSceneStore.touchEligible()&&HomeVisibility.isHome(this)));}
     void refreshVisibility(){
         handler.removeCallbacks(frame);if(!running||scene==null)return;
         if(!Settings.canDrawOverlays(this)){stopSelf();return;}

@@ -28,10 +28,12 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 public final class MainActivity extends Activity {
+    static volatile int visibleActivities;
     PetSettings settings;
     SceneView preview;
     Switch overlay,homeTouch;
     Button power;
+    UpdatePanel updatePanel;
     boolean updatingSwitch,permissionPending,requestedHome,usagePending;
     final android.content.SharedPreferences.OnSharedPreferenceChangeListener preferences=(p,key)->{if(power!=null){power.setText(settings.enabled()?"종료하기":"고양이 다시 켜기");syncOverlay();preview.invalidate();}};
     static final int INK=0xff302b40,MUTED=0xff756e80,PURPLE=0xff7560bb;
@@ -63,6 +65,7 @@ public final class MainActivity extends Activity {
         add(touchCard,text("길게 누르면 종료 메뉴, 끌면 위치 이동. 안정적인 조작에는 ‘다른 앱 위에 표시’, 홈 화면 구분에는 ‘사용 정보 접근’ 권한이 필요해요. 이 설정만 켜면 홈 화면에서만 나타나요. 다른 앱에서도 보이게 하는 설정은 아래에서 따로 선택해요.",12,MUTED),6);
         homeTouch.setOnCheckedChangeListener((b,enabled)->{if(updatingSwitch)return;if(enabled)enableMode(true);else{settings.put("touch_home",false);reconcileLayer();}});
         power=button(settings.enabled()?"종료하기":"고양이 다시 켜기",false);add(touchCard,power,12);power.setOnClickListener(v->{if(settings.enabled())PetLifecycle.stop(this);else PetLifecycle.resume(this);});
+        updatePanel=new UpdatePanel(this,content,saved);
         LinearLayout cats=card(content,"함께 지낼 고양이");
         cats.addView(coatChoices(settings.coat(),coat->{settings.prefs.edit().putInt("coat",coat).apply();preview.reload();}));
         Switch companion=new Switch(this);companion.setText("두 마리 함께 지내기");companion.setTextColor(INK);companion.setTextSize(14);companion.setMinHeight(dp(52));companion.setChecked(settings.prefs.getBoolean("companion",false));cats.addView(companion);
@@ -89,7 +92,7 @@ public final class MainActivity extends Activity {
         overlay=new Switch(this);overlay.setText("다른 앱 위에 고양이 표시");overlay.setTextColor(INK);overlay.setTextSize(14);overlay.setMinHeight(dp(52));optional.addView(overlay);
         add(optional,text("선택 기능 · 기본 꺼짐\n켜면 다른 앱을 사용하는 동안에도 작은 고양이 창이 떠요. 별도 권한이 필요하며, 알림에서 바로 숨길 수 있어요. 고양이 창 부분의 터치는 고양이가 받아요.",12,MUTED),6);
         overlay.setOnCheckedChangeListener((b,enabled)->{if(updatingSwitch)return;if(enabled)enableMode(false);else{permissionPending=false;settings.put("overlay",false);reconcileLayer();}});
-        add(content,text("PREVIEW 0.2  ·  기기 안에만 저장\nPC의 성장 기록은 아직 동기화하지 않아요.",11,MUTED),24);
+        add(content,text("PREVIEW 0.3  ·  설정은 기기 안에만 저장\nPC의 성장 기록은 아직 동기화하지 않아요.",11,MUTED),24);
         settings.prefs.registerOnSharedPreferenceChangeListener(preferences);
         setContentView(scroll);
     }
@@ -121,11 +124,13 @@ public final class MainActivity extends Activity {
     void startMode(){settings.prefs.edit().putBoolean("pets_enabled",true).putBoolean(requestedHome?"touch_home":"overlay",true).apply();reconcileLayer();}
     void reconcileLayer(){try{if(settings.enabled()&&(settings.homeTouch()||settings.overlay())&&Settings.canDrawOverlays(this))startForegroundService(new Intent(this,CatOverlayService.class));else stopService(new Intent(this,CatOverlayService.class));getWindow().getDecorView().postDelayed(this::syncOverlay,350);}catch(SecurityException|IllegalStateException e){Toast.makeText(this,"지금은 고양이 터치 조작을 시작할 수 없어요. 다시 켜 주세요.",Toast.LENGTH_LONG).show();syncOverlay();}}
     void syncOverlay(){if(overlay==null||homeTouch==null)return;updatingSwitch=true;overlay.setChecked(settings.overlay());homeTouch.setChecked(settings.homeTouch());updatingSwitch=false;}
-    @Override protected void onResume(){super.onResume();if(preview!=null){preview.start();syncOverlay();power.setText(settings.enabled()?"종료하기":"고양이 다시 켜기");}if(permissionPending){permissionPending=false;if(Settings.canDrawOverlays(this)&&(!usagePending||HomeVisibility.hasAccess(this)))enableMode(requestedHome);else syncOverlay();}}
-    @Override protected void onPause(){if(preview!=null)preview.stop();super.onPause();}
-    @Override protected void onSaveInstanceState(Bundle b){b.putBoolean("pending_overlay",permissionPending);b.putBoolean("pending_home",requestedHome);b.putBoolean("pending_usage",usagePending);super.onSaveInstanceState(b);}
+    @Override protected void onStart(){super.onStart();visibleActivities++;HomeSceneStore.notifyLayer(this);}
+    @Override protected void onStop(){visibleActivities=Math.max(0,visibleActivities-1);HomeSceneStore.notifyLayer(this);super.onStop();}
+    @Override protected void onResume(){super.onResume();if(preview!=null){preview.start();syncOverlay();power.setText(settings.enabled()?"종료하기":"고양이 다시 켜기");}if(permissionPending){permissionPending=false;if(Settings.canDrawOverlays(this)&&(!usagePending||HomeVisibility.hasAccess(this)))enableMode(requestedHome);else syncOverlay();}if(settings.enabled()&&(settings.overlay()||settings.homeTouch())&&!CatOverlayService.running&&Settings.canDrawOverlays(this))reconcileLayer();if(updatePanel!=null)updatePanel.resume();}
+    @Override protected void onPause(){if(updatePanel!=null)updatePanel.pause();if(preview!=null)preview.stop();super.onPause();}
+    @Override protected void onSaveInstanceState(Bundle b){b.putBoolean("pending_overlay",permissionPending);b.putBoolean("pending_home",requestedHome);b.putBoolean("pending_usage",usagePending);if(updatePanel!=null)updatePanel.save(b);super.onSaveInstanceState(b);}
     @Override public void onRequestPermissionsResult(int request,String[] permissions,int[] grants){super.onRequestPermissionsResult(request,permissions,grants);if(request==200)startMode();}
-    @Override protected void onDestroy(){settings.prefs.unregisterOnSharedPreferenceChangeListener(preferences);super.onDestroy();}
+    @Override protected void onDestroy(){if(updatePanel!=null)updatePanel.close();settings.prefs.unregisterOnSharedPreferenceChangeListener(preferences);super.onDestroy();}
     @Override protected void onActivityResult(int request,int result,Intent data){super.onActivityResult(request,result,data);if(request==100&&result==RESULT_OK&&data!=null&&data.getData()!=null){Uri uri=data.getData();try{getContentResolver().takePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION);}catch(SecurityException ignored){}settings.prefs.edit().putString("photo",uri.toString()).apply();preview.reload();}}
     LinearLayout column(){LinearLayout l=new LinearLayout(this);l.setOrientation(LinearLayout.VERTICAL);return l;}
     LinearLayout card(LinearLayout parent,String title){LinearLayout c=column();c.setPadding(dp(18),dp(18),dp(18),dp(18));c.setBackground(round(Color.WHITE,22));add(parent,c,18);TextView t=text(title,17,INK);t.setTypeface(Typeface.DEFAULT,Typeface.BOLD);c.addView(t);return c;}

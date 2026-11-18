@@ -76,7 +76,7 @@ public final class CatWallpaperService extends WallpaperService {
             }catch(IllegalArgumentException|IllegalStateException e){lastError=e.toString();}
             finally{if(canvas!=null)try{getSurfaceHolder().unlockCanvasAndPost(canvas);}catch(IllegalArgumentException|IllegalStateException e){lastError=e.toString();}}
         }
-        @Override public void onVisibilityChanged(boolean value){visible=value;updateHomeVisibility();previous=0;handler.removeCallbacks(frame);if(!value&&touch!=null)touch.cancel();schedule();}
+        @Override public void onVisibilityChanged(boolean value){visible=value;updateHomeVisibility();previous=0;handler.removeCallbacks(frame);if(!value&&touch!=null)touch.cancel();if(value&&!isPreview()&&settings.enabled())AppUpdates.get(CatWallpaperService.this).check(false);schedule();}
         @Override public void onZoomChanged(float zoom){if(!isPreview()&&visible)HomeSceneStore.zoom(CatWallpaperService.this,zoom);}
         @Override public void onSurfaceCreated(SurfaceHolder holder){super.onSurfaceCreated(holder);surfaceReady=true;schedule();}
         float groundBottom(float height){int percent=Math.max(30,Math.min(88,settings.prefs.getInt("home_floor_percent",58)));return height*(1-percent/100f);}

@@ -23,6 +23,10 @@ try {
     if($LASTEXITCODE -ne 0){throw 'Pointer gesture test compilation failed.'}
     & "$env:JAVA_HOME/bin/java.exe" -cp $clockClasses com.valuewander.yeopjaricat.PointerGestureSpec
     if($LASTEXITCODE -ne 0){throw 'Pointer gesture tests failed.'}
+    & "$env:JAVA_HOME/bin/javac.exe" -d $clockClasses (Join-Path $repo 'mobile/android/app/src/main/java/com/valuewander/yeopjaricat/UpdatePolicy.java') (Join-Path $repo 'mobile/tests/UpdatePolicySpec.java')
+    if($LASTEXITCODE -ne 0){throw 'Update policy test compilation failed.'}
+    & "$env:JAVA_HOME/bin/java.exe" -cp $clockClasses com.valuewander.yeopjaricat.UpdatePolicySpec
+    if($LASTEXITCODE -ne 0){throw 'Update policy tests failed.'}
     $property='sdk.dir='+($env:ANDROID_HOME -replace '\\','/' -replace ':','\:')
     [IO.File]::WriteAllText((Join-Path $repo 'mobile/android/local.properties'),$property+"`n",[Text.Encoding]::ASCII)
     & (Join-Path $repo '.venv/Scripts/python.exe') (Join-Path $repo 'tools/export_android_motions.py')
@@ -31,8 +35,8 @@ try {
     if($Tests){$tasks+=':app:assembleDebugAndroidTest'}
     & ($paths.gradle.Replace($repo,$drive)) -p "$drive/mobile/android" @tasks --console=plain
     if($LASTEXITCODE -ne 0){throw 'Android build failed.'}
-    $module=Get-Content -LiteralPath (Join-Path $repo 'mobile/android/app/build.gradle') -Raw
-    $version=[regex]::Match($module,"versionName '([^']+)'").Groups[1].Value
+    $metadata=Get-Content -LiteralPath (Join-Path $repo 'mobile/android/app/build/outputs/apk/debug/output-metadata.json') -Raw | ConvertFrom-Json
+    $version=$metadata.elements[0].versionName
     if(-not $version){throw 'Android versionName missing.'}
     $out=Join-Path $repo "build/android-$version"
     New-Item -ItemType Directory -Force $out | Out-Null
