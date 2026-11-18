@@ -27,13 +27,19 @@ final class MotionLibrary {
         final int[] frames, times;
         final int loopStart, loopEnd, loopMs;
         final float reference, stride;
+        final float[][] paws;
         final int[][] rectangles;
         final float[][] anchors;
         final int[] page;
+        final Rect sourceRect=new Rect();
+        final android.graphics.RectF poseRect=new android.graphics.RectF();
         float left=Float.POSITIVE_INFINITY,top=Float.POSITIVE_INFINITY,right=Float.NEGATIVE_INFINITY,bottom=Float.NEGATIVE_INFINITY;
         Clip(JSONObject spec, Bitmap[] pages) throws Exception {
             this.spec=spec; this.pages=pages;
             reference=(float)spec.getDouble("reference_height"); stride=(float)spec.optDouble("stride_pixels",0);
+            JSONArray points=spec.optJSONArray("paws");
+            paws=points==null?new float[0][2]:new float[points.length()][2];
+            for(int i=0;i<paws.length;i++)for(int k=0;k<2;k++)paws[i][k]=(float)points.getJSONArray(i).getDouble(k);
             JSONObject sequence=spec.getJSONObject("sequence");
             ArrayList<Integer> frameList=new ArrayList<>(), timeList=new ArrayList<>();
             append(sequence.getJSONArray("intro"),frameList,timeList);
@@ -59,8 +65,9 @@ final class MotionLibrary {
         void paint(Canvas canvas, int frame, float x, float floor, float height, int facing, Paint paint) {
             int[] r=rectangles[frame]; float scale=height/reference;
             int saved=canvas.save(); canvas.translate(x,floor);canvas.scale(facing*scale,scale);
-            canvas.drawBitmap(pages[page[frame]],new Rect(r[0],r[1],r[0]+r[2],r[1]+r[3]),
-                new android.graphics.RectF(-anchors[frame][0],-anchors[frame][1],r[2]-anchors[frame][0],r[3]-anchors[frame][1]),paint);
+            sourceRect.set(r[0],r[1],r[0]+r[2],r[1]+r[3]);
+            poseRect.set(-anchors[frame][0],-anchors[frame][1],r[2]-anchors[frame][0],r[3]-anchors[frame][1]);
+            canvas.drawBitmap(pages[page[frame]],sourceRect,poseRect,paint);
             canvas.restoreToCount(saved);
         }
     }
@@ -70,11 +77,28 @@ final class MotionLibrary {
     final Context context;
     final ExecutorService worker=Executors.newSingleThreadExecutor();
     final Handler main=new Handler(Looper.getMainLooper());
-    final HashMap<String,JSONObject> specs=new HashMap<>();
+    final HashMap<Integer,Clip> neutrals=new HashMap<>();
     final HashMap<String,ArrayList<Ready>> waiting=new HashMap<>();
-    final LruCache<String,Clip> cache=new LruCache<>(24*1024*1024) { @Override protected int sizeOf(String key,Clip clip){return clip.bytes();} };
-    private boolean loaded;
+    final LruCache<String,Clip> cache=new LruCache<>(Math.min(48*1024*1024,(int)(Runtime.getRuntime().maxMemory()/5))) { @Override protected int sizeOf(String key,Clip clip){return clip.bytes();} };
     private MotionLibrary(Context context) { this.context=context; }
+    Clip neutral(int coat){
+        if(!neutrals.containsKey(coat))try{neutrals.put(coat,readClip(coat,"neutral"));}
+        catch(Exception e){android.util.Log.e("YeopjariCat","Cannot load initial cat",e);}
+        return neutrals.get(coat);
+    }
+    private Clip readClip(int coat,String action)throws Exception{
+        JSONObject spec;
+        try(InputStream in=context.getAssets().open("motions/c"+coat+"-"+action+".json")){
+            ByteArrayOutputStream bytes=new ByteArrayOutputStream();byte[] buffer=new byte[4096];int read;
+            while((read=in.read(buffer))!=-1)bytes.write(buffer,0,read);
+            spec=new JSONObject(new String(bytes.toByteArray(),StandardCharsets.UTF_8));
+        }
+        JSONArray ps=spec.getJSONArray("pages");Bitmap[] pages=new Bitmap[ps.length()];
+        for(int i=0;i<pages.length;i++)try(InputStream in=context.getAssets().open("motions/"+ps.getJSONObject(i).getString("file"))){
+            pages[i]=BitmapFactory.decodeStream(in);if(pages[i]==null)throw new IllegalStateException("Cannot decode atlas");
+        }
+        return new Clip(spec,pages);
+    }
     void request(int coat, String action, Ready callback) {
         String key=coat+":"+action;
         Clip found=cache.get(key);if(found!=null){callback.accept(found);return;}
@@ -83,21 +107,7 @@ final class MotionLibrary {
         worker.execute(()->{
             Clip clip=null;
             try {
-                if(!loaded) {
-                    try(InputStream in=context.getAssets().open("motions/manifest.json")) {
-                        ByteArrayOutputStream bytes=new ByteArrayOutputStream();byte[] buffer=new byte[8192];int read;
-                        while((read=in.read(buffer))!=-1)bytes.write(buffer,0,read);
-                        JSONArray array=new JSONObject(new String(bytes.toByteArray(),StandardCharsets.UTF_8)).getJSONArray("clips");
-                        for(int i=0;i<array.length();i++){JSONObject s=array.getJSONObject(i);specs.put(s.getInt("coat")+":"+s.getString("name"),s);}
-                    }
-                    loaded=true;
-                }
-                JSONObject spec=specs.get(key);if(spec==null)throw new IllegalArgumentException("Missing motion "+key);
-                JSONArray ps=spec.getJSONArray("pages");Bitmap[] pages=new Bitmap[ps.length()];
-                for(int i=0;i<pages.length;i++)try(InputStream in=context.getAssets().open("motions/"+ps.getJSONObject(i).getString("file"))) {
-                    pages[i]=BitmapFactory.decodeStream(in);if(pages[i]==null)throw new IllegalStateException("Cannot decode atlas");
-                }
-                clip=new Clip(spec,pages);cache.put(key,clip);
+                clip=readClip(coat,action);cache.put(key,clip);
             } catch(Exception e) { android.util.Log.e("YeopjariCat","Motion load failed: "+key,e); }
             Clip result=clip;
             main.post(()->{ArrayList<Ready> list=waiting.remove(key);if(list!=null)for(Ready cb:list)cb.accept(result);});

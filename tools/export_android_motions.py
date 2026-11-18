@@ -1,73 +1,201 @@
-"""Losslessly repack existing Dropshot-derived poses for the Android renderer.
-
-No new animation, retiming, pose fitting or per-coat registration is authored.
-Small atlas pages keep decode memory bounded. Assets are reproducible build output.
-"""
+"""Pack the registered Windows motion library for Android's Canvas renderer."""
+import argparse
 import hashlib
 import json
+import shutil
+import subprocess
 from pathlib import Path
+
+import cv2
+import numpy as np
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / 'mobile/android/app/src/main/assets/motions'
-ACTIONS = {'walk': 400, 'groom': 113, 'knead': 440, 'punch': 117, 'sleep': 114, 'settle': 439}
+NATIVE = ROOT / 'mobile/windows-gestures'
+VIDEO = ROOT / 'assets/video-actions'
 
 
-def sha(p):
-    return hashlib.sha256(p.read_bytes()).hexdigest()
+def read(path):
+    return json.loads(path.read_text(encoding='utf-8'))
+
+
+def sha(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def sequence(count):
+    return dict(intro=[dict(frame=i, ms=round((i+1)*1000/24)-round(i*1000/24)) for i in range(count)], loop=[], outro=[])
+
+
+def pack(directory, name, coat, poses, anchors, reference, playlist, *, movie=False):
+    # Trim transparent margins without moving the world anchor. Identical exposures
+    # share pixels but retain independent source timestamps and contact records.
+    records, pages, pending, seen = [], [], [], {}
+    def flush():
+        if not pending:
+            return
+        w = max(im.width for im in pending)+2
+        h = max(im.height for im in pending)+2
+        page = Image.new('RGBA', (w*min(8,len(pending)), h*((len(pending)+7)//8)))
+        page_id = len(pages)
+        for i, im in enumerate(pending):
+            x,y = (i%8)*w+1,(i//8)*h+1
+            page.paste(im,(x,y))
+        for rec in records:
+            if rec['page']==page_id and 'slot' in rec:
+                i=rec.pop('slot')
+                rec['rect']=[(i%8)*w+1,(i//8)*h+1,pending[i].width,pending[i].height]
+        filename=f'c{coat}-{name}-{page_id}.webp'
+        path=directory/filename
+        page.save(path, lossless=not movie, quality=94, method=2, exact=True)
+        pages.append(dict(file=filename,sha256=sha(path),width=page.width,height=page.height))
+        pending.clear()
+
+    for index, pose in enumerate(poses):
+        box=pose.getbbox()
+        if not box:
+            raise ValueError(f'Empty {name}/{coat} frame {index}')
+        crop=pose.crop(box)
+        key=(crop.size,hashlib.sha256(crop.tobytes()).digest())
+        anchor=[anchors[index][0]-box[0],anchors[index][1]-box[1]]
+        if key in seen:
+            record=dict(records[seen[key]],anchor=anchor)
+        else:
+            record=dict(page=len(pages),slot=len(pending),anchor=anchor)
+            seen[key]=index
+            pending.append(crop)
+        records.append(record)
+        if len(pending)==24:
+            flush()
+    flush()
+    return dict(name=name,coat=coat,reference_height=reference,frames=records,pages=pages,sequence=playlist)
+
+
+def export_native(exe):
+    NATIVE.mkdir(exist_ok=True)
+    artwork=ROOT/'release/YeopjariCat.exe'
+    entries=[]
+    for coat in (0,8,10):
+        with subprocess.Popen([str(exe),str(artwork),str(coat)],stdout=subprocess.PIPE) as proc:
+            while header:=proc.stdout.readline():
+                name,count=header.decode().split()
+                count=int(count)
+                def poses():
+                    for _ in range(count):
+                        data=proc.stdout.read(224*192*4)
+                        # GDI+ DIB is premultiplied BGRA. Pillow unpremultiplies RGBa.
+                        rgba=np.frombuffer(data,np.uint8).reshape(192,224,4)[:,:,[2,1,0,3]]
+                        yield Image.frombytes('RGBa',(224,192),rgba.tobytes()).convert('RGBA')
+                entry=pack(NATIVE,name,coat,poses(),[(112,150)]*count,96,sequence(count))
+                entry['source']='src/cat_animation.hpp / DrawPetStyle'
+                entries.append(entry)
+            if proc.wait()!=0:
+                raise RuntimeError('Windows gesture capture failed')
+    (NATIVE/'manifest.json').write_text(json.dumps(entries,separators=(',',':')),encoding='utf-8')
+
+
+def movie_frames(path):
+    capture=cv2.VideoCapture(str(path))
+    try:
+        while True:
+            ok,frame=capture.read()
+            if not ok:
+                break
+            rgb=cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
+            h=rgb.shape[0]//2
+            alpha=rgb[h:,:,0].copy()
+            alpha[alpha<8]=0
+            yield Image.fromarray(np.dstack((rgb[:h],alpha)))
+    finally:
+        capture.release()
+
+
+def write_index(entries):
+    index=[]
+    for entry in entries:
+        filename=f'c{entry["coat"]}-{entry["name"]}.json'
+        (OUT/filename).write_text(json.dumps(entry,separators=(',',':')),encoding='utf-8')
+        index.append(dict(name=entry['name'],coat=entry['coat'],file=filename))
+        if entry['name']=='settle':
+            frame=entry['frames'][entry['sequence']['intro'][-1]['frame']]
+            x,y,w,h=frame['rect']
+            neutral=f'c{entry["coat"]}-neutral'
+            with Image.open(OUT/entry['pages'][frame['page']]['file']) as sheet:
+                sheet.crop((x,y,x+w,y+h)).save(OUT/(neutral+'.webp'),lossless=True,exact=True)
+            data=dict(name='neutral',coat=entry['coat'],reference_height=entry['reference_height'],
+                sequence=sequence(1),pages=[dict(file=neutral+'.webp')],frames=[dict(page=0,rect=[0,0,w,h],anchor=frame['anchor'])])
+            (OUT/(neutral+'.json')).write_text(json.dumps(data,separators=(',',':')),encoding='utf-8')
+    manifest=dict(schema=3,source_identity_sha256=sha(VIDEO/'identity-v29.json'),clips=index)
+    (OUT/'manifest.json').write_text(json.dumps(manifest,separators=(',',':')),encoding='utf-8')
 
 
 def main():
+    args=argparse.ArgumentParser()
+    args.add_argument('--native-exe',type=Path,help='Refresh Windows procedural gestures from the offline renderer')
+    args=args.parse_args()
+    if args.native_exe:
+        export_native(args.native_exe)
+        return
     OUT.mkdir(parents=True, exist_ok=True)
-    base = json.loads((ROOT / 'assets/video-actions/manifest.json').read_text())
-    styles = json.loads((ROOT / 'assets/styled-sprites/manifest.json').read_text())
-    identity = ROOT / 'assets/video-actions/identity-v29.json'
-    entries = []
-    for name, resource in ACTIONS.items():
-        clip = next(c for c in base['clips'] if c['clip'] == name)
-        for coat in (0, 8, 10):
-            spec = clip if coat == 0 else next(c for c in styles['atlases'] if c['character'] == coat and c['base_resource_id'] == resource)
-            source = ROOT / ('assets/video-actions' if coat == 0 else 'assets/styled-sprites') / spec['source']
-            if sha(source) != spec['sha256']:
-                raise ValueError(f'Source hash mismatch: {source}')
-            records, pages = [], []
-            width = max(f['rect'][2] for f in clip['frames']) + 4
-            height = max(f['rect'][3] for f in clip['frames']) + 4
-            with Image.open(source) as sheet:
-                sheet = sheet.convert('RGBA')
-                for start in range(0, len(clip['frames']), 32):
-                    group = clip['frames'][start:start+32]
-                    page = Image.new('RGBA', (width * 8, height * 4))
-                    for offset, frame in enumerate(group):
-                        x, y, w, h = frame['rect']
-                        dest_x, dest_y = (offset % 8)*width+2, (offset//8)*height+2
-                        pose = sheet.crop((x, y, x+w, y+h))
-                        page.paste(pose, (dest_x, dest_y))
-                        records.append({'page': len(pages), 'rect': [dest_x, dest_y, w, h], 'anchor': frame['anchor']})
-                    filename = f'c{coat}-{name}-{len(pages)}.webp'
-                    page.save(OUT / filename, lossless=True, exact=True, method=6)
-                    with Image.open(OUT / filename) as check:
-                        if check.convert('RGBA').tobytes() != page.tobytes():
-                            raise ValueError('Lossless pixel equality failed')
-                    pages.append({'file': filename, 'sha256': sha(OUT/filename), 'width': page.width, 'height': page.height})
-                if name == 'settle':
-                    x,y,w,h = clip['frames'][-1]['rect']
-                    if coat == 0:
-                        icon = Image.new('RGBA', (160,160))
-                        pose = sheet.crop((x,y,x+w,y+h))
-                        icon.paste(pose, ((160-w)//2,(160-h)//2))
-                        icon_dir = ROOT/'mobile/android/app/src/main/res/drawable-nodpi'
-                        icon_dir.mkdir(parents=True, exist_ok=True)
-                        icon.save(icon_dir/'cat_icon.png')
-            entries.append({'name':name,'coat':coat,'reference_height':clip['reference_height'],
-                'stride_pixels':clip.get('stride_pixels',0),'sequence':clip['sequence'],
-                'frames':records,'pages':pages,'source':source.relative_to(ROOT).as_posix(),'source_sha256':sha(source)})
-    manifest = {'schema':1,'source_identity':identity.relative_to(ROOT).as_posix(),'source_identity_sha256':sha(identity),
-        'method':'lossless_repack_existing_registered_RGBA_without_retiming','clips':entries}
-    (OUT/'manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,separators=(',',':'))+'\n',encoding='utf-8')
-    print(json.dumps({'clips':len(entries),'frames':sum(len(c['frames']) for c in entries),
-        'pages':sum(len(c['pages']) for c in entries),'bytes':sum(p.stat().st_size for p in OUT.iterdir())}))
+    style=read(ROOT/'assets/styled-sprites/manifest.json')['atlases']
+    registration=read(VIDEO/'registration.json')
+    clips=read(VIDEO/'manifest.json')['clips']
+    treat=next(c for c in read(ROOT/'assets/care-sprites/manifest.json')['clips'] if c['clip']=='treat')
+    entries=[]
+    for c in [*clips,treat]:
+        name=c['clip']
+        base_dir=VIDEO if c is not treat else ROOT/'assets/care-sprites'
+        base=(base_dir/c['source']).relative_to(ROOT).as_posix()
+        for coat in (0,8,10):
+            spec=c if coat==0 else next(s for s in style if s['character']==coat and s['base_source']==base)
+            src=(base_dir if coat==0 else ROOT/'assets/styled-sprites')/spec['source']
+            if sha(src)!=spec['sha256']:
+                raise ValueError(src)
+            with Image.open(src) as sheet:
+                sheet=sheet.convert('RGBA')
+                def poses():
+                    for f in c['frames']:
+                        x,y,w,h=f['rect']
+                        yield sheet.crop((x,y,x+w,y+h))
+                anchors=spec.get('anchors',[f['anchor'] for f in c['frames']])
+                entry=pack(OUT,name,coat,poses(),anchors,c['reference_height'],c['sequence'])
+            entry.update(source=src.relative_to(ROOT).as_posix(),source_sha256=spec['sha256'],stride_pixels=c.get('stride_pixels',0))
+            reg=registration.get(('tuxedo' if coat==8 else 'cream')+'-'+name,{})
+            if name in ('ball','punch','reach','cursor-pounce'):
+                entry['paws']=[p[1] for p in reg['paw_points_logical']]
+            if name=='toy':
+                entry['prop']=reg['prop_points_logical']
+                entry['prop_visible']=reg['prop_visible']
+            entries.append(entry)
+        print('Registered',name,flush=True)
+    balls=read(VIDEO/'selected/ball-v40/registration.json')
+    for asset in read(ROOT/'assets/furniture-v39/manifest.json')['assets']+balls['assets']:
+        name=asset.get('kind','ball-pounce')
+        src=ROOT/asset['path']
+        if sha(src)!=asset['sha256']:
+            raise ValueError(src)
+        count=asset['source_frames']
+        entry=pack(OUT,name,asset['character'],movie_frames(src),[asset['anchor']]*count,asset['reference_height'],sequence(count),movie=True)
+        assert len(entry['frames'])==count
+        entry.update(source=asset['path'],source_sha256=asset['sha256'])
+        if name=='ball-pounce':
+            entry['paws']=balls['paw_points_logical']['tuxedo' if asset['character']==8 else 'cream']
+        entries.append(entry)
+    for entry in read(NATIVE/'manifest.json'):
+        for page in entry['pages']:
+            src=NATIVE/page['file']
+            if sha(src)!=page['sha256']:
+                raise ValueError(src)
+            shutil.copyfile(src,OUT/src.name)
+        entries.append(entry)
+    write_index(entries)
+    used={p['file'] for c in entries for p in c['pages']}
+    used.update(f'c{coat}-neutral.webp' for coat in (0,8,10))
+    for path in OUT.glob('*.webp'):
+        if path.name not in used:
+            path.unlink()
+    print(len(entries),'coat-specific clips;',len(used),'pages;',sum(p.stat().st_size for p in OUT.iterdir()),'bytes')
 
-
-if __name__ == '__main__':
+if __name__=='__main__':
     main()

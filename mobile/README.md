@@ -31,10 +31,13 @@ Usage Access permission; no usage history or UI contents are stored/transmitted.
   on upgrades. The previous backdrop stays selected until the user changes it.
   **이전 배경으로 돌아가기** appears when the old background or a retained backup
   is present. Only an explicit restore can replace the background.
-- Mobile automatic rest is 0.4–1.0 seconds **after full recovery** (startup
-  0.6–1.2 seconds). Stroll, grooming, kneading and paw play remain active; automatic
-  sleep/settling is removed. Source frame clocks and authored recoveries are not
-  shortened. Holding/dragging pauses the owned actor, with no timeline rewind.
+- A short quiet interval follows recovery. Both cats can use the full action
+  menu. Hold the desired cat to choose an action. Selecting **손가락 놀이**
+  arms the next gesture that starts on that cat. The preview also accepts a
+  finger starting in its empty space. Ordinary cat drags still reposition it.
+- With a companion enabled, the cats can meet, take turns swatting, race,
+  follow, sniff, share a nap, compete for a snack or react to a sneeze. These
+  events also run on request through **두 마리 함께 놀기**.
 
 ## Previous wallpaper edition (0.3.1)
 
@@ -95,30 +98,44 @@ Usage Access permission; no usage history or UI contents are stored/transmitted.
 
 ## Preview scope
 
-Android 8.0+ (min SDK 26), target/compile SDK 36. Cream, Tuxedo, Snow, optional
-companion, private photo background, size, gentle stroll, grooming, kneading,
-complete close-paw play, short authored sleep/wake, and settling are included.
-The existing immutable Dropshot poses/timing/registration are repacked losslessly
-into bounded WebP pages. No new generated footage or purchase is used. Full
-Windows feature parity, ball physics, furniture, finger pursuit, PC save sync,
-and mobile store publication are **not** claimed by this preview.
+Android 8.0+ (min SDK 26), target/compile SDK 36. Both actors share the same
+47-command catalog and 42 registered clips per coat. The exporter includes
+the 22 Windows video-action atlases, the treat sequence, three complete
+furniture movies, the registered ball pounce and 15 procedural Windows
+gestures per coat. Color and alpha from packed scene movies become WebP atlas
+pages. The native gesture adapter samples the Windows pose evaluator and GDI+
+renderer on a fixed 96-pixel reference at 24 FPS. The checked-in gesture
+pages allow an Android build without a second Windows build.
+
+Runs carry ground speed into the planted turn. Ball impulses use forward paw
+motion through the collision radius during the registered stroke.
+Finger pounces use the extended paw from the coat's own source at takeoff.
+Mobile perch play uses a visible shelf belonging to the app. Home gestures
+begin on a cat so launcher controls outside the cat retain their normal input.
 
 ## Build
 
-1. Existing authoring Python environment requires Pillow (`.venv`).
+1. Existing authoring Python environment requires Pillow, NumPy and OpenCV (`.venv`).
 2. `tools/setup_android_dev.ps1` downloads checksum-verified Microsoft JDK17,
    Gradle8.13 and official Android command-line tools into ignored `build/`.
    Add `-WithEmulator` for the disposable test device image.
 3. `tools/build_android.ps1 -Tests` repacks verified source atlases, builds the
    debug-signed preview and runs Android lint. Temporary ASCII drive mapping
    avoids native Android tools' Unicode-path limitations on Windows.
-4. Output: `build/android-0.3.2-preview/YeopjariCat-Android-0.3.2-preview.apk`.
+4. Output: `build/android-0.4.0-preview/YeopjariCat-Android-0.4.0-preview.apk`.
 
 The preview uses a local Android debug signing key; it is not the future store
 release key. Do not upload this test key as the production signing identity.
 No APK is placed in the Windows release or its update feed.
 
 ## Verification
+
+- Install the target and instrumentation APKs on the owned API 35 AVD.
+  Run `tools/verify_android_actions.py --adb <adb> --out <dir> --mode parity`
+  for frame sweeps, and repeat with `--mode parity-live` for normal-time
+  screen recordings. The first exercises all commands in both roles, geometry,
+  registered ball contact, handoffs, pairing and rapid finger reversals. The
+  second uses the activity's own renderer and Android frame scheduling.
 
 - Starting in 0.3.2, `tools/verify_android_home_overlay.py` checks Home-only
   operation over an independently selected wallpaper, permission cancellation,

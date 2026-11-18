@@ -19,6 +19,7 @@ def main():
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--live-fixture", action="store_true",
                         help="Select the test APK's live wallpaper before taking the baseline")
+    parser.add_argument("--play", action="store_true", help="Exercise the public Home finger-play menu using real touch input")
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
     device = [args.adb, "-s", "emulator-5580"]
@@ -160,6 +161,37 @@ def main():
     tap("종료하기")
     wait(lambda: "cat_layer_running=true" not in layer(), "Long-press quit failed")
     passed("drag and long-press quit")
+    if args.play:
+        app()
+        tap(START)
+        wait(lambda: "displaying=true" in layer(), "Cats missing after restart")
+        def actor():
+            row = next(s for s in layer().splitlines() if "actor=0 " in s)
+            return dict(re.findall(r"([A-Za-z]+)=([^ ]+)", row))
+        def hit_position():
+            a = actor()
+            return str(round(float(a["hitX"])*density)),str(round(float(a["hitY"])*density))
+        x,y = hit_position()
+        shell("input", "swipe", x,y,x,y,"750")
+        tap("손가락 놀이")
+        wait(lambda: actor()["armed"]=="true", "Home gesture was not armed")
+        before = int(actor()["jumps"])
+        width = int(re.findall(r"(\d+)x\d+", shell("wm","size"))[-1])
+        x,y = hit_position()
+        dest = width*.84 if int(x)<width/2 else width*.16
+        shell("input","swipe",x,y,str(round(dest)),str(max(60,int(y)-100)),"520")
+        wait(lambda: actor()["owner"]=="finger", "Real Home swipe did not start pursuit")
+        wait(lambda: actor()["state"]=="run", "Home cat did not run after the finger")
+        snapshot("finger-home-run")
+        wait(lambda: actor()["state"]=="cursor-pounce", "Home pounce did not start")
+        snapshot("finger-home-jump")
+        wait(lambda: actor()["state"]=="punch", "No recovery into Home swat")
+        assert int(actor()["jumps"])>before
+        passed("real Home long press, finger pursuit, jump, landing and paw strike")
+        app()
+        tap(STOP)
+        home()
+        wait(lambda: "cat_layer_running=true" not in layer(),"Service did not quit after play")
     (args.out / "report.json").write_text(json.dumps({"passed":checks,"wallpapers":original}, indent=2))
 
 

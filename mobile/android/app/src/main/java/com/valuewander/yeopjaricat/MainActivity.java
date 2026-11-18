@@ -58,7 +58,7 @@ public final class MainActivity extends Activity {
             if(catsRunning())PetLifecycle.stop(this);
             else enableMode(true);
         });
-        add(content,text("고양이를 끌어서 옮기고, 길게 눌러 종료할 수 있어요.",13,MUTED),8);
+        add(content,text("끌어서 위치를 옮겨요. 고양이를 길게 누르면 손가락 놀이·행동·종료를 고를 수 있어요.",13,MUTED),8);
         wallpaperReturn=new WallpaperReturn(this,content,power,saved);
         LinearLayout optional=column();add(content,optional,10);
         overlay=new Switch(this);overlay.setText("다른 앱 위에 고양이 표시");overlay.setTextColor(INK);overlay.setTextSize(14);overlay.setMinHeight(dp(52));optional.addView(overlay);
@@ -67,14 +67,19 @@ public final class MainActivity extends Activity {
         LinearLayout cats=card(content,"함께 지낼 고양이");
         cats.addView(coatChoices(settings.coat(),coat->{settings.prefs.edit().putInt("coat",coat).apply();preview.reload();}));
         Switch companion=new Switch(this);companion.setText("두 마리 함께 지내기");companion.setTextColor(INK);companion.setTextSize(14);companion.setMinHeight(dp(52));companion.setChecked(settings.prefs.getBoolean("companion",false));cats.addView(companion);
-        companion.setOnCheckedChangeListener((b,checked)->{settings.prefs.edit().putBoolean("companion",checked).apply();preview.reload();});
         TextView second=text("두 번째 고양이",12,MUTED);add(cats,second,6);
         cats.addView(coatChoices(settings.companionCoat(),coat->{settings.prefs.edit().putInt("companion_coat",coat).apply();preview.reload();}));
         LinearLayout play=card(content,"지금 같이 놀기");
         LinearLayout row=new LinearLayout(this);row.setOrientation(LinearLayout.HORIZONTAL);play.addView(row);
         String[] labels={"살금살금","그루밍","꾹꾹이"},actions={"walk","groom","knead"};
         for(int i=0;i<labels.length;i++){final String action=actions[i];Button b=button(labels[i],false);LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(0,dp(48),1);lp.setMarginEnd(dp(4));row.addView(b,lp);b.setOnClickListener(v->preview.scene.command(action));}
-        add(play,text("고양이를 톡 누르면 앞발로 반응해요. 동작을 끝까지 마친 뒤 짧게 숨을 고르고 다시 움직여요.",12,MUTED),10);
+        Button actionsButton=button("모든 행동 보기",false);add(play,actionsButton,8);
+        actionsButton.setOnClickListener(v->PetMenus.choosePreview(this,false));
+        Button pairButton=button("두 마리 함께 놀기",false);add(play,pairButton,8);
+        pairButton.setEnabled(settings.companion());companion.setOnCheckedChangeListener((b,checked)->{
+            settings.put("companion",checked);preview.reload();pairButton.setEnabled(checked);});
+        pairButton.setOnClickListener(v->PetMenus.choosePreview(this,true));
+        add(play,text("미리보기의 빈 곳에 손가락을 대고 움직이면 가까운 고양이가 쫓아와요.",12,MUTED),10);
         LinearLayout appearance=card(content,"내 홈 화면답게");
         add(appearance,text("고양이 크기",13,INK),14);
         SeekBar size=new SeekBar(this);size.setMax(40);size.setProgress(settings.size()-56);size.setContentDescription("고양이 크기");appearance.addView(size);

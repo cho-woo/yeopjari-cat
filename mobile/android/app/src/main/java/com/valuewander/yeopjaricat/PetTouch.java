@@ -18,7 +18,9 @@ final class PetTouch {
     PetScene scene;
     PetScene.Actor actor;
     PointerGesture gesture;
-    boolean menuOpen;
+    boolean menuOpen,tracking;
+    int selectedActor;
+    boolean previewInput;
     PetTouch(Context context,Supplier<PetScene> source,IntConsumer menu,Runnable invalidate){
         this.source=source;this.menu=menu;this.invalidate=invalidate;
         slop=ViewConfiguration.get(context).getScaledTouchSlop()/context.getResources().getDisplayMetrics().density;
@@ -29,8 +31,12 @@ final class PetTouch {
         if(value.menuActor>=0){if(action==MotionEvent.ACTION_UP){value.selectMenu(x,y);releaseMenu();}return true;}
         if(pointers>1||action==MotionEvent.ACTION_CANCEL){cancel();return true;}
         if(action==MotionEvent.ACTION_DOWN){
-            cancel();int index=value.hit(x,y);if(index<0)return false;scene=value;actor=scene.actors[index];actor.controlled=true;
-            final int selected=index;
+            cancel();int index=value.hit(x,y);boolean empty=index<0;
+            if(!value.settings.enabled()||(empty&&!previewInput))return false;
+            scene=value;selectedActor=empty?value.closest(x,y):index;actor=scene.actors[selectedActor];
+            if(empty||actor.fingerArmed){tracking=true;actor.beginFinger(x,y);return true;}
+            actor.controlled=true;
+            final int selected=selectedActor;
             gesture=new PointerGesture(slop,new PointerGesture.Listener(){
                 public void drag(float dx,float dy){scene.drag(selected,dx,dy);invalidate.run();}
                 public void tap(){actor.controlled=false;actor.request("punch");}
@@ -39,11 +45,16 @@ final class PetTouch {
             });
             gesture.down(x,y,time);handler.postDelayed(hold,550);return true;
         }
+        if(tracking){
+            actor.trackFinger(x,y);
+            if(action==MotionEvent.ACTION_UP){actor.fingerDown=false;tracking=false;}
+            return true;
+        }
         if(gesture==null)return false;
         if(action==MotionEvent.ACTION_MOVE)gesture.move(x,y);
         if(action==MotionEvent.ACTION_UP){handler.removeCallbacks(hold);gesture.up(x,y,time);}
         return true;
     }
     void releaseMenu(){menuOpen=false;if(actor!=null)actor.controlled=false;if(scene!=null)scene.closeMenu();invalidate.run();}
-    void cancel(){handler.removeCallbacks(hold);if(gesture!=null){if(menuOpen)gesture.down=false;else gesture.cancel();}if(!menuOpen&&actor!=null)actor.controlled=false;gesture=null;}
+    void cancel(){if(tracking&&actor!=null){actor.fingerDown=false;tracking=false;}handler.removeCallbacks(hold);if(gesture!=null){if(menuOpen)gesture.down=false;else gesture.cancel();}if(!menuOpen&&actor!=null)actor.controlled=false;gesture=null;}
 }

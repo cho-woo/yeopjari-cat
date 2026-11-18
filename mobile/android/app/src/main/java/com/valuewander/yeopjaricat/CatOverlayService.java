@@ -36,6 +36,7 @@ public final class CatOverlayService extends Service implements SharedPreference
     static final String STOP="com.valuewander.yeopjaricat.STOP_OVERLAY";
     final Handler handler=new Handler(Looper.getMainLooper());
     final ArrayList<PetWindow> windows=new ArrayList<>();
+    final ArrayList<ObjectWindow> objects=new ArrayList<>();
     WindowManager manager;
     PetScene scene;
     PetSettings settings;
@@ -73,10 +74,10 @@ public final class CatOverlayService extends Service implements SharedPreference
         if(!running)return;
         PetScene selected=HomeSceneStore.get(this);
         if(selected==scene&&scene!=null)return;
-        handler.removeCallbacks(frame);hideWindows();windows.clear();
+        handler.removeCallbacks(frame);hideWindows();windows.clear();objects.clear();
         scene=selected;
         resizeScene();
-        for(int i=0;i<scene.actors.length;i++)if(scene.actors[i]!=null)windows.add(new PetWindow(this,i));
+        for(int i=0;i<scene.actors.length;i++)if(scene.actors[i]!=null){objects.add(new ObjectWindow(i));windows.add(new PetWindow(this,i));}
     }
     @SuppressWarnings("deprecation") void resizeScene(){
         DisplayMetrics metrics=new DisplayMetrics();manager.getDefaultDisplay().getRealMetrics(metrics);density=metrics.density;
@@ -101,6 +102,7 @@ public final class CatOverlayService extends Service implements SharedPreference
         if(!Settings.canDrawOverlays(this)){stopSelf();return;}
         if(canShow()){
             if(!displaying)AppUpdates.get(this).check(false);
+            for(ObjectWindow v:objects)if(!v.attached){try{manager.addView(v,v.params);v.attached=true;}catch(SecurityException e){stopSelf();return;}}
             for(PetWindow v:windows)if(!v.attached)try{v.position();manager.addView(v,v.params);v.attached=true;}catch(SecurityException e){stopSelf();return;}
             displaying=!windows.isEmpty();previous=SystemClock.uptimeMillis();handler.post(frame);
         }else{hideWindows();watchHome();}
@@ -112,9 +114,10 @@ public final class CatOverlayService extends Service implements SharedPreference
     }
     void hideWindows(){
         displaying=false;if(menuDialog!=null){menuDialog.dismiss();menuDialog=null;}
+        for(ObjectWindow v:objects)if(v.attached){manager.removeView(v);v.attached=false;}
         for(PetWindow v:windows){v.touch.cancel();if(v.attached){manager.removeView(v);v.attached=false;}}
     }
-    void redraw(){for(PetWindow v:windows)if(v.attached){int x=v.params.x,y=v.params.y,w=v.params.width,h=v.params.height;v.position();if(x!=v.params.x||y!=v.params.y||w!=v.params.width||h!=v.params.height)manager.updateViewLayout(v,v.params);v.invalidate();}}
+    void redraw(){for(ObjectWindow v:objects)if(v.attached)v.update();for(PetWindow v:windows)if(v.attached){int x=v.params.x,y=v.params.y,w=v.params.width,h=v.params.height;v.position();if(x!=v.params.x||y!=v.params.y||w!=v.params.width||h!=v.params.height)manager.updateViewLayout(v,v.params);v.invalidate();}}
     final Runnable frame=new Runnable(){@Override public void run(){
         if(!running||scene==null)return;
         if(!Settings.canDrawOverlays(CatOverlayService.this)){stopSelf();return;}
@@ -126,6 +129,33 @@ public final class CatOverlayService extends Service implements SharedPreference
         try{redraw();}catch(SecurityException e){stopSelf();return;}
         renderedFrames++;handler.postDelayed(this,scene.animating()?33:100);
     }};
+    final class ObjectWindow extends View {
+        final int index;
+        final WindowManager.LayoutParams params;
+        boolean attached;
+        @android.annotation.SuppressLint("RtlHardcoded")
+        ObjectWindow(int index){
+            super(CatOverlayService.this);this.index=index;
+            params=new WindowManager.LayoutParams(1,1,WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE|
+                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,PixelFormat.TRANSLUCENT);
+            params.gravity=Gravity.TOP|Gravity.LEFT;params.alpha=.72f;
+            if(Build.VERSION.SDK_INT>=30)params.setFitInsetsTypes(0);setVisibility(GONE);
+        }
+        void update(){
+            PlayObject prop=scene.actors[index].object;
+            if(prop.kind.isEmpty()){if(getVisibility()!=GONE)setVisibility(GONE);return;}
+            android.graphics.RectF b=prop.bounds(scene.size/110);
+            int x=Math.max(0,(int)Math.floor(b.left*density)),y=Math.max(0,(int)Math.floor(b.top*density));
+            int w=Math.max(1,(int)Math.ceil(b.right*density)-x),h=Math.max(1,(int)Math.ceil(b.bottom*density)-y);
+            if(x!=params.x||y!=params.y||w!=params.width||h!=params.height){
+                params.x=x;params.y=y;params.width=w;params.height=h;manager.updateViewLayout(this,params);
+            }
+            if(getVisibility()!=VISIBLE)setVisibility(VISIBLE);invalidate();
+        }
+        @Override protected void onDraw(Canvas canvas){int sc=canvas.save();canvas.scale(density,density);
+            canvas.translate(-params.x/density,-params.y/density);scene.actors[index].object.draw(canvas,scene.size/110);canvas.restoreToCount(sc);}
+    }
     final class PetWindow extends View {
         final int actor;
         final WindowManager.LayoutParams params;
@@ -138,7 +168,7 @@ public final class CatOverlayService extends Service implements SharedPreference
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL|WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,PixelFormat.TRANSLUCENT);
             params.gravity=Gravity.TOP|Gravity.LEFT;if(Build.VERSION.SDK_INT>=30)params.setFitInsetsTypes(0);
             touch=new PetTouch(context,()->scene,index->showMenu(),CatOverlayService.this::redraw);
-            setContentDescription("고양이. 끌어서 이동, 길게 눌러 종료 메뉴.");position();
+            setContentDescription("고양이. 끌어서 이동, 길게 눌러 놀이 또는 종료.");position();
         }
         void showMenu(){menuDialog=PetMenus.show(CatOverlayService.this,true,touch);}
         void position(){android.graphics.RectF b=scene.actors[actor].bounds(true);float w=b.width()+12,h=b.height()+12;params.width=Math.round(w*density);params.height=Math.round(h*density);params.x=Math.round(Math.max(0,Math.min(scene.width-w,b.left-6))*density);params.y=Math.round(Math.max(0,Math.min(scene.height-h,b.top-6))*density);}
@@ -152,9 +182,9 @@ public final class CatOverlayService extends Service implements SharedPreference
         if(!key.startsWith("position.")){ensureScene();refreshVisibility();}
     }
     @Override public void onConfigurationChanged(android.content.res.Configuration config){super.onConfigurationChanged(config);if(running&&scene!=null){resizeScene();refreshVisibility();}}
-    @Override protected void dump(FileDescriptor fd,PrintWriter out,String[] args){super.dump(fd,out,args);out.println("cat_layer_running="+running+" displaying="+displaying+" cross_apps="+settings.overlay()+" home_touch="+settings.homeTouch()+" enabled="+settings.enabled()+" frames="+renderedFrames);if(scene!=null)for(int i=0;i<scene.actors.length;i++)if(scene.actors[i]!=null)out.println("actor="+i+" x="+scene.actors[i].x+" y="+scene.actors[i].footY()+" state="+scene.actors[i].action);}
+    @Override protected void dump(FileDescriptor fd,PrintWriter out,String[] args){super.dump(fd,out,args);out.println("cat_layer_running="+running+" displaying="+displaying+" cross_apps="+settings.overlay()+" home_touch="+settings.homeTouch()+" enabled="+settings.enabled()+" frames="+renderedFrames);if(scene!=null)for(int i=0;i<scene.actors.length;i++)if(scene.actors[i]!=null)out.println("actor="+i+" x="+scene.actors[i].x+" y="+scene.actors[i].footY()+" state="+scene.actors[i].action+" owner="+scene.actors[i].owner+" armed="+scene.actors[i].fingerArmed+" jumps="+scene.actors[i].landings+" pair="+scene.socialCount+" hits="+scene.actors[i].ballHits+" hitX="+scene.actors[i].bounds().centerX()+" hitY="+scene.actors[i].bounds().centerY());}
     @Override public void onDestroy(){
-        running=false;handler.removeCallbacksAndMessages(null);hideWindows();windows.clear();HomeSceneStore.save();
+        running=false;handler.removeCallbacksAndMessages(null);hideWindows();windows.clear();objects.clear();HomeSceneStore.save();
         HomeSceneStore.unlisten(homeChanged);
         if(settings!=null){settings.prefs.unregisterOnSharedPreferenceChangeListener(this);settings.prefs.edit().putBoolean("overlay",false).putBoolean("touch_home",false).apply();}
         if(receiverRegistered)unregisterReceiver(screen);super.onDestroy();
