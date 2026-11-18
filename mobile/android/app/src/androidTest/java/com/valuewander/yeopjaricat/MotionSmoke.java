@@ -34,7 +34,7 @@ public final class MotionSmoke extends Instrumentation {
     @Override public void onStart(){
         try{
             directory=new File(getTargetContext().getExternalFilesDir(null),"mobile-review");directory.mkdirs();
-            if(arguments!=null&&arguments.getString("mode","").equals("wallpaper-return")){new WallpaperReview(this).run();return;}
+            if(arguments!=null&&arguments.getString("mode","").startsWith("wallpaper-return")){new WallpaperReview(this).run();return;}
             if(arguments!=null&&arguments.getString("mode","").startsWith("update")){new UpdateReview(this,directory).run(arguments.getString("mode"));return;}
             activity=(MainActivity)startActivitySync(new Intent(getTargetContext(),MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
             waitForIdleSync();

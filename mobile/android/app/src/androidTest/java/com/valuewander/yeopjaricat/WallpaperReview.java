@@ -36,6 +36,7 @@ final class WallpaperReview {
         IntentFilter photos=new IntentFilter(Intent.ACTION_OPEN_DOCUMENT);photos.addCategory(Intent.CATEGORY_OPENABLE);photos.addDataType("image/*");
         Instrumentation.ActivityMonitor monitor=test.addMonitor(photos,new Instrumentation.ActivityResult(Activity.RESULT_OK,new Intent().setData(Uri.parse("content://com.valuewander.yeopjaricat.test.wallpaper-fixture/blue")).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)),true);
         test.activity=(MainActivity)test.startActivitySync(new Intent(context,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TASK));state();
+        if(test.arguments.getString("mode","").equals("wallpaper-return-auto")){new WallpaperAutoReview(this).run();test.removeMonitor(monitor);return;}
         Bundle ready=new Bundle();ready.putString("stream","READY_FOR_WALLPAPER_RETURN");test.sendStatus(1,ready);
         File command=new File(directory,"command.json");command.delete();
         for(int tick=0;tick<6000;tick++){

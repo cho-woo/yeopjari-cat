@@ -42,7 +42,8 @@ def main():
         nonlocal cached
         cached=[]
         adb('shell','am','start','-W','-n',PACKAGE+'/.MainActivity','-f','0x24000000')
-        adb('shell','input','swipe','540','450','540','2200','350')
+        # This flow only uses the top controls and never scrolls the Activity.
+        # Avoid introducing launcher/back gestures into a wallpaper-return test.
         time.sleep(.2)
     def shot(name):adb('shell','screencap','-p','/sdcard/wallpaper-review.png');adb('pull','/sdcard/wallpaper-review.png',str(a.out/(name+'.png')))
     def set_wallpaper():
