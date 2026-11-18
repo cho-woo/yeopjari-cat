@@ -9,7 +9,8 @@ def main():
     prefix=[a.adb,'-s','emulator-5580']
     def adb(*parts):return subprocess.check_output(prefix+list(parts),text=True,encoding='utf-8',errors='replace',timeout=90)
     assert 'YeopjariCat_API35' in adb('emu','avd','name'),'Only the owned disposable AVD may be changed'
-    public_hash={'0.4.0-preview':'5c726dc46783fc70e4c82acf81b92ed42d43bea4e2d242af4290de9afc0e82fb',
+    public_hash={'0.4.1-preview':'2e057ad07953a2ee29cc6977d1b52c7a6530c1e2725d97deb49c84c3b9a85b7e',
+                 '0.4.0-preview':'5c726dc46783fc70e4c82acf81b92ed42d43bea4e2d242af4290de9afc0e82fb',
                  '0.3.0-preview':'47cf1d2f33a3b119ed0ee5dea3409412896a40db6db4c066217430ffe4d0879b',
                  '0.3.2-preview':'3a9d6219b21f8ae0197723fb97bd7da8db1bb066e6f2d43d82ec9c89ee9b03f5'}
     assert hashlib.sha256(a.old_apk.read_bytes()).hexdigest()==public_hash[a.from_version],'Use the published previous APK'

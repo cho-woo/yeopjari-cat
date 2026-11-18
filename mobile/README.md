@@ -113,6 +113,12 @@ Finger pounces use the extended paw from the coat's own source at takeoff.
 Mobile perch play uses a visible shelf belonging to the app. Home gestures
 begin on a cat so launcher controls outside the cat retain their normal input.
 
+For cold first-jump regressions, install the instrumentation APK and run
+`tools/verify_android_cold_jump.py --adb <adb> --out <dir> --version <version> --rounds 5`.
+It force-stops the app before each first gesture on the launcher and saves a Perfetto trace
+and draw markers for each coat. `tools/analyze_android_cold_jump.py --processor <trace_processor_shell> --dir <dir>`
+matches the cat's submitted buffers to actual display frames, including takeoff and landing transitions.
+
 ## Build
 
 1. Existing authoring Python environment requires Pillow, NumPy and OpenCV (`.venv`).
@@ -122,7 +128,7 @@ begin on a cat so launcher controls outside the cat retain their normal input.
 3. `tools/build_android.ps1 -Tests` repacks verified source atlases, builds the
    debug-signed preview and runs Android lint. Temporary ASCII drive mapping
    avoids native Android tools' Unicode-path limitations on Windows.
-4. Output: `build/android-0.4.1-preview/YeopjariCat-Android-0.4.1-preview.apk`.
+4. Output: `build/android-0.4.2-preview/YeopjariCat-Android-0.4.2-preview.apk`.
 
 The preview uses a local Android debug signing key; it is not the future store
 release key. Do not upload this test key as the production signing identity.

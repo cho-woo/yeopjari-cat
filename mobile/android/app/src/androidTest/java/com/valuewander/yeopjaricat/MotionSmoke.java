@@ -36,6 +36,9 @@ public final class MotionSmoke extends Instrumentation {
             directory=new File(getTargetContext().getExternalFilesDir(null),"mobile-review");directory.mkdirs();
             if(arguments!=null&&arguments.getString("mode","").startsWith("wallpaper-return")){new WallpaperReview(this).run();return;}
             if(arguments!=null&&arguments.getString("mode","").startsWith("update")){new UpdateReview(this,directory).run(arguments.getString("mode"));return;}
+            if(arguments!=null && "cold-jump".equals(arguments.getString("mode"))){
+                new ColdJumpReview(this,Integer.parseInt(arguments.getString("coat","0"))).run();return;
+            }
             activity=(MainActivity)startActivitySync(new Intent(getTargetContext(),MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
             waitForIdleSync();
             if(arguments!=null&&("pacing".equals(arguments.getString("mode"))||"pacing-home".equals(arguments.getString("mode")))){new MotionPacingReview(this).run(Integer.parseInt(arguments.getString("coat","0")),"pacing-home".equals(arguments.getString("mode")));return;}

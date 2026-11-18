@@ -185,18 +185,22 @@ public final class CatOverlayService extends Service implements SharedPreference
         PetWindow(Context context,int actor){
             super(context);this.actor=actor;
             params=new WindowManager.LayoutParams(Math.round(160*density),Math.round(160*density),WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL|WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,PixelFormat.TRANSLUCENT);
+                WindowManager.LayoutParams.FLAG_SCALED|WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL|WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,PixelFormat.TRANSLUCENT);
             params.gravity=Gravity.TOP|Gravity.LEFT;if(Build.VERSION.SDK_INT>=30)params.setFitInsetsTypes(0);
             touch=new PetTouch(context,()->scene,index->showMenu(),()->{redraw();frames.wake();});
             setContentDescription("고양이. 끌어서 이동, 길게 눌러 놀이 또는 종료.");position();
         }
         void showMenu(){menuDialog=PetMenus.show(CatOverlayService.this,true,touch);}
-        boolean wasMoving=true;
+        boolean wasMoving=true,measuredForPursuit;
+        boolean usePursuitBuffer(PetScene.Actor cat){
+            return !cat.busy()||cat.fingerArmed||"finger".equals(cat.owner);
+        }
         float lastX,lastY;
         MotionLibrary.Clip restingPose;
         int restingFrame,restingFacing;
         void update(){
             PetScene.Actor cat=scene.actors[actor];
+            if(measuredForPursuit!=usePursuitBuffer(cat))requestLayout();
             boolean moving=cat.busy()||cat.controlled||cat.carryMs>0;
             float y=cat.footY();
             if(!moving && !wasMoving && cat.x==lastX && y==lastY && cat.idle==restingPose
@@ -223,7 +227,23 @@ public final class CatOverlayService extends Service implements SharedPreference
             }
             params.width=wide;params.height=high;
         }
-        @Override protected void onDraw(Canvas canvas){super.onDraw(canvas);canvas.save();canvas.scale(density,density);canvas.translate(-params.x/density,-params.y/density);scene.actors[actor].draw(canvas);canvas.restore();}
+        @Override protected void onMeasure(int widthSpec,int heightSpec){
+            // FLAG_SCALED lets the compositor fit this backing buffer to the real
+            // touch window. Keep that window tight while consecutive poses change size.
+            PetScene.Actor cat=scene.actors[actor];
+            measuredForPursuit=usePursuitBuffer(cat);
+            if(!measuredForPursuit){
+                super.onMeasure(widthSpec,heightSpec);return;
+            }
+            setMeasuredDimension(Math.max(1,Math.round(scene.size*1.8f*density)),
+                    Math.max(1,Math.round(scene.size*1.4f*density)));
+        }
+        @Override protected void onDraw(Canvas canvas){
+            super.onDraw(canvas);canvas.save();
+            canvas.scale(density*getMeasuredWidth()/params.width,density*getMeasuredHeight()/params.height);
+            canvas.translate(-params.x/density,-params.y/density);scene.actors[actor].draw(canvas);
+            canvas.restore();
+        }
         @Override public boolean onTouchEvent(MotionEvent event){boolean result=touch.event(event.getActionMasked(),event.getPointerCount(),event.getRawX()/density,event.getRawY()/density,event.getEventTime());if(result)frames.wake();if(event.getActionMasked()==MotionEvent.ACTION_UP)performClick();return result;}
         @Override public boolean performClick(){super.performClick();return true;}
     }
