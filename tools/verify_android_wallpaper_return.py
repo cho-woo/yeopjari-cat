@@ -46,10 +46,13 @@ def main():
         time.sleep(.2)
     def shot(name):adb('shell','screencap','-p','/sdcard/wallpaper-review.png');adb('pull','/sdcard/wallpaper-review.png',str(a.out/(name+'.png')))
     def set_wallpaper():
-        wait(lambda:visible('Set wallpaper'),'Wallpaper preview not opened');tap('Set wallpaper')
+        wait(lambda:visible('Set wallpaper'),'Wallpaper preview not opened');previous=state()['id'];tap('Set wallpaper')
         # The destination dialog can be created after the first hierarchy dump.
         # Never dismiss it by relaunching our Activity or choose Home+Lock implicitly.
-        wait(lambda:visible('Home screen'),'Home-only destination not offered');tap('Home screen')
+        # Android also applies directly when its current Home/Lock arrangement
+        # has no destination choice. Require the actual manager ID to change.
+        wait(lambda:state()['id']!=previous or visible('Home screen'),'Wallpaper neither applied nor offered a destination')
+        if state()['id']==previous:tap('Home screen')
         time.sleep(.8);app()
     def command(action):
         nonlocal sequence
