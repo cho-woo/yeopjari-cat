@@ -33,7 +33,8 @@ final class MotionPacingReview {
     int focus;
     boolean home;
     PetScene scene;
-    View observed;
+    View observed,companionWindow;
+    final ViewTreeObserver.OnDrawListener companionDraw=()->{if(focus==1)onDraw();};
     long downTime;
     long lastDraw,trialStart;
     boolean sampling;
@@ -50,7 +51,7 @@ final class MotionPacingReview {
         PetScene.Actor a=s.actors[focus];
         return "finger/"+(a.loading?"loading":a.action);
     }
-    final ViewTreeObserver.OnDrawListener draw=this::onDraw;
+    final ViewTreeObserver.OnDrawListener draw=()->{if(!home||focus==0)onDraw();};
     void onDraw(){
         if(trial.isEmpty())return;
         long now=System.nanoTime()/1000000;
@@ -150,9 +151,10 @@ final class MotionPacingReview {
             test.activity.startActivity(new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME));
         });
         await(()->{
-            for(View root:WindowInspector.getGlobalWindowViews())if(root instanceof CatOverlayService.PetWindow
-                &&((CatOverlayService.PetWindow)root).actor==0&&root.isAttachedToWindow()){observed=root;return true;}
-            return false;
+            for(View root:WindowInspector.getGlobalWindowViews())if(root instanceof CatOverlayService.PetWindow && root.isAttachedToWindow()){
+                if(((CatOverlayService.PetWindow)root).actor==0)observed=root;else companionWindow=root;
+            }
+            return observed instanceof CatOverlayService.PetWindow && companionWindow!=null;
         },"launcher cat window");
     }
     void run(int coat,boolean onHome)throws Exception{
@@ -163,6 +165,7 @@ final class MotionPacingReview {
         if(home)openHome(coat);
         test.runOnMainSync(()->{
             observed.getViewTreeObserver().addOnDrawListener(draw);
+            if(home)companionWindow.getViewTreeObserver().addOnDrawListener(companionDraw);
             sampling=true;Choreographer.getInstance().postFrameCallback(probe);
             if(!home)test.activity.preview.start();
         });
@@ -177,6 +180,7 @@ final class MotionPacingReview {
             test.runOnMainSync(()->{for(int i=0;i<2;i++)test.check(actions.contains(i+"/reach")&&actions.contains(i+"/punch"),"Missing pair response "+actions);
                 try{finishTrial();}catch(Exception e){throw new AssertionError(e);}});
         }finally{test.runOnMainSync(()->{sampling=false;Choreographer.getInstance().removeFrameCallback(probe);observed.getViewTreeObserver().removeOnDrawListener(draw);
+            if(home)companionWindow.getViewTreeObserver().removeOnDrawListener(companionDraw);
             if(home)test.activity.stopService(new Intent(test.activity,CatOverlayService.class));});}
         JSONObject metrics=new JSONObject();
         for(java.util.Map.Entry<String,ArrayList<Long>> e:gaps.entrySet()){

@@ -20,7 +20,7 @@ final class HomeVisibility {
         int mode=Build.VERSION.SDK_INT>=29?ops.unsafeCheckOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS,Process.myUid(),context.getPackageName()):ops.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS,Process.myUid(),context.getPackageName());
         return mode==AppOpsManager.MODE_ALLOWED;
     }
-    @SuppressWarnings("deprecation") static boolean isHome(Context context){
+    @SuppressWarnings("deprecation") static synchronized boolean isHome(Context context){
         if(!hasAccess(context)){foreground=null;foregroundClass=null;lastEventTime=0;cached=false;return false;}
         long now=SystemClock.uptimeMillis();if(now-checked<150)return cached;checked=now;
         long wall=System.currentTimeMillis();

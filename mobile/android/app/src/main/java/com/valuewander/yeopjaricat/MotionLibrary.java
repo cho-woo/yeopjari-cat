@@ -77,7 +77,8 @@ final class MotionLibrary {
     static synchronized MotionLibrary get(Context c) { if(instance==null)instance=new MotionLibrary(c.getApplicationContext());return instance; }
     final Context context;
     private final LinkedBlockingDeque<Runnable> jobs=new LinkedBlockingDeque<>();
-    final ThreadPoolExecutor worker=new ThreadPoolExecutor(1,1,0,TimeUnit.MILLISECONDS,jobs);
+    final ThreadPoolExecutor worker=new ThreadPoolExecutor(1,1,0,TimeUnit.MILLISECONDS,jobs,
+        task->new Thread(()->{android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND);task.run();},"cat-atlas"));
     final Handler main=new Handler(Looper.getMainLooper());
     final HashMap<Integer,Clip> neutrals=new HashMap<>();
     final HashMap<String,Load> waiting=new HashMap<>();
