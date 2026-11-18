@@ -15,10 +15,9 @@ Usage Access permission; no usage history or UI contents are stored/transmitted.
   The renderer stops when the system reports the wallpaper hidden. Cats are
   suppressed while the keyguard is locked, even if the user chooses the same
   wallpaper for both Home and Lock screens in the system picker.
-- The system wallpaper picker is opened by **홈 화면에 데려오기**. The user
-  selects Home there. This replaces the previous wallpaper; a private photo
-  can be chosen through the Android document picker. Existing wallpaper images
-  are not read automatically.
+- **홈 화면에 데려오기** offers to retain the previous photo before opening the
+  system wallpaper picker. The user selects Home there. Existing wallpaper
+  images are not read automatically; see the return feature below.
 - Optional `TYPE_APPLICATION_OVERLAY` windows require an explicit switch,
   Android's special permission, and a user-started `specialUse` foreground
   service. Notification and app settings both provide Stop. There is no restart
@@ -42,6 +41,33 @@ Usage Access permission; no usage history or UI contents are stored/transmitted.
   0.6–1.2 seconds). Stroll, grooming, kneading and paw play remain active; automatic
   sleep/settling is removed. Source frame clocks and authored recoveries are not
   shortened. Holding/dragging pauses the owned actor, with no timeline rewind.
+
+## Return to the previous wallpaper (0.3.1+)
+
+- **이전 배경으로 돌아가기** sits directly below the Apply button. A retained
+  photo is restored to Home through `WallpaperManager.setStream(FLAG_SYSTEM)`;
+  a visible previous live wallpaper component opens its native confirmation
+  screen. Both paths stop the cats after a confirmed wallpaper change.
+- Android 14+ does not let ordinary apps read the system wallpaper photo. Before
+  replacing a static wallpaper, the user can select its original photo once.
+  The selected bytes are copied into app-private, backup-excluded storage, with
+  a 50MiB limit and image validation. No broad photo/file permission is requested.
+  Live component visibility uses a narrow wallpaper-service package query.
+- The previous snapshot is committed only after successful application. Cancelling
+  the picker preserves the current wallpaper and the last confirmed backup.
+  Reapplying an already selected cat wallpaper does not overwrite that backup.
+- Older installations did not save the previous image: the app cannot recover
+  an overwritten photo retroactively. Return offers explicit photo selection,
+  the phone's default wallpaper, and the system wallpaper chooser. The default
+  is labelled as such and is never presented as the user's original photograph.
+  A photo previously selected inside the cat app can also be restored.
+- Direct photo/default returns preserve a separately selected Lock wallpaper.
+  Live-wallpaper changes use the phone's native picker, whose Home/Lock destination
+  remains under Android/OEM control. Exact original
+  photo crop, launcher effects and OEM theme settings are not captured. A previous
+  live wallpaper still needs to be installed. Removing app data/uninstalling also
+  removes its private retained photo. **종료하기** stops cats; wallpaper return is
+  a separate explicit action.
 
 ## Updates inside the app (0.3+)
 
@@ -90,7 +116,7 @@ and mobile store publication are **not** claimed by this preview.
 3. `tools/build_android.ps1 -Tests` repacks verified source atlases, builds the
    debug-signed preview and runs Android lint. Temporary ASCII drive mapping
    avoids native Android tools' Unicode-path limitations on Windows.
-4. Output: `build/android-0.3.0-preview/YeopjariCat-Android-0.3.0-preview.apk`.
+4. Output: `build/android-0.3.1-preview/YeopjariCat-Android-0.3.1-preview.apk`.
 
 The preview uses a local Android debug signing key; it is not the future store
 release key. Do not upload this test key as the production signing identity.
@@ -98,6 +124,12 @@ No APK is placed in the Windows release or its update feed.
 
 ## Verification
 
+- `tools/verify_android_wallpaper_return.py` operates the actual system live
+  wallpaper picker and WallpaperManager on the owned Android 15 AVD. It checks
+  cancelled application, retained-photo restore/reapplication, an independent
+  live-wallpaper round trip, default return, legacy photo selection, persistence,
+  cat shutdown and preservation of a separate Lock wallpaper. Synthetic photo
+  selection is supplied by the separate test APK; no user photo is used.
 - `mobile/tests/MotionClockSpec.java` checks full timeline/recovery continuity.
 - `mobile/tests/PointerGestureSpec.java` checks tap/drag/long-press ownership,
   hold thresholds, release endpoints and cancellation across 367 cases.
