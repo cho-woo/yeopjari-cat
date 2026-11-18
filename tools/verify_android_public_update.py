@@ -32,7 +32,7 @@ def main():
         end=time.monotonic()+seconds
         while time.monotonic()<end:
             result=condition()
-            if result:return result
+            if result is not None and result is not False:return result
             time.sleep(.4)
         raise AssertionError(message)
     def shot(name):adb('shell','screencap','-p','/sdcard/public-update.png');adb('pull','/sdcard/public-update.png',str(a.out/(name+'.png')))
@@ -41,7 +41,7 @@ def main():
     # Remove only the owned AVD's old fixture/throttle metadata. The old updater
     # then checks the real HTTPS feed; wallpaper preferences and files are retained.
     adb('shell','run-as',PACKAGE,'rm','-f','shared_prefs/app_updates.xml')
-    adb('shell','am','start','-W','-n',PACKAGE+'/.MainActivity')
+    adb('shell','am','start','-W','-n',PACKAGE+'/.MainActivity','-f','0x10008000')
     wait(lambda:find('새 버전이 나왔어요'),'Public update was not discovered');shot('01-public-update-offer');tap('업데이트하기')
     def destination():
         current=nodes()
@@ -51,7 +51,7 @@ def main():
         tap_node(n);current=nodes();switches=[n for n in current if n.get('checkable')=='true' and n.get('checked')=='false'];assert len(switches)==1;tap_node(switches[0]);adb('shell','input','keyevent','KEYCODE_BACK');wait(lambda:find('Update'),'Native confirmation missing')
     assert version()=='0.3.0-preview';shot('02-real-android-confirmation');tap('Update')
     wait(lambda:version()=='0.3.1-preview','Public APK did not replace the old package');shot('03-installed')
-    adb('shell','am','start','-W','-n',PACKAGE+'/.MainActivity');wait(lambda:find('이전 배경으로 돌아가기'),'Updated return control missing');shot('04-return-control-and-retained-backup')
+    adb('shell','am','start','-W','-n',PACKAGE+'/.MainActivity','-f','0x10008000');wait(lambda:find('이전 배경으로 돌아가기'),'Updated return control missing');shot('04-return-control-and-retained-backup')
     after=retained();assert before==after,'Private wallpaper backup changed during update'
     path=adb('shell','pm','path',PACKAGE).strip();assert path.startswith('package:') and '\n' not in path
     installed=a.out/'installed-public.apk';adb('pull',path[len('package:'):],str(installed));sha=hashlib.sha256(installed.read_bytes()).hexdigest();assert sha==hashlib.sha256(a.new_apk.read_bytes()).hexdigest()

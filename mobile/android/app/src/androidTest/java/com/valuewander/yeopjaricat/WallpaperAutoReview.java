@@ -28,7 +28,7 @@ final class WallpaperAutoReview {
         for(AccessibilityNodeInfo n:root.findAccessibilityNodeInfosByText(label))if(n.getText()!=null&&n.getText().toString().equals(label)&&n.isVisibleToUser())return n;
         return null;
     }
-    boolean action(AccessibilityNodeInfo n){while(n!=null){if(n.isClickable()&&n.isEnabled())return n.performAction(AccessibilityNodeInfo.ACTION_CLICK);n=n.getParent();}return false;}
+    boolean action(AccessibilityNodeInfo n){while(n!=null){if(!n.isEnabled())return false;if(n.isClickable())return n.performAction(AccessibilityNodeInfo.ACTION_CLICK);n=n.getParent();}return false;}
     void await(java.util.function.BooleanSupplier condition,String message)throws Exception{
         long end=SystemClock.uptimeMillis()+45000;
         while(SystemClock.uptimeMillis()<end){
@@ -37,8 +37,11 @@ final class WallpaperAutoReview {
             // hide a cat-app ANR or count an obscured screenshot as verification.
             if(node("System UI isn't responding")!=null||node("Process system isn't responding")!=null){AccessibilityNodeInfo wait=node("Wait");if(wait!=null&&action(wait))osWaits++;}
             Thread.sleep(150);
-        }throw new AssertionError(message);
+        }
+        Bitmap failed=test.getUiAutomation().takeScreenshot();if(failed!=null){try(FileOutputStream out=new FileOutputStream(new File(review.directory,"failure.png"))){failed.compress(Bitmap.CompressFormat.PNG,100,out);}failed.recycle();}
+        AccessibilityNodeInfo root=test.getUiAutomation().getRootInActiveWindow();Bundle detail=new Bundle();detail.putString("stream","FAILURE UI "+describe(root)+"\n");test.sendStatus(1,detail);throw new AssertionError(message);
     }
+    String describe(AccessibilityNodeInfo n){if(n==null)return "null";StringBuilder s=new StringBuilder();if(n.getText()!=null)s.append(n.getText()).append(" enabled=").append(n.isEnabled()).append(" clickable=").append(n.isClickable()).append("; ");for(int i=0;i<n.getChildCount();i++)s.append(describe(n.getChild(i)));return s.toString();}
     void click(String label)throws Exception{await(()->{AccessibilityNodeInfo n=node(label);return n!=null&&action(n);},"Missing actual UI control "+label);Thread.sleep(250);}
     void shot(String name)throws Exception{
         await(()->node("홈 화면에 데려오기")!=null,"App not visible for screenshot");Thread.sleep(500);
