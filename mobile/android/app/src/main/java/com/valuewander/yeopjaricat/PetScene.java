@@ -30,6 +30,7 @@ final class PetScene {
         Step step;
         String action="idle",owner="",queued,loadingAction;
         float x,startX,offsetY,lift,startY,speed,fade;
+        float nextGroundMin=Float.NaN;
         float fingerX,fingerY,attackX,attackY,jumpHeight,jumpDx,stopTravel;
         float carryLift,carryMs,landingDy,fingerMiss=Float.POSITIVE_INFINITY;
         int facing=1,idleFacing=1,previousFacing=1,previousFrame,idleFrame,revision;
@@ -335,6 +336,15 @@ final class PetScene {
                     nextStep();
                 }
                 else if(!loading && owner.isEmpty() && !socialActive && !fingerArmed){
+                    if(!Float.isNaN(nextGroundMin)){
+                        float target=nextGroundMin;nextGroundMin=Float.NaN;
+                        if(ground()+1<target){
+                            // Finish the current story before walking down from
+                            // a height inherited from the previous wallpaper.
+                            owner="walk";route("walk",freeDestination(x+(x<width/2?1:-1)*size*.55f),target,false);
+                            nextStep();return;
+                        }
+                    }
                     restMs-=delta;
                     if(restMs<=0&&(queued!=null||automatic)){
                         String next=queued;queued=null;
@@ -450,7 +460,18 @@ final class PetScene {
                 a.x=a.safeX(px*w);a.startX=a.x;a.offsetY=a.safeY(py*h)-floor;
             }
         }
+        if(!positioned||w!=oldW||h!=oldH||floor!=oldFloor)fitBackdropGround(!positioned);
         positioned=true;
+    }
+    void fitBackdropGround(boolean initial){
+        PlayBackdrop design=PlayBackdrop.selected(settings);
+        float edge=design==PlayBackdrop.PHOTO?Float.NaN:design.farthestWalkableY(width,height,floor);
+        for(Actor a:actors)if(a!=null){
+            a.nextGroundMin=edge;
+            if(initial&&a.ground()<edge){
+                a.offsetY=a.safeY(edge)-floor;a.startY=a.ground();
+            }
+        }
     }
     void social(String name,int leader){if(actors[1]==null)return;pendingSocial=name;socialLeader=leader;
         for(Actor a:actors){a.queued=null;a.fingerArmed=false;}}
@@ -531,7 +552,7 @@ final class PetScene {
     int closest(float x,float y){if(actors[1]==null)return 0;return Math.hypot(x-actors[0].x,y-actors[0].footY()+size*.5f)<=Math.hypot(x-actors[1].x,y-actors[1].footY()+size*.5f)?0:1;}
     void drag(int index,float dx,float dy){
         Actor a=actors[index];if(a.busy()){cancelSocial();a.cancelStory();}
-        a.fingerArmed=false;a.x=a.safeX(a.x+dx);a.offsetY=a.safeY(a.ground()+dy)-floor;a.startX=a.x;
+        a.nextGroundMin=Float.NaN;a.fingerArmed=false;a.x=a.safeX(a.x+dx);a.offsetY=a.safeY(a.ground()+dy)-floor;a.startX=a.x;
     }
     void savePositions(){if(positionMode.equals("preview"))return;
         android.content.SharedPreferences.Editor editor=settings.prefs.edit();

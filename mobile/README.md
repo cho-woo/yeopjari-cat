@@ -1,11 +1,12 @@
 # Android preview — 옆자리 고양이
 
-The default Home mode uses the Android live wallpaper surface. The customer selects one photo and confirms the wallpaper in the Android preview. The app does not request Usage Access, read foreground-app history, or request accessibility access. Public GitHub releases provide the in-app preview updates.
+The default Home mode uses the Android live wallpaper surface. The customer chooses a play background or a personal photo and confirms the wallpaper in the Android preview. The app does not request Usage Access, read foreground-app history, or request accessibility access. Public GitHub releases provide the in-app preview updates.
 
 ## Product behavior
 
-- **내 사진으로 고양이 배경 적용** opens the system photo picker on compatible devices, with the document picker as a fallback. Only the chosen image is accessible. Select **홈 화면** in the wallpaper preview when the launcher offers a destination.
-- The cat moves behind launcher icons. **고양이 종료하기** hides the cats and keeps the selected photo. **고양이 다시 켜기** resumes them. **배경 사진 고르기** changes the photo. **이전 배경으로 돌아가기** uses the available restore options when the customer wants to replace the entire wallpaper.
+- **놀이 배경** previews 햇살 마루, 꽃담 정원 or 달빛 옥상. Each scene has a phone composition and a wider composition registered to the cat’s ground. **홈 화면에 적용** opens the system wallpaper preview. Select **홈 화면** when the launcher offers a destination.
+- **배경 사진 고르기** opens the system photo picker, with the document picker as a fallback. **내 사진 다시 사용** restores the previously selected image after trying a play background.
+- The cat moves behind launcher icons. **고양이 종료하기** hides the cats and keeps the selected background. **고양이 다시 켜기** resumes them. **배경 사진 고르기** changes the photo. **이전 배경으로 돌아가기** uses the available restore options when the customer wants to replace the entire wallpaper.
 - **홈에서 손가락 놀이** arms the first cat and returns to Home. The wallpaper consumes the touch events forwarded by the launcher. Icons and launcher gestures take priority. The app preview and optional floating mode provide their own touch surfaces.
 - **다른 앱 위에 고양이 표시** is separately opt-in and initially off. Only that switch can start the foreground service and request Android's overlay permission. An upgrade preserves the system wallpaper until the customer explicitly applies the new one.
 - With a companion enabled, the cats can meet, take turns swatting, race,
@@ -103,7 +104,7 @@ matches the cat's submitted buffers to actual display frames, including takeoff 
 3. `tools/build_android.ps1 -Tests` repacks verified source atlases, builds the
    debug-signed preview and runs Android lint. Temporary ASCII drive mapping
    avoids native Android tools' Unicode-path limitations on Windows.
-4. Output: `build/android-0.5.1-preview/YeopjariCat-Android-0.5.1-preview.apk`.
+4. Output: `build/android-0.6.0-preview/YeopjariCat-Android-0.6.0-preview.apk`.
 
 The preview uses a local Android debug signing key; it is not the future store
 release key. Do not upload this test key as the production signing identity.

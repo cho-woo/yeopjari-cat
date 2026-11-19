@@ -30,11 +30,18 @@ public final class MainActivity extends Activity {
     PetSettings settings;
     SceneView preview;
     Switch overlay;
+    BackdropPicker backdropPicker;
     Button power,homePlay;
     UpdatePanel updatePanel;
     WallpaperReturn wallpaperReturn;
     boolean updatingSwitch,permissionPending;
-    final android.content.SharedPreferences.OnSharedPreferenceChangeListener preferences=(p,key)->{if(power!=null){syncOverlay();preview.invalidate();}};
+    final android.content.SharedPreferences.OnSharedPreferenceChangeListener preferences=(p,key)->{
+        if(power==null)return;
+        if(PlayBackdrop.PREF.equals(key)||"photo".equals(key)){
+            preview.backdrop.refresh();preview.scene.fitBackdropGround(false);backdropPicker.refresh();wallpaperReturn.refresh();
+        }
+        syncOverlay();preview.invalidate();
+    };
     static final int INK=0xff302b40,MUTED=0xff756e80,PURPLE=0xff7560bb;
     int dp(float n){return Math.round(n*getResources().getDisplayMetrics().density);}
     @Override public void onCreate(Bundle saved){
@@ -51,19 +58,19 @@ public final class MainActivity extends Activity {
         TextView title=text("손안의 작은\n옆자리 고양이",31,INK);title.setTypeface(Typeface.create("sans-serif-medium",Typeface.NORMAL));title.setLineSpacing(dp(2),1);add(content,title,14);
         add(content,text("매일의 홈 화면에, 귀여운 옆자리 하나.",14,MUTED),10);
         preview=new SceneView(this);preview.setBackground(round(0xffece3f9,26));preview.setClipToOutline(true);
-        LinearLayout.LayoutParams previewParams=new LinearLayout.LayoutParams(-1,dp(225));previewParams.topMargin=dp(22);content.addView(preview,previewParams);
-        power=button("내 사진으로 고양이 배경 적용",true);add(content,power,14);
-        add(content,text("사진 한 장을 고르면 고양이가 홈 화면의 아이콘 뒤에서 놀아요. 적용할 때 ‘홈 화면’을 선택해 주세요. 종료하면 사진만 남아요.",13,MUTED),8);
+        int contentWidth=getResources().getConfiguration().screenWidthDp-48;
+        int previewHeight=Math.max(225,Math.min(380,Math.round(contentWidth*.63f)));
+        LinearLayout.LayoutParams previewParams=new LinearLayout.LayoutParams(-1,dp(previewHeight));previewParams.topMargin=dp(22);content.addView(preview,previewParams);
+        backdropPicker=new BackdropPicker(this,content);
+        power=button("홈 화면에 적용",true);add(content,power,10);
+        add(content,text("‘홈 화면’을 선택하면 아이콘 뒤에서 고양이가 놀아요. 고양이를 종료하면 배경만 남아요.",13,MUTED),8);
         wallpaperReturn=new WallpaperReturn(this,content,power,saved);
         power.setOnClickListener(v->{
             if(wallpaperReturn.history.isCat()){
                 if(settings.enabled())PetLifecycle.stop(this);else PetLifecycle.resume(this);
-            }else if(settings.photo().isEmpty())wallpaperReturn.choosePetPhoto(true);
-            else wallpaperReturn.applySelectedPhoto();
+            }else wallpaperReturn.applySelectedPhoto();
             syncOverlay();
         });
-        Button photo=button("배경 사진 고르기",false);add(content,photo,8);
-        photo.setOnClickListener(v->wallpaperReturn.choosePetPhoto(false));
         homePlay=button("홈에서 손가락 놀이",false);add(content,homePlay,8);
         homePlay.setOnClickListener(v->{
             if(!wallpaperReturn.history.isCat() || !settings.enabled()){
@@ -135,7 +142,7 @@ public final class MainActivity extends Activity {
         overlay.setChecked(settings.overlay());
         boolean home=wallpaperReturn!=null && wallpaperReturn.history.isCat();
         if(homePlay!=null)homePlay.setVisibility(home&&settings.enabled()?View.VISIBLE:View.GONE);
-        power.setText(home?(settings.enabled()?"고양이 종료하기":"고양이 다시 켜기"):"내 사진으로 고양이 배경 적용");
+        power.setText(home?(settings.enabled()?"고양이 종료하기":"고양이 다시 켜기"):(PlayBackdrop.selected(settings)==PlayBackdrop.PHOTO?"내 사진으로 고양이 배경 적용":"홈 화면에 적용"));
         updatingSwitch=false;
     }
     @Override protected void onStart(){super.onStart();visibleActivities++;HomeSceneStore.notifyLayer(this);}

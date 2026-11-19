@@ -50,7 +50,7 @@ final class WallpaperReturn {
         restore.setEnabled(!history.busy);
         status.setText(history.busy?"배경 사진을 처리하고 있어요…":
             !history.notice.isEmpty()?history.notice:
-            history.isCat()?"선택한 사진을 홈 배경으로 사용 중이에요.":
+            history.isCat()?PlayBackdrop.selected(activity.settings).label+" 배경을 사용 중이에요.":
             "이전에 보관한 배경을 복원할 수 있어요.");
         if(resumed && history.phase().equals("ready")){
             if(history.id()!=history.read("pending_").id && !history.isCat()){history.notice="현재 배경이 바뀌었어요. 다시 적용해 주세요.";history.cancel();return;}
@@ -90,9 +90,9 @@ final class WallpaperReturn {
                 Uri uri=data.getData();
                 try{activity.getContentResolver().takePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION);}
                 catch(SecurityException unavailable){history.notice="이 사진을 계속 사용할 수 없어요. 다른 사진을 골라 주세요.";refresh();return;}
-                PetSettings settings=new PetSettings(activity);String old=settings.photo();settings.put("photo",uri.toString());
+                PetSettings settings=new PetSettings(activity);String old=settings.photo();settings.prefs.edit().putString("photo",uri.toString()).putString(PlayBackdrop.PREF,PlayBackdrop.PHOTO.key).apply();
                 if(!old.isEmpty() && !old.equals(uri.toString()))try{activity.getContentResolver().releasePersistableUriPermission(Uri.parse(old),Intent.FLAG_GRANT_READ_URI_PERMISSION);}catch(SecurityException ignored){}
-                activity.preview.reload();history.notice="배경 사진을 골랐어요.";
+                history.notice="";
                 if(request==PICK_AND_APPLY)applySelectedPhoto();else refresh();
             }
             return;

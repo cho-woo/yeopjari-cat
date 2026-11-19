@@ -52,7 +52,8 @@ public final class CatWallpaperService extends WallpaperService {
             scene=isPreview()?new PetScene(CatWallpaperService.this,this::schedule):HomeSceneStore.get(CatWallpaperService.this);
             touch=new PetTouch(CatWallpaperService.this,()->scene,index->scene.openMenu(index),this::schedule);
             touch.followEmptySpace=true;
-            backdrop=new Backdrop(CatWallpaperService.this,this::schedule);
+            android.util.DisplayMetrics screen=getResources().getDisplayMetrics();
+            backdrop=new Backdrop(CatWallpaperService.this,this::schedule,screen.widthPixels<screen.heightPixels*.74f);
             if(surfaceReady){android.graphics.Rect r=getSurfaceHolder().getSurfaceFrame();resizeViewport(r.width(),r.height());}
         }
         void schedule(){
@@ -83,7 +84,7 @@ public final class CatWallpaperService extends WallpaperService {
                     // compensate for excess pixels that exist in this actual buffer.
                     canvas.translate(Math.max(0,canvas.getWidth()/density-scene.width)*cameraX,
                         Math.max(0,canvas.getHeight()/density-scene.height)*cameraY);
-                    backdrop.draw(canvas,scene.width,scene.height);if(paintCat)scene.draw(canvas);lastPaintCat=paintCat&&settings.enabled();
+                    backdrop.draw(canvas,scene.width,scene.height,scene.floor);if(paintCat)scene.draw(canvas);lastPaintCat=paintCat&&settings.enabled();
                     canvas.restore();renderedFrames++;lastError="none";
                 }
             }catch(IllegalArgumentException|IllegalStateException e){lastError=e.toString();}
@@ -95,13 +96,15 @@ public final class CatWallpaperService extends WallpaperService {
         @Override public void onZoomChanged(float zoom){if(!isPreview()&&visible)HomeSceneStore.zoom(CatWallpaperService.this,zoom);}
         @Override public void onSurfaceCreated(SurfaceHolder holder){super.onSurfaceCreated(holder);surfaceReady=true;schedule();}
         float groundBottom(float height){int percent=Math.max(30,Math.min(88,settings.prefs.getInt("home_floor_percent",58)));return height*(1-percent/100f);}
-        void resizeViewport(int w,int h){android.util.DisplayMetrics m=getResources().getDisplayMetrics();float width=Math.min(w,m.widthPixels)/density,height=Math.min(h,m.heightPixels)/density;scene.resize(width,height,groundBottom(height));}
+        void resizeViewport(int w,int h){android.util.DisplayMetrics m=getResources().getDisplayMetrics();float width=Math.min(w,m.widthPixels)/density,height=Math.min(h,m.heightPixels)/density;backdrop.viewport(width,height);scene.resize(width,height,groundBottom(height));}
         @Override public void onSurfaceChanged(SurfaceHolder holder,int format,int w,int h){super.onSurfaceChanged(holder,format,w,h);resizeViewport(w,h);render(0);schedule();}
         @Override public void onSurfaceRedrawNeeded(SurfaceHolder holder){super.onSurfaceRedrawNeeded(holder);render(0);}
         @Override public void onOffsetsChanged(float x,float y,float xs,float ys,int xp,int yp){cameraX=x;cameraY=y;offsetX=xp;offsetY=yp;if(visible)render(0);}
         @Override public void onSurfaceDestroyed(SurfaceHolder holder){surfaceReady=false;clock.stop();super.onSurfaceDestroyed(holder);}
         @Override public void onTouchEvent(MotionEvent event){if((isPreview()||(!CatOverlayService.displaying&&!keyguard.isKeyguardLocked()))&&touch!=null)touch.event(event.getActionMasked(),event.getPointerCount(),event.getRawX()/density,event.getRawY()/density,event.getEventTime());super.onTouchEvent(event);}
-        @Override public void onSharedPreferenceChanged(SharedPreferences prefs,String key){if(key==null||key.startsWith("position."))return;if(PetSettings.changesScene(key)||key.equals("photo"))reload();schedule();}
+        @Override public void onSharedPreferenceChanged(SharedPreferences prefs,String key){if(key==null||key.startsWith("position."))return;if(PetSettings.changesScene(key))reload();
+            else if(backdrop!=null&&(PlayBackdrop.PREF.equals(key)||key.equals("photo"))){backdrop.refresh();scene.fitBackdropGround(false);}
+            schedule();}
         @Override public void onDestroy(){closed=true;engines.remove(this);updateHomeVisibility();if(touch!=null)touch.cancel();clock.stop();settings.prefs.unregisterOnSharedPreferenceChangeListener(this);if(isPreview())scene.close();backdrop.close();super.onDestroy();}
     }
 }
