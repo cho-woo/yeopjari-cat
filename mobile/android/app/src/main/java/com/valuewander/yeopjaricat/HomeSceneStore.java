@@ -10,7 +10,7 @@ final class HomeSceneStore {
     private static PetScene home;
     private static String configuration="";
     private static int floorPercent=Integer.MIN_VALUE;
-    static boolean visible;
+    static boolean visible,inPlay;
     static float zoom;
     static PetScene get(Context context){
         PetSettings s=new PetSettings(context);

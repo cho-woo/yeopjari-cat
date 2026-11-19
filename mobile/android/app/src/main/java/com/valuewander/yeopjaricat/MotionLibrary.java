@@ -29,7 +29,7 @@ final class MotionLibrary {
         final JSONObject spec;
         final Bitmap[] pages;
         final int[] frames, times;
-        final int loopStart, loopEnd, loopMs;
+        final int loopStart, loopEnd, loopMs, durationMs;
         final float reference, stride;
         final int glanceEnd;
         final float[][] paws;
@@ -56,6 +56,7 @@ final class MotionLibrary {
             frames=frameList.stream().mapToInt(Integer::intValue).toArray();
             times=timeList.stream().mapToInt(Integer::intValue).toArray();
             int total=0; for(int i=loopStart;i<loopEnd;i++) total+=times[i]; loopMs=total;
+            durationMs=java.util.Arrays.stream(times).sum();
             JSONArray all=spec.getJSONArray("frames");
             rectangles=new int[all.length()][4]; anchors=new float[all.length()][2]; page=new int[all.length()];
             for(int i=0;i<all.length();i++) {

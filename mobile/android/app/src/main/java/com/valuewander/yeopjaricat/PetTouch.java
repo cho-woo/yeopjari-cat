@@ -21,7 +21,23 @@ final class PetTouch {
     boolean menuOpen,tracking;
     int selectedActor;
     long releaseTime;
-    boolean followEmptySpace;
+    boolean followEmptySpace,launcherTapsOnly;
+    private int tapTarget=-1;
+    private float tapX,tapY;
+    private long tapDown;
+
+    private boolean launcherTap(PetScene value,int action,int pointers,float x,float y,long time){
+        if(action==MotionEvent.ACTION_DOWN){
+            tapTarget=value.hit(x,y);tapX=x;tapY=y;tapDown=time;
+        }else if(action==MotionEvent.ACTION_CANCEL || pointers!=1 ||
+                Math.hypot(x-tapX,y-tapY)>slop || time-tapDown>=ViewConfiguration.getLongPressTimeout()){
+            tapTarget=-1;
+        }else if(action==MotionEvent.ACTION_UP){
+            int target=tapTarget;tapTarget=-1;
+            if(target>=0 && value.hit(x,y)==target){value.actors[target].tap(time);invalidate.run();}
+        }
+        return tapTarget>=0;
+    }
     PetTouch(Context context,Supplier<PetScene> source,IntConsumer menu,Runnable invalidate){
         this.source=source;this.menu=menu;this.invalidate=invalidate;
         slop=ViewConfiguration.get(context).getScaledTouchSlop()/context.getResources().getDisplayMetrics().density;
@@ -29,6 +45,7 @@ final class PetTouch {
     final Runnable hold=()->{if(gesture!=null)gesture.hold(SystemClock.uptimeMillis());};
     boolean event(int action,int pointers,float x,float y,long time){
         PetScene value=source.get();
+        if(launcherTapsOnly)return launcherTap(value,action,pointers,x,y,time);
         if(value.menuActor>=0){if(action==MotionEvent.ACTION_UP){value.selectMenu(x,y);releaseMenu();}return true;}
         if(pointers>1||action==MotionEvent.ACTION_CANCEL){cancel();return true;}
         if(action==MotionEvent.ACTION_DOWN){
@@ -56,5 +73,5 @@ final class PetTouch {
         return true;
     }
     void releaseMenu(){menuOpen=false;if(actor!=null)actor.controlled=false;if(scene!=null)scene.closeMenu();invalidate.run();}
-    void cancel(){if(tracking&&actor!=null){actor.fingerDown=false;tracking=false;}handler.removeCallbacks(hold);if(gesture!=null){if(menuOpen)gesture.down=false;else gesture.cancel();}if(!menuOpen&&actor!=null)actor.controlled=false;gesture=null;}
+    void cancel(){tapTarget=-1;if(tracking&&actor!=null){actor.fingerDown=false;tracking=false;}handler.removeCallbacks(hold);if(gesture!=null){if(menuOpen)gesture.down=false;else gesture.cancel();}if(!menuOpen&&actor!=null)actor.controlled=false;gesture=null;}
 }

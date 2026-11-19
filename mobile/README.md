@@ -7,13 +7,13 @@ The default Home mode uses the Android live wallpaper surface. The customer choo
 - **놀이 배경** previews 햇살 마루, 꽃담 정원 or 달빛 옥상. Each scene has a phone composition and a wider composition registered to the cat’s ground. **홈 화면에 적용** opens the system wallpaper preview. Select **홈 화면** when the launcher offers a destination.
 - **배경 사진 고르기** opens the system photo picker, with the document picker as a fallback. **내 사진 다시 사용** restores the previously selected image after trying a play background.
 - The cat moves behind launcher icons. **고양이 종료하기** hides the cats and keeps the selected background. **고양이 다시 켜기** resumes them. **배경 사진 고르기** changes the photo. **이전 배경으로 돌아가기** uses the available restore options when the customer wants to replace the entire wallpaper.
-- **홈에서 손가락 놀이** arms the first cat and returns to Home. The wallpaper consumes the touch events forwarded by the launcher. Icons and launcher gestures take priority. The app preview and optional floating mode provide their own touch surfaces.
+- **고양이 놀이터 열기** opens the current home scene in an interactive window. Drag a cat to reposition it at home or drag empty space for finger play. The launcher icon also has a **고양이 놀이터** shortcut. On the ordinary home screen a short tap pets a cat and swiping navigates the launcher.
 - **다른 앱 위에 고양이 표시** is separately opt-in and initially off. Only that switch can start the foreground service and request Android's overlay permission. An upgrade preserves the system wallpaper until the customer explicitly applies the new one.
 - With a companion enabled, the cats can meet, take turns swatting, race,
   follow, sniff, share a nap, compete for a snack or react to a sneeze. These
   events also run on request through **두 마리 함께 놀기**.
 
-To measure first gestures on the current wallpaper, select a photo once on the owned API 35 AVD, then run `tools/verify_android_photo_home.py --adb <adb> --out <dir> --coats 8 0 10 8`. Each sample terminates the process, reapplies the wallpaper through the public Android picker and dispatches a real swipe. `tools/analyze_android_photo_home.py --processor <trace_processor_shell> --dir <dir>` reports the wallpaper surface's actual display intervals for the run, jump, strike and recovery.
+The `launcher-play` Android instrumentation checks placement, a fixed playground background, launcher swipes and passive playback on the actual live wallpaper. The `autoplay` run measures the two roles in the app view. The older `verify_android_photo_home.py` captures pre-0.6.2 swipe behavior.
 
 ## Previous wallpaper edition (0.3.1)
 
@@ -104,7 +104,7 @@ matches the cat's submitted buffers to actual display frames, including takeoff 
 3. `tools/build_android.ps1 -Tests` repacks verified source atlases, builds the
    debug-signed preview and runs Android lint. Temporary ASCII drive mapping
    avoids native Android tools' Unicode-path limitations on Windows.
-4. Output: `build/android-0.6.1-preview/YeopjariCat-Android-0.6.1-preview.apk`.
+4. Output: `build/android-0.6.2-preview/YeopjariCat-Android-0.6.2-preview.apk`.
 
 The preview uses a local Android debug signing key; it is not the future store
 release key. Do not upload this test key as the production signing identity.

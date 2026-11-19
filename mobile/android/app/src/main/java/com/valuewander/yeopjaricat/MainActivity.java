@@ -72,14 +72,9 @@ public final class MainActivity extends Activity {
             }else wallpaperReturn.applySelectedPhoto();
             syncOverlay();
         });
-        homePlay=button("홈에서 손가락 놀이",false);add(content,homePlay,8);
-        homePlay.setOnClickListener(v->{
-            if(!wallpaperReturn.history.isCat() || !settings.enabled()){
-                Toast.makeText(this,"먼저 홈 화면에 고양이 배경을 적용해 주세요.",Toast.LENGTH_SHORT).show();return;
-            }
-            HomeSceneStore.get(this).actors[0].armFinger();
-            startActivity(new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME));
-        });
+        homePlay=button("고양이 놀이터 열기",false);add(content,homePlay,8);
+        homePlay.setOnClickListener(v->startActivity(new Intent(this,PlayActivity.class)));
+        add(content,text("홈에서는 고양이를 톡 눌러 보세요. 고양이를 옮기거나 손가락으로 놀 때는 놀이터를 열어 주세요. 앱 아이콘을 길게 누르면 놀이터 바로가기도 있어요.",13,MUTED),8);
         LinearLayout optional=column();add(content,optional,10);
         overlay=new Switch(this);overlay.setText("다른 앱 위에 고양이 표시");overlay.setTextColor(INK);overlay.setTextSize(14);overlay.setMinHeight(dp(52));optional.addView(overlay);
         overlay.setOnCheckedChangeListener((b,enabled)->{if(updatingSwitch)return;if(enabled)enableOverlay();else{permissionPending=false;settings.put("overlay",false);reconcileLayer();}});
@@ -142,7 +137,7 @@ public final class MainActivity extends Activity {
         updatingSwitch=true;
         overlay.setChecked(settings.overlay());
         boolean home=wallpaperReturn!=null && wallpaperReturn.history.isCat();
-        if(homePlay!=null)homePlay.setVisibility(home&&settings.enabled()?View.VISIBLE:View.GONE);
+        if(homePlay!=null)homePlay.setEnabled(settings.enabled());
         power.setText(home?(settings.enabled()?"고양이 종료하기":"고양이 다시 켜기"):(PlayBackdrop.selected(settings)==PlayBackdrop.PHOTO?"내 사진으로 고양이 배경 적용":"홈 화면에 적용"));
         updatingSwitch=false;
     }

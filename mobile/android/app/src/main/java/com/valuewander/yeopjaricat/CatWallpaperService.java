@@ -51,7 +51,8 @@ public final class CatWallpaperService extends WallpaperService {
             if(isPreview()&&scene!=null)scene.close();
             scene=isPreview()?new PetScene(CatWallpaperService.this,this::schedule):HomeSceneStore.get(CatWallpaperService.this);
             touch=new PetTouch(CatWallpaperService.this,()->scene,index->scene.openMenu(index),this::schedule);
-            touch.followEmptySpace=true;
+            touch.launcherTapsOnly=!isPreview();
+            touch.followEmptySpace=isPreview();
             android.util.DisplayMetrics screen=getResources().getDisplayMetrics();
             backdrop=new Backdrop(CatWallpaperService.this,this::schedule,screen.widthPixels<screen.heightPixels*.74f);
             if(surfaceReady){android.graphics.Rect r=getSurfaceHolder().getSurfaceFrame();resizeViewport(r.width(),r.height());}
@@ -63,7 +64,7 @@ public final class CatWallpaperService extends WallpaperService {
         void render(double delta){
             if(closed||!surfaceReady)return;
             boolean paintCat=settings.enabled() && (isPreview()||(!CatOverlayService.displaying&&!keyguard.isKeyguardLocked()));
-            if(delta>0 && paintCat)scene.tick(delta);
+            if(delta>0 && paintCat && (isPreview() || !HomeSceneStore.inPlay))scene.tick(delta);
             boolean trace=android.os.Build.VERSION.SDK_INT>=29 && android.os.Trace.isEnabled() && paintCat && !isPreview();
             if(trace){
                 PetScene.Actor a=scene.actors[0];
@@ -92,16 +93,17 @@ public final class CatWallpaperService extends WallpaperService {
                 if(canvas!=null)try{getSurfaceHolder().unlockCanvasAndPost(canvas);}catch(IllegalArgumentException|IllegalStateException e){lastError=e.toString();}
             }
         }
-        @Override public void onVisibilityChanged(boolean value){visible=value;updateHomeVisibility();clock.stop();if(!value&&touch!=null)touch.cancel();if(value&&!isPreview()&&settings.enabled())AppUpdates.get(CatWallpaperService.this).check(false);schedule();}
+        @Override public void onVisibilityChanged(boolean value){visible=value;updateHomeVisibility();clock.stop();if(!value&&touch!=null)touch.cancel();if(value&&surfaceReady){android.graphics.Rect r=getSurfaceHolder().getSurfaceFrame();resizeViewport(r.width(),r.height());}
+            if(value&&!isPreview()&&settings.enabled())AppUpdates.get(CatWallpaperService.this).check(false);schedule();}
         @Override public void onZoomChanged(float zoom){if(!isPreview()&&visible)HomeSceneStore.zoom(CatWallpaperService.this,zoom);}
         @Override public void onSurfaceCreated(SurfaceHolder holder){super.onSurfaceCreated(holder);surfaceReady=true;schedule();}
-        float groundBottom(float height){int percent=Math.max(30,Math.min(88,settings.prefs.getInt("home_floor_percent",58)));return height*(1-percent/100f);}
-        void resizeViewport(int w,int h){android.util.DisplayMetrics m=getResources().getDisplayMetrics();float width=Math.min(w,m.widthPixels)/density,height=Math.min(h,m.heightPixels)/density;backdrop.viewport(width,height);scene.resize(width,height,groundBottom(height));}
+
+        void resizeViewport(int w,int h){if(!isPreview()&&HomeSceneStore.inPlay)return;android.util.DisplayMetrics m=getResources().getDisplayMetrics();float width=Math.min(w,m.widthPixels)/density,height=Math.min(h,m.heightPixels)/density;backdrop.viewport(width,height);scene.resize(width,height,settings.homeBottom(height));}
         @Override public void onSurfaceChanged(SurfaceHolder holder,int format,int w,int h){super.onSurfaceChanged(holder,format,w,h);resizeViewport(w,h);render(0);schedule();}
         @Override public void onSurfaceRedrawNeeded(SurfaceHolder holder){super.onSurfaceRedrawNeeded(holder);render(0);}
         @Override public void onOffsetsChanged(float x,float y,float xs,float ys,int xp,int yp){cameraX=x;cameraY=y;offsetX=xp;offsetY=yp;if(visible)render(0);}
         @Override public void onSurfaceDestroyed(SurfaceHolder holder){surfaceReady=false;clock.stop();super.onSurfaceDestroyed(holder);}
-        @Override public void onTouchEvent(MotionEvent event){if((isPreview()||(!CatOverlayService.displaying&&!keyguard.isKeyguardLocked()))&&touch!=null)touch.event(event.getActionMasked(),event.getPointerCount(),event.getRawX()/density,event.getRawY()/density,event.getEventTime());super.onTouchEvent(event);}
+        @Override public void onTouchEvent(MotionEvent event){if((isPreview()||(!HomeSceneStore.inPlay&&!CatOverlayService.displaying&&!keyguard.isKeyguardLocked()))&&touch!=null)touch.event(event.getActionMasked(),event.getPointerCount(),event.getRawX()/density,event.getRawY()/density,event.getEventTime());super.onTouchEvent(event);}
         @Override public void onSharedPreferenceChanged(SharedPreferences prefs,String key){if(key==null||key.startsWith("position."))return;if(PetSettings.changesScene(key))reload();
             else if(backdrop!=null&&(PlayBackdrop.PREF.equals(key)||key.equals("photo"))){backdrop.refresh();scene.fitBackdropGround(false);}
             schedule();}

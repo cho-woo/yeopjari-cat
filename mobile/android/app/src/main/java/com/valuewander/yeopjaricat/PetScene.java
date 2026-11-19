@@ -36,6 +36,9 @@ final class PetScene {
         int facing=1,idleFacing=1,previousFacing=1,previousFrame,idleFrame,revision;
         boolean controlled,loading,gaitExit,sideReady,fingerDown,fingerArmed;
         double age,restMs,fingerAim;
+        String upcomingAuto;
+        boolean selfDirected;
+        int attentionIndex;
         long completed,landings;
         int ballHits;
         final TouchMood mood=new TouchMood();
@@ -43,10 +46,11 @@ final class PetScene {
         long pendingUntil;
         static final String[] GENTLE_POSES={"sniff","ear-flick","watch"};
         String finishedOwner="";
-        Actor(int coat,float x){
-            this.coat=coat;this.x=x;restMs=500+random.nextInt(901);
+        Actor(int coat,float x,String opening){
+            this.coat=coat;this.x=x;restMs=350+random.nextInt(301);
             idle=library.neutral(coat);idleFrame=0;
-            library.preload(coat,"run",null);
+            upcomingAuto=opening;
+            library.preload(coat,opening,null);
         }
         boolean busy(){return loading||clock!=null||!plan.isEmpty()||!owner.isEmpty();}
         float ground(){return floor+offsetY;}
@@ -83,7 +87,7 @@ final class PetScene {
         }
         void armFinger(){pendingMood=0;cancelSocial();cancelStory();fingerArmed=true;library.preload(coat,"run",null);library.preload(coat,"cursor-pounce",null);}
         void cancelStory(){
-            remember();releaseClips();revision++;loading=false;loadingAction=null;clock=null;clip=null;
+            selfDirected=false;upcomingAuto=null;remember();releaseClips();revision++;loading=false;loadingAction=null;clock=null;clip=null;
             plan.clear();queued=null;owner="";action="idle";object.kind="";fingerDown=false;
             // User input may interrupt in midair. Keep the visible baseline and ease back on the next clock.
             if(lift!=0){carryLift=lift+carryLift*smooth(carryMs/320);carryMs=320;lift=0;}
@@ -147,8 +151,45 @@ final class PetScene {
             if(busy()){queued=next;return;}
             start(next);
         }
-        void start(String next){
-            owner=next;float ground=ground();
+        // Select during the planted pause so decoding can overlap it.
+        String chooseAuto(){
+            String pick=random.nextInt(4)==0?"walk":MobileActions.all[random.nextInt(MobileActions.all.length)];
+            if(pick.equals(owner.isEmpty()?finishedOwner:owner))return "watch".equals(pick)?"sniff":"watch";
+            return pick;
+        }
+        void prepareAuto(){
+            if(upcomingAuto!=null)return;
+            upcomingAuto=chooseAuto();
+            String first=upcomingAuto;
+            switch(first){
+                case "stalk":case "climb":case "hang":case "jump":case "cursor-pounce":
+                case "punch":case "reach":case "perch":first="walk";break;
+                case "ball":case "ball-pounce":case "turn":case "brake":case "slide":case "stumble":first="run";break;
+                case "catnip":first="roll";break;
+                case "cushion":first="knead";break;
+                case "scratch-fur":first="groom";break;
+                case "sleep-talk":first="loaf";break;
+                default:break;
+            }
+            library.preload(coat,first,null);
+        }
+        double timeToBoundary(){
+            if(!busy())return 0;
+            if(loading || clock==null || !plan.isEmpty())return Double.POSITIVE_INFINITY;
+            if(step.travel && !gaitExit)return Double.POSITIVE_INFINITY;
+            return Math.max(0,clip.durationMs-age);
+        }
+        void attendPartner(Actor partner){
+            if(sideReady || controlled || fingerArmed || busy() || partner.timeToBoundary()<950)return;
+            selfDirected=false;owner="partner-watch";
+            // Each is a complete, grounded motion with its original entry and recovery.
+            pose(attentionIndex==0 || partner.timeToBoundary()<2400?"ear-flick":"watch");
+            attentionIndex=1-attentionIndex;
+            nextStep();
+        }
+        void start(String next){start(next,false);}
+        void start(String next,boolean autoChosen){
+            selfDirected=autoChosen;upcomingAuto=null;owner=next;float ground=ground();
             switch(next){
                 case "walk": case "stalk":
                     route("walk",roam(next.equals("walk")?2.5f:1.5f),ground,false);break;
@@ -212,9 +253,10 @@ final class PetScene {
             boolean exchange=owner.equals("pair-paw") && socialActive && socialPhase<3;
             if(next==null && sideReady && !exchange){next=new Step("walk");next.bridge=-1;next.direction=facing;}
             if(next==null){
-                finishedOwner=owner;completed++;ballHits+=object.hits;object.hits=0;object.kind="";
+                selfDirected=false;finishedOwner=owner;completed++;ballHits+=object.hits;object.hits=0;object.kind="";
                 owner="";action="idle";step=null;if(!exchange){sideReady=false;releaseClips();}
-                restMs=900+random.nextInt(1301);return;
+                // The full authored recovery has finished. Leave a short, visible planted hold.
+                restMs=420+random.nextInt(341);return;
             }
             if(next.name.equals("ball-approach")){
                 String strike=next.direction==1?"ball":"ball-pounce";
@@ -385,15 +427,18 @@ final class PetScene {
                         }
                     }
                     if(playPendingMood())return;
+                    if(automatic && queued==null)prepareAuto();
                     restMs-=delta;
                     if(restMs<=0&&(queued!=null||automatic)){
-                        String next=queued;queued=null;
-                        if(next==null)next=random.nextInt(4)==0?"walk":MobileActions.all[random.nextInt(MobileActions.all.length)];
-                        start(next);
+                        boolean choose=queued==null;String next=choose?upcomingAuto:queued;queued=null;
+                        start(next,choose);
                     }
                 }
                 return;
             }
+            // Decode the next autonomous entrance while this recovery is still on screen.
+            if(automatic && selfDirected && upcomingAuto==null && queued==null && !socialActive &&
+                pendingSocial.isEmpty() && age>250 && timeToBoundary()<2300)prepareAuto();
             age+=delta;fade=Math.min(1,fade+(float)delta/165);
             if(fade>=1)previousPose=null;
             if(step.travel){walk(delta);return;}
@@ -479,9 +524,9 @@ final class PetScene {
     PetScene(Context context,Runnable invalidate,String mode){
         this.invalidate=invalidate;application=context.getApplicationContext();positionMode=mode;
         library=MotionLibrary.get(context);settings=new PetSettings(context);size=settings.size();
-        actors[0]=new Actor(settings.coat(),width*(settings.companion()?.18f:.28f));
-        if(settings.companion())actors[1]=new Actor(settings.companionCoat(),width*.82f);
-        for(Actor actor:actors)if(actor!=null)library.preload(actor.coat,"cursor-pounce",null);
+        actors[0]=new Actor(settings.coat(),width*(settings.companion()?.18f:.28f),"sniff");
+        if(settings.companion())actors[1]=new Actor(settings.companionCoat(),width*.82f,"ear-flick");
+        for(Actor actor:actors)if(actor!=null){library.preload(actor.coat,"run",null);library.preload(actor.coat,"cursor-pounce",null);}
     }
     void resize(float w,float h,float bottom){
         if(w<=0||h<=0)return;
@@ -520,9 +565,22 @@ final class PetScene {
         Actor a=actors[socialLeader],b=actors[1-socialLeader];
         if(b==null||a==null)return;
         if(!socialActive && pendingSocial.isEmpty() && automatic && !a.fingerArmed&&!b.fingerArmed){
-            socialTimer-=dt;if(socialTimer<=0) social(MobileActions.social[random.nextInt(MobileActions.social.length)],random.nextInt(2));
+            socialTimer-=dt;
+            // An automatic invitation can wait for a natural meeting point.
+            // Until then the other cat continues choosing its own activities.
+            boolean nearBoundary=a.timeToBoundary()<2200 && b.timeToBoundary()<2200;
+            if(socialTimer<=0 && (nearBoundary || (socialTimer< -14000 && (!a.busy()||!b.busy()))))social(MobileActions.social[random.nextInt(MobileActions.social.length)],random.nextInt(2));
         }
-        if(a.busy()||b.busy()||a.controlled||b.controlled||a.fingerArmed||b.fingerArmed)return;
+        if(a.controlled||b.controlled||a.fingerArmed||b.fingerArmed)return;
+        if(a.busy()||b.busy()){
+            if(automatic && (socialActive || !pendingSocial.isEmpty())){
+                // Only the early finisher waits actively. Never make two waiting
+                // poses chase each other's completion or interrupt a planted paw exchange.
+                if(!a.busy() && !b.owner.equals("partner-watch"))a.attendPartner(b);
+                if(!b.busy() && !a.owner.equals("partner-watch"))b.attendPartner(a);
+            }
+            return;
+        }
         if(!pendingSocial.isEmpty()&&!socialActive){
             socialActive=true;socialName=pendingSocial;pendingSocial="";socialPhase=0;
         }
@@ -562,7 +620,7 @@ final class PetScene {
             a.facePose("reach",dir);b.facePose("punch",-dir);
         }else{
             a.owner=b.owner="";socialActive=false;socialCount++;socialTimer=22000+random.nextInt(24000);
-            a.restMs=1100;b.restMs=1600;return;
+            a.restMs=580;b.restMs=720;return;
         }
         socialPhase++;a.nextStep();b.nextStep();
     }

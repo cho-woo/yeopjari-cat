@@ -1,4 +1,5 @@
 <resources>
+    <string name="play_shortcut">고양이 놀이터</string>
     <string name="app_name">옆자리 고양이</string>
     <string name="wallpaper_description">홈 화면에서만 만나는 작은 고양이. 앱을 열거나 화면을 끄면 쉽니다.</string>
     <style name="AppTheme" parent="android:style/Theme.Material.Light.NoActionBar">
