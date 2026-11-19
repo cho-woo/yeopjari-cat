@@ -12,13 +12,21 @@ import java.nio.file.Files;
 import java.util.HashSet;
 
 final class TouchReview {
-    final MotionSmoke test;final MainActivity activity;final File folder;
+    final MotionSmoke test;MainActivity activity;final File folder;
     final JSONArray results=new JSONArray();
     TouchReview(MotionSmoke test,MainActivity activity,File folder){this.test=test;this.activity=activity;this.folder=folder;}
     void event(int action,float x,float y,long down){MotionEvent e=MotionEvent.obtain(down,SystemClock.uptimeMillis(),action,x,y,0);e.setSource(InputDevice.SOURCE_TOUCHSCREEN);test.sendPointerSync(e);e.recycle();}
     float[] point(int role){final float[] p=new float[2];test.runOnMainSync(()->{int[] screen=new int[2];activity.preview.getLocationOnScreen(screen);RectF b=activity.preview.scene.actors[role].bounds();float d=activity.preview.density();p[0]=screen[0]+b.centerX()*d;p[1]=screen[1]+b.centerY()*d;});return p;}
     void idle()throws Exception{test.waitFor(()->activity.preview.scene.actors[0].idle!=null&&activity.preview.scene.actors[1]!=null&&activity.preview.scene.actors[1].idle!=null,"Two cats not loaded");}
     void run()throws Exception{
+        // The resume button operates on the installed live wallpaper. Install it
+        // through the system picker before sending input to the settings preview.
+        if(!activity.wallpaperReturn.history.isCat()){
+            new LauncherPlayReview(test).applyHome();
+            activity=(MainActivity)test.startActivitySync(new android.content.Intent(test.getTargetContext(),MainActivity.class)
+                .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK|android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK));
+            test.waitFor(activity::hasWindowFocus,"Settings preview did not regain focus");
+        }
         for(int coat:new int[]{0,8,10}){
             test.runOnMainSync(()->{new PetSettings(activity).prefs.edit().putBoolean("pets_enabled",true).putBoolean("companion",true).putInt("coat",coat).putInt("companion_coat",coat).apply();activity.preview.reload();activity.preview.scene.automatic=false;});idle();
             for(int role=0;role<2;role++){
