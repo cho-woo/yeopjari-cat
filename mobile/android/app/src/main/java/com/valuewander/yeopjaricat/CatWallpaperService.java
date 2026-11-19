@@ -3,6 +3,7 @@ package com.valuewander.yeopjaricat;
 import android.app.KeyguardManager;
 import android.content.SharedPreferences;
 import android.graphics.Canvas;
+import android.graphics.PixelFormat;
 import android.service.wallpaper.WallpaperService;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
@@ -44,7 +45,7 @@ public final class CatWallpaperService extends WallpaperService {
         final float density=getResources().getDisplayMetrics().density;
         final KeyguardManager keyguard=(KeyguardManager)getSystemService(KEYGUARD_SERVICE);
         CatEngine(){setTouchEventsEnabled(true);settings.prefs.registerOnSharedPreferenceChangeListener(this);}
-        @Override public void onCreate(SurfaceHolder holder){super.onCreate(holder);reload();}
+        @Override public void onCreate(SurfaceHolder holder){super.onCreate(holder);holder.setFormat(PixelFormat.RGBX_8888);reload();}
         void reload(){
             if(touch!=null)touch.cancel();if(backdrop!=null)backdrop.close();
             if(isPreview()&&scene!=null)scene.close();

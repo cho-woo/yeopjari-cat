@@ -3,6 +3,8 @@ package com.valuewander.yeopjaricat;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
 import android.graphics.RectF;
 import java.util.ArrayDeque;
 import java.util.Random;
@@ -371,9 +373,26 @@ final class PetScene {
         void draw(Canvas canvas){
             MotionLibrary.Clip current=clip==null?idle:clip;if(current==null)return;
             float t=previousPose!=null&&clip!=null?smooth(fade):1;
-            if(t<1){paint.setAlpha(Math.round(255*(1-t)));previousPose.paint(canvas,previousFrame,x,footY(),size,previousFacing,paint);}
-            paint.setAlpha(Math.round(255*t));current.paint(canvas,currentFrame(),x,footY(),size,clip==null?idleFacing:facing,paint);
-            paint.setAlpha(255);
+            int dir = clip==null?idleFacing:facing;
+            int incoming = Math.round(255*t);
+            if(incoming==255){current.paint(canvas,currentFrame(),x,footY(),size,dir,paint);return;}
+            if(incoming==0){previousPose.paint(canvas,previousFrame,x,footY(),size,previousFacing,paint);return;}
+            // Mix premultiplied source pixels, then composite once onto the
+            // wallpaper. Two SRC_OVER passes let the photo show through the fur.
+            RectF layerBounds = bounds();
+            layerBounds.inset(-2,-2);
+            int saved = canvas.saveLayer(layerBounds,null);
+            try {
+                paint.setAlpha(255-incoming);
+                previousPose.paint(canvas,previousFrame,x,footY(),size,previousFacing,paint);
+                paint.setAlpha(incoming);
+                paint.setXfermode(ADD_POSE);
+                current.paint(canvas,currentFrame(),x,footY(),size,dir,paint);
+            } finally {
+                paint.setXfermode(null);
+                paint.setAlpha(255);
+                canvas.restoreToCount(saved);
+            }
         }
         RectF bounds(){return bounds(false);}
         RectF bounds(boolean whole){
@@ -389,6 +408,7 @@ final class PetScene {
                 x+(dir<0?-l:r),footY()+(whole?c.bottom:c.rectangles[f][3]-c.anchors[f][1])*s);
         }
     }
+    private static final PorterDuffXfermode ADD_POSE = new PorterDuffXfermode(PorterDuff.Mode.ADD);
     final MotionLibrary library;
     final Random random=new Random();
     final Actor[] actors=new Actor[2];

@@ -8,7 +8,9 @@ from pathlib import Path
 
 import cv2
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw
+from android_snow_edges import clean_edges
+from android_snow_fur import retouch
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / 'mobile/android/app/src/main/assets/motions'
@@ -28,7 +30,38 @@ def sequence(count):
     return dict(intro=[dict(frame=i, ms=round((i+1)*1000/24)-round(i*1000/24)) for i in range(count)], loop=[], outro=[])
 
 
-def pack(directory, name, coat, poses, anchors, reference, playlist, *, movie=False):
+def repaired_pose(pose, name, frame, protected=None):
+    result = clean_edges(retouch(pose, name, frame))
+    if protected is not None and result is not pose:
+        result.paste(pose, mask=protected)
+    return result
+
+
+def iris_frames(sheet, frames):
+    for frame in frames:
+        x,y,w,h=frame['rect']
+        yield sheet.crop((x,y,x+w,y+h)).point(lambda label: 255 if label else 0)
+
+
+def movie_eyes(asset, name):
+    if name=='ball-pounce':
+        path=VIDEO/'selected/ball-v40/snowdrop-eyes.json'
+        sw,sh=480,480
+    else:
+        path=ROOT/f'assets/furniture-v39/selected/review/snowdrop-{name}-eyes.json'
+        sw,sh=asset['source_dimensions']
+    w,h=asset['width'],asset['height']
+    for eyes in read(path):
+        mask=Image.new('L',(w,h))
+        draw=ImageDraw.Draw(mask)
+        for eye in eyes:
+            x,y,rw,rh=eye['rect']
+            draw.rectangle((int(x*w/sw),int(y*h/sh),
+                            int(np.ceil((x+rw)*w/sw))-1,int(np.ceil((y+rh)*h/sh))-1),fill=255)
+        yield mask
+
+
+def pack(directory, name, coat, poses, anchors, reference, playlist, *, movie=False, protected=None):
     # Trim transparent margins without moving the world anchor. Identical exposures
     # share pixels but retain independent source timestamps and contact records.
     records, pages, pending, seen = [], [], [], {}
@@ -48,11 +81,13 @@ def pack(directory, name, coat, poses, anchors, reference, playlist, *, movie=Fa
                 rec['rect']=[(i%8)*w+1,(i//8)*h+1,pending[i].width,pending[i].height]
         filename=f'c{coat}-{name}-{page_id}.webp'
         path=directory/filename
-        page.save(path, lossless=not movie, quality=94, method=2, exact=True)
+        page.save(path, lossless=(not movie or coat == 10), quality=94, method=2, exact=True)
         pages.append(dict(file=filename,sha256=sha(path),width=page.width,height=page.height))
         pending.clear()
 
     for index, pose in enumerate(poses):
+        if coat == 10:
+            pose = repaired_pose(pose, name, index, next(protected) if protected is not None else None)
         box=pose.getbbox()
         if not box:
             raise ValueError(f'Empty {name}/{coat} frame {index}')
@@ -159,7 +194,11 @@ def main():
                         x,y,w,h=f['rect']
                         yield sheet.crop((x,y,x+w,y+h))
                 anchors=spec.get('anchors',[f['anchor'] for f in c['frames']])
-                entry=pack(OUT,name,coat,poses(),anchors,c['reference_height'],c['sequence'])
+                protected = None
+                if coat==10:
+                    with Image.open(src.parent/'odd-eye-masks'/src.name) as mask_file:
+                        protected=iris_frames(mask_file.convert('L'),c['frames'])
+                entry=pack(OUT,name,coat,poses(),anchors,c['reference_height'],c['sequence'],protected=protected)
             entry.update(source=src.relative_to(ROOT).as_posix(),source_sha256=spec['sha256'],stride_pixels=c.get('stride_pixels',0))
             reg=registration.get(('tuxedo' if coat==8 else 'cream')+'-'+name,{})
             if name in ('ball','punch','reach','cursor-pounce'):
@@ -176,7 +215,8 @@ def main():
         if sha(src)!=asset['sha256']:
             raise ValueError(src)
         count=asset['source_frames']
-        entry=pack(OUT,name,asset['character'],movie_frames(src),[asset['anchor']]*count,asset['reference_height'],sequence(count),movie=True)
+        entry=pack(OUT,name,asset['character'],movie_frames(src),[asset['anchor']]*count,asset['reference_height'],sequence(count),movie=True,
+                   protected=movie_eyes(asset,name) if asset['character']==10 else None)
         assert len(entry['frames'])==count
         entry.update(source=asset['path'],source_sha256=asset['sha256'])
         if name=='ball-pounce':
@@ -187,7 +227,22 @@ def main():
             src=NATIVE/page['file']
             if sha(src)!=page['sha256']:
                 raise ValueError(src)
-            shutil.copyfile(src,OUT/src.name)
+            if entry['coat']!=10:
+                shutil.copyfile(src,OUT/src.name)
+        if entry['coat']==10:
+            # Already-trimmed Win32 frames have anchors in that trim's space.
+            native_pages = []
+            for page in entry['pages']:
+                with Image.open(NATIVE/page['file']) as sheet:
+                    native_pages.append(sheet.convert('RGBA'))
+            def native_poses():
+                for frame in entry['frames']:
+                    x,y,w,h=frame['rect']
+                    yield native_pages[frame['page']].crop((x,y,x+w,y+h))
+            processed = pack(OUT,entry['name'],10,native_poses(),
+                [f['anchor'] for f in entry['frames']],entry['reference_height'],entry['sequence'])
+            processed['source'] = entry['source']
+            entry = processed
         entries.append(entry)
     write_index(entries)
     used={p['file'] for c in entries for p in c['pages']}

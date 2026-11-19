@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.ColorSpace;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.os.Handler;
@@ -114,10 +115,14 @@ final class MotionLibrary {
         Clip clip=new Clip(spec,pages,outroOnly);
         boolean[] needed=new boolean[pages.length];
         for(int frame:clip.frames)needed[clip.page[frame]]=true;
+        BitmapFactory.Options decode = new BitmapFactory.Options();
+        decode.inPreferredConfig = Bitmap.Config.ARGB_8888;
+        decode.inPreferredColorSpace = ColorSpace.get(ColorSpace.Named.SRGB);
+        decode.inScaled = false;
         for(int i=0;i<pages.length;i++){
             if(outroOnly && !needed[i])continue;
             try(InputStream in=context.getAssets().open("motions/"+ps.getJSONObject(i).getString("file"))){
-                pages[i]=BitmapFactory.decodeStream(in);
+                pages[i]=BitmapFactory.decodeStream(in,null,decode);
                 if(pages[i]==null)throw new IllegalStateException("Cannot decode atlas");
                 if(i==(outroOnly?clip.page[clip.frames[0]]:0))pages[i].prepareToDraw();
             }

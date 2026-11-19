@@ -5,7 +5,7 @@ from functools import lru_cache
 from pathlib import Path
 
 from PIL import Image, ImageChops
-from export_android_motions import OUT, ROOT, VIDEO, read, sha
+from export_android_motions import iris_frames, repaired_pose, OUT, ROOT, VIDEO, read, sha
 
 
 def main():
@@ -19,6 +19,7 @@ def main():
     originals={c['clip']:c for c in [*video,treat]}
     styled=read(ROOT/'assets/styled-sprites/manifest.json')['atlases']
     results=[]
+    protected_iris_pixels=0
     for item in index['clips']:
         dest=read(OUT/item['file'])
         name,coat=dest['name'],dest['coat']
@@ -39,6 +40,9 @@ def main():
                 return im.convert('RGBA')
         with Image.open(source) as im:
             sheet=im.convert('RGBA')
+        if coat==10:
+            with Image.open(source.parent/'odd-eye-masks'/source.name) as mask_file:
+                protected=iris_frames(mask_file.convert('L'),c['frames'])
         for i,(old,new) in enumerate(zip(c['frames'],dest['frames'])):
             x,y,w,h=old['rect']
             original=sheet.crop((x,y,x+w,y+h))
@@ -46,14 +50,24 @@ def main():
             assert new['anchor']==[anchors[i][0]-bounds[0],anchors[i][1]-bounds[1]],(name,coat,i,'anchor')
             x,y,w,h=new['rect']
             packed=page(new['page']).crop((x,y,x+w,y+h))
+            raw=original.crop(bounds)
+            if coat == 10:
+                iris = next(protected)
+                corrected = repaired_pose(original,name,i,iris)
+                protected_iris_pixels += iris.histogram()[255]
+                assert corrected.getchannel('A').tobytes() == original.getchannel('A').tobytes(), (name,i,'coverage')
+                original = corrected
             original=original.crop(bounds)
             assert packed.size==original.size
+            if coat==10:
+                delta=ImageChops.difference(raw,packed).convert('RGB')
+                assert not Image.composite(delta,Image.new('RGB',delta.size),iris.crop(bounds)).getbbox(),(name,i,'iris')
             assert not ImageChops.difference(original,packed).getbbox(alpha_only=False),(name,coat,i,'pixels')
         page.cache_clear()
         results.append(dict(name=name,coat=coat,frames=len(c['frames'])))
     assert len(results)==69
     report=dict(passed=True,source='Windows registered sprite atlases',clips=len(results),
-        checked_frames=sum(r['frames'] for r in results),identity_sha256=index['source_identity_sha256'],results=results)
+        protected_iris_pixels=protected_iris_pixels,checked_frames=sum(r['frames'] for r in results),identity_sha256=index['source_identity_sha256'],results=results)
     args.out.parent.mkdir(parents=True,exist_ok=True)
     args.out.write_text(json.dumps(report,indent=2),encoding='utf-8')
     print(report['clips'],report['checked_frames'],'pixel and anchor comparisons passed')
