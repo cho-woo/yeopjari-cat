@@ -41,6 +41,7 @@ final class TouchReview {
                 test.runOnMainSync(()->activity.power.performClick());test.check(new PetSettings(activity).enabled(),"Resume failed");
                 results.put(new JSONObject().put("coat",coat).put("role",role).put("drag_2d",true).put("long_press_menu",true).put("global_exit",true).put("resume",true));
             }
+            if("touch-gestures".equals(test.arguments.getString("mode")))continue;
             // Real elapsed-time playback, with both roles active. No synthetic fast-forward.
             test.runOnMainSync(()->{activity.preview.reload();});idle();
             long until=SystemClock.uptimeMillis()+35000;int[] active={0,0};int samples=0;

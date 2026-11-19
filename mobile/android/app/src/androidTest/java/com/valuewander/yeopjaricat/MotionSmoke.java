@@ -49,7 +49,7 @@ public final class MotionSmoke extends Instrumentation {
             if(arguments!=null&&arguments.getString("mode","").startsWith("parity")){
                 new ActionParityReview(this).run(arguments.getString("mode"),Integer.parseInt(arguments.getString("coat","0")));return;
             }
-            if(arguments!=null&&"touch".equals(arguments.getString("mode"))){new TouchReview(this,activity,directory).run();Bundle b=new Bundle();b.putString("stream","TOUCH_REVIEW_PASSED");finish(RESULT_OK,b);return;}
+            if(arguments!=null&&("touch".equals(arguments.getString("mode")) || "touch-gestures".equals(arguments.getString("mode")))){new TouchReview(this,activity,directory).run();Bundle b=new Bundle();b.putString("stream","TOUCH_REVIEW_PASSED");finish(RESULT_OK,b);return;}
             if(arguments!=null&&"wallpaper".equals(arguments.getString("mode"))){wallpaperChecks();return;}
             check(!new PetSettings(getTargetContext()).prefs.getBoolean("overlay",false),"Overlay must default OFF");
             check(!CatOverlayService.running,"Default must not start overlay service");
