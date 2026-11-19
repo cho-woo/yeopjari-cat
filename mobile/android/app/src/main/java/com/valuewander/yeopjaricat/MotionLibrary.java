@@ -31,6 +31,7 @@ final class MotionLibrary {
         final int[] frames, times;
         final int loopStart, loopEnd, loopMs;
         final float reference, stride;
+        final int glanceEnd;
         final float[][] paws;
         final int[][] rectangles;
         final float[][] anchors;
@@ -40,6 +41,7 @@ final class MotionLibrary {
         float left=Float.POSITIVE_INFINITY,top=Float.POSITIVE_INFINITY,right=Float.NEGATIVE_INFINITY,bottom=Float.NEGATIVE_INFINITY;
         Clip(JSONObject spec, Bitmap[] pages, boolean outroOnly) throws Exception {
             this.spec=spec; this.pages=pages;
+            glanceEnd=spec.optInt("glance_end",0);
             reference=(float)spec.getDouble("reference_height"); stride=(float)spec.optDouble("stride_pixels",0);
             JSONArray points=spec.optJSONArray("paws");
             paws=points==null?new float[0][2]:new float[points.length()][2];

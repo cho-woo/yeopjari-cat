@@ -41,6 +41,7 @@ public final class MotionSmoke extends Instrumentation {
             }
             activity=(MainActivity)startActivitySync(new Intent(getTargetContext(),MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
             waitForIdleSync();
+            if(arguments!=null&&"touch-moods".equals(arguments.getString("mode"))){new TouchMoodReview(this).run();return;}
             if(arguments!=null&&"play-backdrops".equals(arguments.getString("mode"))){new PlayBackdropReview(this).run();return;}
             if(arguments!=null&&"snow-playback".equals(arguments.getString("mode"))){new SnowGraphicsReview(this).playback();return;}
             if(arguments!=null&&"snow-graphics".equals(arguments.getString("mode"))){new SnowGraphicsReview(this).run();return;}

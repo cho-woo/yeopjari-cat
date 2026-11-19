@@ -38,6 +38,10 @@ final class PetScene {
         double age,restMs,fingerAim;
         long completed,landings;
         int ballHits;
+        final TouchMood mood=new TouchMood();
+        int pendingMood, gentleCount;
+        long pendingUntil;
+        static final String[] GENTLE_POSES={"sniff","ear-flick","watch"};
         String finishedOwner="";
         Actor(int coat,float x){
             this.coat=coat;this.x=x;restMs=500+random.nextInt(901);
@@ -77,7 +81,7 @@ final class PetScene {
             MotionLibrary.Clip resident=upcoming.get(name);
             if(resident!=null)ready.accept(resident);else library.request(coat,name,ready);
         }
-        void armFinger(){cancelSocial();cancelStory();fingerArmed=true;library.preload(coat,"run",null);library.preload(coat,"cursor-pounce",null);}
+        void armFinger(){pendingMood=0;cancelSocial();cancelStory();fingerArmed=true;library.preload(coat,"run",null);library.preload(coat,"cursor-pounce",null);}
         void cancelStory(){
             remember();releaseClips();revision++;loading=false;loadingAction=null;clock=null;clip=null;
             plan.clear();queued=null;owner="";action="idle";object.kind="";fingerDown=false;
@@ -104,6 +108,40 @@ final class PetScene {
             if(right-x<size*.65f)return left;
             if(x-left<size*.65f)return right;
             return random.nextBoolean()?right:left;
+        }
+        void tap(long time){
+            int level=mood.tap(time);
+            if(level==0 || owner.equals("touch-angry"))return;
+            if(owner.equals("touch-warning")){
+                if(level==TouchMood.ANGRY){
+                    owner="touch-angry";
+                    if(clock!=null){
+                        int visible=clock.frame();
+                        clock=clip.clock();
+                        // Keep the actual exposure on screen, even on the returning glance.
+                        for(int i=0;i<visible;i++)clock.advance(clock.duration[i]);
+                    }
+                }
+                return;
+            }
+            if(owner.equals("touch-gentle") && level==TouchMood.GENTLE)return;
+            pendingMood=Math.max(pendingMood,level);
+            pendingUntil=time+(pendingMood==TouchMood.ANGRY?30000:pendingMood==TouchMood.WARNING?8000:3000);
+            if(!socialActive && !fingerArmed && (!busy() || owner.equals("touch-gentle"))){
+                if(busy()){String command=queued;cancelStory();queued=command;}
+                playPendingMood();
+            }
+        }
+        boolean playPendingMood(){
+            int level=pendingMood;pendingMood=0;
+            if(level==0 || android.os.SystemClock.uptimeMillis()>pendingUntil)return false;
+            if(level==TouchMood.GENTLE){
+                owner="touch-gentle";pose(GENTLE_POSES[gentleCount]);
+                gentleCount=(gentleCount+1)%GENTLE_POSES.length;
+            }else{
+                owner=level==TouchMood.ANGRY?"touch-angry":"touch-warning";pose("touch-hiss");
+            }
+            nextStep();return true;
         }
         void request(String next){
             if(busy()){queued=next;return;}
@@ -206,6 +244,7 @@ final class PetScene {
                 if(value==null){android.util.Log.e("YeopjariCat","Cannot play "+name);cancelStory();restMs=4000;return;}
                 previousPose=idle;previousFrame=idleFrame;previousFacing=idleFacing;fade=0;
                 clip=value;clock=value.clock();action=name;age=0;startX=x;startY=ground();gaitExit=false;
+                if(owner.equals("touch-warning"))clock=TouchMood.warning(clock,clip.glanceEnd);
                 if(step.direction!=0)facing=step.direction;
                 if(owner.equals("finger")&&!step.travel&&!name.equals("turn")&&step.bridge==0){
                     attackX=fingerX;attackY=fingerY;
@@ -345,6 +384,7 @@ final class PetScene {
                             nextStep();return;
                         }
                     }
+                    if(playPendingMood())return;
                     restMs-=delta;
                     if(restMs<=0&&(queued!=null||automatic)){
                         String next=queued;queued=null;
@@ -546,13 +586,13 @@ final class PetScene {
             uiPaint.setColor(0xff7560bb);uiPaint.setTextSize(15);uiPaint.setTextAlign(Paint.Align.CENTER);
             canvas.drawText("종료하기",r.centerX(),r.top+29,uiPaint);canvas.drawText("취소",r.centerX(),r.top+71,uiPaint);}
     }
-    void touch(float x,float y){int i=hit(x,y);if(i>=0)actors[i].request("punch");}
+    void touch(float x,float y){int i=hit(x,y);if(i>=0)actors[i].tap(android.os.SystemClock.uptimeMillis());}
     int hit(float x,float y){if(!settings.enabled())return -1;
         for(int i=actors.length-1;i>=0;i--)if(actors[i]!=null){RectF b=actors[i].bounds();b.inset(-8,-8);if(b.contains(x,y))return i;}return -1;}
     int closest(float x,float y){if(actors[1]==null)return 0;return Math.hypot(x-actors[0].x,y-actors[0].footY()+size*.5f)<=Math.hypot(x-actors[1].x,y-actors[1].footY()+size*.5f)?0:1;}
     void drag(int index,float dx,float dy){
         Actor a=actors[index];if(a.busy()){cancelSocial();a.cancelStory();}
-        a.nextGroundMin=Float.NaN;a.fingerArmed=false;a.x=a.safeX(a.x+dx);a.offsetY=a.safeY(a.ground()+dy)-floor;a.startX=a.x;
+        a.pendingMood=0;a.nextGroundMin=Float.NaN;a.fingerArmed=false;a.x=a.safeX(a.x+dx);a.offsetY=a.safeY(a.ground()+dy)-floor;a.startX=a.x;
     }
     void savePositions(){if(positionMode.equals("preview"))return;
         android.content.SharedPreferences.Editor editor=settings.prefs.edit();

@@ -13,7 +13,7 @@ final class SceneView extends View {
     final PetFrameLoop frames=new PetFrameLoop(this::drawFrame);
     boolean running;
     long renderedFrames;
-    SceneView(Context context) { super(context);setContentDescription("고양이 미리보기. 고양이를 톡 누르면 앞발로 반응해요.");reload(); }
+    SceneView(Context context) { super(context);setContentDescription("고양이 미리보기. 고양이를 톡 누르면 반응해요. 연달아 건드리면 귀를 젖히고 하악질해요.");reload(); }
     void reload() {
         if(touch!=null)touch.cancel();if(menuDialog!=null){menuDialog.dismiss();menuDialog=null;}if(scene!=null)scene.close();if(backdrop!=null)backdrop.close();
         scene=new PetScene(getContext(),this::wake);backdrop=new Backdrop(getContext(),this::invalidate,false);

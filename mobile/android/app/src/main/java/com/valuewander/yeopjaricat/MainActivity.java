@@ -99,7 +99,7 @@ public final class MainActivity extends Activity {
         pairButton.setEnabled(settings.companion());companion.setOnCheckedChangeListener((b,checked)->{
             settings.put("companion",checked);preview.reload();pairButton.setEnabled(checked);});
         pairButton.setOnClickListener(v->PetMenus.choosePreview(this,true));
-        add(play,text("미리보기의 빈 곳에 손가락을 대고 움직이면 가까운 고양이가 쫓아와요.",12,MUTED),10);
+        add(play,text("빈 곳을 누르고 움직이면 손가락을 쫓아와요. 고양이를 연달아 톡톡 건드리면 하악질할 수도 있어요.",12,MUTED),10);
         LinearLayout appearance=card(content,"내 홈 화면답게");
         add(appearance,text("고양이 크기",13,INK),14);
         SeekBar size=new SeekBar(this);size.setMax(40);size.setProgress(settings.size()-56);size.setContentDescription("고양이 크기");appearance.addView(size);

@@ -104,7 +104,7 @@ matches the cat's submitted buffers to actual display frames, including takeoff 
 3. `tools/build_android.ps1 -Tests` repacks verified source atlases, builds the
    debug-signed preview and runs Android lint. Temporary ASCII drive mapping
    avoids native Android tools' Unicode-path limitations on Windows.
-4. Output: `build/android-0.6.0-preview/YeopjariCat-Android-0.6.0-preview.apk`.
+4. Output: `build/android-0.6.1-preview/YeopjariCat-Android-0.6.1-preview.apk`.
 
 The preview uses a local Android debug signing key; it is not the future store
 release key. Do not upload this test key as the production signing identity.

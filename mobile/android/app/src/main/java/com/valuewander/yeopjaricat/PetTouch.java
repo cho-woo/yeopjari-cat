@@ -20,6 +20,7 @@ final class PetTouch {
     PointerGesture gesture;
     boolean menuOpen,tracking;
     int selectedActor;
+    long releaseTime;
     boolean followEmptySpace;
     PetTouch(Context context,Supplier<PetScene> source,IntConsumer menu,Runnable invalidate){
         this.source=source;this.menu=menu;this.invalidate=invalidate;
@@ -35,12 +36,11 @@ final class PetTouch {
             if(!value.settings.enabled()||(empty&&!followEmptySpace))return false;
             scene=value;selectedActor=empty?value.closest(x,y):index;actor=scene.actors[selectedActor];
             if(empty||actor.fingerArmed){tracking=true;actor.beginFinger(x,y);return true;}
-            actor.controlled=true;
             final int selected=selectedActor;
             gesture=new PointerGesture(slop,new PointerGesture.Listener(){
-                public void drag(float dx,float dy){scene.drag(selected,dx,dy);invalidate.run();}
-                public void tap(){actor.controlled=false;actor.request("punch");}
-                public void menu(){menuOpen=true;menu.accept(selected);invalidate.run();}
+                public void drag(float dx,float dy){actor.controlled=true;scene.drag(selected,dx,dy);invalidate.run();}
+                public void tap(){actor.tap(releaseTime);invalidate.run();}
+                public void menu(){actor.controlled=true;menuOpen=true;menu.accept(selected);invalidate.run();}
                 public void release(boolean dragged){if(!menuOpen){actor.controlled=false;if(dragged)scene.savePositions();}}
             });
             gesture.down(x,y,time);handler.postDelayed(hold,550);return true;
@@ -52,7 +52,7 @@ final class PetTouch {
         }
         if(gesture==null)return false;
         if(action==MotionEvent.ACTION_MOVE)gesture.move(x,y);
-        if(action==MotionEvent.ACTION_UP){handler.removeCallbacks(hold);gesture.up(x,y,time);}
+        if(action==MotionEvent.ACTION_UP){releaseTime=time;handler.removeCallbacks(hold);gesture.up(x,y,time);}
         return true;
     }
     void releaseMenu(){menuOpen=false;if(actor!=null)actor.controlled=false;if(scene!=null)scene.closeMenu();invalidate.run();}

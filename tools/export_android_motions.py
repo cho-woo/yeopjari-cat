@@ -9,6 +9,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 from PIL import Image, ImageDraw
+from android_touch_reactions import touch_entries
 from android_snow_edges import clean_edges
 from android_snow_fur import retouch
 
@@ -244,6 +245,7 @@ def main():
             processed['source'] = entry['source']
             entry = processed
         entries.append(entry)
+    entries.extend(touch_entries(ROOT,OUT,pack,sequence))
     write_index(entries)
     used={p['file'] for c in entries for p in c['pages']}
     used.update(f'c{coat}-neutral.webp' for coat in (0,8,10))
