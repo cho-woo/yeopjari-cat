@@ -59,7 +59,8 @@ public final class MainActivity extends Activity {
         add(content,text("매일의 홈 화면에, 귀여운 옆자리 하나.",14,MUTED),10);
         preview=new SceneView(this);preview.setBackground(round(0xffece3f9,26));preview.setClipToOutline(true);
         int contentWidth=getResources().getConfiguration().screenWidthDp-48;
-        int previewHeight=Math.max(225,Math.min(380,Math.round(contentWidth*.63f)));
+        int availableHeight=getResources().getConfiguration().screenHeightDp;
+        int previewHeight=Math.max(145,Math.min(Math.round(availableHeight*.37f),Math.max(225,Math.min(380,Math.round(contentWidth*.63f)))));
         LinearLayout.LayoutParams previewParams=new LinearLayout.LayoutParams(-1,dp(previewHeight));previewParams.topMargin=dp(22);content.addView(preview,previewParams);
         backdropPicker=new BackdropPicker(this,content);
         power=button("홈 화면에 적용",true);add(content,power,10);

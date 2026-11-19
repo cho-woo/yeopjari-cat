@@ -39,6 +39,11 @@ def main():
         raise AssertionError(desc)
     def tap(*names):
         n=until(lambda:control(*names),str(names));x,y,u,v=map(int,re.findall(r'\d+',n.get('bounds')))
+        w,h=map(int,re.findall(r'(\d+)x(\d+)',shell('wm','size'))[-1])
+        if n.get('package')==PACKAGE and (y+v)/2>h*.84:
+            shell('input','swipe',str(w//2),str(round(h*.73)),str(w//2),str(round(h*.48)),'340')
+            n=until(lambda:control(*names),str(names))
+            x,y,u,v=map(int,re.findall(r'\d+',n.get('bounds')))
         shell('input','tap',str((x+u)//2),str((y+v)//2))
     def open_app():shell('am','start','-W','-n',PACKAGE+'/.MainActivity')
     def shot(name):
