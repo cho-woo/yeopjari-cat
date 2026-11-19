@@ -20,7 +20,7 @@ final class PetTouch {
     PointerGesture gesture;
     boolean menuOpen,tracking;
     int selectedActor;
-    boolean previewInput;
+    boolean followEmptySpace;
     PetTouch(Context context,Supplier<PetScene> source,IntConsumer menu,Runnable invalidate){
         this.source=source;this.menu=menu;this.invalidate=invalidate;
         slop=ViewConfiguration.get(context).getScaledTouchSlop()/context.getResources().getDisplayMetrics().density;
@@ -32,7 +32,7 @@ final class PetTouch {
         if(pointers>1||action==MotionEvent.ACTION_CANCEL){cancel();return true;}
         if(action==MotionEvent.ACTION_DOWN){
             cancel();int index=value.hit(x,y);boolean empty=index<0;
-            if(!value.settings.enabled()||(empty&&!previewInput))return false;
+            if(!value.settings.enabled()||(empty&&!followEmptySpace))return false;
             scene=value;selectedActor=empty?value.closest(x,y):index;actor=scene.actors[selectedActor];
             if(empty||actor.fingerArmed){tracking=true;actor.beginFinger(x,y);return true;}
             actor.controlled=true;

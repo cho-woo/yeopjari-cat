@@ -196,7 +196,8 @@ final class PetScene {
             }
             step=next;
             String name=next.name;int token=++revision;loading=true;loadingAction=name;
-            obtain(name,value->{
+            String asset=owner.equals("finger") && step.bridge<0 && name.equals("walk")?MotionLibrary.WALK_RECOVERY:name;
+            obtain(asset,value->{
                 if(closed||revision!=token)return;
                 loading=false;loadingAction=null;
                 if(value==null){android.util.Log.e("YeopjariCat","Cannot play "+name);cancelStory();restMs=4000;return;}
@@ -233,11 +234,12 @@ final class PetScene {
                 if(name.equals("ball")||name.equals("ball-pounce"))object.beginStroke();
                 // Stage the immediately following pose before it owns the renderer.
                 Step ahead=plan.peek();
-                if(ahead!=null&&!ahead.name.equals("ball-approach"))library.preload(coat,ahead.name,null);
-                if(owner.equals("finger")){
-                    if(name.equals("run")){reserve("cursor-pounce");reserve("turn");}
-                    if(name.equals("run") || name.equals("cursor-pounce"))reserve("punch");
-                    if(name.equals("punch") || name.equals("reach") || name.equals("cursor-pounce"))reserve("walk");
+                boolean finger=owner.equals("finger");
+                if(ahead!=null && !ahead.name.equals("ball-approach") && !(finger && name.equals("cursor-pounce")))
+                    library.preload(coat,ahead.name,null);
+                if(finger){
+                    if(name.equals("run"))reserve("cursor-pounce");
+                    if(name.equals("punch") || name.equals("reach"))reserve(MotionLibrary.WALK_RECOVERY);
                 }
                 invalidate.run();
             });
@@ -306,6 +308,7 @@ final class PetScene {
         }
         boolean fingerFar(){return Math.abs(fingerX-x)>size*1.03f||Math.abs(fingerStandY()-ground())>size*.45f;}
         void trackFinger(float px,float py){
+            if(action.equals("run") && (px-x)*facing<0)reserve("turn");
             fingerX=px;fingerY=py;
             if(!owner.equals("finger")||!fingerFar()||step==null||step.travel||step.bridge!=0)return;
             boolean preparing=step.name.equals("cursor-pounce")&&(loading||(clock!=null&&clock.step()<clip.loopStart));
@@ -346,6 +349,9 @@ final class PetScene {
             if(step.bridge>0 && clock.step()>=clip.loopStart){endStep();return;}
             if(isJump()){
                 float phase=clamp((float)(clock.loopElapsed()/Math.max(1,clip.loopMs)),0,1);
+                // The paw strike follows landing. Its textures can wait for liftoff,
+                // leaving the first run and the planted crouch free of speculative work.
+                if(lift==0 && phase>0 && phase<1 && owner.equals("finger"))reserve("punch");
                 lift=4*jumpHeight*phase*(1-phase);x=startX+jumpDx*smooth(phase);
                 if(step.platform)offsetY=startY-floor+landingDy*smooth(phase);
                 if(owner.equals("finger") && phase>0 && phase<1){

@@ -6,8 +6,8 @@ android {
         applicationId 'com.valuewander.yeopjaricat'
         minSdk 26
         targetSdk 36
-        versionCode = (project.findProperty('previewVersionCode') ?: '8').toString().toInteger()
-        versionName = (project.findProperty('previewVersionName') ?: '0.4.2-preview').toString()
+        versionCode = (project.findProperty('previewVersionCode') ?: '9').toString().toInteger()
+        versionName = (project.findProperty('previewVersionName') ?: '0.5.0-preview').toString()
         testInstrumentationRunner 'com.valuewander.yeopjaricat.MotionSmoke'
     }
     compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }

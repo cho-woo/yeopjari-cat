@@ -21,6 +21,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 final class MotionLibrary {
+    // Cache a projection of the original walk clip, retaining its frame IDs and anchors.
+    static final String WALK_RECOVERY="walk-outro";
     interface Ready { void accept(Clip clip); }
     static final class Clip {
         final JSONObject spec;
@@ -35,7 +37,7 @@ final class MotionLibrary {
         final Rect sourceRect=new Rect();
         final android.graphics.RectF poseRect=new android.graphics.RectF();
         float left=Float.POSITIVE_INFINITY,top=Float.POSITIVE_INFINITY,right=Float.NEGATIVE_INFINITY,bottom=Float.NEGATIVE_INFINITY;
-        Clip(JSONObject spec, Bitmap[] pages) throws Exception {
+        Clip(JSONObject spec, Bitmap[] pages, boolean outroOnly) throws Exception {
             this.spec=spec; this.pages=pages;
             reference=(float)spec.getDouble("reference_height"); stride=(float)spec.optDouble("stride_pixels",0);
             JSONArray points=spec.optJSONArray("paws");
@@ -43,8 +45,10 @@ final class MotionLibrary {
             for(int i=0;i<paws.length;i++)for(int k=0;k<2;k++)paws[i][k]=(float)points.getJSONArray(i).getDouble(k);
             JSONObject sequence=spec.getJSONObject("sequence");
             ArrayList<Integer> frameList=new ArrayList<>(), timeList=new ArrayList<>();
-            append(sequence.getJSONArray("intro"),frameList,timeList);
-            loopStart=frameList.size(); append(sequence.getJSONArray("loop"),frameList,timeList); loopEnd=frameList.size();
+            if(!outroOnly)append(sequence.getJSONArray("intro"),frameList,timeList);
+            loopStart=frameList.size();
+            if(!outroOnly)append(sequence.getJSONArray("loop"),frameList,timeList);
+            loopEnd=frameList.size();
             append(sequence.getJSONArray("outro"),frameList,timeList);
             frames=frameList.stream().mapToInt(Integer::intValue).toArray();
             times=timeList.stream().mapToInt(Integer::intValue).toArray();
@@ -62,7 +66,7 @@ final class MotionLibrary {
             for(int i=0;i<array.length();i++) { JSONObject step=array.getJSONObject(i);frames.add(step.getInt("frame"));times.add(step.getInt("ms")); }
         }
         MotionClock clock() { return new MotionClock(frames,times,loopStart,loopEnd); }
-        int bytes() { int n=0;for(Bitmap b:pages)n+=b.getAllocationByteCount();return n; }
+        int bytes() { int n=0;for(Bitmap b:pages)if(b!=null)n+=b.getAllocationByteCount();return n; }
         void paint(Canvas canvas, int frame, float x, float floor, float height, int facing, Paint paint) {
             int[] r=rectangles[frame]; float scale=height/reference;
             int saved=canvas.save(); canvas.translate(x,floor);canvas.scale(facing*scale,scale);
@@ -98,19 +102,27 @@ final class MotionLibrary {
         return neutrals.get(coat);
     }
     private Clip readClip(int coat,String action)throws Exception{
+        boolean outroOnly=WALK_RECOVERY.equals(action);
+        String source=outroOnly?"walk":action;
         JSONObject spec;
-        try(InputStream in=context.getAssets().open("motions/c"+coat+"-"+action+".json")){
+        try(InputStream in=context.getAssets().open("motions/c"+coat+"-"+source+".json")){
             ByteArrayOutputStream bytes=new ByteArrayOutputStream();byte[] buffer=new byte[4096];int read;
             while((read=in.read(buffer))!=-1)bytes.write(buffer,0,read);
             spec=new JSONObject(new String(bytes.toByteArray(),StandardCharsets.UTF_8));
         }
         JSONArray ps=spec.getJSONArray("pages");Bitmap[] pages=new Bitmap[ps.length()];
-        for(int i=0;i<pages.length;i++)try(InputStream in=context.getAssets().open("motions/"+ps.getJSONObject(i).getString("file"))){
-            pages[i]=BitmapFactory.decodeStream(in);
-            if(pages[i]==null)throw new IllegalStateException("Cannot decode atlas");
-            if(i==0)pages[i].prepareToDraw(); // Do not upload every future page during the current action.
+        Clip clip=new Clip(spec,pages,outroOnly);
+        boolean[] needed=new boolean[pages.length];
+        for(int frame:clip.frames)needed[clip.page[frame]]=true;
+        for(int i=0;i<pages.length;i++){
+            if(outroOnly && !needed[i])continue;
+            try(InputStream in=context.getAssets().open("motions/"+ps.getJSONObject(i).getString("file"))){
+                pages[i]=BitmapFactory.decodeStream(in);
+                if(pages[i]==null)throw new IllegalStateException("Cannot decode atlas");
+                if(i==(outroOnly?clip.page[clip.frames[0]]:0))pages[i].prepareToDraw();
+            }
         }
-        return new Clip(spec,pages);
+        return clip;
     }
     // Submitted and delivered on the main thread. Only bitmap decoding runs on the worker.
     private final class Load implements Runnable {
@@ -132,6 +144,12 @@ final class MotionLibrary {
     void request(int coat,String action,Ready callback){schedule(coat,action,callback,true);}
     void preload(int coat,String action,Ready callback){schedule(coat,action,callback,false);}
     private void schedule(int coat,String action,Ready callback,boolean current){
+        if(WALK_RECOVERY.equals(action)){
+            String full=coat+":walk";
+            Clip resident=cache.get(full);
+            if(resident!=null){if(callback!=null)callback.accept(resident);return;}
+            if(waiting.containsKey(full))action="walk";
+        }
         String key=coat+":"+action;
         Clip found=cache.get(key);
         if(found==null){

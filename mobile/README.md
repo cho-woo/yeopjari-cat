@@ -1,43 +1,18 @@
 # Android preview — 옆자리 고양이
 
-User scope confirmed 2026-11-17: **home screen only by default**. Showing the pet
-above other apps is a separate, explicit opt-in setting. No
-accessibility permission, screen capture, automated interaction with other apps,
-or boot receiver is used. Network access is used only for public GitHub update
-metadata and user-requested APK downloads. Optional Home touch controls compare
-the latest foreground package to the selected launcher locally, with explicit
-Usage Access permission; no usage history or UI contents are stored/transmitted.
+The default Home mode uses the Android live wallpaper surface. The customer selects one photo and confirms the wallpaper in the Android preview. The app does not request Usage Access, read foreground-app history, or request accessibility access. Public GitHub releases provide the in-app preview updates.
 
 ## Product behavior
 
-- **홈 화면에 고양이 켜기** starts a user-controlled foreground service and
-  opens Home. The cat lives in a small transparent window over the existing
-  launcher. Starting, quitting, dragging, and changing display modes do not
-  write the Home or Lock wallpaper or copy its contents.
-- Android's overlay permission allows drawing the cat window. Usage Access
-  identifies the resumed Home activity on-device. Cancel either setup prompt
-  to leave the service off. While the screen is unlocked, the Home-only mode
-  checks foreground activity changes, removes the windows when another app
-  becomes active and resumes them when Home returns. This is a sampled
-  observation, so removal can briefly follow a foreground transition.
-- **다른 앱 위에 고양이 표시** is a separate switch, initially off. Switching
-  it back off while Home mode is running returns the cat to Home-only display.
-  Locked screens, screen-off and the app's settings/installer hide the windows.
-- Hold either cat for 550 ms and choose **종료하기**, use **고양이 종료하기**
-  in settings, or stop it from the notification. This removes both cats and
-  stops the service. Starting again defaults to Home only. Dragged positions
-  are retained across sessions and viewport changes.
-- The former live wallpaper service remains installed to preserve backgrounds
-  on upgrades. The previous backdrop stays selected until the user changes it.
-  **이전 배경으로 돌아가기** appears when the old background or a retained backup
-  is present. Only an explicit restore can replace the background.
-- A short quiet interval follows recovery. Both cats can use the full action
-  menu. Hold the desired cat to choose an action. Selecting **손가락 놀이**
-  arms the next gesture that starts on that cat. The preview also accepts a
-  finger starting in its empty space. Ordinary cat drags still reposition it.
+- **내 사진으로 고양이 배경 적용** opens the system photo picker on compatible devices, with the document picker as a fallback. Only the chosen image is accessible. Select **홈 화면** in the wallpaper preview when the launcher offers a destination.
+- The cat moves behind launcher icons. **고양이 종료하기** hides the cats and keeps the selected photo. **고양이 다시 켜기** resumes them. **배경 사진 고르기** changes the photo. **이전 배경으로 돌아가기** uses the available restore options when the customer wants to replace the entire wallpaper.
+- **홈에서 손가락 놀이** arms the first cat and returns to Home. The wallpaper consumes the touch events forwarded by the launcher. Icons and launcher gestures take priority. The app preview and optional floating mode provide their own touch surfaces.
+- **다른 앱 위에 고양이 표시** is separately opt-in and initially off. Only that switch can start the foreground service and request Android's overlay permission. An upgrade preserves the system wallpaper until the customer explicitly applies the new one.
 - With a companion enabled, the cats can meet, take turns swatting, race,
   follow, sniff, share a nap, compete for a snack or react to a sneeze. These
   events also run on request through **두 마리 함께 놀기**.
+
+To measure first gestures on the current wallpaper, select a photo once on the owned API 35 AVD, then run `tools/verify_android_photo_home.py --adb <adb> --out <dir> --coats 8 0 10 8`. Each sample terminates the process, reapplies the wallpaper through the public Android picker and dispatches a real swipe. `tools/analyze_android_photo_home.py --processor <trace_processor_shell> --dir <dir>` reports the wallpaper surface's actual display intervals for the run, jump, strike and recovery.
 
 ## Previous wallpaper edition (0.3.1)
 
@@ -128,7 +103,7 @@ matches the cat's submitted buffers to actual display frames, including takeoff 
 3. `tools/build_android.ps1 -Tests` repacks verified source atlases, builds the
    debug-signed preview and runs Android lint. Temporary ASCII drive mapping
    avoids native Android tools' Unicode-path limitations on Windows.
-4. Output: `build/android-0.4.2-preview/YeopjariCat-Android-0.4.2-preview.apk`.
+4. Output: `build/android-0.5.0-preview/YeopjariCat-Android-0.5.0-preview.apk`.
 
 The preview uses a local Android debug signing key; it is not the future store
 release key. Do not upload this test key as the production signing identity.
@@ -229,7 +204,7 @@ need its own clear purpose, disclosure, opt-in and Play review.
 
 - [Accessibility service capabilities](https://developer.android.com/guide/topics/ui/accessibility/views/service)
 - [Play AccessibilityService policy](https://support.google.com/googleplay/android-developer/answer/10964491?hl=en)
-- [Usage Access is user-granted in Settings](https://developer.android.com/reference/android/Manifest.permission#PACKAGE_USAGE_STATS)
+- [System photo picker](https://developer.android.com/training/data-storage/shared/photo-picker)
 - [App installation permission](https://developer.android.com/reference/android/content/pm/PackageManager#canRequestPackageInstalls())
 - [Installer user-action requirements](https://developer.android.com/reference/android/content/pm/PackageInstaller.SessionParams#setRequireUserAction(int))
 - [Public releases API](https://docs.github.com/en/rest/releases/releases#list-releases)

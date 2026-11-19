@@ -25,6 +25,21 @@ final class WallpaperReturn {
         restore=a.button("이전 배경으로 돌아가기",false);a.add(parent,restore,8);restore.setOnClickListener(v->chooseRestore());
         status=a.text("",12,MainActivity.MUTED);a.add(parent,status,8);history.listen(listener);refresh();
     }
+    static final int PICK_AND_APPLY=405,PICK_PHOTO=406;
+    void choosePetPhoto(boolean applyAfter){
+        Intent intent=new Intent(Intent.ACTION_OPEN_DOCUMENT).setType("image/*").addCategory(Intent.CATEGORY_OPENABLE);
+        if(android.os.Build.VERSION.SDK_INT>=33){
+            Intent picker=new Intent(android.provider.MediaStore.ACTION_PICK_IMAGES).setType("image/*");
+            if(picker.resolveActivity(activity.getPackageManager())!=null)intent=picker;
+        }
+        launch(intent,applyAfter?PICK_AND_APPLY:PICK_PHOTO);
+    }
+    void applySelectedPhoto(){
+        if(history.isCat()){PetLifecycle.resume(activity);activity.syncOverlay();return;}
+        WallpaperHistory.Snapshot before=history.beforeApply();
+        if(before==null)before=new WallpaperHistory.Snapshot("none","","",history.id());
+        history.stage(before,"ready");
+    }
     void refresh(){
         // Older installations may still have the cat wallpaper or a retained backup.
         // Only an explicit restore action may change the wallpaper.
@@ -35,8 +50,13 @@ final class WallpaperReturn {
         restore.setEnabled(!history.busy);
         status.setText(history.busy?"배경 사진을 처리하고 있어요…":
             !history.notice.isEmpty()?history.notice:
-            history.isCat()?"이전 버전의 고양이 배경을 사용 중이에요. 원래 배경으로 바꾸려면 위 버튼을 눌러 주세요.":
+            history.isCat()?"선택한 사진을 홈 배경으로 사용 중이에요.":
             "이전에 보관한 배경을 복원할 수 있어요.");
+        if(resumed && history.phase().equals("ready")){
+            if(history.id()!=history.read("pending_").id && !history.isCat()){history.notice="현재 배경이 바뀌었어요. 다시 적용해 주세요.";history.cancel();return;}
+            history.picking();
+            launch(new Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER).putExtra(WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT,new ComponentName(activity,CatWallpaperService.class)),APPLY);
+        }
     }
     void chooseRestore(){
         ArrayList<String> labels=new ArrayList<>();ArrayList<Runnable> actions=new ArrayList<>();WallpaperHistory.Snapshot saved=history.read("saved_");
@@ -64,9 +84,22 @@ final class WallpaperReturn {
         }
     }
     void result(int request,int result,Intent data){
+        if(request==PICK_AND_APPLY || request==PICK_PHOTO){
+            pickerOpen=false;HomeSceneStore.notifyLayer(activity);
+            if(result==Activity.RESULT_OK && data!=null && data.getData()!=null){
+                Uri uri=data.getData();
+                try{activity.getContentResolver().takePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION);}
+                catch(SecurityException unavailable){history.notice="이 사진을 계속 사용할 수 없어요. 다른 사진을 골라 주세요.";refresh();return;}
+                PetSettings settings=new PetSettings(activity);String old=settings.photo();settings.put("photo",uri.toString());
+                if(!old.isEmpty() && !old.equals(uri.toString()))try{activity.getContentResolver().releasePersistableUriPermission(Uri.parse(old),Intent.FLAG_GRANT_READ_URI_PERMISSION);}catch(SecurityException ignored){}
+                activity.preview.reload();history.notice="배경 사진을 골랐어요.";
+                if(request==PICK_AND_APPLY)applySelectedPhoto();else refresh();
+            }
+            return;
+        }
         if(request==PHOTO){pickerOpen=false;HomeSceneStore.notifyLayer(activity);if(result==Activity.RESULT_OK&&data!=null&&data.getData()!=null)history.receivePhoto(data.getData());else history.cancel();}
     }
-    void resume(){resumed=true;pickerOpen=false;HomeSceneStore.notifyLayer(activity);history.reconcile();if(history.phase().equals("ready"))history.cancel();refresh();if(history.phase().isEmpty()&&!history.busy&&(dialog==null||!dialog.isShowing())){String pending=dialogKind;dialogKind="";if(pending.equals("restore"))chooseRestore();}}
+    void resume(){resumed=true;pickerOpen=false;HomeSceneStore.notifyLayer(activity);history.reconcile();refresh();if(history.phase().isEmpty()&&!history.busy&&(dialog==null||!dialog.isShowing())){String pending=dialogKind;dialogKind="";if(pending.equals("restore"))chooseRestore();}}
     void pause(){resumed=false;}
     void close(){closing=true;history.unlisten(listener);if(dialog!=null)dialog.dismiss();}
 }

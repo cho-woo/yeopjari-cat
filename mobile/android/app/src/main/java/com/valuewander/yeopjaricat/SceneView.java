@@ -18,7 +18,7 @@ final class SceneView extends View {
         if(touch!=null)touch.cancel();if(menuDialog!=null){menuDialog.dismiss();menuDialog=null;}if(scene!=null)scene.close();if(backdrop!=null)backdrop.close();
         scene=new PetScene(getContext(),this::wake);backdrop=new Backdrop(getContext(),this::invalidate);
         touch=new PetTouch(getContext(),()->scene,index->showMenu(),this::wake);
-        touch.previewInput=true;
+        touch.followEmptySpace=true;
         if(getWidth()>0)scene.resize(getWidth()/density(),getHeight()/density(),20);
         invalidate();
     }

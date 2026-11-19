@@ -64,7 +64,7 @@ public final class CatOverlayService extends Service implements SharedPreference
     }
     @Override public int onStartCommand(Intent intent,int flags,int startId){
         if(intent!=null&&STOP.equals(intent.getAction())){PetLifecycle.stop(this);stopSelf();return START_NOT_STICKY;}
-        if(intent==null||!Settings.canDrawOverlays(this)||!settings.enabled()||(!settings.overlay()&&!settings.homeTouch())){stopSelf();return START_NOT_STICKY;}
+        if(intent==null||!Settings.canDrawOverlays(this)||!settings.enabled()||!settings.overlay()){stopSelf();return START_NOT_STICKY;}
         PendingIntent open=PendingIntent.getActivity(this,0,new Intent(this,MainActivity.class),PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT);
         PendingIntent stop=PendingIntent.getService(this,1,new Intent(this,CatOverlayService.class).setAction(STOP),PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT);
         Notification notice=new Notification.Builder(this,"pet_overlay").setSmallIcon(R.drawable.ic_notification)
@@ -107,13 +107,12 @@ public final class CatOverlayService extends Service implements SharedPreference
         if(destroyed||!running||scene==null)return;
         if(!available()){applyVisibility(false);return;}
         if(checkingHome)return;
-        boolean anyApp=settings.overlay(),onlyHome=settings.homeTouch();
+        boolean overlayEnabled=settings.overlay();
         checkingHome=true;
-        // Package resolution, usage events, keyguard and overlay permissions use
-        // synchronous Binder calls. Keep them off the thread presenting both cats.
+        // Binder permission and keyguard checks run off the drawing thread.
         visibilityWorker.execute(()->{
             boolean allowed=Settings.canDrawOverlays(this);
-            boolean visible=allowed && screenUnlocked() && (anyApp || (onlyHome && HomeVisibility.isHome(this)));
+            boolean visible=allowed && screenUnlocked() && overlayEnabled;
             handler.post(()->{
                 checkingHome=false;
                 if(destroyed||!running)return;
@@ -130,12 +129,7 @@ public final class CatOverlayService extends Service implements SharedPreference
             for(PetWindow v:windows)if(!v.attached)try{v.position();manager.addView(v,v.params);v.attached=true;}catch(SecurityException e){stopSelf();return;}
             if(!displaying){displaying=!windows.isEmpty();if(displaying)frames.start();}
             handler.postDelayed(visibilityPoll,150);
-        }else{hideWindows();watchHome();}
-    }
-    void watchHome(){
-        // A normal photo or third-party wallpaper cannot send us visibility callbacks.
-        if(running && settings.homeTouch() && !settings.overlay() && screenUnlocked()
-                && MainActivity.visibleActivities==0)handler.postDelayed(visibilityPoll,350);
+        }else hideWindows();
     }
     void hideWindows(){
         frames.stop();displaying=false;if(menuDialog!=null){menuDialog.dismiss();menuDialog=null;}
@@ -195,34 +189,42 @@ public final class CatOverlayService extends Service implements SharedPreference
         boolean usePursuitBuffer(PetScene.Actor cat){
             return !cat.busy()||cat.fingerArmed||"finger".equals(cat.owner);
         }
-        float lastX,lastY;
-        MotionLibrary.Clip restingPose;
-        int restingFrame,restingFacing;
+        float lastX,lastY,lastSize;
+        MotionLibrary.Clip lastPose;
+        int lastFrame,lastFacing;
         void update(){
             PetScene.Actor cat=scene.actors[actor];
             if(measuredForPursuit!=usePursuitBuffer(cat))requestLayout();
             boolean moving=cat.busy()||cat.controlled||cat.carryMs>0;
             float y=cat.footY();
-            if(!moving && !wasMoving && cat.x==lastX && y==lastY && cat.idle==restingPose
-                    && cat.idleFrame==restingFrame && cat.idleFacing==restingFacing)return;
-            wasMoving=moving;lastX=cat.x;lastY=y;restingPose=cat.idle;
-            restingFrame=cat.idleFrame;restingFacing=cat.idleFacing;
+            MotionLibrary.Clip pose=cat.clip!=null?cat.clip:cat.idle;
+            int frame=cat.currentFrame(),facing=cat.clip!=null?cat.facing:cat.idleFacing;
+            // A stationary authored hold needs just one buffer. Keep submitting every
+            // moving, blended or newly registered pose, including the final idle pose.
+            if(!isLayoutRequested() && cat.previousPose==null && moving==wasMoving && cat.x==lastX && y==lastY
+                    && scene.size==lastSize && pose==lastPose && frame==lastFrame && facing==lastFacing)return;
+            wasMoving=moving;lastX=cat.x;lastY=y;lastSize=scene.size;
+            lastPose=cat.previousPose==null?pose:null;lastFrame=frame;lastFacing=facing;
             int x=params.x,top=params.y,w=params.width,h=params.height;position();
             if(x!=params.x||top!=params.y||w!=params.width||h!=params.height)manager.updateViewLayout(this,params);
             invalidate();
         }
         void position(){
-            android.graphics.RectF b=scene.actors[actor].bounds(true);
+            PetScene.Actor cat=scene.actors[actor];
+            android.graphics.RectF b=cat.bounds(true);
+            // Keep the whole clip's touch-window size. During a chase only its
+            // visible pose (including crossfade) has to fit before a window move.
+            android.graphics.RectF visible="finger".equals(cat.owner)?cat.bounds():b;
             float w=b.width()+12,h=b.height()+12;
             int wide=Math.round(w*density),high=Math.round(h*density);
             // Move the sprite inside its existing six-dp padding first. Repositioning
             // a launcher surface costs a WindowManager transaction and layout.
-            if(!attached||params.width!=wide||Math.max(0,b.left)*density<params.x
-                    ||Math.min(scene.width,b.right)*density>params.x+wide){
+            if(!attached||params.width!=wide||Math.max(0,visible.left)*density<params.x
+                    ||Math.min(scene.width,visible.right)*density>params.x+wide){
                 params.x=Math.round(Math.max(0,Math.min(scene.width-w,b.left-6))*density);
             }
-            if(!attached||params.height!=high||Math.max(0,b.top)*density<params.y
-                    ||Math.min(scene.height,b.bottom)*density>params.y+high){
+            if(!attached||params.height!=high||Math.max(0,visible.top)*density<params.y
+                    ||Math.min(scene.height,visible.bottom)*density>params.y+high){
                 params.y=Math.round(Math.max(0,Math.min(scene.height-h,b.top-6))*density);
             }
             params.width=wide;params.height=high;
@@ -249,11 +251,11 @@ public final class CatOverlayService extends Service implements SharedPreference
     }
     @Override public void onSharedPreferenceChanged(SharedPreferences prefs,String key){
         if(!running)return;
-        if(!settings.enabled()||(!settings.overlay()&&!settings.homeTouch())){stopSelf();return;}
+        if(!settings.enabled()||!settings.overlay()){stopSelf();return;}
         if(!key.startsWith("position.")){ensureScene();refreshVisibility();}
     }
     @Override public void onConfigurationChanged(android.content.res.Configuration config){super.onConfigurationChanged(config);if(running&&scene!=null){resizeScene();refreshVisibility();}}
-    @Override protected void dump(FileDescriptor fd,PrintWriter out,String[] args){super.dump(fd,out,args);out.println("cat_layer_running="+running+" displaying="+displaying+" cross_apps="+settings.overlay()+" home_touch="+settings.homeTouch()+" enabled="+settings.enabled()+" frames="+renderedFrames);if(scene!=null)for(int i=0;i<scene.actors.length;i++)if(scene.actors[i]!=null)out.println("actor="+i+" x="+scene.actors[i].x+" y="+scene.actors[i].footY()+" state="+scene.actors[i].action+" owner="+scene.actors[i].owner+" armed="+scene.actors[i].fingerArmed+" jumps="+scene.actors[i].landings+" pair="+scene.socialCount+" hits="+scene.actors[i].ballHits+" hitX="+scene.actors[i].bounds().centerX()+" hitY="+scene.actors[i].bounds().centerY());}
+    @Override protected void dump(FileDescriptor fd,PrintWriter out,String[] args){super.dump(fd,out,args);out.println("cat_layer_running="+running+" displaying="+displaying+" cross_apps="+settings.overlay()+" home_touch=false"+" enabled="+settings.enabled()+" frames="+renderedFrames);if(scene!=null)for(int i=0;i<scene.actors.length;i++)if(scene.actors[i]!=null)out.println("actor="+i+" x="+scene.actors[i].x+" y="+scene.actors[i].footY()+" state="+scene.actors[i].action+" owner="+scene.actors[i].owner+" armed="+scene.actors[i].fingerArmed+" jumps="+scene.actors[i].landings+" pair="+scene.socialCount+" hits="+scene.actors[i].ballHits+" hitX="+scene.actors[i].bounds().centerX()+" hitY="+scene.actors[i].bounds().centerY());}
     @Override public void onDestroy(){
         destroyed=true;visibilityWorker.shutdownNow();running=false;handler.removeCallbacksAndMessages(null);hideWindows();windows.clear();objects.clear();HomeSceneStore.save();
         HomeSceneStore.unlisten(homeChanged);
