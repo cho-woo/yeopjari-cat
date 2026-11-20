@@ -252,7 +252,31 @@ class EyeIdentityTracker:
         return eyes,result
 
 
-def snow_material(source, eyes, props=None, strict_skin=False):
+def jump_ear_weights(rgba, anchor_x, skin_weight):
+    """Follow the two pinnae of the registered right-facing jump, even mid-blink."""
+    red, green, blue, alpha = rgba.astype(np.float32).transpose(2, 0, 1)
+    yy, xx = np.indices(alpha.shape)
+    # Register each apex to its own opaque silhouette. The tail rises higher
+    # than the near ear during landing, outside these two root-relative strips.
+    # A peach-to-pink gradient spans many hues in the retained video.
+    tint = np.clip(((red - green) - .9 * (green - blue) - 9) / 49, 0, 1)
+    tint *= np.clip((red - 75) / 50, 0, 1)
+    for left, right, dx, dy, rx, ry in (
+            (-9, 12, 0, 13, 12, 16), (26, 47, 2, 12, 7, 14)):
+        band = (alpha >= 165) & (xx >= anchor_x + left) & (xx <= anchor_x + right)
+        if not band.any():
+            raise ValueError('Missing ear silhouette in the registered jump')
+        top = yy[band].min()
+        tip_x = np.median(xx[band & (yy <= top + 1)])
+        distance = np.sqrt(((xx - tip_x - dx) / rx) ** 2 + ((yy - top - dy) / ry) ** 2)
+        # Keep the original wisps and soft shadow rather than thresholding
+        # individual compressed pixels into either white fur or pink skin.
+        blend = np.clip((1.55 - distance) / .45, 0, 1)
+        skin_weight = skin_weight * (1 - blend) + tint * blend * np.clip((1.14 - distance) / .37, 0, 1)
+    return skin_weight
+
+
+def snow_material(source, eyes, props=None, strict_skin=False, jump_anchor_x=None):
     rgba = np.asarray(source)
     rgb = rgba[:, :, :3].astype(np.float32)
     red, green, blue = rgb.transpose(2, 0, 1)
@@ -294,6 +318,8 @@ def snow_material(source, eyes, props=None, strict_skin=False):
     weight = np.clip((red - green - 8) / 20, 0, 1) * np.clip((18 - (green - blue)) / 12, 0, 1) * pink
     if strict_skin:
         weight=np.clip((red-green-42)/10,0,1)*np.clip((18-hue)/4,0,1)*pink
+    if jump_anchor_x is not None:
+        weight = jump_ear_weights(rgba, jump_anchor_x, weight)
     result = result * (1 - weight[:, :, None]) + rgb * weight[:, :, None]
     skin = (weight >= .999) & (eyes == 0)
     result[skin] = rgb[skin]
@@ -653,7 +679,8 @@ def main(only=None,materials_only=False,metadata_only=False):
                     food=(xx>ax-35)&(xx<ax-15)&(yy<ay-4)&(rgb[:,:,0]>rgb[:,:,1]*1.35)&(rgb[:,:,0]>rgb[:,:,2]*1.35)
                     props=region&(metal|food) if np.count_nonzero(region&metal)>30 else None
                 painted, checks = snow_material(local, local_mask, props,
-                    bool(IDENTITY['clips'].get(clip,{}).get('strict_pink_skin')))
+                    bool(IDENTITY['clips'].get(clip,{}).get('strict_pink_skin')),
+                    jump_anchor_x=record['anchor'][0] if clip == 'jump' else None)
                 if not checks['alpha_exact'] or not checks['skin_rgb_exact']:
                     raise ValueError(f'OddEye {clip} frame {index} changed geometry or skin: {checks}')
                 snow.paste(painted, (x, y))

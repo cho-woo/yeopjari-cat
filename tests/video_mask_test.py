@@ -14,6 +14,35 @@ ROOT = Path(__file__).resolve().parents[1]
 
 @unittest.skipUnless(cv2 is not None, 'Authoring pixel dependencies unavailable')
 class BallMaskTest(unittest.TestCase):
+    def test_snow_jump_inner_ears_survive_partial_blinks(self):
+        import json
+        from PIL import Image
+        sys.path.insert(0, str(ROOT/'tools'))
+        from pack_video_actions import snow_material
+
+        library = json.loads((ROOT/'assets/video-actions/manifest.json').read_text(encoding='utf-8'))
+        jump = next(c for c in library['clips'] if c['clip'] == 'jump' and c['character'] == 0)
+        style = ROOT/'assets/styled-sprites'
+        with Image.open(ROOT/'assets/video-actions'/jump['source']) as original, \
+                Image.open(style/'odd-eye-masks/c10-r119.png') as irises, \
+                Image.open(style/'c10-r119.png') as shipping:
+            for index, frame in enumerate(jump['frames']):
+                with self.subTest(frame=index):
+                    x, y, w, h = frame['rect']
+                    box = (x, y, x+w, y+h)
+                    ax, ay = frame['anchor']
+                    source = original.crop(box)
+                    mask = np.asarray(irises.crop(box))
+                    painted, proof = snow_material(source, mask, strict_skin=True, jump_anchor_x=ax)
+                    np.testing.assert_array_equal(np.asarray(painted), np.asarray(shipping.crop(box)))
+                    self.assertTrue(proof['alpha_exact'])
+                    rgb = np.asarray(painted, dtype=np.int16)
+                    yy, xx = np.indices(mask.shape)
+                    above_muzzle = (yy >= ay-103) & (yy < ay-43) & (rgb[:,:,3] > 200)
+                    for left, right, chroma, minimum in ((-9,10,30,90), (30,46,25,18)):
+                        ear = above_muzzle & (xx >= ax+left) & (xx < ax+right)
+                        self.assertGreaterEqual(np.count_nonzero(ear & (rgb[:,:,0]-rgb[:,:,1] > chroma)), minimum)
+
     def test_profile_eye_spacing_does_not_erase_inner_ears_or_color_the_tail(self):
         sys.path.insert(0,str(ROOT/'tools'))
         from pack_video_actions import snow_material
