@@ -111,5 +111,51 @@ final class SnowGraphicsReview {
         Bundle result=new Bundle();result.putString("stream","SNOW_PLAYBACK_PASSED draws="+test.activity.preview.renderedFrames);
         test.finish(MotionSmoke.RESULT_OK,result);
     }
+    void jump() throws Exception {
+        ActionParityReview playback = new ActionParityReview(test);
+        playback.configure(10, 10);
+        PetScene scene = playback.scene;
+        test.waitFor(() -> scene.actors[0].idle != null && scene.actors[1].idle != null, "Snowdrop not ready");
+        test.runOnMainSync(() -> scene.command("jump"));
+        playback.sweep("snow-jump", () -> !scene.actors[0].busy() && !scene.actors[1].busy());
+        for (PetScene.Actor actor : scene.actors)
+            test.check("jump".equals(actor.finishedOwner), "Jump command did not finish");
+
+        MotionLibrary.Clip[] clip = new MotionLibrary.Clip[1];
+        CountDownLatch ready = new CountDownLatch(1);
+        test.runOnMainSync(() -> scene.library.request(10, "jump", c -> { clip[0] = c; ready.countDown(); }));
+        test.check(ready.await(10, TimeUnit.SECONDS) && clip[0] != null, "Jump clip unavailable");
+        Bitmap frame = Bitmap.createBitmap(160, 160, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(frame);
+        android.graphics.Paint paint = new android.graphics.Paint(android.graphics.Paint.FILTER_BITMAP_FLAG);
+        // Sample the two separate ear corridors relative to the recorded floor anchor.
+        int failed = 0, minNear = Integer.MAX_VALUE, minFar = Integer.MAX_VALUE;
+        for (int i = 0; i < clip[0].rectangles.length; i++) {
+            for (int facing : new int[]{1, -1}) {
+                frame.eraseColor(0);
+                clip[0].paint(canvas, i, 80, 120, clip[0].reference, facing, paint);
+                int near = earPixels(frame, facing, -9, 10, 30);
+                int far = earPixels(frame, facing, 30, 46, 25);
+                minNear = Math.min(minNear, near);
+                minFar = Math.min(minFar, far);
+                if (near < 90 || far < 18) failed++;
+            }
+        }
+        String summary = "frames=" + clip[0].rectangles.length + " both_facings failed=" + failed +
+                " min_near=" + minNear + " min_far=" + minFar;
+        test.check(failed == 0, summary);
+        Bundle result = new Bundle();
+        result.putString("stream", "SNOW_JUMP_PASSED " + summary);
+        test.finish(MotionSmoke.RESULT_OK, result);
+    }
+    private static int earPixels(Bitmap frame, int facing, int left, int right, int chroma) {
+        int count = 0;
+        for (int y = 17; y < 77; y++)
+            for (int x = left; x < right; x++) {
+                int pixel = frame.getPixel(facing == 1 ? 80 + x : 79 - x, y);
+                if (Color.alpha(pixel) > 200 && Color.red(pixel) - Color.green(pixel) > chroma) count++;
+            }
+        return count;
+    }
     static int error(int a,int middle,int b){return Math.abs(middle-(a+b+1)/2);}
 }

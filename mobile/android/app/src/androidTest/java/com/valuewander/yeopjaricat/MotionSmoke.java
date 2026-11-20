@@ -48,6 +48,7 @@ public final class MotionSmoke extends Instrumentation {
             if(arguments!=null&&"play-backdrops".equals(arguments.getString("mode"))){new PlayBackdropReview(this).run();return;}
             if(arguments!=null&&"snow-playback".equals(arguments.getString("mode"))){new SnowGraphicsReview(this).playback();return;}
             if(arguments!=null&&"snow-graphics".equals(arguments.getString("mode"))){new SnowGraphicsReview(this).run();return;}
+            if(arguments!=null&&"snow-jump".equals(arguments.getString("mode"))){new SnowGraphicsReview(this).jump();return;}
             if(arguments!=null&&("pacing".equals(arguments.getString("mode"))||"pacing-home".equals(arguments.getString("mode")))){new MotionPacingReview(this).run(Integer.parseInt(arguments.getString("coat","0")),"pacing-home".equals(arguments.getString("mode")));return;}
             if(arguments!=null&&arguments.getString("mode","").startsWith("parity")){
                 new ActionParityReview(this).run(arguments.getString("mode"),Integer.parseInt(arguments.getString("coat","0")));return;
