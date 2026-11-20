@@ -1,0 +1,28 @@
+{
+  "generator": "OpenAI ImageGen",
+  "square_prompt": "Produce a single finished original environmental game illustration, an empty stage for an animated pet that will be drawn by a separate app. Square 1:1 image for adaptive crop on a vertical phone or unfolded tablet. Full bleed, absolutely no pets, animals, humans, text, lettering, icons, grid, UI or visible logos. Strong art direction: premium hand-painted gouache picture-book scenery, subtle dry-brush grain, warm miniature-diorama depth and painterly edges with a restrained cozy palette. Eye-level lateral game stage, slight view down onto the surface. The far horizontal boundary of the accessible floor runs at approximately 48 percent down the image. The whole band from 52 to 86 percent must be unobstructed continuous walkable ground from left to right. No furniture or props in this band. Layer decorative environment far behind the ground plane. Keep recognizable environment even at center vertical crop, balanced but not precisely symmetrical. No stage edge or void.",
+  "scenes": [
+    {
+      "key": "sunroom",
+      "theme": "A late morning sunroom in a little Korean home. Large honey-wood casement window with leafy shadows, sheer apricot gingham curtain at an upper edge, a small green potted plant on the sill. Soft turquoise-green garden outside. Golden honey oak floor runs the entire lower half. Diffuse sunlight lies in a long oblique patch crossing the floor, plus a thin cream rug cropped into a bottom corner. Quiet nostalgic amber, terracotta and jade.",
+      "wide": "scene_sunroom.webp",
+      "phone": "portrait_sunroom.webp",
+      "picker": "thumb_sunroom.webp"
+    },
+    {
+      "key": "garden",
+      "theme": "A hidden spring courtyard behind an old Korean brick garden wall. Luminous fresh green apple tree canopy filtering morning sun at upper sides, foxgloves and a handful of white daisies at edges, a tiny distant robin-free birdbath among ferns. A broad continuous pale sage moss and packed-earth clearing runs horizontally across the entire lower half with sparse flowers confined to extreme bottom corners. Mint jade, warm butter-yellow light, pale periwinkle blossoms. Outdoor, lush, airy.",
+      "wide": "scene_garden.webp",
+      "phone": "portrait_garden.webp",
+      "picker": "thumb_garden.webp"
+    },
+    {
+      "key": "rooftop",
+      "theme": "A sheltered rooftop in a quiet Korean neighborhood at blue hour. High indigo sky and a small glowing crescent moon above a softly silhouetted city, a single warm lit window and a short strand of round amber bulbs overhead. Low muted cobalt parapet behind a broad continuous muted dusty-lilac rooftop decking across the lower half. Delicate broad glow from lanterns integrated at distant side edges only. Lavender, midnight-teal and amber. Dreamy cozy night, enough light on the floor to see a black cat.",
+      "wide": "scene_rooftop.webp",
+      "phone": "portrait_rooftop.webp",
+      "picker": "thumb_rooftop.webp"
+    }
+  ],
+  "portrait_composition": "Recompose the matching square illustration as a 9:16 wallpaper of the same place and palette. Place the curtain, birdbath or crescent and lamps within the central width. Leave the lower half open for the separately rendered cat."
+}

@@ -1,0 +1,14 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <provider android:name="com.valuewander.yeopjaricat.FixtureWallpaperProvider"
+            android:authorities="com.valuewander.yeopjaricat.test.wallpaper-fixture" android:exported="true" />
+        <service android:name="com.valuewander.yeopjaricat.FixtureWallpaperService" android:exported="true"
+            android:label="Wallpaper return review" android:permission="android.permission.BIND_WALLPAPER">
+            <intent-filter><action android:name="android.service.wallpaper.WallpaperService" /></intent-filter>
+            <meta-data android:name="android.service.wallpaper" android:resource="@xml/review_wallpaper" />
+        </service>
+        <!-- Separate test APK only: a transparent foreground app must not keep Home touch windows visible. -->
+        <activity android:name="com.valuewander.yeopjaricat.TranslucentReviewActivity"
+            android:exported="true" android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+    </application>
+</manifest>

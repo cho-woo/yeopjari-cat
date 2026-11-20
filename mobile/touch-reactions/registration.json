@@ -1,0 +1,58 @@
+{
+  "canonical_canvas": 1024,
+  "reference_height": 367,
+  "sources": [
+    {
+      "coat": "cream",
+      "file": "cream.mp4",
+      "sha256": "c15263b40e276ec200e10033f4264765f6beaae10fbdc5eae5295d54e28d5f90",
+      "job_id": "mcp_c9e7069a31124622b49ad7b444819ea8",
+      "credit_cost": 75,
+      "model": "bytedance/seedance-1-pro",
+      "options": {
+        "duration": 5,
+        "resolution": "480p",
+        "aspect_ratio": "1:1",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f91aa82183e14b82a31e69c0185697b5/cream-front-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/f91aa82183e14b82a31e69c0185697b5/cream-front-identity-v29.png",
+        "prompt": "One continuous locked-off orthographic character animation for a tiny mobile pet, same seated kitten as both reference frames. Repeated invisible pokes make the kitten adorably exasperated. 0–1 s: blink and direct a skeptical sideways glance, rotate one ear. 1–2 s: ears swivel outward and fold back, eyes narrow, tail tip flicks in irritation. 2–3.4 s: a clearly readable brief feline hiss, muzzle wrinkles and mouth opens with two tiny teeth, ears pinned sideways, shoulders bunch. 3.4–5 s: mouth closes, sigh and slow blink, ears rise, ease into the identical friendly seated reference. Front paws and rump stay planted at the reference coordinates; full cat including tail always in frame, same scale and silhouette proportions. Preserve exact reference face, fur markings and eye color with stable lighting and the identical uniform flat green chroma background throughout. No text, graphic marks, props, other characters, shadow, cuts, zoom, or camera motion."
+      },
+      "source_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_c9e7069a31124622b49ad7b444819ea8/output/output_0.mp4",
+      "reference": "assets/video-actions/references/cream-front-v29.png",
+      "canonical_root": [
+        512,
+        725
+      ],
+      "glance_end": 32,
+      "first": 0,
+      "last": 120,
+      "fps": 24
+    },
+    {
+      "coat": "tuxedo",
+      "file": "tuxedo.mp4",
+      "sha256": "71397962df978eacaf10699e56ba74a8bc37ea4dd35cd7e8777a622010be5306",
+      "job_id": "mcp_1eb148b988c24f748f3d465f5f16e34c",
+      "credit_cost": 75,
+      "model": "bytedance/seedance-1-pro",
+      "options": {
+        "duration": 5,
+        "resolution": "480p",
+        "aspect_ratio": "1:1",
+        "start_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/83c1feedbe4d49e7928fcd973495a776/tuxedo-front-identity-v29.png",
+        "last_frame": "https://cdn.aistudio.dropshot.io/public/mcp-uploads/prod/WMKX9JZ1/83c1feedbe4d49e7928fcd973495a776/tuxedo-front-identity-v29.png",
+        "prompt": "One continuous locked-off orthographic character animation for a tiny mobile pet, same seated kitten as both reference frames. Repeated invisible pokes make the kitten adorably exasperated. 0–1 s: blink and direct a skeptical sideways glance, rotate one ear. 1–2 s: ears swivel outward and fold back, eyes narrow, tail tip flicks in irritation. 2–3.4 s: a clearly readable brief feline hiss, muzzle wrinkles and mouth opens with two tiny teeth, ears pinned sideways, shoulders bunch. 3.4–5 s: mouth closes, sigh and slow blink, ears rise, ease into the identical friendly seated reference. Front paws and rump stay planted at the reference coordinates; full cat including tail always in frame, same scale and silhouette proportions. Preserve exact reference face, fur markings and eye color with stable lighting and the identical uniform flat green chroma background throughout. No text, graphic marks, props, other characters, shadow, cuts, zoom, or camera motion."
+      },
+      "source_url": "https://cdn.aistudio.dropshot.io/public/jobs/prod/mcp_1eb148b988c24f748f3d465f5f16e34c/output/output_0.mp4",
+      "reference": "assets/video-actions/references/tuxedo-front-v29.png",
+      "canonical_root": [
+        512,
+        729
+      ],
+      "glance_end": 32,
+      "first": 0,
+      "last": 120,
+      "fps": 24
+    }
+  ]
+}

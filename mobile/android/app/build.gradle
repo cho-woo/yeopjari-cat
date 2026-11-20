@@ -1,0 +1,37 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'com.valuewander.yeopjaricat'
+    compileSdk 36
+    defaultConfig {
+        applicationId 'com.valuewander.yeopjaricat'
+        resValue 'string', 'shortcut_package', 'com.valuewander.yeopjaricat'
+        minSdk 26
+        targetSdk 36
+        versionCode = (project.findProperty('previewVersionCode') ?: '15').toString().toInteger()
+        versionName = (project.findProperty('previewVersionName') ?: '0.6.4-preview').toString()
+        testInstrumentationRunner 'com.valuewander.yeopjaricat.MotionSmoke'
+    }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+    buildTypes {
+        release { minifyEnabled false }
+        play {
+            initWith release
+            applicationIdSuffix '.play'
+            debuggable false
+            resValue 'string', 'shortcut_package', 'com.valuewander.yeopjaricat.play'
+        }
+    }
+    sourceSets {
+        debug.java.srcDir 'src/direct/java'
+        release.java.srcDir 'src/direct/java'
+    }
+    lint { abortOnError true; checkReleaseBuilds true }
+}
+
+androidComponents {
+    onVariants(selector().withBuildType('play')) { variant ->
+        variant.outputs.each { output ->
+            output.versionName.set(providers.gradleProperty('playVersionName').orElse('0.6.4'))
+        }
+    }
+}

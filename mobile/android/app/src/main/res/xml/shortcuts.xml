@@ -1,0 +1,8 @@
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut android:shortcutId="home_play" android:shortcutShortLabel="@string/play_shortcut"
+        android:icon="@drawable/cat_icon">
+        <intent android:action="android.intent.action.VIEW"
+            android:targetPackage="@string/shortcut_package"
+            android:targetClass="com.valuewander.yeopjaricat.PlayActivity" />
+    </shortcut>
+</shortcuts>

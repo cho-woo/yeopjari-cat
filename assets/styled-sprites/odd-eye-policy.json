@@ -156,7 +156,7 @@
       "base_source": "assets/video-actions/cream-jump.png",
       "source": "c10-r119.png",
       "input_sha256": "e26f894717217e14340a673b74f1b01f96001859181a851edfa57b554020edc5",
-      "output_sha256": "4f03c5dcfd9078d2daea6e73c3832f91909ebf5a89fcf92545b0eb91548bf5bc",
+      "output_sha256": "6d3135dfb2aa532105b8e87907fb684b4cfa96383194edee89afadc0b1cade86",
       "source_alpha_sha256": "c7377b90212f82db27acf04a40088ecc4bd8deaa8b7e320ede7097d5bbe13bf4",
       "iris_mask": "odd-eye-masks/c10-r119.png",
       "iris_mask_sha256": "0ea09486fa638d2f67e3d0a0a03d67c1c267b3c67c259caf35a7d54b591df191",
@@ -394,5 +394,5 @@
   ],
   "tool_sha256": "38aff80a6a8fe818168305d47c6f697ab0d9af7892119f3e5ab903e5c41c86c4",
   "additional_authoring_tool": "tools/pack_video_actions.py",
-  "additional_authoring_tool_sha256": "b96486272633d556f9cdc2ec58d7aa7b0a856cb7f5f195131e1dc069ef37122d"
+  "additional_authoring_tool_sha256": "f6019b60a0e3f68a26658954eb8b65fea83f17d3efee3a19440893700f9a5549"
 }

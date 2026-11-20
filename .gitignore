@@ -10,3 +10,7 @@ __pycache__/
 /render-self-test.txt
 
 /build-inputs/audio-reference/
+/mobile/android/.gradle/
+/mobile/android/**/build/
+/mobile/android/local.properties
+/mobile/android/app/src/main/assets/motions/
