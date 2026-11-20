@@ -105,7 +105,7 @@ public final class CatWallpaperService extends WallpaperService {
             }
         }
         @Override public void onVisibilityChanged(boolean value){visible=value;updateHomeVisibility();clock.stop();if(!value&&touch!=null)touch.cancel();if(value&&surfaceReady){android.graphics.Rect r=getSurfaceHolder().getSurfaceFrame();resizeViewport(r.width(),r.height());}
-            if(value&&!isPreview()&&settings.enabled())AppUpdates.get(CatWallpaperService.this).check(false);schedule();}
+            if(value&&!isPreview()&&settings.enabled())AppUpdates.checkWhileVisible(CatWallpaperService.this);schedule();}
         @Override public void onZoomChanged(float zoom){if(!isPreview()&&visible)HomeSceneStore.zoom(CatWallpaperService.this,zoom);}
         @Override public void onSurfaceCreated(SurfaceHolder holder){super.onSurfaceCreated(holder);surfaceReady=true;schedule();}
 

@@ -27,6 +27,7 @@ final class UpdatePanel {
         button.setOnClickListener(v->{if(updates.state==AppUpdates.State.READY)requestInstall();else if(updates.state==AppUpdates.State.AVAILABLE)startDownload();else updates.check(true);});
         updates.listen(listener);render();
     }
+    String versionLabel(){return "PREVIEW "+updates.currentName.replace("-preview","");}
     void startDownload(){installWhenReady=true;updates.download();}
     void render(){
         String label="업데이트 확인",message="새 버전을 확인할 수 있어요.";

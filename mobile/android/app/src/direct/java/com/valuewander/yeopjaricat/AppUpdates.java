@@ -19,6 +19,7 @@ final class AppUpdates {
     static volatile boolean installerOpen;
     static AppUpdates instance;
     enum State{IDLE,CHECKING,LATEST,AVAILABLE,DOWNLOADING,READY,ERROR}
+    static void checkWhileVisible(Context context){get(context).check(false);}
     static synchronized AppUpdates get(Context context){if(instance==null)instance=new AppUpdates(context,new UpdateClient(context));return instance;}
     final Context context;final UpdateClient client;final SharedPreferences prefs;
     final Handler main=new Handler(Looper.getMainLooper());

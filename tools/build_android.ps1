@@ -23,7 +23,7 @@ try {
     if($LASTEXITCODE -ne 0){throw 'Pointer gesture test compilation failed.'}
     & "$env:JAVA_HOME/bin/java.exe" -cp $clockClasses com.valuewander.yeopjaricat.PointerGestureSpec
     if($LASTEXITCODE -ne 0){throw 'Pointer gesture tests failed.'}
-    & "$env:JAVA_HOME/bin/javac.exe" -d $clockClasses (Join-Path $repo 'mobile/android/app/src/main/java/com/valuewander/yeopjaricat/UpdatePolicy.java') (Join-Path $repo 'mobile/tests/UpdatePolicySpec.java')
+    & "$env:JAVA_HOME/bin/javac.exe" -d $clockClasses (Join-Path $repo 'mobile/android/app/src/direct/java/com/valuewander/yeopjaricat/UpdatePolicy.java') (Join-Path $repo 'mobile/tests/UpdatePolicySpec.java')
     if($LASTEXITCODE -ne 0){throw 'Update policy test compilation failed.'}
     & "$env:JAVA_HOME/bin/java.exe" -cp $clockClasses com.valuewander.yeopjaricat.UpdatePolicySpec
     if($LASTEXITCODE -ne 0){throw 'Update policy tests failed.'}

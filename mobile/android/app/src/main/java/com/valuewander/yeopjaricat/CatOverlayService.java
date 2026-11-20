@@ -124,7 +124,7 @@ public final class CatOverlayService extends Service implements SharedPreference
     }
     void applyVisibility(boolean show){
         if(show){
-            if(!displaying)AppUpdates.get(this).check(false);
+            if(!displaying)AppUpdates.checkWhileVisible(this);
             for(ObjectWindow v:objects)if(!v.attached){try{manager.addView(v,v.params);v.attached=true;}catch(SecurityException e){stopSelf();return;}}
             for(PetWindow v:windows)if(!v.attached)try{v.position();manager.addView(v,v.params);v.attached=true;}catch(SecurityException e){stopSelf();return;}
             if(!displaying){displaying=!windows.isEmpty();if(displaying)frames.start();}

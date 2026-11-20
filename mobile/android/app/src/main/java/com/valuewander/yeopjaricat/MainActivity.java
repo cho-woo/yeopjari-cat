@@ -54,7 +54,7 @@ public final class MainActivity extends Activity {
             else{top=insets.getSystemWindowInsetTop();bottom=insets.getSystemWindowInsetBottom();}
             content.setPadding(dp(24),dp(18)+top,dp(24),dp(30)+bottom);return insets;
         });
-        content.addView(text("VALUEWANDER  /  MOBILE PREVIEW",10,MUTED));
+        content.addView(text(getString(R.string.edition_heading),10,MUTED));
         TextView title=text("손안의 작은\n옆자리 고양이",31,INK);title.setTypeface(Typeface.create("sans-serif-medium",Typeface.NORMAL));title.setLineSpacing(dp(2),1);add(content,title,14);
         add(content,text("매일의 홈 화면에, 귀여운 옆자리 하나.",14,MUTED),10);
         preview=new SceneView(this);preview.setBackground(round(0xffece3f9,26));preview.setClipToOutline(true);
@@ -103,7 +103,7 @@ public final class MainActivity extends Activity {
         SeekBar position=new SeekBar(this);position.setMax(58);position.setProgress(settings.prefs.getInt("home_floor_percent",58)-30);position.setContentDescription("홈 화면 고양이 높이");appearance.addView(position);
         position.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar s,int value,boolean fromUser){}public void onStartTrackingTouch(SeekBar s){}public void onStopTrackingTouch(SeekBar s){settings.prefs.edit().putInt("home_floor_percent",30+s.getProgress()).apply();}});
         add(appearance,text("아이콘이나 검색창과 겹치면 고양이가 지낼 높이를 조절해 주세요.",12,MUTED),8);
-        add(content,text("PREVIEW "+updatePanel.updates.currentName.replace("-preview","")+"  ·  설정은 기기 안에만 저장\nPC의 성장 기록은 아직 동기화하지 않아요.",11,MUTED),24);
+        add(content,text(updatePanel.versionLabel()+"  ·  설정은 기기 안에만 저장\nPC의 성장 기록은 아직 동기화하지 않아요.",11,MUTED),24);
         settings.prefs.registerOnSharedPreferenceChangeListener(preferences);
         setContentView(scroll);
     }
