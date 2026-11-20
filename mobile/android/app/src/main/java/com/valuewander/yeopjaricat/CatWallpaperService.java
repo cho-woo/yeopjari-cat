@@ -44,7 +44,9 @@ public final class CatWallpaperService extends WallpaperService {
         String lastError="none";
         final float density=getResources().getDisplayMetrics().density;
         final KeyguardManager keyguard=(KeyguardManager)getSystemService(KEYGUARD_SERVICE);
-        CatEngine(){setTouchEventsEnabled(true);settings.prefs.registerOnSharedPreferenceChangeListener(this);}
+        final android.graphics.Paint selection=new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
+        CatEngine(){setTouchEventsEnabled(true);settings.prefs.registerOnSharedPreferenceChangeListener(this);
+            selection.setStyle(android.graphics.Paint.Style.STROKE);selection.setStrokeWidth(2);selection.setColor(0xffffce79);}
         @Override public void onCreate(SurfaceHolder holder){super.onCreate(holder);holder.setFormat(PixelFormat.RGBX_8888);reload();}
         void reload(){
             if(touch!=null)touch.cancel();if(backdrop!=null)backdrop.close();
@@ -85,7 +87,16 @@ public final class CatWallpaperService extends WallpaperService {
                     // compensate for excess pixels that exist in this actual buffer.
                     canvas.translate(Math.max(0,canvas.getWidth()/density-scene.width)*cameraX,
                         Math.max(0,canvas.getHeight()/density-scene.height)*cameraY);
-                    backdrop.draw(canvas,scene.width,scene.height,scene.floor);if(paintCat)scene.draw(canvas);lastPaintCat=paintCat&&settings.enabled();
+                    backdrop.draw(canvas,scene.width,scene.height,scene.floor);
+                    if(paintCat){
+                        int selected=touch.selectedHomeCat(android.os.SystemClock.uptimeMillis());
+                        if(selected>=0 && scene.actors[selected]!=null){
+                            PetScene.Actor a=scene.actors[selected];float y=a.footY();
+                            canvas.drawOval(a.x-scene.size*.38f,y-scene.size*.08f,a.x+scene.size*.38f,y+scene.size*.08f,selection);
+                        }
+                        scene.draw(canvas);
+                    }
+                    lastPaintCat=paintCat&&settings.enabled();
                     canvas.restore();renderedFrames++;lastError="none";
                 }
             }catch(IllegalArgumentException|IllegalStateException e){lastError=e.toString();}
@@ -104,9 +115,16 @@ public final class CatWallpaperService extends WallpaperService {
         @Override public void onOffsetsChanged(float x,float y,float xs,float ys,int xp,int yp){cameraX=x;cameraY=y;offsetX=xp;offsetY=yp;if(visible)render(0);}
         @Override public void onSurfaceDestroyed(SurfaceHolder holder){surfaceReady=false;clock.stop();super.onSurfaceDestroyed(holder);}
         @Override public void onTouchEvent(MotionEvent event){if((isPreview()||(!HomeSceneStore.inPlay&&!CatOverlayService.displaying&&!keyguard.isKeyguardLocked()))&&touch!=null)touch.event(event.getActionMasked(),event.getPointerCount(),event.getRawX()/density,event.getRawY()/density,event.getEventTime());super.onTouchEvent(event);}
+        @Override public android.os.Bundle onCommand(String action,int x,int y,int z,android.os.Bundle extras,boolean resultRequested){
+            if(android.app.WallpaperManager.COMMAND_TAP.equals(action) && visible && !isPreview() && touch!=null &&
+                    !HomeSceneStore.inPlay && !CatOverlayService.displaying && !keyguard.isKeyguardLocked()){
+                touch.launcherEmptyTap(x/density,y/density,android.os.SystemClock.uptimeMillis());
+            }
+            return super.onCommand(action,x,y,z,extras,resultRequested);
+        }
         @Override public void onSharedPreferenceChanged(SharedPreferences prefs,String key){if(key==null||key.startsWith("position."))return;if(PetSettings.changesScene(key))reload();
             else if(backdrop!=null&&(PlayBackdrop.PREF.equals(key)||key.equals("photo"))){backdrop.refresh();scene.fitBackdropGround(false);}
-            schedule();}
+            if(!settings.enabled()&&touch!=null)touch.cancel();schedule();}
         @Override public void onDestroy(){closed=true;engines.remove(this);updateHomeVisibility();if(touch!=null)touch.cancel();clock.stop();settings.prefs.unregisterOnSharedPreferenceChangeListener(this);if(isPreview())scene.close();backdrop.close();super.onDestroy();}
     }
 }

@@ -151,6 +151,29 @@ final class PetScene {
             if(busy()){queued=next;return;}
             start(next);
         }
+        void goToHomeTap(float px,float py){
+            cancelSocial();
+            float destX=safeX(px),destY=safeY(py);
+            String gait=Math.hypot(destX-x,destY-ground())<size*.85f?"walk":"run";
+            pendingMood=0;fingerArmed=false;nextGroundMin=Float.NaN;
+            // Keep an already moving stride, including its speed and exposure clock.
+            // A landing, planted turn or gait recovery must finish before the new leg.
+            boolean travel=step!=null && step.travel && clock!=null;
+            if(travel || (clock!=null && (isJump() || action.equals("turn") || isStop()))){
+                owner="home-call";selfDirected=false;fingerDown=false;queued=null;plan.clear();object.kind="";
+                if(travel && !gaitExit){
+                    boolean reverse=(destX-x)*facing < -2;
+                    if(!reverse){
+                        step.x=destX;step.y=destY;step.continuous=false;return;
+                    }
+                    step.continuous=true;
+                    facePose("turn",facing);route(gait,destX,destY,false);
+                    endStep();return;
+                }
+                route(gait,destX,destY,false);return;
+            }
+            cancelStory();owner="home-call";route(gait,destX,destY,false);nextStep();
+        }
         // Select during the planted pause so decoding can overlap it.
         String chooseAuto(){
             String pick=random.nextInt(4)==0?"walk":MobileActions.all[random.nextInt(MobileActions.all.length)];
@@ -253,6 +276,7 @@ final class PetScene {
             boolean exchange=owner.equals("pair-paw") && socialActive && socialPhase<3;
             if(next==null && sideReady && !exchange){next=new Step("walk");next.bridge=-1;next.direction=facing;}
             if(next==null){
+                if(owner.equals("home-call"))savePositions();
                 selfDirected=false;finishedOwner=owner;completed++;ballHits+=object.hits;object.hits=0;object.kind="";
                 owner="";action="idle";step=null;if(!exchange){sideReady=false;releaseClips();}
                 // The full authored recovery has finished. Leave a short, visible planted hold.
@@ -267,6 +291,9 @@ final class PetScene {
                 Step gait=new Step("run");gait.travel=true;gait.x=safeX(dest);gait.y=ground();next=gait;
             }
             if(next.travel && Math.hypot(next.x-x,next.y-ground())<1){nextStep();return;}
+            if(owner.equals("home-call") && next.travel && sideReady && (next.x-x)*facing < -2){
+                plan.addFirst(next);next=new Step("turn");next.direction=facing;
+            }
             if(exchange && sideReady && !next.travel && sidePose(next.name) && next.direction!=0 && next.direction!=facing){
                 plan.addFirst(next);next=new Step("turn");next.direction=facing;
             }

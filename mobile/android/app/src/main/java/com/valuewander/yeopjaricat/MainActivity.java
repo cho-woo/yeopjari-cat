@@ -74,7 +74,7 @@ public final class MainActivity extends Activity {
         });
         homePlay=button("고양이 놀이터 열기",false);add(content,homePlay,8);
         homePlay.setOnClickListener(v->startActivity(new Intent(this,PlayActivity.class)));
-        add(content,text("홈에서는 고양이를 톡 눌러 보세요. 고양이를 옮기거나 손가락으로 놀 때는 놀이터를 열어 주세요. 앱 아이콘을 길게 누르면 놀이터 바로가기도 있어요.",13,MUTED),8);
+        add(content,text("홈에서 고양이를 톡 누르고 발밑에 고리가 보일 때 빈 곳을 톡 누르면 그곳으로 달려가요. 두 마리 중 함께 놀 고양이를 골라 보세요. 놀이터에서는 손가락을 따라 놀거나 고양이를 끌어 옮길 수 있어요.",13,MUTED),8);
         LinearLayout optional=column();add(content,optional,10);
         overlay=new Switch(this);overlay.setText("다른 앱 위에 고양이 표시");overlay.setTextColor(INK);overlay.setTextSize(14);overlay.setMinHeight(dp(52));optional.addView(overlay);
         overlay.setOnCheckedChangeListener((b,enabled)->{if(updatingSwitch)return;if(enabled)enableOverlay();else{permissionPending=false;settings.put("overlay",false);reconcileLayer();}});
