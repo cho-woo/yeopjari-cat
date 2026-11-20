@@ -2876,7 +2876,7 @@ inline constexpr std::array<Atlas,60> kStyledAtlases{{
     Atlas{10,116,1016,2560,6400,"82f88ac1962030d9c295f73ab5516279f7d4af84ac218b235533756600b89093","assets/styled-sprites/c10-r116.png",nullptr,0,0},
     Atlas{10,117,1017,2560,4480,"ea50e4890bdccebaaefdcc5a70f199b21087f2cccdb3e1ee9cb23ea93c73dfae","assets/styled-sprites/c10-r117.png",nullptr,0,0},
     Atlas{10,118,1018,2560,6400,"f6e2b3d969b588b347f0d3eb7c7e3f58023897d503c4024ba6b27c71505b25c7","assets/styled-sprites/c10-r118.png",nullptr,0,0},
-    Atlas{10,119,1019,2560,4160,"4f03c5dcfd9078d2daea6e73c3832f91909ebf5a89fcf92545b0eb91548bf5bc","assets/styled-sprites/c10-r119.png",nullptr,0,0},
+    Atlas{10,119,1019,2560,4160,"6d3135dfb2aa532105b8e87907fb684b4cfa96383194edee89afadc0b1cade86","assets/styled-sprites/c10-r119.png",nullptr,0,0},
     Atlas{10,120,613,1536,1024,"edfd4c106c5c050131673ac0265887a5fa01a0bb7ba7927e44114c9a3e915e96","assets/styled-sprites/c10-r120.png",nullptr,0,0},
     Atlas{10,400,1300,2560,9280,"e7eb6b0a3aad17fc0e2ca87c5292a358271d5471241682a70a505d76da14bc7e","assets/styled-sprites/c10-r400.png",nullptr,0,0},
     Atlas{10,401,1301,2560,5440,"0e94ee41fcc0636f49e3a2b6b66c826a6c67be9f427fc0f898431e2f9d0d1e73","assets/styled-sprites/c10-r401.png",nullptr,0,0},
