@@ -31,6 +31,7 @@ final class MotionLibrary {
         final int[] frames, times;
         final int loopStart, loopEnd, loopMs, durationMs;
         final float reference, stride;
+        final boolean frontFacing;
         final int glanceEnd;
         final float[][] paws;
         final int[][] rectangles;
@@ -41,6 +42,17 @@ final class MotionLibrary {
         float left=Float.POSITIVE_INFINITY,top=Float.POSITIVE_INFINITY,right=Float.NEGATIVE_INFINITY,bottom=Float.NEGATIVE_INFINITY;
         Clip(JSONObject spec, Bitmap[] pages, boolean outroOnly) throws Exception {
             this.spec=spec; this.pages=pages;
+            // These front portraits have no travel or directional contact.
+            // Mirroring them after a run swaps the anatomical eyes and blaze.
+            switch(spec.optString("name")){
+                case "neutral":case "idle-breathe":case "watch":case "ear-flick":
+                case "tail-raise":case "loaf":case "peek":case "sneeze":case "yawn":
+                case "sleep-talk":case "hang":case "pride":case "sniff":case "look-down":
+                case "balance":case "startled":case "touch-hiss":case "treat":
+                case "groom":case "knead":case "sleep":case "settle":case "eat":
+                    frontFacing=true;break;
+                default:frontFacing=false;
+            }
             glanceEnd=spec.optInt("glance_end",0);
             reference=(float)spec.getDouble("reference_height"); stride=(float)spec.optDouble("stride_pixels",0);
             JSONArray points=spec.optJSONArray("paws");
@@ -70,12 +82,15 @@ final class MotionLibrary {
             for(int i=0;i<array.length();i++) { JSONObject step=array.getJSONObject(i);frames.add(step.getInt("frame"));times.add(step.getInt("ms")); }
         }
         MotionClock clock() { return new MotionClock(frames,times,loopStart,loopEnd); }
+        int displayFacing(int facing){return frontFacing?1:facing;}
         int bytes() { int n=0;for(Bitmap b:pages)if(b!=null)n+=b.getAllocationByteCount();return n; }
         void paint(Canvas canvas, int frame, float x, float floor, float height, int facing, Paint paint) {
             int[] r=rectangles[frame]; float scale=height/reference;
-            int saved=canvas.save(); canvas.translate(x,floor);canvas.scale(facing*scale,scale);
+            int saved=canvas.save();
+            if(displayFacing(facing)<0)canvas.scale(-1,1,x,floor);
             sourceRect.set(r[0],r[1],r[0]+r[2],r[1]+r[3]);
-            poseRect.set(-anchors[frame][0],-anchors[frame][1],r[2]-anchors[frame][0],r[3]-anchors[frame][1]);
+            float left=x-anchors[frame][0]*scale,top=floor-anchors[frame][1]*scale;
+            poseRect.set(left,top,left+r[2]*scale,top+r[3]*scale);
             canvas.drawBitmap(pages[page[frame]],sourceRect,poseRect,paint);
             canvas.restoreToCount(saved);
         }

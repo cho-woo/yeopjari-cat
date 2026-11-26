@@ -7,6 +7,10 @@ import cv2
 import numpy as np
 from PIL import Image
 
+# These actions carry the registered fur correction in the shared atlas,
+# before the head material is applied. Android should only clean the outline.
+SHARED_FUR_ACTIONS = {"groom", "knead", "toy", "fish", "eat", "stumble", "tail-chase"}
+
 # (first frame, last frame, polygon). Boundaries are placed in clear fur or
 # outside the silhouette. The separate windows follow changes of prop/pose.
 FUR_REGIONS = {

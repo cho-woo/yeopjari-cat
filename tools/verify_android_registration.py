@@ -5,7 +5,8 @@ from functools import lru_cache
 from pathlib import Path
 
 from PIL import Image, ImageChops
-from export_android_motions import iris_frames, repaired_pose, OUT, ROOT, VIDEO, read, sha
+from export_android_motions import iris_frames, production_pose, OUT, ROOT, VIDEO, read, sha
+from register_snow_treat import ANDROID_ANCHOR, android_frame
 
 
 def main():
@@ -46,20 +47,24 @@ def main():
         for i,(old,new) in enumerate(zip(c['frames'],dest['frames'])):
             x,y,w,h=old['rect']
             original=sheet.crop((x,y,x+w,y+h))
+            composite=name=='treat'
+            if composite:
+                assert dest.get('composite')=='registered-treat-portrait'
+                original=android_frame(sheet,i,coat)
+            anchor=ANDROID_ANCHOR if composite else anchors[i]
             bounds=original.getbbox()
-            assert new['anchor']==[anchors[i][0]-bounds[0],anchors[i][1]-bounds[1]],(name,coat,i,'anchor')
+            assert new['anchor']==[anchor[0]-bounds[0],anchor[1]-bounds[1]],(name,coat,i,'anchor')
             x,y,w,h=new['rect']
             packed=page(new['page']).crop((x,y,x+w,y+h))
             raw=original.crop(bounds)
-            if coat == 10:
-                iris = next(protected)
-                corrected = repaired_pose(original,name,i,iris)
+            iris = next(protected) if coat==10 and not composite else None
+            corrected = production_pose(original,name,coat,i,iris)
+            if iris is not None:
                 protected_iris_pixels += iris.histogram()[255]
-                assert corrected.getchannel('A').tobytes() == original.getchannel('A').tobytes(), (name,i,'coverage')
-                original = corrected
-            original=original.crop(bounds)
+            assert corrected.getchannel('A').tobytes() == original.getchannel('A').tobytes(), (name,i,'coverage')
+            original=corrected.crop(bounds)
             assert packed.size==original.size
-            if coat==10:
+            if iris is not None:
                 delta=ImageChops.difference(raw,packed).convert('RGB')
                 assert not Image.composite(delta,Image.new('RGB',delta.size),iris.crop(bounds)).getbbox(),(name,i,'iris')
             assert not ImageChops.difference(original,packed).getbbox(alpha_only=False),(name,coat,i,'pixels')

@@ -43,12 +43,18 @@ public final class MotionSmoke extends Instrumentation {
             waitForIdleSync();
             if(arguments!=null&&"launcher-play".equals(arguments.getString("mode"))){new LauncherPlayReview(this).run();return;}
             if(arguments!=null&&"home-call".equals(arguments.getString("mode"))){new HomeCallReview(this).run();return;}
+            if(arguments!=null&&"action-flow-film".equals(arguments.getString("mode"))){new ActionFlowReview(this).film();return;}
+            if(arguments!=null&&"action-flow".equals(arguments.getString("mode"))){new ActionFlowReview(this).run();return;}
             if(arguments!=null&&"autoplay".equals(arguments.getString("mode"))){new AutomaticReview(this).run();return;}
             if(arguments!=null&&"touch-moods".equals(arguments.getString("mode"))){new TouchMoodReview(this).run();return;}
             if(arguments!=null&&"play-backdrops".equals(arguments.getString("mode"))){new PlayBackdropReview(this).run();return;}
             if(arguments!=null&&"snow-playback".equals(arguments.getString("mode"))){new SnowGraphicsReview(this).playback();return;}
             if(arguments!=null&&"snow-graphics".equals(arguments.getString("mode"))){new SnowGraphicsReview(this).run();return;}
             if(arguments!=null&&"snow-jump".equals(arguments.getString("mode"))){new SnowGraphicsReview(this).jump();return;}
+            if(arguments!=null&&"ear-frames".equals(arguments.getString("mode"))){SnowEarFrames.run(this);return;}
+            if(arguments!=null&&"appearance".equals(arguments.getString("mode"))){
+                new AppearanceTransitionsReview(this).run(Integer.parseInt(arguments.getString("coat","10")));return;
+            }
             if(arguments!=null&&("pacing".equals(arguments.getString("mode"))||"pacing-home".equals(arguments.getString("mode")))){new MotionPacingReview(this).run(Integer.parseInt(arguments.getString("coat","0")),"pacing-home".equals(arguments.getString("mode")));return;}
             if(arguments!=null&&arguments.getString("mode","").startsWith("parity")){
                 new ActionParityReview(this).run(arguments.getString("mode"),Integer.parseInt(arguments.getString("coat","0")));return;

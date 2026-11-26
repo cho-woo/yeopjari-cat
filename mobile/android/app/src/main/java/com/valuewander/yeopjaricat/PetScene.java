@@ -7,6 +7,7 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.RectF;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Random;
 
 /** One scene in dp, used by Home, preview, and both cats. Only resize and explicit dragging relocate roots. */
@@ -18,14 +19,23 @@ final class PetScene {
         float x=Float.NaN,y=Float.NaN;
         int direction,bridge;
         boolean platform;
-        boolean travel, continuous;
+        boolean travel, continuous, fromStanding;
         Step(String name){this.name=name;}
+    }
+    // Premultiplied weights sum to 255, so even repeated interruptions have a bounded size.
+    static final class HeldFrame {
+        final MotionLibrary.Clip clip;
+        final int frame, direction, weight;
+        HeldFrame(MotionLibrary.Clip clip,int frame,int direction,int weight){
+            this.clip=clip;this.frame=frame;this.direction=direction;this.weight=weight;
+        }
     }
     final class Actor {
         final int coat;
         final PlayObject object=new PlayObject();
         final ArrayDeque<Step> plan=new ArrayDeque<>();
         MotionLibrary.Clip idle,clip,previousPose;
+        ArrayList<HeldFrame> heldBlend;
         MotionClock clock;
         Step step;
         String action="idle",owner="",queued,loadingAction;
@@ -37,6 +47,7 @@ final class PetScene {
         boolean controlled,loading,gaitExit,sideReady,fingerDown,fingerArmed;
         double age,restMs,fingerAim;
         String upcomingAuto;
+        final ArrayDeque<String> recentAuto=new ArrayDeque<>();
         boolean selfDirected;
         int attentionIndex;
         long completed,landings;
@@ -65,7 +76,29 @@ final class PetScene {
             Step s=new Step(gait);s.travel=true;s.x=safeX(px);s.y=safeY(py);s.continuous=continuous;plan.add(s);
         }
         void remember(){
-            if(clip!=null&&clock!=null){idle=clip;idleFrame=clock.frame();idleFacing=facing;}
+            if(clip==null||clock==null)return;
+            if(previousPose!=null && fade<1){
+                int incoming=Math.round(255*smooth(fade));
+                int outgoing=255-incoming;
+                ArrayList<HeldFrame> visible=new ArrayList<>();
+                if(heldBlend==null){
+                    if(outgoing>0)visible.add(new HeldFrame(previousPose,previousFrame,previousFacing,outgoing));
+                }else{
+                    int total=0,assigned=0;
+                    for(HeldFrame part:heldBlend){
+                        total+=part.weight;
+                        int next=(total*outgoing+127)/255;
+                        if(next>assigned)visible.add(new HeldFrame(part.clip,part.frame,part.direction,next-assigned));
+                        assigned=next;
+                    }
+                }
+                if(incoming>0)visible.add(new HeldFrame(clip,clock.frame(),facing,incoming));
+                heldBlend=visible;
+            }else{
+                heldBlend=null;
+            }
+            previousPose=null;
+            idle=clip;idleFrame=clock.frame();idleFacing=facing;
         }
         // Keep the small working set for the current interaction even if another coat
         // evicts an entry from the shared LRU. Late replies cannot retain an old story.
@@ -174,11 +207,35 @@ final class PetScene {
             }
             cancelStory();owner="home-call";route(gait,destX,destY,false);nextStep();
         }
-        // Select during the planted pause so decoding can overlap it.
+        // Favor physically related choices without turning them into a fixed routine.
         String chooseAuto(){
-            String pick=random.nextInt(4)==0?"walk":MobileActions.all[random.nextInt(MobileActions.all.length)];
-            if(pick.equals(owner.isEmpty()?finishedOwner:owner))return "watch".equals(pick)?"sniff":"watch";
-            return pick;
+            String current=owner.isEmpty()?finishedOwner:owner;
+            String[] related;
+            switch(current){
+                case "walk":case "stalk":case "run":case "turn":case "jump":case "cursor-pounce":
+                    related=new String[]{"stalk","run","turn","jump","reach","scratch","sniff","walk"};break;
+                case "sleep":case "sleep-talk":case "loaf":case "cushion":
+                    related=new String[]{"settle","groom","yawn","sniff","walk","knead"};break;
+                case "ball":case "ball-pounce":case "punch":case "reach":case "fly":case "toy":
+                    related=new String[]{"stalk","run","watch","reach","jump","groom","sniff"};break;
+                case "fish":case "eat":case "treat":
+                    related=new String[]{"groom","scratch-fur","walk","loaf","sniff"};break;
+                default:related=sideReady?new String[]{"walk","stalk","jump","punch","climb"}:MobileActions.all;
+            }
+            String[] choices=random.nextInt(3)==0?MobileActions.all:related;
+            int start=random.nextInt(choices.length);
+            for(int i=0;i<choices.length;i++){
+                String choice=choices[(start+i)%choices.length];
+                if(!choice.equals(current)&&!recentAuto.contains(choice))return choice;
+            }
+            throw new IllegalStateException("No distinct next action");
+        }
+        boolean seatedEntrance(String name){
+            switch(name){
+                case "loaf":case "sleep":case "sleep-talk":case "idle-breathe":case "knead":
+                case "eat":case "treat":case "fish":return true;
+                default:return false;
+            }
         }
         void prepareAuto(){
             if(upcomingAuto!=null)return;
@@ -213,16 +270,25 @@ final class PetScene {
         void start(String next){start(next,false);}
         void start(String next,boolean autoChosen){
             selfDirected=autoChosen;upcomingAuto=null;owner=next;float ground=ground();
+            if(autoChosen){
+                recentAuto.addLast(next);
+                if(recentAuto.size()>3)recentAuto.removeFirst();
+            }
             switch(next){
                 case "walk": case "stalk":
-                    route("walk",roam(next.equals("walk")?2.5f:1.5f),ground,false);break;
+                    float target=roam(next.equals("walk")?2.5f:1.5f);
+                    if(autoChosen && Math.abs(target-x)<size*.55f)pose("sniff");
+                    else route("walk",target,ground,autoChosen);
+                    break;
                 case "run": case "turn": case "brake": case "slide": case "stumble":{
                     float dest=roam(4.5f);int dir=toward(dest);
                     boolean turn=next.equals("turn")||(next.equals("run")&&random.nextInt(3)==0);
                     String stop=next.equals("run")||turn?new String[]{"brake","brake","slide","stumble"}[random.nextInt(4)]:next;
                     route("run",dest-dir*Math.min(size*.35f,Math.abs(dest-x)*.18f),ground,true);
                     if(turn){facePose("turn",dir);route("run",x,ground,true);dir=-dir;}
-                    facePose(stop,dir);break;
+                    if(!autoChosen||!(next.equals("run")||next.equals("turn")))facePose(stop,dir);
+                    else if(Math.abs(dest-x)<size*.55f)facePose("reach",dir);
+                    break;
                 }
                 case "perch":{
                     float dest=roam(1.55f),platform=safeY(ground-size*.55f);
@@ -260,7 +326,8 @@ final class PetScene {
         }
         boolean sidePose(String name){
             return name.equals("jump")||name.equals("cursor-pounce")||name.equals("punch")||
-                name.equals("reach")||name.equals("climb")||name.equals("ball");
+                name.equals("reach")||name.equals("climb")||name.equals("ball")||
+                name.equals("tower")||name.equals("scratch")||name.equals("box");
         }
         float standoff(String kind){
             boolean pounce=kind.equals("ball-pounce");
@@ -274,13 +341,12 @@ final class PetScene {
         void nextStep(){
             Step next=plan.poll();
             boolean exchange=owner.equals("pair-paw") && socialActive && socialPhase<3;
-            if(next==null && sideReady && !exchange){next=new Step("walk");next.bridge=-1;next.direction=facing;}
             if(next==null){
                 if(owner.equals("home-call"))savePositions();
                 selfDirected=false;finishedOwner=owner;completed++;ballHits+=object.hits;object.hits=0;object.kind="";
-                owner="";action="idle";step=null;if(!exchange){sideReady=false;releaseClips();}
-                // The full authored recovery has finished. Leave a short, visible planted hold.
-                restMs=420+random.nextInt(341);return;
+                owner="";step=null;if(!exchange)releaseClips();
+                // The last actual drawing and orientation remain in place during decoding.
+                restMs=0;return;
             }
             if(next.name.equals("ball-approach")){
                 String strike=next.direction==1?"ball":"ball-pounce";
@@ -288,20 +354,22 @@ final class PetScene {
                 float dest=object.x-dir*gap;
                 if(Math.abs(safeX(dest)-dest)>1){dir=-dir;dest=object.x-dir*gap;}
                 plan.peek().direction=dir;
-                Step gait=new Step("run");gait.travel=true;gait.x=safeX(dest);gait.y=ground();next=gait;
+                Step gait=new Step("run");gait.travel=true;gait.continuous=sidePose(strike);gait.x=safeX(dest);gait.y=ground();next=gait;
             }
             if(next.travel && Math.hypot(next.x-x,next.y-ground())<1){nextStep();return;}
-            if(owner.equals("home-call") && next.travel && sideReady && (next.x-x)*facing < -2){
+            boolean reverseTravel=next.travel && (next.x-x)*facing < -2;
+            boolean reversePose=!next.travel && sidePose(next.name) && next.direction!=0 && next.direction!=facing;
+            if(sideReady && (reverseTravel || reversePose)){
                 plan.addFirst(next);next=new Step("turn");next.direction=facing;
             }
-            if(exchange && sideReady && !next.travel && sidePose(next.name) && next.direction!=0 && next.direction!=facing){
-                plan.addFirst(next);next=new Step("turn");next.direction=facing;
-            }
-            if(next.bridge==0 && !next.travel && sidePose(next.name) && !sideReady && !owner.equals("finger")){
+            boolean standingRun=next.travel && next.name.equals("run");
+            if(next.bridge==0 && (standingRun || sidePose(next.name)) && !sideReady && !owner.equals("finger")){
+                next.fromStanding=standingRun;
                 plan.addFirst(next);Step enter=new Step("walk");enter.bridge=1;
-                enter.direction=next.direction==0?facing:next.direction;next=enter;
-            }else if(next.bridge==0 && !next.travel && !sidePose(next.name) && sideReady &&
-                     !next.name.equals("turn") && !next.name.equals("slide") && !next.name.equals("brake") && !next.name.equals("stumble")){
+                enter.direction=next.direction==0?facing:next.direction;
+                if(standingRun && Math.abs(next.x-x)>1)enter.direction=toward(next.x);
+                next=enter;
+            }else if(next.bridge==0 && !next.travel && sideReady && seatedEntrance(next.name)){
                 plan.addFirst(next);next=new Step("walk");next.bridge=-1;next.direction=facing;
             }
             step=next;
@@ -321,7 +389,7 @@ final class PetScene {
                 if(step.bridge<0)clock.exitLoop();
                 if(step.travel){
                     if(Math.abs(step.x-x)>1)facing=toward(step.x);
-                    if(sideReady)clock.beginLoop();
+                    if(sideReady && !step.fromStanding)clock.beginLoop();
                     speed=sideReady?size*.55f:0;sideReady=false;
                 } else if(name.equals("turn")){
                     speed=0;
@@ -366,7 +434,7 @@ final class PetScene {
             if(action.equals("turn")){facing=-facing;sideReady=true;}
             if(isJump()){lift=0;landings++;}
             if(action.equals("climb"))lift=0;
-            clock=null;clip=null;action="idle";step=null;
+            clock=null;clip=null;step=null;
             if(owner.equals("finger") && attack &&
                     (fingerDown || Math.hypot(fingerX-attackX,fingerY-attackY)>size*.42f) && fingerFar()){
                 plan.clear();planFinger(false);
@@ -467,7 +535,7 @@ final class PetScene {
             if(automatic && selfDirected && upcomingAuto==null && queued==null && !socialActive &&
                 pendingSocial.isEmpty() && age>250 && timeToBoundary()<2300)prepareAuto();
             age+=delta;fade=Math.min(1,fade+(float)delta/165);
-            if(fade>=1)previousPose=null;
+            if(fade>=1){previousPose=null;heldBlend=null;}
             if(step.travel){walk(delta);return;}
             clock.advance(delta);
             if(step.bridge>0 && clock.step()>=clip.loopStart){endStep();return;}
@@ -492,39 +560,85 @@ final class PetScene {
             if(clock.finished())endStep();
         }
         int currentFrame(){return clock==null?idleFrame:clock.frame();}
+        void drawOutgoing(Canvas canvas){
+            if(heldBlend==null){
+                previousPose.paint(canvas,previousFrame,x,footY(),size,previousFacing,paint);
+                return;
+            }
+            if(heldBlend.size()==1){
+                HeldFrame only=heldBlend.get(0);
+                only.clip.paint(canvas,only.frame,x,footY(),size,only.direction,paint);
+                return;
+            }
+            // Draw original samples directly in this surface's coordinate system.
+            // A copied bitmap would apply the sampling filter again on every interruption.
+            RectF area=blendBounds(canvas);
+            int layer=canvas.saveLayer(area,null);
+            try{
+                boolean add=false;
+                for(HeldFrame part:heldBlend){
+                    int weighted=saveWeight(canvas,area,part.weight,add);
+                    part.clip.paint(canvas,part.frame,x,footY(),size,part.direction,paint);
+                    canvas.restoreToCount(weighted);
+                    add=true;
+                }
+            }finally{
+                canvas.restoreToCount(layer);
+            }
+        }
+        int saveWeight(Canvas canvas,RectF area,int weight,boolean add){
+            layerPaint.setAlpha(weight);
+            layerPaint.setXfermode(add?ADD_POSE:null);
+            return canvas.saveLayer(area,layerPaint);
+        }
         void draw(Canvas canvas){
             MotionLibrary.Clip current=clip==null?idle:clip;if(current==null)return;
+            if(clip==null && heldBlend!=null){drawOutgoing(canvas);return;}
             float t=previousPose!=null&&clip!=null?smooth(fade):1;
             int dir = clip==null?idleFacing:facing;
             int incoming = Math.round(255*t);
             if(incoming==255){current.paint(canvas,currentFrame(),x,footY(),size,dir,paint);return;}
-            if(incoming==0){previousPose.paint(canvas,previousFrame,x,footY(),size,previousFacing,paint);return;}
+            if(incoming==0){drawOutgoing(canvas);return;}
             // Mix premultiplied source pixels, then composite once onto the
             // wallpaper. Two SRC_OVER passes let the photo show through the fur.
-            RectF layerBounds = bounds();
-            layerBounds.inset(-2,-2);
-            int saved = canvas.saveLayer(layerBounds,null);
+            RectF area=blendBounds(canvas);
+            int saved=canvas.saveLayer(area,null);
             try {
-                paint.setAlpha(255-incoming);
-                previousPose.paint(canvas,previousFrame,x,footY(),size,previousFacing,paint);
-                paint.setAlpha(incoming);
-                paint.setXfermode(ADD_POSE);
+                // Rasterize each source at full opacity first. On fractional
+                // scales an alpha-weighted bitmap draw can use a different filter.
+                int outgoingLayer=saveWeight(canvas,area,255-incoming,false);
+                drawOutgoing(canvas);
+                canvas.restoreToCount(outgoingLayer);
+                int incomingLayer=saveWeight(canvas,area,incoming,true);
                 current.paint(canvas,currentFrame(),x,footY(),size,dir,paint);
+                canvas.restoreToCount(incomingLayer);
             } finally {
-                paint.setXfermode(null);
-                paint.setAlpha(255);
                 canvas.restoreToCount(saved);
             }
         }
         RectF bounds(){return bounds(false);}
+        RectF blendBounds(Canvas canvas){
+            // The software rasterizer changes its bilinear sampling origin
+            // when a clipped layer starts at a nonzero offset. Keep the same
+            // source sampling as a steady pose. Home normally uses hardware.
+            if(!canvas.isHardwareAccelerated())return null;
+            RectF box=bounds();
+            box.set((float)Math.floor(box.left)-2,(float)Math.floor(box.top)-2,
+                    (float)Math.ceil(box.right)+2,(float)Math.ceil(box.bottom)+2);
+            return box;
+        }
         RectF bounds(boolean whole){
             MotionLibrary.Clip c=clip!=null?clip:idle;
             if(c==null)return new RectF(x-size*.6f,footY()-size,x+size*.6f,footY());
             RectF box=frameBounds(c,currentFrame(),clip==null?idleFacing:facing,whole);
-            if(previousPose!=null && fade<1)box.union(frameBounds(previousPose,previousFrame,previousFacing,false));
+            if(heldBlend!=null){
+                for(HeldFrame part:heldBlend)
+                    box.union(frameBounds(part.clip,part.frame,part.direction,false));
+            }else if(previousPose!=null && fade<1)box.union(frameBounds(previousPose,previousFrame,previousFacing,false));
             return box;
         }
         RectF frameBounds(MotionLibrary.Clip c,int f,int dir,boolean whole){
+            dir=c.displayFacing(dir);
             float s=size/c.reference,l=(whole?c.left:-c.anchors[f][0])*s,r=(whole?c.right:c.rectangles[f][2]-c.anchors[f][0])*s;
             return new RectF(x+(dir<0?-r:l),footY()+(whole?c.top:-c.anchors[f][1])*s,
                 x+(dir<0?-l:r),footY()+(whole?c.bottom:c.rectangles[f][3]-c.anchors[f][1])*s);
@@ -535,6 +649,7 @@ final class PetScene {
     final Random random=new Random();
     final Actor[] actors=new Actor[2];
     final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG);
+    final Paint layerPaint=new Paint();
     final Runnable invalidate;
     final PetSettings settings;
     final Context application;
@@ -647,7 +762,7 @@ final class PetScene {
             a.facePose("reach",dir);b.facePose("punch",-dir);
         }else{
             a.owner=b.owner="";socialActive=false;socialCount++;socialTimer=22000+random.nextInt(24000);
-            a.restMs=580;b.restMs=720;return;
+            a.restMs=0;b.restMs=0;return;
         }
         socialPhase++;a.nextStep();b.nextStep();
     }

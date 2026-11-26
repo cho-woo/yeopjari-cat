@@ -2,7 +2,6 @@
 import argparse
 import hashlib
 import json
-import shutil
 import subprocess
 from pathlib import Path
 
@@ -11,7 +10,9 @@ import numpy as np
 from PIL import Image, ImageDraw
 from android_touch_reactions import touch_entries
 from android_snow_edges import clean_edges
-from android_snow_fur import retouch
+from android_snow_fur import SHARED_FUR_ACTIONS, retouch
+from android_coat_material import correct_material
+from register_snow_treat import ANDROID_ANCHOR, android_frame
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / 'mobile/android/app/src/main/assets/motions'
@@ -32,10 +33,16 @@ def sequence(count):
 
 
 def repaired_pose(pose, name, frame, protected=None):
-    result = clean_edges(retouch(pose, name, frame))
+    result = clean_edges(pose if name in SHARED_FUR_ACTIONS else retouch(pose, name, frame))
     if protected is not None and result is not pose:
         result.paste(pose, mask=protected)
     return result
+
+
+def production_pose(pose, name, coat, index, protected=None):
+    if coat == 10 and name != 'treat':
+        pose = repaired_pose(pose, name, index, protected)
+    return correct_material(pose, coat, name, protected)
 
 
 def iris_frames(sheet, frames):
@@ -62,7 +69,7 @@ def movie_eyes(asset, name):
         yield mask
 
 
-def pack(directory, name, coat, poses, anchors, reference, playlist, *, movie=False, protected=None):
+def pack(directory, name, coat, poses, anchors, reference, playlist, *, movie=False, protected=None, raw=False):
     # Trim transparent margins without moving the world anchor. Identical exposures
     # share pixels but retain independent source timestamps and contact records.
     records, pages, pending, seen = [], [], [], {}
@@ -82,13 +89,15 @@ def pack(directory, name, coat, poses, anchors, reference, playlist, *, movie=Fa
                 rec['rect']=[(i%8)*w+1,(i//8)*h+1,pending[i].width,pending[i].height]
         filename=f'c{coat}-{name}-{page_id}.webp'
         path=directory/filename
-        page.save(path, lossless=(not movie or coat == 10), quality=94, method=2, exact=True)
+        # The source movies are already chroma-subsampled. A second lossy
+        # encode bleeds green into white paws and the charcoal ear silhouette.
+        page.save(path, lossless=True, quality=94, method=2, exact=True)
         pages.append(dict(file=filename,sha256=sha(path),width=page.width,height=page.height))
         pending.clear()
 
     for index, pose in enumerate(poses):
-        if coat == 10:
-            pose = repaired_pose(pose, name, index, next(protected) if protected is not None else None)
+        if not raw:
+            pose = production_pose(pose, name, coat, index, next(protected) if protected is not None else None)
         box=pose.getbbox()
         if not box:
             raise ValueError(f'Empty {name}/{coat} frame {index}')
@@ -108,9 +117,9 @@ def pack(directory, name, coat, poses, anchors, reference, playlist, *, movie=Fa
     return dict(name=name,coat=coat,reference_height=reference,frames=records,pages=pages,sequence=playlist)
 
 
-def export_native(exe):
+def export_native(exe, artwork):
     NATIVE.mkdir(exist_ok=True)
-    artwork=ROOT/'release/YeopjariCat.exe'
+    artwork_digest=sha(artwork)
     entries=[]
     for coat in (0,8,10):
         with subprocess.Popen([str(exe),str(artwork),str(coat)],stdout=subprocess.PIPE) as proc:
@@ -123,8 +132,9 @@ def export_native(exe):
                         # GDI+ DIB is premultiplied BGRA. Pillow unpremultiplies RGBa.
                         rgba=np.frombuffer(data,np.uint8).reshape(192,224,4)[:,:,[2,1,0,3]]
                         yield Image.frombytes('RGBa',(224,192),rgba.tobytes()).convert('RGBA')
-                entry=pack(NATIVE,name,coat,poses(),[(112,150)]*count,96,sequence(count))
+                entry=pack(NATIVE,name,coat,poses(),[(112,150)]*count,96,sequence(count),raw=True)
                 entry['source']='src/cat_animation.hpp / DrawPetStyle'
+                entry['artwork_sha256']=artwork_digest
                 entries.append(entry)
             if proc.wait()!=0:
                 raise RuntimeError('Windows gesture capture failed')
@@ -169,9 +179,11 @@ def write_index(entries):
 def main():
     args=argparse.ArgumentParser()
     args.add_argument('--native-exe',type=Path,help='Refresh Windows procedural gestures from the offline renderer')
+    args.add_argument('--artwork',type=Path,default=ROOT/'release/YeopjariCat.exe',
+                      help='Windows executable containing the verified character artwork for native gestures')
     args=args.parse_args()
     if args.native_exe:
-        export_native(args.native_exe)
+        export_native(args.native_exe,args.artwork)
         return
     OUT.mkdir(parents=True, exist_ok=True)
     style=read(ROOT/'assets/styled-sprites/manifest.json')['atlases']
@@ -199,7 +211,13 @@ def main():
                 if coat==10:
                     with Image.open(src.parent/'odd-eye-masks'/src.name) as mask_file:
                         protected=iris_frames(mask_file.convert('L'),c['frames'])
-                entry=pack(OUT,name,coat,poses(),anchors,c['reference_height'],c['sequence'],protected=protected)
+                if name=='treat':
+                    count=len(c['frames'])
+                    entry=pack(OUT,name,coat,(android_frame(sheet,i,coat) for i in range(count)),
+                               [ANDROID_ANCHOR]*count,c['reference_height'],c['sequence'])
+                    entry['composite']='registered-treat-portrait'
+                else:
+                    entry=pack(OUT,name,coat,poses(),anchors,c['reference_height'],c['sequence'],protected=protected)
             entry.update(source=src.relative_to(ROOT).as_posix(),source_sha256=spec['sha256'],stride_pixels=c.get('stride_pixels',0))
             reg=registration.get(('tuxedo' if coat==8 else 'cream')+'-'+name,{})
             if name in ('ball','punch','reach','cursor-pounce'):
@@ -228,9 +246,7 @@ def main():
             src=NATIVE/page['file']
             if sha(src)!=page['sha256']:
                 raise ValueError(src)
-            if entry['coat']!=10:
-                shutil.copyfile(src,OUT/src.name)
-        if entry['coat']==10:
+        if entry['pages']:
             # Already-trimmed Win32 frames have anchors in that trim's space.
             native_pages = []
             for page in entry['pages']:
@@ -240,9 +256,11 @@ def main():
                 for frame in entry['frames']:
                     x,y,w,h=frame['rect']
                     yield native_pages[frame['page']].crop((x,y,x+w,y+h))
-            processed = pack(OUT,entry['name'],10,native_poses(),
+            processed = pack(OUT,entry['name'],entry['coat'],native_poses(),
                 [f['anchor'] for f in entry['frames']],entry['reference_height'],entry['sequence'])
             processed['source'] = entry['source']
+            if 'artwork_sha256' in entry:
+                processed['artwork_sha256'] = entry['artwork_sha256']
             entry = processed
         entries.append(entry)
     entries.extend(touch_entries(ROOT,OUT,pack,sequence))
