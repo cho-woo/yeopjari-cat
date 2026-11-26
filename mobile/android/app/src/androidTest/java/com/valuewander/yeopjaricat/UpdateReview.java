@@ -29,6 +29,15 @@ final class UpdateReview {
     interface Attempt{void run()throws Exception;}
     void rejects(String name,Attempt attempt)throws Exception{try{attempt.run();}catch(IOException|IllegalArgumentException denied){check(true,name);return;}throw new AssertionError("Rejected update was accepted: "+name);}
     void run(String mode)throws Exception{
+        if(mode.equals("update-published")){
+            UpdateClient live=new UpdateClient(context);
+            String installed=context.getPackageManager().getPackageInfo(context.getPackageName(),0).versionName;
+            UpdatePolicy.Release release=live.latest(installed);
+            String wanted=test.arguments.getString("expected");
+            check(release!=null && release.version.name().equals(wanted),"Public update for "+installed);
+            live.download(release,bytes->{});live.verifyReady(release);
+            Bundle done=new Bundle();done.putString("stream","PUBLIC_UPDATE_READY "+installed+" -> "+wanted+" "+hash(live.file()));test.finish(MotionSmoke.RESULT_OK,done);return;
+        }
         File future=new File(fixtures,"future.apk");UpdatePolicy.Release next=release(future,"0.3.1-preview");JSONArray feed=new JSONArray().put(new JSONObject().put("tag_name","v99.0.0").put("assets",new JSONArray())).put(entry(next).put("draft",true)).put(entry(next));
         if(mode.equals("update-install")){installFlow(future,next,feed);return;}
         check(UpdateClient.select(feed,"0.3.0-preview").version.name().equals("0.3.1-preview"),"android_channel_ignores_windows_and_drafts");

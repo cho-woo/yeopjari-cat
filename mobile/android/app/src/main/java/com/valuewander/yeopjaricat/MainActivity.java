@@ -34,9 +34,21 @@ public final class MainActivity extends Activity {
     Button power,homePlay;
     UpdatePanel updatePanel;
     WallpaperReturn wallpaperReturn;
+    TextView appetiteLabel;
+    void refreshAppetite(){
+        if(appetiteLabel==null || preview==null || preview.scene==null)return;
+        long now=System.currentTimeMillis();
+        PetScene.Actor[] cats=preview.scene.actors;
+        String label=cats[1]==null?"포만감 ":"첫째 포만감 ";
+        label+=cats[0].appetite.displayed(now)+"/100";
+        if(cats[1]!=null)label+="   ·   둘째 "+cats[1].appetite.displayed(now)+"/100";
+        appetiteLabel.setText(label);
+    }
     boolean updatingSwitch,permissionPending;
     final android.content.SharedPreferences.OnSharedPreferenceChangeListener preferences=(p,key)->{
         if(power==null)return;
+        if(key!=null && key.startsWith("appetite.")){refreshAppetite();return;}
+        if("companion".equals(key))power.post(this::refreshAppetite);
         if(PlayBackdrop.PREF.equals(key)||"photo".equals(key)){
             preview.backdrop.refresh();preview.scene.fitBackdropGround(false);backdropPicker.refresh();wallpaperReturn.refresh();
         }
@@ -85,6 +97,7 @@ public final class MainActivity extends Activity {
         TextView second=text("두 번째 고양이",12,MUTED);add(cats,second,6);
         cats.addView(coatChoices(2000,settings.companionCoat(),coat->{settings.prefs.edit().putInt("companion_coat",coat).apply();preview.reload();}));
         LinearLayout play=card(content,"지금 같이 놀기");
+        appetiteLabel=text("",14,MUTED);add(play,appetiteLabel,7);refreshAppetite();
         LinearLayout row=new LinearLayout(this);row.setOrientation(LinearLayout.HORIZONTAL);play.addView(row);
         String[] labels={"살금살금","그루밍","꾹꾹이"},actions={"walk","groom","knead"};
         for(int i=0;i<labels.length;i++){final String action=actions[i];Button b=button(labels[i],false);LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(0,dp(48),1);lp.setMarginEnd(dp(4));row.addView(b,lp);b.setOnClickListener(v->preview.scene.command(action));}
@@ -143,7 +156,7 @@ public final class MainActivity extends Activity {
     }
     @Override protected void onStart(){super.onStart();visibleActivities++;HomeSceneStore.notifyLayer(this);}
     @Override protected void onStop(){visibleActivities=Math.max(0,visibleActivities-1);HomeSceneStore.notifyLayer(this);super.onStop();}
-    @Override protected void onResume(){super.onResume();if(preview!=null){preview.start();syncOverlay();}if(wallpaperReturn!=null)wallpaperReturn.resume();if(permissionPending){permissionPending=false;if(Settings.canDrawOverlays(this))enableOverlay();else syncOverlay();}if(settings.enabled()&&settings.overlay()&&!CatOverlayService.running&&Settings.canDrawOverlays(this))reconcileLayer();if(updatePanel!=null)updatePanel.resume();}
+    @Override protected void onResume(){super.onResume();refreshAppetite();if(preview!=null){preview.start();syncOverlay();}if(wallpaperReturn!=null)wallpaperReturn.resume();if(permissionPending){permissionPending=false;if(Settings.canDrawOverlays(this))enableOverlay();else syncOverlay();}if(settings.enabled()&&settings.overlay()&&!CatOverlayService.running&&Settings.canDrawOverlays(this))reconcileLayer();if(updatePanel!=null)updatePanel.resume();}
     @Override protected void onPause(){if(wallpaperReturn!=null)wallpaperReturn.pause();if(updatePanel!=null)updatePanel.pause();if(preview!=null)preview.stop();super.onPause();}
     @Override protected void onSaveInstanceState(Bundle b){b.putBoolean("pending_cross_app",permissionPending);if(updatePanel!=null)updatePanel.save(b);if(wallpaperReturn!=null)wallpaperReturn.save(b);super.onSaveInstanceState(b);}
     @Override public void onRequestPermissionsResult(int request,String[] permissions,int[] grants){super.onRequestPermissionsResult(request,permissions,grants);if(request==200)startMode();}

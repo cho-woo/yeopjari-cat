@@ -39,7 +39,7 @@ final class SnowGraphicsReview {
             scene.size=108;scene.floor=142;
             MotionLibrary.Clip neutral=scene.library.neutral(10);
             for(int i=0;i<2;i++){
-                PetScene.Actor a=scene.new Actor(10,80,"ear-flick");
+                PetScene.Actor a=scene.new Actor(10,80,"ear-flick",0);
                 scene.actors[i]=a;a.clip=neutral;a.clock=neutral.clock();
                 a.previousPose=groom[0];a.previousFrame=103;
                 a.previousFacing=1;a.facing=i==0?1:-1;

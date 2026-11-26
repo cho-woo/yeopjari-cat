@@ -31,7 +31,8 @@ final class PetScene {
         }
     }
     final class Actor {
-        final int coat;
+        final int coat,slot;
+        final PetAppetite appetite;
         final PlayObject object=new PlayObject();
         final ArrayDeque<Step> plan=new ArrayDeque<>();
         MotionLibrary.Clip idle,clip,previousPose;
@@ -57,7 +58,8 @@ final class PetScene {
         long pendingUntil;
         static final String[] GENTLE_POSES={"sniff","ear-flick","watch"};
         String finishedOwner="";
-        Actor(int coat,float x,String opening){
+        Actor(int coat,float x,String opening,int slot){
+            this.slot=slot;appetite=new PetAppetite(settings.prefs,slot,System.currentTimeMillis());
             this.coat=coat;this.x=x;restMs=350+random.nextInt(301);
             idle=library.neutral(coat);idleFrame=0;
             upcomingAuto=opening;
@@ -180,7 +182,12 @@ final class PetScene {
             }
             nextStep();return true;
         }
+        void fullReply(){
+            String who=slot==0?"첫째":"둘째";
+            android.widget.Toast.makeText(application,who+"는 배가 불러요 · 포만감 "+appetite.displayed(System.currentTimeMillis())+"/100",android.widget.Toast.LENGTH_SHORT).show();
+        }
         void request(String next){
+            if(PetAppetite.food(next) && !appetite.accepts(next,System.currentTimeMillis())){fullReply();return;}
             if(busy()){queued=next;return;}
             start(next);
         }
@@ -226,6 +233,7 @@ final class PetScene {
             int start=random.nextInt(choices.length);
             for(int i=0;i<choices.length;i++){
                 String choice=choices[(start+i)%choices.length];
+                if(PetAppetite.food(choice) && appetite.displayed(System.currentTimeMillis())>35)continue;
                 if(!choice.equals(current)&&!recentAuto.contains(choice))return choice;
             }
             throw new IllegalStateException("No distinct next action");
@@ -269,6 +277,11 @@ final class PetScene {
         }
         void start(String next){start(next,false);}
         void start(String next,boolean autoChosen){
+            if(PetAppetite.food(next) && !appetite.accepts(next,System.currentTimeMillis())){
+                upcomingAuto=null;
+                if(autoChosen)start("sniff",true);else fullReply();
+                return;
+            }
             selfDirected=autoChosen;upcomingAuto=null;owner=next;float ground=ground();
             if(autoChosen){
                 recentAuto.addLast(next);
@@ -379,6 +392,11 @@ final class PetScene {
                 if(closed||revision!=token)return;
                 loading=false;loadingAction=null;
                 if(value==null){android.util.Log.e("YeopjariCat","Cannot play "+name);cancelStory();restMs=4000;return;}
+                // Only the actor about to show a real, decoded food clip consumes a portion.
+                if(PetAppetite.food(name) && !appetite.serve(name,System.currentTimeMillis())){
+                    if(!selfDirected && !owner.startsWith("pair-"))fullReply();
+                    step=null;nextStep();return;
+                }
                 previousPose=idle;previousFrame=idleFrame;previousFacing=idleFacing;fade=0;
                 clip=value;clock=value.clock();action=name;age=0;startX=x;startY=ground();gaitExit=false;
                 if(owner.equals("touch-warning"))clock=TouchMood.warning(clock,clip.glanceEnd);
@@ -666,8 +684,8 @@ final class PetScene {
     PetScene(Context context,Runnable invalidate,String mode){
         this.invalidate=invalidate;application=context.getApplicationContext();positionMode=mode;
         library=MotionLibrary.get(context);settings=new PetSettings(context);size=settings.size();
-        actors[0]=new Actor(settings.coat(),width*(settings.companion()?.18f:.28f),"sniff");
-        if(settings.companion())actors[1]=new Actor(settings.companionCoat(),width*.82f,"ear-flick");
+        actors[0]=new Actor(settings.coat(),width*(settings.companion()?.18f:.28f),"sniff",0);
+        if(settings.companion())actors[1]=new Actor(settings.companionCoat(),width*.82f,"ear-flick",1);
         for(Actor actor:actors)if(actor!=null){library.preload(actor.coat,"run",null);library.preload(actor.coat,"cursor-pounce",null);}
     }
     void resize(float w,float h,float bottom){
@@ -711,7 +729,12 @@ final class PetScene {
             // An automatic invitation can wait for a natural meeting point.
             // Until then the other cat continues choosing its own activities.
             boolean nearBoundary=a.timeToBoundary()<2200 && b.timeToBoundary()<2200;
-            if(socialTimer<=0 && (nearBoundary || (socialTimer< -14000 && (!a.busy()||!b.busy()))))social(MobileActions.social[random.nextInt(MobileActions.social.length)],random.nextInt(2));
+            if(socialTimer<=0 && (nearBoundary || (socialTimer< -14000 && (!a.busy()||!b.busy())))){
+                String activity=MobileActions.social[random.nextInt(MobileActions.social.length)];
+                int leader=random.nextInt(2);
+                if("snack".equals(activity) && actors[leader].appetite.displayed(System.currentTimeMillis())>35)activity="sniff";
+                social(activity,leader);
+            }
         }
         if(a.controlled||b.controlled||a.fingerArmed||b.fingerArmed)return;
         if(a.busy()||b.busy()){
@@ -753,7 +776,10 @@ final class PetScene {
                     a.route(gait,a.x+move,lane,false);b.route(gait,b.x+move,lane,false);break;
                 }
                 case "nap":a.facePose("sleep",dir);b.facePose("sleep",-dir);break;
-                case "snack":a.facePose("treat",dir);b.facePose("reach",-dir);break;
+                case "snack":
+                    if(a.appetite.accepts("treat",System.currentTimeMillis())){a.facePose("treat",dir);b.facePose("reach",-dir);}
+                    else{a.fullReply();a.facePose("sniff",dir);b.facePose("sniff",-dir);}
+                    break;
                 case "sniff":a.facePose("sniff",dir);b.facePose("sniff",-dir);break;
                 case "surprise":a.facePose("sneeze",dir);b.facePose("startled",-dir);break;
                 default:a.facePose("punch",dir);b.facePose("reach",-dir);

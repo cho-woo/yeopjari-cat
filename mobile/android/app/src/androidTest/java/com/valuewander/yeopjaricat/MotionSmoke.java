@@ -43,6 +43,7 @@ public final class MotionSmoke extends Instrumentation {
             waitForIdleSync();
             if(arguments!=null&&"launcher-play".equals(arguments.getString("mode"))){new LauncherPlayReview(this).run();return;}
             if(arguments!=null&&"home-call".equals(arguments.getString("mode"))){new HomeCallReview(this).run();return;}
+            if(arguments!=null&&"appetite".equals(arguments.getString("mode"))){new AppetiteReview(this).run();return;}
             if(arguments!=null&&"action-flow-film".equals(arguments.getString("mode"))){new ActionFlowReview(this).film();return;}
             if(arguments!=null&&"action-flow".equals(arguments.getString("mode"))){new ActionFlowReview(this).run();return;}
             if(arguments!=null&&"autoplay".equals(arguments.getString("mode"))){new AutomaticReview(this).run();return;}

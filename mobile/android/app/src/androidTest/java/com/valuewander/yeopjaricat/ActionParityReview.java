@@ -80,7 +80,10 @@ final class ActionParityReview {
         test.runOnMainSync(()->scene.drag(1,0,-scene.size*1.1f));
         for(String action:MobileActions.all){
             int[] previous={scene.actors[0].ballHits,scene.actors[1].ballHits};
-            test.runOnMainSync(()->{scene.command(action);});
+            test.runOnMainSync(()->{
+                if(PetAppetite.food(action))scene.settings.prefs.edit().putFloat("appetite.0.amount",45).putFloat("appetite.1.amount",45).apply();
+                scene.command(action);
+            });
             sweep(coat+"/"+companion+"/"+action,()->!scene.actors[0].busy()&&!scene.actors[1].busy());
             for(int i=0;i<2;i++){
                 PetScene.Actor a=scene.actors[i];check(a.finishedOwner.equals(action),"Missing completion "+action);
